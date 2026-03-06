@@ -1,0 +1,13 @@
+import { inject, Injectable } from '@angular/core';
+import { Observable } from 'rxjs';
+import { Envelope } from '../models/envelope.model';
+import { EnvelopeGateway } from '../gateways/envelope.gateway';
+
+@Injectable({ providedIn: 'root' })
+export class GetEnvelopesUseCase {
+  private readonly gateway = inject(EnvelopeGateway);
+
+  execute(): Observable<Envelope[]> {
+    return this.gateway.getAll();
+  }
+}
