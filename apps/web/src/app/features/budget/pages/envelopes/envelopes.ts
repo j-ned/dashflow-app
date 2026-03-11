@@ -1,115 +1,355 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { switchMap } from 'rxjs';
 import { Envelope } from '../../domain/models/envelope.model';
+import { EnvelopeTransaction } from '../../domain/models/envelope-transaction.model';
 import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
 import { CreateEnvelopeUseCase } from '../../domain/use-cases/create-envelope.use-case';
 import { UpdateEnvelopeUseCase } from '../../domain/use-cases/update-envelope.use-case';
 import { CreditEnvelopeUseCase } from '../../domain/use-cases/credit-envelope.use-case';
 import { DeleteEnvelopeUseCase } from '../../domain/use-cases/delete-envelope.use-case';
+import { GetEnvelopeTransactionsUseCase } from '../../domain/use-cases/get-envelope-transactions.use-case';
+import { AddEnvelopeTransactionUseCase } from '../../domain/use-cases/add-envelope-transaction.use-case';
+import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
+import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
+import { CreateRecurringEntryUseCase } from '../../domain/use-cases/create-recurring-entry.use-case';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { EnvelopeForm } from '../../components/envelope-form/envelope-form';
 import { CreditEnvelopeForm } from '../../components/credit-envelope-form/credit-envelope-form';
+import { Icon } from '@shared/components/icon/icon';
+import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { Toaster } from '@shared/components/toast/toast';
+import { UpdateMemberColorUseCase } from '../../domain/use-cases/update-member-color.use-case';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-envelopes',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, ModalDialog, EnvelopeForm, CreditEnvelopeForm],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    ModalDialog,
+    EnvelopeForm,
+    CreditEnvelopeForm,
+    Icon,
+    FormsModule,
+  ],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Enveloppes</h2>
-        <p class="mt-1 text-sm text-text-muted">Gérez vos enveloppes virtuelles</p>
+        <p class="mt-1 text-sm text-text-muted">Gerez vos enveloppes virtuelles</p>
       </div>
-      <button type="button"
-              class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-green"
-              (click)="openCreateModal()">
-        + Nouvelle enveloppe
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-white hover:bg-ib-green/90 transition-colors shadow-sm"
+        (click)="openCreateModal()"
+      >
+        <app-icon name="plus" size="14" /> Nouvelle enveloppe
       </button>
     </header>
 
-    <section aria-label="Liste des enveloppes" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      @for (envelope of envelopes(); track envelope.id) {
-        <article class="rounded-xl border border-border bg-surface p-5 hover:border-ib-green/30 transition-colors">
-          <div class="flex items-center justify-between mb-3">
-            <h3 class="font-semibold text-text-primary">{{ envelope.name }}</h3>
-            <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                  [style.background-color]="envelope.color + '20'"
-                  [style.color]="envelope.color">
-              {{ envelope.type }}
-            </span>
+    <!-- Member filter -->
+    @if (activeMembers().length > 0) {
+      <div class="flex gap-2 flex-wrap items-center">
+        @for (m of activeMembers(); track m.id) {
+          <div
+            class="inline-flex items-center rounded-full border transition-colors"
+            [style.border-color]="
+              filterMemberId() === m.id ? m.color || 'var(--color-ib-green)' : 'var(--border)'
+            "
+            [style.background-color]="
+              filterMemberId() === m.id ? m.color || 'var(--color-ib-green)' : 'transparent'
+            "
+          >
+            <!-- Color dot = color picker -->
+            <label class="relative cursor-pointer pl-2.5 py-1 shrink-0" title="Changer la couleur">
+              <span
+                class="inline-block h-3 w-3 rounded-full border-2 hover:scale-125 transition-transform"
+                [style.background-color]="m.color || 'var(--color-text-muted)'"
+                [style.border-color]="
+                  filterMemberId() === m.id ? 'rgba(255,255,255,0.4)' : 'var(--border)'
+                "
+              ></span>
+              <input
+                type="color"
+                class="absolute inset-0 h-0 w-0 opacity-0"
+                [value]="m.color || '#6aab73'"
+                (click)="$event.stopPropagation()"
+                (change)="updateMemberColor(m.id, $event)"
+              />
+            </label>
+            <!-- Name = filter toggle -->
+            <button
+              type="button"
+              class="pr-3 pl-1.5 py-1 text-xs font-medium"
+              [class.text-white]="filterMemberId() === m.id"
+              [class.text-text-muted]="filterMemberId() !== m.id"
+              (click)="filterMemberId.set(m.id)"
+            >
+              {{ m.firstName }}
+            </button>
+          </div>
+        }
+      </div>
+    }
+
+    <section
+      aria-label="Liste des enveloppes"
+      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+    >
+      @for (envelope of filteredEnvelopes(); track envelope.id) {
+        <article
+          class="group relative overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5"
+        >
+          <div
+            class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
+            [style.background-color]="envelope.color"
+          ></div>
+          <div class="p-5">
+            <div class="flex items-center justify-between mb-1">
+              <div class="flex items-center gap-2">
+                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-cyan/10">
+                  <app-icon name="wallet" size="16" class="text-ib-cyan" />
+                </div>
+                <h3 class="font-semibold text-text-primary">{{ envelope.name }}</h3>
+              </div>
+              <span
+                class="rounded-full px-2 py-0.5 text-[9px] font-semibold"
+                [style.background-color]="envelope.color + '20'"
+                [style.color]="envelope.color"
+              >
+                {{ envelope.type }}
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2 text-[11px] text-text-muted mb-3 ml-10">
+              @if (memberName(envelope.memberId); as mName) {
+                <span class="inline-flex items-center gap-1">
+                  @if (memberColor(envelope.memberId); as mc) {
+                    <span
+                      class="inline-block h-2 w-2 rounded-full"
+                      [style.background-color]="mc"
+                    ></span>
+                  }
+                  {{ mName }}
+                </span>
+              }
+              @if (envelope.dueDay) {
+                <span class="rounded-md bg-raised px-1.5 py-0.5 font-mono text-[10px]"
+                  >le {{ envelope.dueDay }}</span
+                >
+              }
+            </div>
+
+            <p class="text-2xl font-mono font-bold text-ib-cyan tracking-tight ml-10">
+              {{ envelope.balance | number: '1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
+            </p>
+
+            @if (envelope.target) {
+              @let pct = (envelope.balance / envelope.target) * 100;
+              @let remaining = envelope.target - envelope.balance;
+              <div class="mt-3 ml-10">
+                <div class="grid grid-cols-2 gap-2 text-xs mb-2">
+                  <div>
+                    <p class="text-[10px] text-text-muted">Objectif</p>
+                    <p class="font-mono font-medium text-text-primary">
+                      {{ envelope.target | number: '1.2-2' }}&euro;
+                    </p>
+                  </div>
+                  <div>
+                    <p class="text-[10px] text-text-muted">Restant</p>
+                    <p
+                      class="font-mono font-medium"
+                      [class.text-ib-green]="remaining <= 0"
+                      [class.text-ib-yellow]="remaining > 0"
+                    >
+                      {{ remaining > 0 ? (remaining | number: '1.2-2') : '0,00' }}&euro;
+                    </p>
+                  </div>
+                </div>
+                <div class="flex justify-between text-[10px] text-text-muted mb-1">
+                  <span>Progression</span>
+                  <span class="font-mono font-semibold">{{ pct | number: '1.0-0' }}%</span>
+                </div>
+                <div class="h-2 rounded-full bg-hover overflow-hidden">
+                  <div
+                    class="h-full rounded-full transition-all duration-500 ease-out"
+                    [style.width.%]="pct > 100 ? 100 : pct"
+                    [style.background-color]="envelope.color"
+                  ></div>
+                </div>
+              </div>
+            } @else {
+              <p class="text-[11px] text-text-muted mt-2 ml-10">Aucun objectif defini</p>
+            }
           </div>
 
-          <p class="text-3xl font-mono font-semibold text-ib-cyan">{{ envelope.balance | number:'1.2-2' }} &euro;</p>
-
-          @if (envelope.target) {
-            @let pct = (envelope.balance / envelope.target) * 100;
-            @let remaining = envelope.target - envelope.balance;
-            <dl class="grid grid-cols-2 gap-2 text-xs mt-3 mb-3">
-              <div>
-                <dt class="text-text-muted/70">Objectif</dt>
-                <dd class="font-mono text-text-primary">{{ envelope.target | number:'1.2-2' }} &euro;</dd>
-              </div>
-              <div>
-                <dt class="text-text-muted/70">Restant</dt>
-                <dd class="font-mono" [class.text-ib-green]="remaining <= 0" [class.text-ib-yellow]="remaining > 0">
-                  {{ remaining > 0 ? (remaining | number:'1.2-2') : '0,00' }} &euro;
-                </dd>
-              </div>
-            </dl>
-            <div class="flex justify-between text-xs text-text-muted mb-1">
-              <span>Progression</span>
-              <span class="font-mono">{{ pct | number:'1.0-0' }}%</span>
-            </div>
-            <div class="h-2 rounded-full bg-hover">
-              <div class="h-full rounded-full transition-all duration-300"
-                   [style.width.%]="pct > 100 ? 100 : pct"
-                   [style.background-color]="envelope.color"></div>
-            </div>
-          } @else {
-            <p class="text-xs text-text-muted mt-2">Aucun objectif défini</p>
-          }
-
-          <div class="mt-4 flex gap-2 pt-3 border-t border-border/50">
-            <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                    (click)="openCreditModal(envelope)">
-              +/- Montant
+          <div
+            class="flex items-center justify-end gap-1 px-4 py-2.5 border-t border-border/50 bg-canvas/50"
+          >
+            <button
+              type="button"
+              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+              (click)="openCreditModal(envelope)"
+              aria-label="Crediter/Debiter"
+            >
+              <app-icon name="plus-circle" size="14" />
             </button>
-            <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
-                    (click)="openEditModal(envelope)">
-              Modifier
+            <button
+              type="button"
+              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+              (click)="openHistoryModal(envelope)"
+              aria-label="Historique"
+            >
+              <app-icon name="clock" size="14" />
             </button>
-            <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
-                    (click)="deleteEnvelope(envelope.id)">
-              Supprimer
+            <button
+              type="button"
+              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+              (click)="openEditModal(envelope)"
+              aria-label="Modifier"
+            >
+              <app-icon name="pencil" size="14" />
+            </button>
+            <button
+              type="button"
+              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+              (click)="deleteEnvelope(envelope.id)"
+              aria-label="Supprimer"
+            >
+              <app-icon name="trash" size="14" />
             </button>
           </div>
         </article>
       } @empty {
-        <p class="col-span-full text-center text-text-muted py-12">Aucune enveloppe. Créez votre première enveloppe.</p>
+        <div
+          class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface"
+        >
+          <app-icon name="wallet" size="48" class="text-text-muted/20 mx-auto mb-3" />
+          <p class="text-sm text-text-muted">Aucune enveloppe</p>
+          <p class="text-xs text-text-muted mt-1">Creez votre premiere enveloppe</p>
+        </div>
       }
     </section>
 
-    <footer class="rounded-xl border border-border bg-surface p-4 flex items-center justify-between">
-      <span class="text-sm text-text-muted">Total toutes enveloppes</span>
-      <span class="text-xl font-mono font-semibold text-ib-cyan">{{ totalBalance() | number:'1.2-2' }} &euro;</span>
+    <footer class="rounded-xl border border-border bg-surface overflow-hidden">
+      <div class="flex items-center justify-between px-5 py-3 bg-ib-cyan/5">
+        <div class="flex items-center gap-2">
+          <app-icon name="wallet" size="16" class="text-ib-cyan" />
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan"
+            >Total toutes enveloppes</span
+          >
+        </div>
+        <span class="text-xl font-mono font-bold text-ib-cyan"
+          >{{ totalBalance() | number: '1.2-2' }}<span class="text-base ml-0.5">&euro;</span></span
+        >
+      </div>
     </footer>
 
     <app-modal-dialog #createModal title="Nouvelle enveloppe" (closed)="onModalClosed()">
-      <app-envelope-form (submitted)="createEnvelope($event)" (cancelled)="createModal.close()" />
+      <app-envelope-form
+        [members]="members()"
+        (submitted)="createEnvelope($event)"
+        (cancelled)="createModal.close()"
+      />
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier l'enveloppe" (closed)="onModalClosed()">
-      <app-envelope-form [initial]="selectedEnvelope()" (submitted)="updateEnvelope($event)" (cancelled)="editModal.close()" />
+      <app-envelope-form
+        [initial]="selectedEnvelope()"
+        [members]="members()"
+        (submitted)="updateEnvelope($event)"
+        (cancelled)="editModal.close()"
+      />
     </app-modal-dialog>
 
-    <app-modal-dialog #creditModal title="Créditer / Débiter" (closed)="onModalClosed()">
-      <app-credit-envelope-form (submitted)="creditEnvelope($event)" (cancelled)="creditModal.close()" />
+    <app-modal-dialog #creditModal title="Crediter / Debiter" (closed)="onModalClosed()">
+      <app-credit-envelope-form
+        [accounts]="accounts()"
+        (submitted)="creditEnvelope($event)"
+        (cancelled)="creditModal.close()"
+      />
+    </app-modal-dialog>
+
+    <app-modal-dialog
+      #historyModal
+      [title]="'Historique — ' + (selectedEnvelope()?.name ?? '')"
+      (closed)="onModalClosed()"
+    >
+      <div class="space-y-4">
+        <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
+          <div class="flex-1">
+            <label for="env-tx-amount" class="text-xs text-text-muted">Montant</label>
+            <input
+              id="env-tx-amount"
+              type="number"
+              step="0.01"
+              class="form-input mono"
+              [value]="manualTxAmount()"
+              (input)="manualTxAmount.set(+$any($event.target).value)"
+            />
+            <p class="text-[10px] mt-0.5" style="color: var(--color-text-muted)">
+              Positif = credit, negatif = debit
+            </p>
+          </div>
+          <div class="flex-1">
+            <label for="env-tx-date" class="text-xs text-text-muted">Date</label>
+            <input
+              id="env-tx-date"
+              type="date"
+              class="form-input"
+              [value]="manualTxDate()"
+              (input)="manualTxDate.set($any($event.target).value)"
+            />
+          </div>
+          <button
+            type="submit"
+            [disabled]="!manualTxAmount() || !manualTxDate()"
+            class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
+          >
+            Ajouter
+          </button>
+        </form>
+
+        @if (transactions().length > 0) {
+          <div class="rounded-xl border border-border overflow-hidden">
+            <table class="w-full text-sm">
+              <thead>
+                <tr
+                  class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
+                >
+                  <th class="px-4 py-2.5">Date</th>
+                  <th class="px-4 py-2.5 text-right">Montant</th>
+                </tr>
+              </thead>
+              <tbody class="divide-y divide-border/30">
+                @for (tx of transactions(); track tx.id) {
+                  <tr class="hover:bg-hover/30 transition-colors">
+                    <td class="px-4 py-2.5 text-text-primary">
+                      {{ tx.date | date: 'dd/MM/yyyy' }}
+                    </td>
+                    <td
+                      class="px-4 py-2.5 text-right font-mono font-medium"
+                      [class.text-ib-green]="tx.amount > 0"
+                      [class.text-ib-red]="tx.amount < 0"
+                    >
+                      {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number: '1.2-2' }}&euro;
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        } @else {
+          <div class="text-center py-8">
+            <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
+            <p class="text-sm text-text-muted">Aucune operation enregistree</p>
+          </div>
+        }
+      </div>
     </app-modal-dialog>
   `,
 })
@@ -119,10 +359,19 @@ export class Envelopes {
   private readonly updateEnvelopeUC = inject(UpdateEnvelopeUseCase);
   private readonly creditEnvelopeUC = inject(CreditEnvelopeUseCase);
   private readonly deleteEnvelopeUC = inject(DeleteEnvelopeUseCase);
+  private readonly getTransactionsUC = inject(GetEnvelopeTransactionsUseCase);
+  private readonly addTransactionUC = inject(AddEnvelopeTransactionUseCase);
+  private readonly getMembersUC = inject(GetMembersUseCase);
+  private readonly updateMemberColorUC = inject(UpdateMemberColorUseCase);
+  private readonly getAccountsUC = inject(GetBankAccountsUseCase);
+  private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
+  private readonly toaster = inject(Toaster);
+  private readonly confirm = inject(ConfirmService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
   private readonly creditModalRef = viewChild.required<ModalDialog>('creditModal');
+  private readonly historyModalRef = viewChild.required<ModalDialog>('historyModal');
 
   private readonly _refresh = signal(0);
   protected readonly envelopes = toSignal(
@@ -130,11 +379,59 @@ export class Envelopes {
     { initialValue: [] },
   );
 
+  protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
+  protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
+  protected readonly filterMemberId = signal<string | null>(null);
+
+  protected readonly activeMembers = computed(() => {
+    const envs = this.envelopes();
+    const memberIds = new Set(envs.map((e) => e.memberId).filter(Boolean));
+    return this.members().filter((m) => memberIds.has(m.id));
+  });
+
+  constructor() {
+    effect(() => {
+      const active = this.activeMembers();
+      const current = this.filterMemberId();
+      if (active.length > 0 && (current === null || !active.find((m) => m.id === current))) {
+        this.filterMemberId.set(active[0].id);
+      }
+    });
+  }
+
+  protected readonly filteredEnvelopes = computed(() => {
+    const all = this.envelopes();
+    const fid = this.filterMemberId();
+    if (!fid) return all;
+    return all.filter((e) => e.memberId === fid);
+  });
+
   protected readonly totalBalance = computed(() =>
-    this.envelopes().reduce((sum, e) => sum + e.balance, 0)
+    this.filteredEnvelopes().reduce((sum, e) => sum + e.balance, 0),
   );
 
   protected readonly selectedEnvelope = signal<Envelope | null>(null);
+  protected readonly transactions = signal<EnvelopeTransaction[]>([]);
+  protected readonly manualTxAmount = signal(0);
+  protected readonly manualTxDate = signal(new Date().toISOString().slice(0, 10));
+
+  private readonly memberMap = computed(() => {
+    const map = new Map<string, { name: string; color: string | null }>();
+    for (const m of this.members()) {
+      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: m.color });
+    }
+    return map;
+  });
+
+  protected memberName(id: string | null): string | null {
+    if (!id) return null;
+    return this.memberMap().get(id)?.name ?? null;
+  }
+
+  protected memberColor(id: string | null): string | null {
+    if (!id) return null;
+    return this.memberMap().get(id)?.color ?? null;
+  }
 
   protected openCreateModal() {
     this.createModalRef().open();
@@ -150,39 +447,100 @@ export class Envelopes {
     this.creditModalRef().open();
   }
 
+  protected openHistoryModal(envelope: Envelope) {
+    this.selectedEnvelope.set(envelope);
+    this.getTransactionsUC.execute(envelope.id).subscribe((txs) => {
+      this.transactions.set(txs);
+      this.historyModalRef().open();
+    });
+  }
+
+  protected addManualTransaction() {
+    const envelope = this.selectedEnvelope();
+    const amount = this.manualTxAmount();
+    const date = this.manualTxDate();
+    if (!envelope || !amount || !date) return;
+    this.addTransactionUC.execute(envelope.id, { amount, date }).subscribe((tx) => {
+      this.transactions.update((txs) => [tx, ...txs]);
+      this.manualTxAmount.set(0);
+      this.manualTxDate.set(new Date().toISOString().slice(0, 10));
+    });
+  }
+
   protected onModalClosed() {
     this.selectedEnvelope.set(null);
+    this.transactions.set([]);
+    this.manualTxAmount.set(0);
+    this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
   protected createEnvelope(data: Omit<Envelope, 'id'>) {
-    this.createEnvelopeUC.execute(data).subscribe(() => {
-      this.createModalRef().close();
-      this._refresh.update(v => v + 1);
+    this.createEnvelopeUC.execute(data).subscribe({
+      next: () => {
+        this.createModalRef().close();
+        this._refresh.update((v) => v + 1);
+        this.toaster.success('Enveloppe creee');
+      },
+      error: () => this.toaster.error('Erreur lors de la creation'),
     });
   }
 
   protected updateEnvelope(data: Omit<Envelope, 'id'>) {
     const id = this.selectedEnvelope()?.id;
     if (!id) return;
-    this.updateEnvelopeUC.execute(id, data).subscribe(() => {
-      this.editModalRef().close();
-      this._refresh.update(v => v + 1);
+    this.updateEnvelopeUC.execute(id, data).subscribe({
+      next: () => {
+        this.editModalRef().close();
+        this._refresh.update((v) => v + 1);
+        this.toaster.success('Enveloppe modifiee');
+      },
+      error: () => this.toaster.error('Erreur lors de la modification'),
     });
   }
 
-  protected creditEnvelope(event: { amount: number }) {
-    const id = this.selectedEnvelope()?.id;
-    if (!id) return;
-    this.creditEnvelopeUC.execute(id, event.amount).subscribe(() => {
-      this.creditModalRef().close();
-      this._refresh.update(v => v + 1);
+  protected creditEnvelope(event: { amount: number; date: string; accountId: string | null }) {
+    const envelope = this.selectedEnvelope();
+    if (!envelope) return;
+    this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date).subscribe({
+      next: () => {
+        this.creditModalRef().close();
+        this._refresh.update((v) => v + 1);
+        this.toaster.success(event.amount > 0 ? 'Enveloppe creditee' : 'Enveloppe debitee');
+        if (event.accountId && event.amount > 0) {
+          this.createEntryUC
+            .execute({
+              label: `Crédit enveloppe — ${envelope.name}`,
+              amount: event.amount,
+              type: 'spending',
+              accountId: event.accountId,
+              memberId: envelope.memberId,
+              dayOfMonth: null,
+              date: event.date || null,
+              category: 'Enveloppe',
+              payslipKey: null,
+            })
+            .subscribe();
+        }
+      },
+      error: () => this.toaster.error("Erreur lors de l'operation"),
     });
   }
 
-  protected deleteEnvelope(id: string) {
-    if (!confirm('Supprimer cette enveloppe ?')) return;
-    this.deleteEnvelopeUC.execute(id).subscribe(() => {
-      this._refresh.update(v => v + 1);
+  protected async deleteEnvelope(id: string) {
+    if (!(await this.confirm.delete('cette enveloppe'))) return;
+    this.deleteEnvelopeUC.execute(id).subscribe({
+      next: () => {
+        this._refresh.update((v) => v + 1);
+        this.toaster.success('Enveloppe supprimee');
+      },
+      error: () => this.toaster.error('Erreur lors de la suppression'),
+    });
+  }
+
+  protected updateMemberColor(memberId: string, event: Event) {
+    const color = (event.target as HTMLInputElement).value;
+    this.updateMemberColorUC.execute(memberId, color).subscribe({
+      next: () => this._refresh.update((v) => v + 1),
     });
   }
 }

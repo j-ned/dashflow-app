@@ -3,25 +3,27 @@
 @import 'tailwindcss';
 
 @theme {
-  /* Colors */
-  --color-canvas: #191a1c;
-  --color-surface: #1e2022;
-  --color-raised: #26282b;
-  --color-elevated: #26282b;
-  --color-hover: #2d3033;
-  --color-border: #2d3033;
+  /* ── Base colors (dark theme, used by Tailwind at compile) ── */
 
-  --color-text-primary: #bcbec4;
-  --color-text-muted: #7a7e85;
+  --color-canvas: #16171a;
+  --color-surface: #1c1d21;
+  --color-raised: #24262a;
+  --color-elevated: #24262a;
+  --color-hover: #2e3035;
+  --color-border: #383b41;
 
-  --color-ib-blue: #56a8f5;
-  --color-ib-cyan: #2aacb8;
-  --color-ib-green: #6aab73;
-  --color-ib-orange: #cf8e6d;
-  --color-ib-red: #e06c75;
-  --color-ib-purple: #9876aa;
-  --color-ib-yellow: #e5c07b;
-  --color-ib-pink: #c77dba;
+  --color-text-primary: #c8cad0;
+  --color-text-muted: #8b8f96;
+
+  /* Accent colors — all verified ≥ 4.7:1 on canvas #16171a */
+  --color-ib-blue: #5eadf7;
+  --color-ib-cyan: #34b8c5;
+  --color-ib-green: #73b67d;
+  --color-ib-orange: #d69a7a;
+  --color-ib-red: #e5787f;
+  --color-ib-purple: #a78bba;
+  --color-ib-yellow: #e8c882;
+  --color-ib-pink: #cf8ac5;
 
   /* Fonts */
   --font-sans: 'Inter', system-ui, sans-serif;
@@ -33,18 +35,84 @@
   --radius-lg: 12px;
 }
 
-:root {
-  /* Custom CSS variables (non-Tailwind) */
-  --bg-canvas: #191a1c;
-  --bg-surface: #1e2022;
-  --bg-elevated: #26282b;
-  --bg-hover: #2d3033;
+/* ══════════════════════════════════════════════════
+   Dark theme (default)
+   ══════════════════════════════════════════════════
+   Contrast audit (WCAG AA):
+   ─ text-primary #c8cad0 on canvas  #16171a → 10.4:1 ✅
+   ─ text-primary #c8cad0 on surface #1c1d21 →  9.3:1 ✅
+   ─ text-primary #c8cad0 on elevated #24262a →  8.1:1 ✅
+   ─ text-muted   #8b8f96 on canvas  #16171a →  5.3:1 ✅
+   ─ text-muted   #8b8f96 on surface #1c1d21 →  4.8:1 ✅
+   ─ text-muted   #8b8f96 on elevated #24262a →  4.5:1 ✅ (exact AA)
+   ─ border       #383b41 on canvas  #16171a →  1.8:1 (decorative: OK)
+   ─ All accents  ≥ 4.7:1 on canvas, ≥ 4.5:1 on elevated ✅
+   ══════════════════════════════════════════════════ */
+:root,
+[data-theme="dark"] {
+  --bg-canvas: #16171a;
+  --bg-surface: #1c1d21;
+  --bg-elevated: #24262a;
+  --bg-hover: #2e3035;
 
-  --text-primary: #bcbec4;
-  --text-muted: #7a7e85;
+  --text-primary: #c8cad0;
+  --text-muted: #8b8f96;
 
-  --border: #2d3033;
-  --border-focus: #56a8f5;
+  --border: #383b41;
+  --border-focus: #5eadf7;
+
+  /* Solid accent backgrounds (white text on top ≥ 4.5:1) */
+  --accent-green-bg: #3a7e47;
+  --accent-purple-bg: #6f5490;
+}
+
+/* ══════════════════════════════════════════════════
+   Light theme
+   ══════════════════════════════════════════════════
+   Contrast audit (WCAG AA):
+   ─ text-primary #1a1a1e on surface #ffffff → 17.1:1 ✅
+   ─ text-primary #1a1a1e on canvas  #f4f4f6 → 14.9:1 ✅
+   ─ text-primary #1a1a1e on elevated #ebebef → 13.6:1 ✅
+   ─ text-muted   #5e5e63 on surface #ffffff →  6.1:1 ✅
+   ─ text-muted   #5e5e63 on canvas  #f4f4f6 →  5.6:1 ✅
+   ─ text-muted   #5e5e63 on hover   #e2e2e7 →  4.7:1 ✅
+   ─ All accents  ≥ 4.5:1 on surface #ffffff ✅
+   ══════════════════════════════════════════════════ */
+[data-theme="light"] {
+  --bg-canvas: #f4f4f6;
+  --bg-surface: #ffffff;
+  --bg-elevated: #ebebef;
+  --bg-hover: #e2e2e7;
+
+  --text-primary: #1a1a1e;
+  --text-muted: #5e5e63;
+
+  --border: #c5c5cc;
+  --border-focus: #2b64b9;
+
+  /* Override Tailwind theme colors */
+  --color-canvas: #f4f4f6;
+  --color-surface: #ffffff;
+  --color-raised: #ebebef;
+  --color-elevated: #ebebef;
+  --color-hover: #e2e2e7;
+  --color-border: #c5c5cc;
+  --color-text-primary: #1a1a1e;
+  --color-text-muted: #5e5e63;
+
+  /* Accent colors — all verified ≥ 4.5:1 on white #ffffff */
+  --color-ib-blue: #2b64b9;
+  --color-ib-cyan: #16707a;
+  --color-ib-green: #357a40;
+  --color-ib-orange: #9e5a2e;
+  --color-ib-red: #b53d48;
+  --color-ib-purple: #6f4d8e;
+  --color-ib-yellow: #7d6400;
+  --color-ib-pink: #8e4683;
+
+  /* Solid accent backgrounds (white text on top ≥ 4.5:1) */
+  --accent-green-bg: #357a40;
+  --accent-purple-bg: #6f4d8e;
 }
 
 body {
@@ -55,6 +123,7 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  transition: background-color 200ms ease, color 200ms ease;
 }
 
 /* ── Form fields ── */
@@ -79,7 +148,8 @@ body {
 }
 
 .form-input::placeholder {
-  color: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
+  color: var(--color-text-muted);
+  opacity: 0.65;
 }
 
 .form-input:focus-visible,
@@ -93,10 +163,10 @@ body {
   font-family: var(--font-mono), sans-serif;
 }
 
-/* Select arrow styling */
+/* Select arrow — uses text-muted for both themes */
 .form-select {
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%237a7e85' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238b8f96' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 0.75rem center;
   padding-right: 2.5rem;
@@ -133,7 +203,7 @@ body {
   padding: 0.5rem 1rem;
   font-size: 0.875rem;
   font-weight: 500;
-  color: var(--color-canvas);
+  color: #ffffff;
   border: none;
   cursor: pointer;
   transition: opacity 150ms ease;
@@ -150,10 +220,10 @@ body {
 
 .btn-submit:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--color-canvas), 0 0 0 4px currentColor;
+  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px currentColor;
 }
 
-/* Form validation — ng-invalid.ng-touched → red border, ng-valid.ng-touched → green border */
+/* Form validation */
 .form-input.ng-invalid.ng-touched,
 .form-select.ng-invalid.ng-touched {
   border-color: var(--color-ib-red);
@@ -170,11 +240,12 @@ small.error {
   line-height: 1.25;
 }
 
-/* Modal dialog */
+/* ── Modal dialog ── */
 dialog.modal-dialog {
   background: transparent;
   border: none;
   padding: 0;
+  margin: auto;
   max-width: 100vw;
   max-height: 100vh;
   overflow: visible;
@@ -194,14 +265,20 @@ dialog.modal-dialog[open]::backdrop {
 }
 
 dialog.modal-dialog .modal-content {
+  display: flex;
+  flex-direction: column;
   background-color: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-lg);
   padding: 1.5rem;
-  min-width: 24rem;
-  max-width: 32rem;
   width: 100%;
+  max-height: 90vh;
 }
+
+dialog.modal-dialog .modal-sm { min-width: 20rem; max-width: 26rem; }
+dialog.modal-dialog .modal-md { min-width: 24rem; max-width: 32rem; }
+dialog.modal-dialog .modal-lg { min-width: 32rem; max-width: 48rem; }
+dialog.modal-dialog .modal-xl { min-width: 40rem; max-width: 64rem; }
 
 @keyframes modal-fade-in {
   from { opacity: 0; transform: scale(0.95) translateY(-10px); }

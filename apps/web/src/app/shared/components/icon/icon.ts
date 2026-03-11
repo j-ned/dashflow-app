@@ -1,14 +1,21 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 export type IconName =
+  | 'dashflow-logo'
   | 'wallet' | 'briefcase'
   | 'layout-dashboard' | 'mail' | 'banknote' | 'package'
   | 'trending-up' | 'users' | 'file-text' | 'receipt' | 'landmark'
   | 'settings' | 'log-out' | 'camera' | 'x'
   | 'plus' | 'pencil' | 'trash' | 'search' | 'check'
   | 'alert-triangle' | 'eye' | 'eye-off'
-  | 'chevron-down' | 'chevron-right' | 'arrow-left'
-  | 'calendar' | 'download' | 'filter' | 'shield';
+  | 'chevron-down' | 'chevron-up' | 'chevron-right' | 'chevrons-left' | 'chevrons-right' | 'arrow-left'
+  | 'arrow-up-right' | 'arrow-down-left'
+  | 'calendar' | 'clock' | 'download' | 'filter' | 'shield'
+  | 'plus-circle'
+  | 'heart-pulse' | 'stethoscope' | 'pill' | 'bell' | 'folder'
+  | 'sun' | 'moon'
+  | 'chart-line' | 'arrow-right' | 'credit-card' | 'activity' | 'heart' | 'monitor'
+  | 'shield-check' | 'copy' | 'lock' | 'key';
 
 @Component({
   selector: 'app-icon',

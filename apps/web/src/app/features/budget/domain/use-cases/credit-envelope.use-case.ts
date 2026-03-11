@@ -7,7 +7,7 @@ import { EnvelopeGateway } from '../gateways/envelope.gateway';
 export class CreditEnvelopeUseCase {
   private readonly gateway = inject(EnvelopeGateway);
 
-  execute(id: string, amount: number): Observable<Envelope> {
-    return this.gateway.updateBalance(id, amount);
+  execute(id: string, amount: number, date: string): Observable<Envelope> {
+    return this.gateway.updateBalance(id, amount, date);
   }
 }

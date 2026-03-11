@@ -1,8 +1,13 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { map } from 'rxjs';
+import { BankAccount } from '../../domain/models/bank-account.model';
 
 type PaymentFormShape = {
   amount: FormControl<number>;
+  date: FormControl<string>;
+  accountId: FormControl<string>;
 };
 
 @Component({
@@ -29,11 +34,29 @@ type PaymentFormShape = {
             }
           }
         </div>
+
+        <div>
+          <label for="payment-date" class="form-label">Date</label>
+          <input id="payment-date" type="date" formControlName="date" class="form-input" />
+        </div>
+
+        @if (accounts().length > 0) {
+          <div>
+            <label for="payment-account" class="form-label">Decompter du compte</label>
+            <select id="payment-account" formControlName="accountId" class="form-input">
+              <option value="">Ne pas decompter</option>
+              @for (acc of accounts(); track acc.id) {
+                <option [value]="acc.id">{{ acc.name }}</option>
+              }
+            </select>
+            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Creera une depense sur le compte selectionne</p>
+          </div>
+        }
       </fieldset>
 
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
-        <button type="submit" [disabled]="form.invalid"
+        <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-blue)">
           Valider
         </button>
@@ -42,16 +65,29 @@ type PaymentFormShape = {
   `,
 })
 export class RecordPaymentForm {
-  readonly submitted = output<{ amount: number }>();
+  readonly accounts = input<BankAccount[]>([]);
+  readonly submitted = output<{ amount: number; date: string; accountId: string | null }>();
   readonly cancelled = output<void>();
 
   protected readonly form = new FormGroup<PaymentFormShape>({
     amount: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(0.01)] }),
+    date: new FormControl(new Date().toISOString().slice(0, 10), { nonNullable: true }),
+    accountId: new FormControl('', { nonNullable: true }),
   });
+
+  protected readonly isInvalid = toSignal(
+    this.form.statusChanges.pipe(map(() => this.form.invalid)),
+    { initialValue: this.form.invalid },
+  );
 
   protected submitForm() {
     if (this.form.invalid) return;
-    this.submitted.emit({ amount: this.form.getRawValue().amount });
-    this.form.reset();
+    const v = this.form.getRawValue();
+    this.submitted.emit({
+      amount: v.amount,
+      date: v.date,
+      accountId: v.accountId || null,
+    });
+    this.form.reset({ amount: 0, date: new Date().toISOString().slice(0, 10), accountId: '' });
   }
 }

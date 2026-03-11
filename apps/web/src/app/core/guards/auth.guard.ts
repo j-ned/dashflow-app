@@ -10,5 +10,17 @@ export const authGuard: CanMatchFn = async () => {
     await auth.checkSession();
   }
 
-  return auth.isAuthenticated() ? true : router.createUrlTree(['/auth/login']);
+  if (!auth.isAuthenticated()) {
+    return router.createUrlTree(['/auth/login']);
+  }
+
+  if (auth.needsEncryptionSetup()) {
+    return router.createUrlTree(['/auth/encryption-setup']);
+  }
+
+  if (auth.needsUnlock()) {
+    return router.createUrlTree(['/auth/unlock']);
+  }
+
+  return true;
 };

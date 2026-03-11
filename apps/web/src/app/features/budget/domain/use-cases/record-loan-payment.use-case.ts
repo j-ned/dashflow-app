@@ -7,7 +7,7 @@ import { LoanGateway } from '../gateways/loan.gateway';
 export class RecordLoanPaymentUseCase {
   private readonly gateway = inject(LoanGateway);
 
-  execute(id: string, amount: number): Observable<Loan> {
-    return this.gateway.recordPayment(id, amount);
+  execute(id: string, amount: number, date: string): Observable<Loan> {
+    return this.gateway.recordPayment(id, amount, date);
   }
 }

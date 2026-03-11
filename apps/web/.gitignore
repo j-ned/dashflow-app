@@ -8,6 +8,11 @@
 
 # Node
 /node_modules
+backend/node_modules
+backend/.env
+backend/.env.example
+.env
+.env.local
 npm-debug.log
 yarn-error.log
 
@@ -21,6 +26,7 @@ yarn-error.log
 *.launch
 .settings/
 *.sublime-workspace
+
 
 # Visual Studio Code
 .vscode/*

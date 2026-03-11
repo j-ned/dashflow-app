@@ -59,7 +59,8 @@
               "buildTarget": "dash-flow:build:production"
             },
             "development": {
-              "buildTarget": "dash-flow:build:development"
+              "buildTarget": "dash-flow:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

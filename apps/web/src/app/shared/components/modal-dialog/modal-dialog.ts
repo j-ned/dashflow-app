@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, ElementRef, input, output, viewChild } from '@angular/core';
 import { Icon } from '@shared/components/icon/icon';
 
+export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
+
 @Component({
   selector: 'app-modal-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -11,8 +13,8 @@ import { Icon } from '@shared/components/icon/icon';
             class="modal-dialog"
             (click)="onBackdropClick($event)"
             (close)="closed.emit()">
-      <div class="modal-content" (click)="$event.stopPropagation()">
-        <header class="flex items-center justify-between pb-3 mb-3 border-b border-border">
+      <div class="modal-content" [class]="sizeClass()" (click)="$event.stopPropagation()">
+        <header class="flex items-center justify-between pb-3 mb-3 border-b border-border shrink-0">
           <h3 class="text-base font-semibold text-text-primary">{{ title() }}</h3>
           <button type="button"
                   class="rounded-md p-1 text-text-muted hover:text-text-primary hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
@@ -21,7 +23,7 @@ import { Icon } from '@shared/components/icon/icon';
             <app-icon name="x" size="18" />
           </button>
         </header>
-        <div>
+        <div class="overflow-y-auto flex-1 min-h-0">
           <ng-content />
         </div>
       </div>
@@ -30,9 +32,14 @@ import { Icon } from '@shared/components/icon/icon';
 })
 export class ModalDialog {
   readonly title = input.required<string>();
+  readonly size = input<ModalSize>('md');
   readonly closed = output<void>();
 
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+
+  protected sizeClass(): string {
+    return `modal-content modal-${this.size()}`;
+  }
 
   open() {
     this.dialogRef().nativeElement.showModal();
