@@ -318,7 +318,7 @@ import { NgOptimizedImage } from '@angular/common';
                   alt="Liste des rendez-vous"
                   class="w-full object-cover"
                   loading="lazy"
-                  fill />
+                  height="935" width="1908" />
               </div>
             </article>
 
