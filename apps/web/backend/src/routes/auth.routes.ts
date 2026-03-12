@@ -321,7 +321,7 @@ auth.patch('/me/password', authMiddleware, async (c) => {
   return c.json({ message: 'Mot de passe mis a jour' });
 });
 
-// ── Set Password (for OAuth-only accounts) ──
+// ── Set Password (for OAuth-only accounts or passphrase-only accounts) ──
 auth.post('/me/set-password', authMiddleware, async (c) => {
   const userId = c.get('userId');
   const body = await c.req.json();
@@ -332,9 +332,6 @@ auth.post('/me/set-password', authMiddleware, async (c) => {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) {
     return c.json({ error: 'Utilisateur non trouve' }, 404);
-  }
-  if (user.password) {
-    return c.json({ error: 'Ce compte a deja un mot de passe. Utilisez la modification.' }, 400);
   }
 
   const hashed = await hash(newPassword);
@@ -512,11 +509,9 @@ auth.post('/me/encryption-passphrase', authMiddleware, async (c) => {
   const v = validate(encryptionPassphraseSchema, await c.req.json());
   if (!v.success) return c.json({ error: v.error }, 400);
 
-  // Hash passphrase server-side for verification on re-entry
-  const hashed = await hash(v.data.passphrase);
-
+  // Mark as passphrase-based encryption — do NOT store passphrase in password field
+  // The passphrase is only used client-side for PBKDF2 key derivation
   await db.update(users).set({
-    password: hashed,
     encryptionPassphrase: true,
   }).where(eq(users.id, userId));
 
