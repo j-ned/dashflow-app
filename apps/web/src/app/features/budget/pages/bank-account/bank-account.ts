@@ -12,7 +12,6 @@ import { DeleteRecurringEntryUseCase } from '../../domain/use-cases/delete-recur
 import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
 import { CreateBankAccountUseCase } from '../../domain/use-cases/create-bank-account.use-case';
 import { DeleteBankAccountUseCase } from '../../domain/use-cases/delete-bank-account.use-case';
-import { UpdateBankAccountUseCase } from '../../domain/use-cases/update-bank-account.use-case';
 import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
@@ -20,6 +19,17 @@ import { RecurringEntryForm } from '../../components/recurring-entry-form/recurr
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+
+const PALETTE = [
+  'var(--color-ib-blue)',
+  'var(--color-ib-cyan)',
+  'var(--color-ib-green)',
+  'var(--color-ib-purple)',
+  'var(--color-ib-orange)',
+  'var(--color-ib-pink)',
+  'var(--color-ib-yellow)',
+  'var(--color-ib-red)',
+] as const;
 
 @Component({
   selector: 'app-bank-account',
@@ -34,27 +44,18 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
         <p class="mt-1 text-sm text-text-muted">Estimation du solde en fin de mois</p>
       </div>
       <nav class="flex items-center gap-2 flex-wrap">
-        @for (account of accounts(); track account.id) {
-          <div class="inline-flex items-center rounded-lg border transition-all cursor-pointer"
-               [style.border-color]="selectedAccountId() === account.id ? (account.color || 'var(--color-ib-cyan)') : 'var(--border)'"
-               [style.background-color]="selectedAccountId() === account.id ? (account.color || 'var(--color-ib-cyan)') : 'transparent'">
-            <label class="relative cursor-pointer pl-2.5 py-1.5 shrink-0" title="Changer la couleur du dot">
-              <span class="inline-block h-3 w-3 rounded-full border-2 hover:scale-125 transition-transform"
-                    [style.background-color]="account.dotColor || 'var(--color-text-muted)'"
-                    [style.border-color]="selectedAccountId() === account.id ? 'rgba(255,255,255,0.4)' : 'var(--border)'"></span>
-              <input type="color" class="absolute inset-0 h-0 w-0 opacity-0"
-                     [value]="account.dotColor || '#ef4444'"
-                     (click)="$event.stopPropagation()"
-                     (change)="updateAccountDotColor(account.id, $event)" />
-            </label>
-            <button type="button"
-                    class="pr-3 pl-1.5 py-1.5 text-xs font-medium"
-                    [class.text-white]="selectedAccountId() === account.id"
-                    [class.text-text-muted]="selectedAccountId() !== account.id"
-                    (click)="selectAccount(account.id)">
-              {{ account.name }}
-            </button>
-          </div>
+        @for (account of accounts(); track account.id; let i = $index) {
+          <button type="button"
+                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+                  [style.border-color]="selectedAccountId() === account.id ? accountColor(i) : 'var(--border)'"
+                  [style.background-color]="selectedAccountId() === account.id ? accountColor(i) : 'transparent'"
+                  [class.text-white]="selectedAccountId() === account.id"
+                  [class.text-text-muted]="selectedAccountId() !== account.id"
+                  (click)="selectAccount(account.id)">
+            <span class="inline-block h-2.5 w-2.5 rounded-full"
+                  [style.background-color]="accountDotColor(i)"></span>
+            {{ account.name }}
+          </button>
         }
         <button type="button"
                 class="rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
@@ -212,7 +213,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                     }
                     @if (memberName(entry.memberId); as mName) {
                       <span class="inline-flex items-center gap-1 text-[11px] text-text-muted">
-                        @if (memberColor(entry.memberId); as mc) {
+                        @if (memberColorById(entry.memberId); as mc) {
                           <span class="inline-block h-2 w-2 rounded-full shrink-0" [style.background-color]="mc"></span>
                         }
                         {{ mName }}
@@ -460,35 +461,21 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Comptes existants</p>
             <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
-              @for (account of accounts(); track account.id) {
+              @for (account of accounts(); track account.id; let i = $index) {
                 <div class="flex items-center justify-between px-4 py-3 hover:bg-hover/30 transition-colors">
                   <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center gap-2">
+                      <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
+                      <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
+                    </span>
                     <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
                   </div>
-                  <div class="flex items-center gap-2">
-                    <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-text-muted" title="Couleur du badge">
-                      <span class="inline-block h-5 w-5 rounded-md border border-border/50 hover:scale-110 transition-transform"
-                            [style.background-color]="account.color || 'var(--color-ib-cyan)'"></span>
-                      <input type="color" class="h-0 w-0 opacity-0 absolute"
-                             [value]="account.color || '#22d3ee'"
-                             (change)="updateAccountColor(account.id, $event)" />
-                      Badge
-                    </label>
-                    <label class="flex items-center gap-1.5 cursor-pointer text-[10px] text-text-muted" title="Couleur du dot">
-                      <span class="inline-block h-5 w-5 rounded-full border border-border/50 hover:scale-110 transition-transform"
-                            [style.background-color]="account.dotColor || 'var(--color-text-muted)'"></span>
-                      <input type="color" class="h-0 w-0 opacity-0 absolute"
-                             [value]="account.dotColor || '#ef4444'"
-                             (change)="updateAccountDotColor(account.id, $event)" />
-                      Dot
-                    </label>
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                            (click)="deleteAccount(account)"
-                            aria-label="Supprimer le compte">
-                      <app-icon name="trash" size="14" />
-                    </button>
-                  </div>
+                  <button type="button"
+                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                          (click)="deleteAccount(account)"
+                          aria-label="Supprimer le compte">
+                    <app-icon name="trash" size="14" />
+                  </button>
                 </div>
               }
             </div>
@@ -505,18 +492,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                      class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                      placeholder="Ex: Compte courant, Compte joint..." />
             </div>
-            <div class="flex gap-4">
-              <div>
-                <label for="acc-color" class="block text-sm font-medium text-text-muted mb-1">Badge</label>
-                <input id="acc-color" type="color" [ngModel]="newAccountColor()" (ngModelChange)="newAccountColor.set($event)" name="color"
-                       class="h-9 w-16 rounded border border-border bg-raised cursor-pointer" />
-              </div>
-              <div>
-                <label for="acc-dot-color" class="block text-sm font-medium text-text-muted mb-1">Dot</label>
-                <input id="acc-dot-color" type="color" [ngModel]="newAccountDotColor()" (ngModelChange)="newAccountDotColor.set($event)" name="dotColor"
-                       class="h-9 w-16 rounded border border-border bg-raised cursor-pointer" />
-              </div>
-            </div>
+            <p class="text-xs text-text-muted">Les couleurs sont attribuees automatiquement.</p>
             <footer class="flex justify-end gap-3 pt-2">
               <button type="button"
                       class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
@@ -556,7 +532,6 @@ export class BankAccount {
   private readonly getAccountsUC = inject(GetBankAccountsUseCase);
   private readonly createAccountUC = inject(CreateBankAccountUseCase);
   private readonly deleteAccountUC = inject(DeleteBankAccountUseCase);
-  private readonly updateAccountUC = inject(UpdateBankAccountUseCase);
   private readonly entryGateway = inject(RecurringEntryGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
@@ -680,8 +655,6 @@ export class BankAccount {
   });
 
   protected readonly newAccountName = signal('');
-  protected readonly newAccountColor = signal('#3b82f6');
-  protected readonly newAccountDotColor = signal('#ef4444');
 
   private readonly memberMap = computed(() => {
     const map = new Map<string, { name: string; color: string | null }>();
@@ -704,9 +677,11 @@ export class BankAccount {
     return this.memberMap().get(id)?.name ?? null;
   }
 
-  protected memberColor(id: string | null): string | null {
+  protected memberColorById(id: string | null): string | null {
     if (!id) return null;
-    return this.memberMap().get(id)?.color ?? null;
+    const members = this.members();
+    const idx = members.findIndex(m => m.id === id);
+    return idx >= 0 ? PALETTE[(idx + 3) % PALETTE.length] : null;
   }
 
   protected accountName(id: string | null): string | null {
@@ -719,16 +694,12 @@ export class BankAccount {
     this.selectedAccountId.set(id);
   }
 
-  protected async updateAccountColor(accountId: string, event: Event) {
-    const color = (event.target as HTMLInputElement).value;
-    await lastValueFrom(this.updateAccountUC.execute(accountId, { color }));
-    this._refreshAccounts.update(v => v + 1);
+  protected accountColor(index: number): string {
+    return PALETTE[index % PALETTE.length];
   }
 
-  protected async updateAccountDotColor(accountId: string, event: Event) {
-    const dotColor = (event.target as HTMLInputElement).value;
-    await lastValueFrom(this.updateAccountUC.execute(accountId, { dotColor }));
-    this._refreshAccounts.update(v => v + 1);
+  protected accountDotColor(index: number): string {
+    return PALETTE[(index + 3) % PALETTE.length];
   }
 
   protected prevMonth() {
@@ -747,11 +718,9 @@ export class BankAccount {
     const name = this.newAccountName().trim();
     if (!name) return;
     try {
-      await lastValueFrom(this.createAccountUC.execute({ name, color: this.newAccountColor(), dotColor: this.newAccountDotColor() }));
+      await lastValueFrom(this.createAccountUC.execute({ name, color: null, dotColor: null }));
       this.toaster.success('Compte cree');
       this.newAccountName.set('');
-      this.newAccountColor.set('#3b82f6');
-      this.newAccountDotColor.set('#ef4444');
       this._refreshAccounts.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la creation du compte');

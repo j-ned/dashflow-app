@@ -20,8 +20,18 @@ import { RecordPaymentForm } from '../../components/record-payment-form/record-p
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
-import { UpdateMemberColorUseCase } from '../../domain/use-cases/update-member-color.use-case';
 import { FormsModule } from '@angular/forms';
+
+const MEMBER_PALETTE = [
+  'var(--color-ib-green)',
+  'var(--color-ib-blue)',
+  'var(--color-ib-purple)',
+  'var(--color-ib-orange)',
+  'var(--color-ib-pink)',
+  'var(--color-ib-cyan)',
+  'var(--color-ib-yellow)',
+  'var(--color-ib-red)',
+] as const;
 
 @Component({
   selector: 'app-loans',
@@ -55,42 +65,20 @@ import { FormsModule } from '@angular/forms';
     <!-- Member filter -->
     @if (activeMembers().length > 0) {
       <div class="flex gap-2 flex-wrap items-center">
-        @for (m of activeMembers(); track m.id) {
-          <div
-            class="inline-flex items-center rounded-full border transition-colors"
-            [style.border-color]="
-              filterMemberId() === m.id ? m.color || 'var(--color-ib-green)' : 'var(--border)'
-            "
-            [style.background-color]="
-              filterMemberId() === m.id ? m.color || 'var(--color-ib-green)' : 'transparent'
-            "
+        @for (m of activeMembers(); track m.id; let i = $index) {
+          <button
+            type="button"
+            class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+            [style.border-color]="filterMemberId() === m.id ? memberColor(i) : 'var(--border)'"
+            [style.background-color]="filterMemberId() === m.id ? memberColor(i) : 'transparent'"
+            [class.text-white]="filterMemberId() === m.id"
+            [class.text-text-muted]="filterMemberId() !== m.id"
+            (click)="filterMemberId.set(m.id)"
           >
-            <label class="relative cursor-pointer pl-2.5 py-1 shrink-0" title="Changer la couleur">
-              <span
-                class="inline-block h-3 w-3 rounded-full border-2 hover:scale-125 transition-transform"
-                [style.background-color]="m.color || 'var(--color-text-muted)'"
-                [style.border-color]="
-                  filterMemberId() === m.id ? 'rgba(255,255,255,0.4)' : 'var(--border)'
-                "
-              ></span>
-              <input
-                type="color"
-                class="absolute inset-0 h-0 w-0 opacity-0"
-                [value]="m.color || '#6aab73'"
-                (click)="$event.stopPropagation()"
-                (change)="updateMemberColor(m.id, $event)"
-              />
-            </label>
-            <button
-              type="button"
-              class="pr-3 pl-1.5 py-1 text-xs font-medium transition-colors"
-              [class.text-white]="filterMemberId() === m.id"
-              [class.text-text-muted]="filterMemberId() !== m.id"
-              (click)="filterMemberId.set(m.id)"
-            >
-              {{ m.firstName }}
-            </button>
-          </div>
+            <span class="inline-block h-2.5 w-2.5 rounded-full"
+                  [style.background-color]="memberColor(i)"></span>
+            {{ m.firstName }}
+          </button>
         }
       </div>
     }
@@ -126,7 +114,7 @@ import { FormsModule } from '@angular/forms';
                     <div class="flex items-center gap-2 mt-0.5">
                       @if (memberName(loan.memberId); as mName) {
                         <span class="inline-flex items-center gap-1 text-[10px] text-ib-purple">
-                          @if (memberColor(loan.memberId); as mc) {
+                          @if (memberColorById(loan.memberId); as mc) {
                             <span
                               class="inline-block h-2 w-2 rounded-full"
                               [style.background-color]="mc"
@@ -278,7 +266,7 @@ import { FormsModule } from '@angular/forms';
                     <div class="flex items-center gap-2 mt-0.5">
                       @if (memberName(loan.memberId); as mName) {
                         <span class="inline-flex items-center gap-1 text-[10px] text-ib-purple">
-                          @if (memberColor(loan.memberId); as mc) {
+                          @if (memberColorById(loan.memberId); as mc) {
                             <span
                               class="inline-block h-2 w-2 rounded-full"
                               [style.background-color]="mc"
@@ -515,7 +503,6 @@ export class Loans {
   private readonly getTransactionsUC = inject(GetLoanTransactionsUseCase);
   private readonly addTransactionUC = inject(AddLoanTransactionUseCase);
   private readonly getMembersUC = inject(GetMembersUseCase);
-  private readonly updateMemberColorUC = inject(UpdateMemberColorUseCase);
   private readonly getAccountsUC = inject(GetBankAccountsUseCase);
   private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
   private readonly toaster = inject(Toaster);
@@ -585,9 +572,11 @@ export class Loans {
     return this.memberMap().get(id)?.name ?? null;
   }
 
-  protected memberColor(id: string | null): string | null {
+  protected memberColorById(id: string | null): string | null {
     if (!id) return null;
-    return this.memberMap().get(id)?.color ?? null;
+    const members = this.members();
+    const idx = members.findIndex(m => m.id === id);
+    return idx >= 0 ? MEMBER_PALETTE[idx % MEMBER_PALETTE.length] : null;
   }
 
   protected openLentModal() {
@@ -698,9 +687,7 @@ export class Loans {
     }
   }
 
-  protected async updateMemberColor(memberId: string, event: Event) {
-    const color = (event.target as HTMLInputElement).value;
-    await lastValueFrom(this.updateMemberColorUC.execute(memberId, color));
-    this._refresh.update((v) => v + 1);
+  protected memberColor(index: number): string {
+    return MEMBER_PALETTE[index % MEMBER_PALETTE.length];
   }
 }
