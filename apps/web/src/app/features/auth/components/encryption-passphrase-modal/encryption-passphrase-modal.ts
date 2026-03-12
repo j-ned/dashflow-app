@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, output, signal, viewChild } from '@
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
+import { passwordMatchValidator } from '@shared/validators/form-validators';
 
 type PassphraseFormShape = {
   passphrase: FormControl<string>;
@@ -28,6 +29,8 @@ type PassphraseFormShape = {
         }
 
         <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-4">
+          <legend class="sr-only">Passphrase de chiffrement</legend>
           <div>
             <label for="passphrase" class="mb-1.5 block text-sm font-medium text-text-primary">
               Passphrase <span aria-hidden="true" class="text-ib-red">*</span>
@@ -47,8 +50,12 @@ type PassphraseFormShape = {
                 <app-icon [name]="showPassphrase() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
-            @if (form.controls.passphrase.touched && form.controls.passphrase.errors?.['minlength']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Minimum 8 caracteres.</small>
+            @if (form.controls.passphrase.touched) {
+              @if (form.controls.passphrase.errors?.['required']) {
+                <small class="mt-1 block text-xs text-ib-red" role="alert">La passphrase est obligatoire.</small>
+              } @else if (form.controls.passphrase.errors?.['minlength']) {
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Minimum 8 caracteres.</small>
+              }
             }
           </div>
 
@@ -71,7 +78,14 @@ type PassphraseFormShape = {
                 <app-icon [name]="showConfirm() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
+            @if (
+              (form.controls.passphrase.touched || form.controls.confirm.touched) &&
+              form.errors?.['mismatch']
+            ) {
+              <small class="mt-1 block text-xs text-ib-red" role="alert">Les passphrases ne correspondent pas.</small>
+            }
           </div>
+          </fieldset>
 
           <button
             type="submit"
@@ -105,16 +119,12 @@ export class EncryptionPassphraseModal {
       nonNullable: true,
       validators: [Validators.required],
     }),
-  });
+  }, { validators: [passwordMatchValidator('passphrase', 'confirm')] });
 
   protected submit(): void {
-    const { passphrase, confirm } = this.form.getRawValue();
+    if (this.form.invalid) return;
 
-    if (passphrase !== confirm) {
-      this.error.set('Les passphrases ne correspondent pas.');
-      return;
-    }
-
+    const { passphrase } = this.form.getRawValue();
     this.passphraseSet.emit(passphrase);
     this.modal().close();
   }

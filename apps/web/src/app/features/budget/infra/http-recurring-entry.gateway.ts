@@ -10,7 +10,7 @@ import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gatewa
 const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'accountId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpRecurringEntryGateway extends RecurringEntryGateway {
+export class HttpRecurringEntryGateway implements RecurringEntryGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 
@@ -73,7 +73,6 @@ export class HttpRecurringEntryGateway extends RecurringEntryGateway {
       switchMap((blob) => {
         const key = this.crypto.getMasterKey();
         if (!key) return from([blob]);
-        // If the blob is application/octet-stream, it's likely encrypted
         if (blob.type === 'application/octet-stream') {
           return from(decryptFile(blob, key, 'application/pdf'));
         }

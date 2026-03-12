@@ -9,7 +9,7 @@ import { MemberGateway } from '../domain/gateways/member.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpMemberGateway extends MemberGateway {
+export class HttpMemberGateway implements MemberGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

@@ -260,7 +260,6 @@ export class BudgetAnalytics {
     const loanPay = this.monthlyLoanPayments();
     const otherSpendings = spendings - envCredits - loanPay;
 
-    // Build sub detail for charges
     const chargeParts: string[] = [];
     if (annual > 0) chargeParts.push(`${annual.toFixed(0)}€ annualise`);
     if (envCredits > 0) chargeParts.push(`${envCredits.toFixed(0)}€ enveloppes`);
@@ -389,7 +388,6 @@ export class BudgetAnalytics {
     const envCredits = this.monthlyEnvelopeCredits();
     const loanPay = this.monthlyLoanPayments();
 
-    // Net balance forecast
     if (net > 0) {
       results.push({
         label: 'Reste a vivre',
@@ -410,7 +408,6 @@ export class BudgetAnalytics {
       });
     }
 
-    // Envelope forecasts
     const envsWithTarget = this.envelopes().filter(e => Number(e.target ?? 0) > 0);
     for (const env of this.envelopes()) {
       const envBalance = Number(env.balance);
@@ -448,7 +445,6 @@ export class BudgetAnalytics {
       }
     }
 
-    // Loan forecasts
     const activeLoans = this.loans().filter(l => Number(l.remaining) > 0);
     for (const loan of this.loans()) {
       const loanAmount = Number(loan.amount);

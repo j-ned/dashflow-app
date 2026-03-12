@@ -74,7 +74,6 @@ function fuzzyScore(query: string, target: string): number {
             (close)="onDialogClose()">
       <div class="command-panel" (click)="$event.stopPropagation()">
 
-        <!-- Search input -->
         <div class="flex items-center gap-3 px-4 py-3 border-b border-border">
           <app-icon name="search" size="18" class="text-text-muted shrink-0" />
           <input #searchInput
@@ -91,7 +90,6 @@ function fuzzyScore(query: string, target: string): number {
           </kbd>
         </div>
 
-        <!-- Results -->
         <div class="max-h-[min(60vh,400px)] overflow-y-auto overscroll-contain p-2">
           @if (grouped().length > 0) {
             @for (group of grouped(); track group.category) {
@@ -119,7 +117,6 @@ function fuzzyScore(query: string, target: string): number {
           }
         </div>
 
-        <!-- Footer -->
         <div class="flex items-center justify-between gap-4 border-t border-border px-4 py-2 text-[10px] text-text-muted">
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1">
@@ -232,7 +229,6 @@ export class CommandPalette {
   // ── Commands registry ──
 
   private readonly commands: Command[] = [
-    // Navigation — Budget
     { id: 'nav-budget',       label: 'Vue globale — Budget',     category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard budget vue globale tableau de bord',         action: () => this.go('/budget/dashboard') },
     { id: 'nav-envelopes',    label: 'Enveloppes',               category: 'budget',     icon: 'mail',             keywords: 'enveloppes epargne savings',                         action: () => this.go('/budget/envelopes') },
     { id: 'nav-loans',        label: 'Prets & Dettes',           category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser',              action: () => this.go('/budget/loans') },
@@ -240,7 +236,6 @@ export class CommandPalette {
     { id: 'nav-archives',     label: 'Archives salaires',        category: 'budget',     icon: 'folder',           keywords: 'archives salaires historique revenus fiches de paie', action: () => this.go('/budget/archives') },
     { id: 'nav-analytics',    label: 'Statistiques & Previsions', category: 'budget',    icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
 
-    // Navigation — Medical
     { id: 'nav-medical',      label: 'Vue globale — Medical',    category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante',                action: () => this.go('/medical/dashboard') },
     { id: 'nav-patients',     label: 'Patients',                 category: 'medical',    icon: 'users',            keywords: 'patients famille membres enfants',                   action: () => this.go('/medical/patients') },
     { id: 'nav-practitioners', label: 'Praticiens',              category: 'medical',    icon: 'stethoscope',      keywords: 'praticiens medecins docteur dentiste specialiste',    action: () => this.go('/medical/practitioners') },
@@ -250,10 +245,8 @@ export class CommandPalette {
     { id: 'nav-documents',    label: 'Documents medicaux',       category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans',           action: () => this.go('/medical/documents') },
     { id: 'nav-reminders',    label: 'Alertes & Rappels',        category: 'medical',    icon: 'bell',             keywords: 'alertes rappels notifications reminders',            action: () => this.go('/medical/reminders') },
 
-    // Navigation — Settings
     { id: 'nav-settings',     label: 'Parametres',               category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',         action: () => this.go('/settings') },
 
-    // Actions rapides
     { id: 'act-logout',       label: 'Deconnexion',              category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir',                  action: () => this.go('/auth/login') },
   ];
 

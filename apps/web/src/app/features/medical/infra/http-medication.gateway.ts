@@ -9,7 +9,7 @@ import { MedicationGateway } from '../domain/gateways/medication.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'prescriptionId', 'patientId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpMedicationGateway extends MedicationGateway {
+export class HttpMedicationGateway implements MedicationGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

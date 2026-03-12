@@ -35,9 +35,11 @@ type UnlockFormShape = {
       }
 
       <form [formGroup]="form" (ngSubmit)="unlock()" class="flex flex-col gap-4">
+        <fieldset class="flex flex-col gap-4">
+        <legend class="sr-only">Deverrouillage</legend>
         <div>
           <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-            Mot de passe
+            Mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <div class="relative">
             <input
@@ -54,7 +56,11 @@ type UnlockFormShape = {
               <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
             </button>
           </div>
+          @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
+            <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
+          }
         </div>
+        </fieldset>
 
         <button
           type="submit"

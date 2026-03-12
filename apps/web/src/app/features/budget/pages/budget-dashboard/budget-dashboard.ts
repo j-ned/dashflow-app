@@ -379,7 +379,6 @@ export class BudgetDashboard {
 
   constructor() {
     afterNextRender(() => {
-      // Use MutationObserver to wait for the ref card to appear in DOM
       const host = this._el.nativeElement as HTMLElement;
       const tryObserve = () => {
         const el = host.querySelector('[data-dash-ref]');
@@ -400,7 +399,6 @@ export class BudgetDashboard {
   protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
   protected readonly entries = toSignal(this.getEntries.execute(), { initialValue: [] });
 
-  // Group by member
   protected readonly memberSummaries = computed<MemberSummary[]>(() => {
     const envs = this.envelopes();
     const allLoans = this.loans();
@@ -453,7 +451,6 @@ export class BudgetDashboard {
 
     const summaries: MemberSummary[] = [];
 
-    // Global (non attribue) en premier
     const global = buildSummary(null, 'Global (famille)', 'GL');
     if (global.envelopes.length > 0 || global.lentLoans.length > 0 || global.borrowedLoans.length > 0
         || global.incomes.length > 0 || global.monthlyExpenses.length > 0
@@ -461,7 +458,6 @@ export class BudgetDashboard {
       summaries.push(global);
     }
 
-    // Par membre (uniquement ceux qui ont des donnees)
     for (const m of mbrs) {
       const ms = buildSummary(m.id, `${m.firstName} ${m.lastName}`, `${m.firstName[0]}${m.lastName[0]}`);
       if (ms.envelopes.length > 0 || ms.lentLoans.length > 0 || ms.borrowedLoans.length > 0

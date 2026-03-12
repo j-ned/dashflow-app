@@ -1,21 +1,35 @@
 import { Routes } from '@angular/router';
 import { MedicalDashboard } from './pages/medical-dashboard/medical-dashboard';
-import { Patients } from './pages/patients/patients';
-import { Practitioners } from './pages/practitioners/practitioners';
-import { Appointments } from './pages/appointments/appointments';
-import { Prescriptions } from './pages/prescriptions/prescriptions';
-import { Medications } from './pages/medications/medications';
-import { Documents } from './pages/documents/documents';
-import { Reminders } from './pages/reminders/reminders';
 
 export const MEDICAL_ROUTES: Routes = [
   { path: 'dashboard', component: MedicalDashboard },
-  { path: 'patients', component: Patients },
-  { path: 'practitioners', component: Practitioners },
-  { path: 'appointments', component: Appointments },
-  { path: 'prescriptions', component: Prescriptions },
-  { path: 'documents', component: Documents },
-  { path: 'medications', component: Medications },
-  { path: 'reminders', component: Reminders },
+  {
+    path: 'patients',
+    loadComponent: () => import('./pages/patients/patients').then(m => m.Patients),
+  },
+  {
+    path: 'practitioners',
+    loadComponent: () => import('./pages/practitioners/practitioners').then(m => m.Practitioners),
+  },
+  {
+    path: 'appointments',
+    loadComponent: () => import('./pages/appointments/appointments').then(m => m.Appointments),
+  },
+  {
+    path: 'prescriptions',
+    loadComponent: () => import('./pages/prescriptions/prescriptions').then(m => m.Prescriptions),
+  },
+  {
+    path: 'documents',
+    loadComponent: () => import('./pages/documents/documents').then(m => m.Documents),
+  },
+  {
+    path: 'medications',
+    loadComponent: () => import('./pages/medications/medications').then(m => m.Medications),
+  },
+  {
+    path: 'reminders',
+    loadComponent: () => import('./pages/reminders/reminders').then(m => m.Reminders),
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

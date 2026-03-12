@@ -27,16 +27,26 @@ type RecurringEntryFormShape = {
 
         <div>
           <label for="re-label" class="block text-sm font-medium text-text-muted mb-1">Libelle <span aria-hidden="true">*</span></label>
-          <input id="re-label" type="text" formControlName="label"
+          <input id="re-label" type="text" formControlName="label" aria-required="true"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                  [placeholder]="labelPlaceholder()" />
+          @if (form.controls.label.touched && form.controls.label.errors?.['required']) {
+            <small class="mt-1 block text-xs text-ib-red" role="alert">Le libelle est obligatoire.</small>
+          }
         </div>
 
         <div>
           <label for="re-amount" class="block text-sm font-medium text-text-muted mb-1">Montant <span aria-hidden="true">*</span></label>
-          <input id="re-amount" type="number" formControlName="amount" step="0.01" min="0"
+          <input id="re-amount" type="number" formControlName="amount" step="0.01" min="0" aria-required="true"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                  placeholder="0.00" />
+          @if (form.controls.amount.touched) {
+            @if (form.controls.amount.errors?.['required']) {
+              <small class="mt-1 block text-xs text-ib-red" role="alert">Le montant est obligatoire.</small>
+            } @else if (form.controls.amount.errors?.['min']) {
+              <small class="mt-1 block text-xs text-ib-red" role="alert">Le montant doit etre superieur a 0.</small>
+            }
+          }
         </div>
 
         <div class="grid grid-cols-2 gap-4">

@@ -1,17 +1,9 @@
-import { inject } from '@angular/core';
-import { CanMatchFn, Router, Routes } from '@angular/router';
+import { Routes } from '@angular/router';
 import { AppShell } from './layout/app-shell/app-shell';
 import { BudgetLayout } from './layout/budget-layout/budget-layout';
 import { MedicalLayout } from './layout/medical-layout/medical-layout';
 import { authGuard } from '@core/guards/auth.guard';
-import { AuthStore } from '@features/auth/domain/auth.store';
-
-const guestGuard: CanMatchFn = async () => {
-  const auth = inject(AuthStore);
-  const router = inject(Router);
-  if (auth.isLoading()) await auth.checkSession();
-  return auth.isAuthenticated() ? router.createUrlTree(['/budget']) : true;
-};
+import { guestGuard } from '@core/guards/guest.guard';
 
 export const routes: Routes = [
   {

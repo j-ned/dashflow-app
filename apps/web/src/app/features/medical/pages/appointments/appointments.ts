@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Appointment, AppointmentStatus } from '../../domain/models/appointment.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
@@ -224,48 +224,48 @@ export class Appointments {
     this.selectedAppointment.set(null);
   }
 
-  protected createAppointment(data: Omit<Appointment, 'id'>) {
-    this.createAppointmentUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Rendez-vous cree');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createAppointment(data: Omit<Appointment, 'id'>) {
+    try {
+      await lastValueFrom(this.createAppointmentUC.execute(data));
+      this.toaster.success('Rendez-vous cree');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updateAppointment(data: Omit<Appointment, 'id'>) {
+  protected async updateAppointment(data: Omit<Appointment, 'id'>) {
     const id = this.selectedAppointment()?.id;
     if (!id) return;
-    this.updateAppointmentUC.execute(id, data).subscribe({
-      next: () => {
-        this.toaster.success('Rendez-vous modifie');
-        this.editModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updateAppointmentUC.execute(id, data));
+      this.toaster.success('Rendez-vous modifie');
+      this.editModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
-  protected updateStatus(id: string, status: AppointmentStatus) {
-    this.updateAppointmentStatusUC.execute(id, status).subscribe({
-      next: () => {
-        this.toaster.success('Statut du rendez-vous mis a jour');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors du changement de statut'),
-    });
+  protected async updateStatus(id: string, status: AppointmentStatus) {
+    try {
+      await lastValueFrom(this.updateAppointmentStatusUC.execute(id, status));
+      this.toaster.success('Statut du rendez-vous mis a jour');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors du changement de statut');
+    }
   }
 
   protected async deleteAppointment(id: string) {
     if (!await this.confirm.delete('ce rendez-vous')) return;
-    this.deleteAppointmentUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Rendez-vous supprime');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteAppointmentUC.execute(id));
+      this.toaster.success('Rendez-vous supprime');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

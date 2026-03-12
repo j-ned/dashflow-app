@@ -9,7 +9,7 @@ import { AppointmentGateway } from '../domain/gateways/appointment.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpAppointmentGateway extends AppointmentGateway {
+export class HttpAppointmentGateway implements AppointmentGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

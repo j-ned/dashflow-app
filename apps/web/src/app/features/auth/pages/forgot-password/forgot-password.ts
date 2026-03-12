@@ -6,6 +6,7 @@ import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { firstValueFrom } from 'rxjs';
+import { passwordMatchValidator } from '@shared/validators/form-validators';
 
 type EmailFormShape = {
   email: FormControl<string>;
@@ -39,6 +40,8 @@ type ResetFormShape = {
 
       @if (step() === 'email') {
         <form [formGroup]="emailForm" (ngSubmit)="submitEmail()" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-4">
+          <legend class="sr-only">Adresse email</legend>
           <div>
             <label for="email" class="mb-1.5 block text-sm font-medium text-text-primary">
               Email <span aria-hidden="true" class="text-ib-red">*</span>
@@ -59,6 +62,8 @@ type ResetFormShape = {
               }
             }
           </div>
+
+          </fieldset>
 
           <button
             type="submit"
@@ -82,6 +87,8 @@ type ResetFormShape = {
         </div>
 
         <form [formGroup]="resetForm" (ngSubmit)="submitReset()" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-4">
+          <legend class="sr-only">Reinitialisation du mot de passe</legend>
           <div>
             <label for="code" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
               Code de reinitialisation
@@ -142,14 +149,18 @@ type ResetFormShape = {
                 <app-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
-            @if (resetForm.controls.confirmPassword.touched && passwordMismatch()) {
+            @if (
+              (resetForm.controls.newPassword.touched || resetForm.controls.confirmPassword.touched) &&
+              resetForm.errors?.['mismatch']
+            ) {
               <small class="mt-1 block text-xs text-ib-red" role="alert">Les mots de passe ne correspondent pas.</small>
             }
           </div>
+          </fieldset>
 
           <button
             type="submit"
-            [disabled]="resetForm.invalid || passwordMismatch() || loading()"
+            [disabled]="resetForm.invalid || loading()"
             class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading() ? 'Reinitialisation...' : 'Reinitialiser le mot de passe' }}
@@ -283,16 +294,11 @@ export class ForgotPassword {
       nonNullable: true,
       validators: [Validators.required],
     }),
-  });
+  }, { validators: [passwordMatchValidator('newPassword', 'confirmPassword')] });
 
   protected onRecoveryKeyInput(event: Event): void {
     const value = (event.target as HTMLTextAreaElement).value.replace(/\s/g, '');
     this.recoveryKeyValue.set(value);
-  }
-
-  protected passwordMismatch(): boolean {
-    const { newPassword, confirmPassword } = this.resetForm.getRawValue();
-    return confirmPassword.length > 0 && newPassword !== confirmPassword;
   }
 
   protected async submitEmail(): Promise<void> {
@@ -315,7 +321,7 @@ export class ForgotPassword {
   }
 
   protected async submitReset(): Promise<void> {
-    if (this.resetForm.invalid || this.passwordMismatch()) return;
+    if (this.resetForm.invalid) return;
 
     this.loading.set(true);
     this.error.set('');
@@ -325,11 +331,8 @@ export class ForgotPassword {
       this._resetPassword = newPassword;
       this._resetCode = code;
 
-      // Reset password on server
       await this.auth.resetPassword(this.pendingEmail(), code, newPassword);
 
-      // Check if user had encryption — if so, show recovery step
-      // After password reset, log in to check encryption state
       try {
         await this.auth.login(this.pendingEmail(), newPassword);
         const user = this.auth.user();
@@ -340,7 +343,6 @@ export class ForgotPassword {
           this.step.set('done');
         }
       } catch {
-        // Login might fail (2FA etc), just go to done
         this.step.set('done');
       }
     } catch {
@@ -380,17 +382,14 @@ export class ForgotPassword {
     this.error.set('');
 
     try {
-      // Get the recovery-wrapped key from server
       const keyMaterial = this.auth.getKeyMaterial();
       if (!keyMaterial?.recoveryWrappedKey) {
         this.error.set('Aucune cle de recuperation trouvee sur le serveur.');
         return;
       }
 
-      // Unwrap master key with recovery key
       await this.cryptoStore.unlockWithRecovery(recoveryHex, keyMaterial.recoveryWrappedKey);
 
-      // Re-wrap with new password
       const masterKey = this.cryptoStore.getMasterKey()!;
       const salt = this.cryptoStore.generateSalt();
       const wrappingKey = await this.cryptoStore.deriveWrappingKey(this._resetPassword, salt);
@@ -398,11 +397,9 @@ export class ForgotPassword {
       const { bytesToHex } = await import('@core/services/crypto/crypto.store');
       const saltHex = bytesToHex(salt);
 
-      // Also re-wrap with recovery key for future use
       const recoveryWrappingKey = await this.cryptoStore.deriveWrappingKeyFromRecovery(recoveryHex);
       const recoveryWrappedKey = await this.cryptoStore.wrapKey(masterKey, recoveryWrappingKey);
 
-      // Save new key material on server
       await firstValueFrom(
         this.api.patch('/auth/me/encryption-keys', {
           salt: saltHex,

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Prescription } from '../../domain/models/prescription.model';
 import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
 import { CreatePrescriptionUseCase } from '../../domain/use-cases/create-prescription.use-case';
@@ -222,85 +222,85 @@ export class Prescriptions {
     return presc.validUntil < new Date().toISOString().slice(0, 10);
   }
 
-  protected uploadDocument(prescriptionId: string, event: Event) {
+  protected async uploadDocument(prescriptionId: string, event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.uploadDocumentUC.execute(prescriptionId, file).subscribe({
-      next: () => {
-        this.toaster.success('Document ajoute');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de l\'ajout du document'),
-    });
+    try {
+      await lastValueFrom(this.uploadDocumentUC.execute(prescriptionId, file));
+      this.toaster.success('Document ajoute');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de l\'ajout du document');
+    }
     input.value = '';
   }
 
   protected async deleteDocument(prescriptionId: string) {
     if (!await this.confirm.confirm({ title: 'Retirer le document', message: 'Retirer le document attache a cette ordonnance ?', confirmLabel: 'Retirer', variant: 'warning' })) return;
-    this.deleteDocumentUC.execute(prescriptionId).subscribe({
-      next: () => {
-        this.toaster.success('Document retire');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors du retrait du document'),
-    });
+    try {
+      await lastValueFrom(this.deleteDocumentUC.execute(prescriptionId));
+      this.toaster.success('Document retire');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors du retrait du document');
+    }
   }
 
-  protected createPrescription({ data, file }: PrescriptionSubmitData) {
-    this.createPrescriptionUC.execute(data).subscribe({
-      next: (created) => {
-        if (file) {
-          this.uploadDocumentUC.execute(created.id, file).subscribe({
-            next: () => {
-              this.toaster.success('Ordonnance creee');
-              this.createModalRef().close();
-              this._refresh.update(v => v + 1);
-            },
-            error: () => this.toaster.error('Erreur lors de l\'ajout du document'),
-          });
-        } else {
+  protected async createPrescription({ data, file }: PrescriptionSubmitData) {
+    try {
+      const created = await lastValueFrom(this.createPrescriptionUC.execute(data));
+      if (file) {
+        try {
+          await lastValueFrom(this.uploadDocumentUC.execute(created.id, file));
           this.toaster.success('Ordonnance creee');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
+        } catch {
+          this.toaster.error('Erreur lors de l\'ajout du document');
         }
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+      } else {
+        this.toaster.success('Ordonnance creee');
+        this.createModalRef().close();
+        this._refresh.update(v => v + 1);
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updatePrescription({ data, file }: PrescriptionSubmitData) {
+  protected async updatePrescription({ data, file }: PrescriptionSubmitData) {
     const id = this.selectedPrescription()?.id;
     if (!id) return;
-    this.updatePrescriptionUC.execute(id, data).subscribe({
-      next: () => {
-        if (file) {
-          this.uploadDocumentUC.execute(id, file).subscribe({
-            next: () => {
-              this.toaster.success('Ordonnance modifiee');
-              this.editModalRef().close();
-              this._refresh.update(v => v + 1);
-            },
-            error: () => this.toaster.error('Erreur lors de l\'ajout du document'),
-          });
-        } else {
+    try {
+      await lastValueFrom(this.updatePrescriptionUC.execute(id, data));
+      if (file) {
+        try {
+          await lastValueFrom(this.uploadDocumentUC.execute(id, file));
           this.toaster.success('Ordonnance modifiee');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
+        } catch {
+          this.toaster.error('Erreur lors de l\'ajout du document');
         }
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+      } else {
+        this.toaster.success('Ordonnance modifiee');
+        this.editModalRef().close();
+        this._refresh.update(v => v + 1);
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
   protected async deletePrescription(id: string) {
     if (!await this.confirm.delete('cette ordonnance')) return;
-    this.deletePrescriptionUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Ordonnance supprimee');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deletePrescriptionUC.execute(id));
+      this.toaster.success('Ordonnance supprimee');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

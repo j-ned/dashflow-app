@@ -1,6 +1,6 @@
 import { ApplicationConfig, LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
-import { provideRouter, withComponentInputBinding, withViewTransitions } from '@angular/router';
+import { provideRouter, withComponentInputBinding, withInMemoryScrolling, withViewTransitions } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import localeFr from '@angular/common/locales/fr';
 
@@ -38,10 +38,17 @@ import { HttpSharedAccessGateway } from '@features/medical/infra/http-shared-acc
 export const appConfig: ApplicationConfig = {
   providers: [
     { provide: LOCALE_ID, useValue: 'fr' },
-    provideRouter(routes, withComponentInputBinding(), withViewTransitions()),
+    provideRouter(
+      routes,
+      withComponentInputBinding(),
+      withViewTransitions(),
+      withInMemoryScrolling({
+        anchorScrolling: 'enabled',
+        scrollPositionRestoration: 'enabled',
+      }),
+    ),
     provideHttpClient(withFetch()),
 
-    // Budget gateways
     { provide: EnvelopeGateway, useClass: HttpEnvelopeGateway },
     { provide: LoanGateway, useClass: HttpLoanGateway },
     { provide: MemberGateway, useClass: HttpMemberGateway },
@@ -49,7 +56,6 @@ export const appConfig: ApplicationConfig = {
     { provide: BankAccountGateway, useClass: HttpBankAccountGateway },
     { provide: SalaryArchiveGateway, useClass: HttpSalaryArchiveGateway },
 
-    // Medical gateways
     { provide: PatientGateway, useClass: HttpPatientGateway },
     { provide: PractitionerGateway, useClass: HttpPractitionerGateway },
     { provide: AppointmentGateway, useClass: HttpAppointmentGateway },

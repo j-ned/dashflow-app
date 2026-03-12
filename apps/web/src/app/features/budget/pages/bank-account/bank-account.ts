@@ -2,7 +2,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, 
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount as BankAccountModel } from '../../domain/models/bank-account.model';
 import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
@@ -583,7 +583,6 @@ export class BankAccount {
 
   protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
 
-  // Filtre par compte — auto-select le premier compte
   protected readonly selectedAccountId = signal<string | null>(null);
 
   constructor() {
@@ -615,8 +614,7 @@ export class BankAccount {
   protected readonly annualExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'annual_expense'));
   protected readonly allSpendings = computed(() => this.filteredEntries().filter(e => e.type === 'spending'));
 
-  // Filtre par mois pour les depenses
-  protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7)); // '2026-03'
+  protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7));
 
   protected readonly spendingMonthLabel = computed(() => {
     const [y, m] = this.spendingMonth().split('-');
@@ -681,7 +679,6 @@ export class BankAccount {
     }
   });
 
-  // Gestion comptes
   protected readonly newAccountName = signal('');
   protected readonly newAccountColor = signal('#3b82f6');
   protected readonly newAccountDotColor = signal('#ef4444');
@@ -722,18 +719,16 @@ export class BankAccount {
     this.selectedAccountId.set(id);
   }
 
-  protected updateAccountColor(accountId: string, event: Event) {
+  protected async updateAccountColor(accountId: string, event: Event) {
     const color = (event.target as HTMLInputElement).value;
-    this.updateAccountUC.execute(accountId, { color }).subscribe({
-      next: () => this._refreshAccounts.update(v => v + 1),
-    });
+    await lastValueFrom(this.updateAccountUC.execute(accountId, { color }));
+    this._refreshAccounts.update(v => v + 1);
   }
 
-  protected updateAccountDotColor(accountId: string, event: Event) {
+  protected async updateAccountDotColor(accountId: string, event: Event) {
     const dotColor = (event.target as HTMLInputElement).value;
-    this.updateAccountUC.execute(accountId, { dotColor }).subscribe({
-      next: () => this._refreshAccounts.update(v => v + 1),
-    });
+    await lastValueFrom(this.updateAccountUC.execute(accountId, { dotColor }));
+    this._refreshAccounts.update(v => v + 1);
   }
 
   protected prevMonth() {
@@ -748,34 +743,34 @@ export class BankAccount {
     this.spendingMonth.set(d.toISOString().slice(0, 7));
   }
 
-  protected createAccount() {
+  protected async createAccount() {
     const name = this.newAccountName().trim();
     if (!name) return;
-    this.createAccountUC.execute({ name, color: this.newAccountColor(), dotColor: this.newAccountDotColor() }).subscribe({
-      next: () => {
-        this.toaster.success('Compte cree');
-        this.newAccountName.set('');
-        this.newAccountColor.set('#3b82f6');
-        this.newAccountDotColor.set('#ef4444');
-        this._refreshAccounts.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation du compte'),
-    });
+    try {
+      await lastValueFrom(this.createAccountUC.execute({ name, color: this.newAccountColor(), dotColor: this.newAccountDotColor() }));
+      this.toaster.success('Compte cree');
+      this.newAccountName.set('');
+      this.newAccountColor.set('#3b82f6');
+      this.newAccountDotColor.set('#ef4444');
+      this._refreshAccounts.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation du compte');
+    }
   }
 
   protected async deleteAccount(account: BankAccountModel) {
     if (!await this.confirm.confirm({ title: 'Supprimer le compte', message: `Supprimer le compte "${account.name}" ? Les entrees seront conservees sans compte.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
-    this.deleteAccountUC.execute(account.id).subscribe({
-      next: () => {
-        this.toaster.success('Compte supprime');
-        if (this.selectedAccountId() === account.id) {
-          this.selectedAccountId.set(null);
-        }
-        this._refreshAccounts.update(v => v + 1);
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression du compte'),
-    });
+    try {
+      await lastValueFrom(this.deleteAccountUC.execute(account.id));
+      this.toaster.success('Compte supprime');
+      if (this.selectedAccountId() === account.id) {
+        this.selectedAccountId.set(null);
+      }
+      this._refreshAccounts.update(v => v + 1);
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression du compte');
+    }
   }
 
   protected openCreateModal(type: RecurringEntryType) {
@@ -790,26 +785,26 @@ export class BankAccount {
 
   protected onModalClosed() { this.selectedEntry.set(null); }
 
-  protected createEntry(data: Omit<RecurringEntry, 'id'>) {
-    this.createEntryUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Entree creee');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
+    try {
+      await lastValueFrom(this.createEntryUC.execute(data));
+      this.toaster.success('Entree creee');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
   protected async deleteEntry(id: string) {
     if (!await this.confirm.delete('cette entree')) return;
-    this.deleteEntryUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Entree supprimee');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteEntryUC.execute(id));
+      this.toaster.success('Entree supprimee');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 
   // ── Payslip management ──
@@ -820,30 +815,30 @@ export class BankAccount {
     this._pendingPayslipFile = file;
   }
 
-  protected updateEntry(data: Omit<RecurringEntry, 'id'>) {
+  protected async updateEntry(data: Omit<RecurringEntry, 'id'>) {
     const id = this.selectedEntry()?.id;
     if (!id) return;
-    this.updateEntryUC.execute(id, data).subscribe({
-      next: () => {
-        const file = this._pendingPayslipFile;
-        if (file) {
-          this._pendingPayslipFile = null;
-          this.entryGateway.uploadPayslip(id, file).subscribe({
-            next: () => {
-              this.toaster.success('Entree modifiee');
-              this.editModalRef().close();
-              this._refresh.update(v => v + 1);
-            },
-            error: () => this.toaster.error('Erreur lors de l\'ajout de la fiche de paie'),
-          });
-        } else {
+    try {
+      await lastValueFrom(this.updateEntryUC.execute(id, data));
+      const file = this._pendingPayslipFile;
+      if (file) {
+        this._pendingPayslipFile = null;
+        try {
+          await lastValueFrom(this.entryGateway.uploadPayslip(id, file));
           this.toaster.success('Entree modifiee');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
+        } catch {
+          this.toaster.error('Erreur lors de l\'ajout de la fiche de paie');
         }
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+      } else {
+        this.toaster.success('Entree modifiee');
+        this.editModalRef().close();
+        this._refresh.update(v => v + 1);
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
   protected openPayslip() {
@@ -852,28 +847,26 @@ export class BankAccount {
     this.openPayslipById(id);
   }
 
-  protected openPayslipById(id: string) {
-    this.entryGateway.downloadPayslip(id).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    });
+  protected async openPayslipById(id: string) {
+    const blob = await lastValueFrom(this.entryGateway.downloadPayslip(id));
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
   protected async deletePayslip() {
     const id = this.selectedEntry()?.id;
     if (!id) return;
     if (!await this.confirm.delete('la fiche de paie')) return;
-    this.entryGateway.deletePayslip(id).subscribe({
-      next: () => {
-        this.toaster.success('Fiche de paie supprimee');
-        this._refresh.update(v => v + 1);
-        // Update selected entry to reflect removal
-        const entry = this.selectedEntry();
-        if (entry) {
-          this.selectedEntry.set({ ...entry, payslipKey: null });
-        }
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression de la fiche de paie'),
-    });
+    try {
+      await lastValueFrom(this.entryGateway.deletePayslip(id));
+      this.toaster.success('Fiche de paie supprimee');
+      this._refresh.update(v => v + 1);
+      const entry = this.selectedEntry();
+      if (entry) {
+        this.selectedEntry.set({ ...entry, payslipKey: null });
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la suppression de la fiche de paie');
+    }
   }
 }

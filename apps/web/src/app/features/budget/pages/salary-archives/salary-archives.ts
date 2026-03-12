@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { GetSalaryArchivesUseCase } from '../../domain/use-cases/get-salary-archives.use-case';
@@ -288,10 +288,8 @@ export class SalaryArchives {
 
   private readonly allEntries = toSignal(this.getEntriesUC.execute(), { initialValue: [] });
 
-  // Expand/collapse
   protected readonly expandedId = signal<string | null>(null);
 
-  // Form
   protected readonly formMonth = signal(this.previousMonth());
   protected readonly formSalary = signal<number | null>(null);
   protected readonly formTotalExpenses = signal<number | null>(null);
@@ -342,11 +340,10 @@ export class SalaryArchives {
     return Number(a.salary) - Number(a.totalExpenses) - Number(a.totalSpendings);
   }
 
-  protected openPayslip(id: string) {
-    this.gateway.downloadPayslip(id).subscribe(blob => {
-      const url = URL.createObjectURL(blob);
-      window.open(url, '_blank');
-    });
+  protected async openPayslip(id: string) {
+    const blob = await lastValueFrom(this.gateway.downloadPayslip(id));
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
   protected onFileSelected(event: Event) {
@@ -359,7 +356,7 @@ export class SalaryArchives {
     this.createModalRef().open();
   }
 
-  protected createArchive() {
+  protected async createArchive() {
     const month = this.formMonth();
     const salary = this.formSalary();
     if (!month || !salary) return;
@@ -376,25 +373,25 @@ export class SalaryArchives {
     if (this.formAccountId()) fd.append('accountId', this.formAccountId()!);
     if (this._selectedFile) fd.append('payslip', this._selectedFile);
 
-    this.createArchiveUC.execute(fd).subscribe({
-      next: () => {
-        this.toaster.success('Archive creee');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation de l\'archive'),
-    });
+    try {
+      await lastValueFrom(this.createArchiveUC.execute(fd));
+      this.toaster.success('Archive creee');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation de l\'archive');
+    }
   }
 
   protected async deleteArchive(archive: SalaryArchive) {
     if (!await this.confirm.confirm({ title: 'Supprimer l\'archive', message: `Supprimer l'archive de ${this.monthLabel(archive.month)} ? Cette action est irreversible.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
-    this.deleteArchiveUC.execute(archive.id).subscribe({
-      next: () => {
-        this.toaster.success('Archive supprimee');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteArchiveUC.execute(archive.id));
+      this.toaster.success('Archive supprimee');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 
   protected resetForm() {

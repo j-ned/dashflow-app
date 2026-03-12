@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Loan } from '../../domain/models/loan.model';
 import { LoanTransaction } from '../../domain/models/loan-transaction.model';
 import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
@@ -607,24 +607,22 @@ export class Loans {
     this.paymentModalRef().open();
   }
 
-  protected openHistoryModal(loan: Loan) {
+  protected async openHistoryModal(loan: Loan) {
     this.selectedLoan.set(loan);
-    this.getTransactionsUC.execute(loan.id).subscribe((txs) => {
-      this.transactions.set(txs);
-      this.historyModalRef().open();
-    });
+    const txs = await lastValueFrom(this.getTransactionsUC.execute(loan.id));
+    this.transactions.set(txs);
+    this.historyModalRef().open();
   }
 
-  protected addManualTransaction() {
+  protected async addManualTransaction() {
     const loan = this.selectedLoan();
     const amount = this.manualTxAmount();
     const date = this.manualTxDate();
     if (!loan || !amount || !date) return;
-    this.addTransactionUC.execute(loan.id, { amount, date }).subscribe((tx) => {
-      this.transactions.update((txs) => [tx, ...txs]);
-      this.manualTxAmount.set(0);
-      this.manualTxDate.set(new Date().toISOString().slice(0, 10));
-    });
+    const tx = await lastValueFrom(this.addTransactionUC.execute(loan.id, { amount, date }));
+    this.transactions.update((txs) => [tx, ...txs]);
+    this.manualTxAmount.set(0);
+    this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
   protected onModalClosed() {
@@ -634,76 +632,75 @@ export class Loans {
     this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
-  protected createLoan(data: Omit<Loan, 'id'>) {
-    this.createLoanUC.execute(data).subscribe({
-      next: () => {
-        if (data.direction === 'lent') this.lentModalRef().close();
-        else this.borrowedModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success(data.direction === 'lent' ? 'Pret cree' : 'Emprunt cree');
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createLoan(data: Omit<Loan, 'id'>) {
+    try {
+      await lastValueFrom(this.createLoanUC.execute(data));
+      if (data.direction === 'lent') this.lentModalRef().close();
+      else this.borrowedModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success(data.direction === 'lent' ? 'Pret cree' : 'Emprunt cree');
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updateLoan(data: Omit<Loan, 'id'>) {
+  protected async updateLoan(data: Omit<Loan, 'id'>) {
     const id = this.selectedLoan()?.id;
     if (!id) return;
-    this.updateLoanUC.execute(id, data).subscribe({
-      next: () => {
-        this.editModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Pret modifie');
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updateLoanUC.execute(id, data));
+      this.editModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Pret modifie');
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
-  protected recordPayment(event: { amount: number; date: string; accountId: string | null }) {
+  protected async recordPayment(event: { amount: number; date: string; accountId: string | null }) {
     const loan = this.selectedLoan();
     if (!loan) return;
-    this.recordPaymentUC.execute(loan.id, event.amount, event.date).subscribe({
-      next: () => {
-        this.paymentModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Remboursement enregistre');
+    try {
+      await lastValueFrom(this.recordPaymentUC.execute(loan.id, event.amount, event.date));
+      this.paymentModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Remboursement enregistre');
 
-        if (event.accountId) {
-          const direction = loan.direction === 'borrowed' ? 'Remb. dette' : 'Remb. pret';
-          this.createEntryUC
-            .execute({
-              label: `${direction} — ${loan.person}`,
-              amount: event.amount,
-              type: 'spending',
-              accountId: event.accountId,
-              memberId: loan.memberId,
-              dayOfMonth: null,
-              date: event.date || null,
-              category: 'Remboursement',
-              payslipKey: null,
-            })
-            .subscribe();
-        }
-      },
-      error: () => this.toaster.error('Erreur lors du remboursement'),
-    });
+      if (event.accountId) {
+        const direction = loan.direction === 'borrowed' ? 'Remb. dette' : 'Remb. pret';
+        await lastValueFrom(
+          this.createEntryUC.execute({
+            label: `${direction} — ${loan.person}`,
+            amount: event.amount,
+            type: 'spending',
+            accountId: event.accountId,
+            memberId: loan.memberId,
+            dayOfMonth: null,
+            date: event.date || null,
+            category: 'Remboursement',
+            payslipKey: null,
+          }),
+        );
+      }
+    } catch {
+      this.toaster.error('Erreur lors du remboursement');
+    }
   }
 
   protected async deleteLoan(id: string) {
     if (!(await this.confirm.delete('ce pret'))) return;
-    this.deleteLoanUC.execute(id).subscribe({
-      next: () => {
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Pret supprime');
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteLoanUC.execute(id));
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Pret supprime');
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 
-  protected updateMemberColor(memberId: string, event: Event) {
+  protected async updateMemberColor(memberId: string, event: Event) {
     const color = (event.target as HTMLInputElement).value;
-    this.updateMemberColorUC.execute(memberId, color).subscribe({
-      next: () => this._refresh.update((v) => v + 1),
-    });
+    await lastValueFrom(this.updateMemberColorUC.execute(memberId, color));
+    this._refresh.update((v) => v + 1);
   }
 }

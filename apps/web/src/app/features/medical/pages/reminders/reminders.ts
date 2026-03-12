@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Reminder } from '../../domain/models/reminder.model';
 
 import { Appointment } from '../../domain/models/appointment.model';
@@ -369,36 +369,36 @@ export class Reminders {
     // no selection to clear for reminders
   }
 
-  protected createReminder(data: Omit<Reminder, 'id'>) {
-    this.createReminderUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Alerte creee');
-        this.createReminderModalRef().close();
-        this._refreshReminders.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createReminder(data: Omit<Reminder, 'id'>) {
+    try {
+      await lastValueFrom(this.createReminderUC.execute(data));
+      this.toaster.success('Alerte creee');
+      this.createReminderModalRef().close();
+      this._refreshReminders.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected toggleReminder(id: string) {
-    this.toggleReminderUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Alerte mise a jour');
-        this._refreshReminders.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la mise a jour'),
-    });
+  protected async toggleReminder(id: string) {
+    try {
+      await lastValueFrom(this.toggleReminderUC.execute(id));
+      this.toaster.success('Alerte mise a jour');
+      this._refreshReminders.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la mise a jour');
+    }
   }
 
   protected async deleteReminder(id: string) {
     if (!await this.confirm.delete('cette alerte')) return;
-    this.deleteReminderUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Alerte supprimee');
-        this._refreshReminders.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteReminderUC.execute(id));
+      this.toaster.success('Alerte supprimee');
+      this._refreshReminders.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 
 }

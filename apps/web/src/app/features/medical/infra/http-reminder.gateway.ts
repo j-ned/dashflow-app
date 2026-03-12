@@ -5,7 +5,7 @@ import { Reminder } from '../domain/models/reminder.model';
 import { ReminderGateway } from '../domain/gateways/reminder.gateway';
 
 @Injectable()
-export class HttpReminderGateway extends ReminderGateway {
+export class HttpReminderGateway implements ReminderGateway {
   private readonly api = inject(ApiClient);
 
   getAll(): Observable<Reminder[]> {

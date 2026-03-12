@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { MedicalDocument, DOCUMENT_TYPE_LABELS } from '../../domain/models/document.model';
 import { GetDocumentsUseCase } from '../../domain/use-cases/get-documents.use-case';
 import { CreateDocumentUseCase } from '../../domain/use-cases/create-document.use-case';
@@ -219,74 +219,74 @@ export class Documents {
     this.selectedDocument.set(null);
   }
 
-  protected uploadFile(documentId: string, event: Event) {
+  protected async uploadFile(documentId: string, event: Event) {
     const input = event.target as HTMLInputElement;
     const file = input.files?.[0];
     if (!file) return;
-    this.uploadFileUC.execute(documentId, file).subscribe({
-      next: () => {
-        this.toaster.success('Fichier ajoute');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de l\'ajout du fichier'),
-    });
+    try {
+      await lastValueFrom(this.uploadFileUC.execute(documentId, file));
+      this.toaster.success('Fichier ajoute');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de l\'ajout du fichier');
+    }
     input.value = '';
   }
 
-  protected createDoc({ data, file }: DocumentSubmitData) {
-    this.createDocumentUC.execute(data).subscribe({
-      next: (created) => {
-        if (file) {
-          this.uploadFileUC.execute(created.id, file).subscribe({
-            next: () => {
-              this.toaster.success('Document cree');
-              this.createModalRef().close();
-              this._refresh.update(v => v + 1);
-            },
-            error: () => this.toaster.error('Erreur lors de l\'ajout du fichier'),
-          });
-        } else {
+  protected async createDoc({ data, file }: DocumentSubmitData) {
+    try {
+      const created = await lastValueFrom(this.createDocumentUC.execute(data));
+      if (file) {
+        try {
+          await lastValueFrom(this.uploadFileUC.execute(created.id, file));
           this.toaster.success('Document cree');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
+        } catch {
+          this.toaster.error('Erreur lors de l\'ajout du fichier');
         }
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+      } else {
+        this.toaster.success('Document cree');
+        this.createModalRef().close();
+        this._refresh.update(v => v + 1);
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updateDoc({ data, file }: DocumentSubmitData) {
+  protected async updateDoc({ data, file }: DocumentSubmitData) {
     const id = this.selectedDocument()?.id;
     if (!id) return;
-    this.updateDocumentUC.execute(id, data).subscribe({
-      next: () => {
-        if (file) {
-          this.uploadFileUC.execute(id, file).subscribe({
-            next: () => {
-              this.toaster.success('Document modifie');
-              this.editModalRef().close();
-              this._refresh.update(v => v + 1);
-            },
-            error: () => this.toaster.error('Erreur lors de l\'ajout du fichier'),
-          });
-        } else {
+    try {
+      await lastValueFrom(this.updateDocumentUC.execute(id, data));
+      if (file) {
+        try {
+          await lastValueFrom(this.uploadFileUC.execute(id, file));
           this.toaster.success('Document modifie');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
+        } catch {
+          this.toaster.error('Erreur lors de l\'ajout du fichier');
         }
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+      } else {
+        this.toaster.success('Document modifie');
+        this.editModalRef().close();
+        this._refresh.update(v => v + 1);
+      }
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
   protected async deleteDoc(id: string) {
     if (!await this.confirm.delete('ce document')) return;
-    this.deleteDocumentUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Document supprime');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteDocumentUC.execute(id));
+      this.toaster.success('Document supprime');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

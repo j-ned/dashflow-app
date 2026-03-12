@@ -43,7 +43,6 @@ export class AuthStore {
   readonly avatarUrl = computed(() => {
     const url = this._user()?.avatarUrl;
     if (!url) return null;
-    // Backend returns relative path like /api/auth/avatar/:id
     return url;
   });
   readonly totpEnabled = computed(() => this._user()?.totpEnabled ?? false);
@@ -76,7 +75,6 @@ export class AuthStore {
       this._isAuthenticated.set(true);
       this._keyMaterial = keyMaterial ?? null;
 
-      // Try to restore crypto from session
       if (user.encryptionVersion === 1) {
         await this.crypto.restoreFromSession();
       }
@@ -120,7 +118,6 @@ export class AuthStore {
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
 
-    // Auto-unlock if encryption is set up
     if (res.keyMaterial && res.user.encryptionVersion === 1) {
       await this.crypto.unlock(password, res.keyMaterial.salt, res.keyMaterial.wrappedMasterKey);
     }

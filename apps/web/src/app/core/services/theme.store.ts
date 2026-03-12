@@ -14,13 +14,11 @@ export class ThemeStore {
   readonly isDark = () => this._theme() === 'dark';
 
   constructor() {
-    // Apply theme class on <html> reactively
     effect(() => {
       const t = this._theme();
       document.documentElement.setAttribute('data-theme', t);
     });
 
-    // Apply immediately on init
     document.documentElement.setAttribute('data-theme', this._theme());
   }
 

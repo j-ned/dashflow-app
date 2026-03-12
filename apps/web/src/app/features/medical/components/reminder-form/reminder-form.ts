@@ -1,7 +1,8 @@
-import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
+import { startWith } from 'rxjs';
+import { conditionalRequiredValidator } from '@shared/validators/form-validators';
 import { Reminder, ReminderTarget, ReminderType } from '../../domain/models/reminder.model';
 import { Medication } from '../../domain/models/medication.model';
 import { Appointment } from '../../domain/models/appointment.model';
@@ -50,8 +51,10 @@ type ReminderFormShape = {
 
         @if (selectedTarget() === 'medication') {
           <div>
-            <label for="rem-medication" class="form-label">Medicament</label>
-            <select id="rem-medication" formControlName="medicationId"
+            <label for="rem-medication" class="form-label">
+              Medicament <span aria-hidden="true" class="text-ib-red">*</span>
+            </label>
+            <select id="rem-medication" formControlName="medicationId" aria-required="true"
                     class="form-select">
               <option value="">-- Selectionner --</option>
               @for (m of medications(); track m.id) {
@@ -63,8 +66,10 @@ type ReminderFormShape = {
 
         @if (selectedTarget() === 'appointment') {
           <div>
-            <label for="rem-appointment" class="form-label">Rendez-vous</label>
-            <select id="rem-appointment" formControlName="appointmentId"
+            <label for="rem-appointment" class="form-label">
+              Rendez-vous <span aria-hidden="true" class="text-ib-red">*</span>
+            </label>
+            <select id="rem-appointment" formControlName="appointmentId" aria-required="true"
                     class="form-select">
               <option value="">-- Selectionner --</option>
               @for (a of appointments(); track a.id) {
@@ -106,23 +111,30 @@ export class ReminderForm {
   readonly submitted = output<Omit<Reminder, 'id'>>();
   readonly cancelled = output<void>();
 
-  protected readonly selectedTarget = signal<ReminderTarget>('medication');
-
   protected readonly form = new FormGroup<ReminderFormShape>({
     type: new FormControl<ReminderType>('email', { nonNullable: true, validators: [Validators.required] }),
     target: new FormControl<ReminderTarget>('medication', { nonNullable: true, validators: [Validators.required] }),
     medicationId: new FormControl('', { nonNullable: true }),
     appointmentId: new FormControl('', { nonNullable: true }),
     recipientEmail: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
+  }, {
+    validators: [
+      conditionalRequiredValidator('target', 'medication', 'medicationId'),
+      conditionalRequiredValidator('target', 'appointment', 'appointmentId'),
+    ],
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
+  protected readonly selectedTarget = toSignal(
+    this.form.controls.target.valueChanges.pipe(startWith(this.form.controls.target.value)),
+    { initialValue: this.form.controls.target.value },
   );
 
+  protected readonly isInvalid = computed(() => {
+    this.selectedTarget();
+    return this.form.invalid;
+  });
+
   protected onTargetChange() {
-    this.selectedTarget.set(this.form.controls.target.value);
     this.form.controls.medicationId.setValue('');
     this.form.controls.appointmentId.setValue('');
   }
@@ -139,6 +151,5 @@ export class ReminderForm {
       enabled: true,
     });
     this.form.reset();
-    this.selectedTarget.set('medication');
   }
 }

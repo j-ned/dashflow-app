@@ -10,7 +10,7 @@ import { DocumentGateway } from '../domain/gateways/document.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpDocumentGateway extends DocumentGateway {
+export class HttpDocumentGateway implements DocumentGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

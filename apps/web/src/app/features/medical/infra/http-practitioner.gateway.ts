@@ -9,7 +9,7 @@ import { PractitionerGateway } from '../domain/gateways/practitioner.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpPractitionerGateway extends PractitionerGateway {
+export class HttpPractitionerGateway implements PractitionerGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

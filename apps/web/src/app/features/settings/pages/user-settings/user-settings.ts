@@ -1,17 +1,22 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, viewChild } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { AuthStore } from '../../../auth/domain/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Icon } from '@shared/components/icon/icon';
 import { RecoveryKeyModal } from '../../../auth/components/recovery-key-modal/recovery-key-modal';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { passwordMatchValidator } from '@shared/validators/form-validators';
 
-function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-  const password = group.get('newPassword')?.value;
-  const confirm = group.get('confirmPassword')?.value;
-  return password === confirm ? null : { mismatch: true };
-}
+type ProfileFormShape = {
+  displayName: FormControl<string>;
+};
+
+type PasswordFormShape = {
+  currentPassword: FormControl<string>;
+  newPassword: FormControl<string>;
+  confirmPassword: FormControl<string>;
+};
 
 @Component({
   selector: 'app-user-settings',
@@ -94,6 +99,8 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
             (ngSubmit)="saveProfile()"
             class="flex-1 w-full space-y-5"
           >
+            <fieldset class="space-y-5">
+            <legend class="sr-only">Profil personnel</legend>
             <div class="space-y-1.5">
               <label for="display-name" class="text-sm font-medium text-text-primary"
                 >Nom d'affichage</label
@@ -118,6 +125,7 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
                 class="w-full rounded-lg border border-border/50 bg-raised px-4 py-2.5 text-sm text-text-muted cursor-not-allowed opacity-80"
               />
             </div>
+            </fieldset>
             <div class="pt-2 flex justify-end">
               <button
                 type="submit"
@@ -151,6 +159,8 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
         </div>
 
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6 space-y-5">
+          <fieldset class="space-y-5">
+          <legend class="sr-only">Modifier le mot de passe</legend>
           <div class="space-y-1.5">
             <label for="current-password" class="text-sm font-medium text-text-primary">
               Mot de passe actuel <span aria-hidden="true" class="text-ib-red">*</span>
@@ -169,6 +179,11 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
                 <app-icon [name]="showCurrentPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
+            @if (passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.errors?.['required']) {
+              <p class="text-xs text-ib-red font-medium mt-1" role="alert">
+                Le mot de passe actuel est obligatoire.
+              </p>
+            }
           </div>
 
           <div class="space-y-1.5">
@@ -189,13 +204,16 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
                 <app-icon [name]="showNewPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
-            @if (
-              passwordForm.controls.newPassword.touched &&
-              passwordForm.controls.newPassword.errors?.['minlength']
-            ) {
-              <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                Le mot de passe doit contenir au moins 8 caracteres.
-              </p>
+            @if (passwordForm.controls.newPassword.touched) {
+              @if (passwordForm.controls.newPassword.errors?.['required']) {
+                <p class="text-xs text-ib-red font-medium mt-1" role="alert">
+                  Le nouveau mot de passe est obligatoire.
+                </p>
+              } @else if (passwordForm.controls.newPassword.errors?.['minlength']) {
+                <p class="text-xs text-ib-red font-medium mt-1" role="alert">
+                  Le mot de passe doit contenir au moins 8 caracteres.
+                </p>
+              }
             }
           </div>
 
@@ -218,13 +236,15 @@ function passwordMatchValidator(group: AbstractControl): ValidationErrors | null
               </button>
             </div>
             @if (
-              passwordForm.controls.confirmPassword.touched && passwordForm.errors?.['mismatch']
+              (passwordForm.controls.newPassword.touched || passwordForm.controls.confirmPassword.touched) &&
+              passwordForm.errors?.['mismatch']
             ) {
               <p class="text-xs text-ib-red font-medium mt-1" role="alert">
                 Les mots de passe ne correspondent pas.
               </p>
             }
           </div>
+          </fieldset>
 
           <div class="pt-2">
             <button
@@ -508,7 +528,7 @@ export class UserSettings {
   // Profile
   protected readonly avatarPreview = signal<string | null>(null);
   protected readonly profileSaving = signal(false);
-  protected readonly profileForm = new FormGroup({
+  protected readonly profileForm = new FormGroup<ProfileFormShape>({
     displayName: new FormControl('', { nonNullable: true }),
   });
 
@@ -518,7 +538,7 @@ export class UserSettings {
   protected readonly showConfirmPassword = signal(false);
   protected readonly showDisable2faPassword = signal(false);
   protected readonly passwordSaving = signal(false);
-  protected readonly passwordForm = new FormGroup(
+  protected readonly passwordForm = new FormGroup<PasswordFormShape>(
     {
       currentPassword: new FormControl('', {
         nonNullable: true,
@@ -533,7 +553,7 @@ export class UserSettings {
         validators: [Validators.required],
       }),
     },
-    { validators: [passwordMatchValidator] },
+    { validators: [passwordMatchValidator('newPassword', 'confirmPassword')] },
   );
 
   // 2FA

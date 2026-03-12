@@ -1,17 +1,27 @@
 import { Routes } from '@angular/router';
 import { BudgetDashboard } from './pages/budget-dashboard/budget-dashboard';
-import { Envelopes } from './pages/envelopes/envelopes';
-import { Loans } from './pages/loans/loans';
-import { BankAccount } from './pages/bank-account/bank-account';
-import { SalaryArchives } from './pages/salary-archives/salary-archives';
-import { BudgetAnalytics } from './pages/budget-analytics/budget-analytics';
 
 export const BUDGET_ROUTES: Routes = [
   { path: 'dashboard', component: BudgetDashboard },
-  { path: 'envelopes', component: Envelopes },
-  { path: 'loans', component: Loans },
-  { path: 'account', component: BankAccount },
-  { path: 'archives', component: SalaryArchives },
-  { path: 'analytics', component: BudgetAnalytics },
+  {
+    path: 'envelopes',
+    loadComponent: () => import('./pages/envelopes/envelopes').then(m => m.Envelopes),
+  },
+  {
+    path: 'loans',
+    loadComponent: () => import('./pages/loans/loans').then(m => m.Loans),
+  },
+  {
+    path: 'account',
+    loadComponent: () => import('./pages/bank-account/bank-account').then(m => m.BankAccount),
+  },
+  {
+    path: 'archives',
+    loadComponent: () => import('./pages/salary-archives/salary-archives').then(m => m.SalaryArchives),
+  },
+  {
+    path: 'analytics',
+    loadComponent: () => import('./pages/budget-analytics/budget-analytics').then(m => m.BudgetAnalytics),
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

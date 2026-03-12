@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Patient } from '../../domain/models/patient.model';
 import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
 import { CreatePatientUseCase } from '../../domain/use-cases/create-patient.use-case';
@@ -122,38 +122,38 @@ export class Patients {
     this.selectedPatient.set(null);
   }
 
-  protected createPatient(data: Omit<Patient, 'id'>) {
-    this.createPatientUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Patient cree');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createPatient(data: Omit<Patient, 'id'>) {
+    try {
+      await lastValueFrom(this.createPatientUC.execute(data));
+      this.toaster.success('Patient cree');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updatePatient(data: Omit<Patient, 'id'>) {
+  protected async updatePatient(data: Omit<Patient, 'id'>) {
     const id = this.selectedPatient()?.id;
     if (!id) return;
-    this.updatePatientUC.execute(id, data).subscribe({
-      next: () => {
-        this.toaster.success('Patient modifie');
-        this.editModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updatePatientUC.execute(id, data));
+      this.toaster.success('Patient modifie');
+      this.editModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
   protected async deletePatient(id: string) {
     if (!await this.confirm.delete('ce patient')) return;
-    this.deletePatientUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Patient supprime');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deletePatientUC.execute(id));
+      this.toaster.success('Patient supprime');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

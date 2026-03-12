@@ -11,7 +11,7 @@ const CLEARTEXT_KEYS = ['id', 'userId', 'memberId'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'loanId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpLoanGateway extends LoanGateway {
+export class HttpLoanGateway implements LoanGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

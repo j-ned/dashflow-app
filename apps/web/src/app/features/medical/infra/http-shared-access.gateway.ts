@@ -5,7 +5,7 @@ import { SharedAccess } from '../domain/models/shared-access.model';
 import { SharedAccessGateway } from '../domain/gateways/shared-access.gateway';
 
 @Injectable()
-export class HttpSharedAccessGateway extends SharedAccessGateway {
+export class HttpSharedAccessGateway implements SharedAccessGateway {
   private readonly api = inject(ApiClient);
 
   getAll(): Observable<SharedAccess[]> {

@@ -1,14 +1,9 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators, AbstractControl, ValidationErrors } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
-
-function passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
-  const password = group.get('password')?.value;
-  const confirm = group.get('confirmPassword')?.value;
-  return password === confirm ? null : { mismatch: true };
-}
+import { passwordMatchValidator } from '@shared/validators/form-validators';
 
 type RegisterFormShape = {
   displayName: FormControl<string>;
@@ -39,6 +34,8 @@ type RegisterFormShape = {
 
       @if (step() === 'register') {
         <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-4">
+          <legend class="sr-only">Informations d'inscription</legend>
           <div>
             <label for="displayName" class="mb-1.5 block text-sm font-medium text-text-primary">
               Nom d'affichage
@@ -92,8 +89,12 @@ type RegisterFormShape = {
                 <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
-            @if (registerForm.controls.password.touched && registerForm.controls.password.errors?.['minlength']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au moins 12 caracteres.</small>
+            @if (registerForm.controls.password.touched) {
+              @if (registerForm.controls.password.errors?.['required']) {
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
+              } @else if (registerForm.controls.password.errors?.['minlength']) {
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au moins 12 caracteres.</small>
+              }
             }
           </div>
 
@@ -120,6 +121,8 @@ type RegisterFormShape = {
               <small class="mt-1 block text-xs text-ib-red" role="alert">Les mots de passe ne correspondent pas.</small>
             }
           </div>
+
+          </fieldset>
 
           <button
             type="submit"
@@ -250,7 +253,7 @@ export class Register {
       nonNullable: true,
       validators: [Validators.required],
     }),
-  }, { validators: [passwordMatchValidator] });
+  }, { validators: [passwordMatchValidator('password', 'confirmPassword')] });
 
   protected async submitRegister(): Promise<void> {
     if (this.registerForm.invalid) return;

@@ -11,7 +11,7 @@ const CLEARTEXT_KEYS = ['id', 'userId', 'memberId'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'envelopeId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpEnvelopeGateway extends EnvelopeGateway {
+export class HttpEnvelopeGateway implements EnvelopeGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

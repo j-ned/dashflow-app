@@ -8,7 +8,6 @@ import { AuthStore } from '../../domain/auth.store';
 import { RecoveryKeyModal } from '../../components/recovery-key-modal/recovery-key-modal';
 import { EncryptionPassphraseModal } from '../../components/encryption-passphrase-modal/encryption-passphrase-modal';
 
-// Mapping of cleartext keys per table (foreign keys + structural)
 const CLEARTEXT_KEYS: Record<string, readonly string[]> = {
   bankAccounts: ['id', 'userId', 'createdAt'],
   envelopes: ['id', 'userId', 'memberId'],
@@ -155,21 +154,16 @@ export class EncryptionSetup {
     const user = this.auth.user();
     if (!user) return;
 
-    // OAuth without password → need passphrase first
     if (!user.hasPassword) {
       this.passphraseModal().open();
       return;
     }
 
-    // For password users, they already have a password — use it
-    this._password = ''; // Will be derived from login password (already unlocked or prompt)
+    this._password = '';
     this.loading.set(true);
     this.error.set('');
 
     try {
-      // We need the password. If crypto is not unlocked, we can't proceed
-      // The setup is only reachable after login, so use the login password
-      // Prompt for password re-entry
       const password = prompt('Confirmez votre mot de passe pour activer le chiffrement :');
       if (!password) {
         this.loading.set(false);
@@ -193,16 +187,13 @@ export class EncryptionSetup {
     this.startEncryptionWithPassword(passphrase);
   }
 
-  protected onPassphraseModalClosed(): void {
-    // User cancelled
-  }
+  protected onPassphraseModalClosed(): void {}
 
   private async startEncryptionWithPassword(password: string): Promise<void> {
     this.loading.set(true);
     this.error.set('');
 
     try {
-      // Save passphrase on server
       await firstValueFrom(
         this.api.post('/auth/me/encryption-passphrase', { passphrase: password }),
       );
@@ -223,13 +214,10 @@ export class EncryptionSetup {
     await this.migrateData();
   }
 
-  protected onRecoveryModalClosed(): void {
-    // Recovery modal closed without confirming — do nothing
-  }
+  protected onRecoveryModalClosed(): void {}
 
   private async migrateData(): Promise<void> {
     try {
-      // Unlock crypto with password
       const keyMaterial = this.auth.getKeyMaterial();
       if (keyMaterial) {
         await this.cryptoStore.unlock(this._password, keyMaterial.salt, keyMaterial.wrappedMasterKey);
@@ -265,9 +253,7 @@ export class EncryptionSetup {
             }
             encryptedData[tableName] = encrypted;
           }
-        } catch {
-          // Table might not exist or be empty — skip
-        }
+        } catch {}
 
         completed++;
       }

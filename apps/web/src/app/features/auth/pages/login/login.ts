@@ -27,6 +27,8 @@ type LoginFormShape = {
 
       @if (step() === 'credentials') {
         <form [formGroup]="form" (ngSubmit)="submitLogin()" class="flex flex-col gap-4">
+          <fieldset class="flex flex-col gap-4">
+          <legend class="sr-only">Identifiants de connexion</legend>
           <div>
             <label for="email" class="mb-1.5 block text-sm font-medium text-text-primary">
               Email <span aria-hidden="true" class="text-ib-red">*</span>
@@ -75,6 +77,8 @@ type LoginFormShape = {
               }
             }
           </div>
+
+          </fieldset>
 
           <button
             type="submit"

@@ -15,13 +15,11 @@ import { ThemeStore } from '@core/services/theme.store';
   template: `
     <header class="header">
 
-      <!-- Left: Logo -->
       <a routerLink="/budget" class="logo-link" aria-label="Accueil DashFlow">
         <app-icon name="dashflow-logo" size="22" />
         <span>DashFlow</span>
       </a>
 
-      <!-- Center: Space tabs -->
       <nav aria-label="Espaces" class="flex items-center bg-canvas p-1 rounded-lg border border-border">
         <a routerLink="/budget"
            routerLinkActive="tab--active-budget"
@@ -35,9 +33,7 @@ import { ThemeStore } from '@core/services/theme.store';
         </a>
       </nav>
 
-      <!-- Right: Search + Theme + Avatar -->
       <div class="flex items-center gap-2 shrink-0">
-        <!-- Search -->
         <button type="button"
                 class="header-btn hidden sm:inline-flex"
                 (click)="commandPalette().open()">
@@ -46,7 +42,6 @@ import { ThemeStore } from '@core/services/theme.store';
           <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">⌘K</kbd>
         </button>
 
-        <!-- Theme toggle -->
         <button type="button"
                 class="icon-btn"
                 (click)="theme.toggle()"
@@ -54,7 +49,6 @@ import { ThemeStore } from '@core/services/theme.store';
           <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" size="18" />
         </button>
 
-        <!-- Avatar -->
         <a routerLink="/settings"
            class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
            aria-label="Paramètres du compte">
@@ -112,8 +106,6 @@ import { ThemeStore } from '@core/services/theme.store';
       flex-shrink: 0;
     }
 
-    /* ── Space tabs ── */
-
     .tab {
       display: inline-flex;
       align-items: center;
@@ -129,8 +121,6 @@ import { ThemeStore } from '@core/services/theme.store';
     .tab:hover {
       color: var(--text-primary);
     }
-
-    /* ── Search button ── */
 
     .header-btn {
       display: inline-flex;
@@ -150,8 +140,6 @@ import { ThemeStore } from '@core/services/theme.store';
       border-color: var(--text-muted);
       color: var(--text-primary);
     }
-
-    /* ── Icon button (theme toggle) ── */
 
     .icon-btn {
       display: inline-flex;

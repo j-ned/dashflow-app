@@ -9,7 +9,7 @@ import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpBankAccountGateway extends BankAccountGateway {
+export class HttpBankAccountGateway implements BankAccountGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Envelope } from '../../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../../domain/models/envelope-transaction.model';
 import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
@@ -447,24 +447,22 @@ export class Envelopes {
     this.creditModalRef().open();
   }
 
-  protected openHistoryModal(envelope: Envelope) {
+  protected async openHistoryModal(envelope: Envelope) {
     this.selectedEnvelope.set(envelope);
-    this.getTransactionsUC.execute(envelope.id).subscribe((txs) => {
-      this.transactions.set(txs);
-      this.historyModalRef().open();
-    });
+    const txs = await lastValueFrom(this.getTransactionsUC.execute(envelope.id));
+    this.transactions.set(txs);
+    this.historyModalRef().open();
   }
 
-  protected addManualTransaction() {
+  protected async addManualTransaction() {
     const envelope = this.selectedEnvelope();
     const amount = this.manualTxAmount();
     const date = this.manualTxDate();
     if (!envelope || !amount || !date) return;
-    this.addTransactionUC.execute(envelope.id, { amount, date }).subscribe((tx) => {
-      this.transactions.update((txs) => [tx, ...txs]);
-      this.manualTxAmount.set(0);
-      this.manualTxDate.set(new Date().toISOString().slice(0, 10));
-    });
+    const tx = await lastValueFrom(this.addTransactionUC.execute(envelope.id, { amount, date }));
+    this.transactions.update((txs) => [tx, ...txs]);
+    this.manualTxAmount.set(0);
+    this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
   protected onModalClosed() {
@@ -474,73 +472,72 @@ export class Envelopes {
     this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
-  protected createEnvelope(data: Omit<Envelope, 'id'>) {
-    this.createEnvelopeUC.execute(data).subscribe({
-      next: () => {
-        this.createModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Enveloppe creee');
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createEnvelope(data: Omit<Envelope, 'id'>) {
+    try {
+      await lastValueFrom(this.createEnvelopeUC.execute(data));
+      this.createModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Enveloppe creee');
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updateEnvelope(data: Omit<Envelope, 'id'>) {
+  protected async updateEnvelope(data: Omit<Envelope, 'id'>) {
     const id = this.selectedEnvelope()?.id;
     if (!id) return;
-    this.updateEnvelopeUC.execute(id, data).subscribe({
-      next: () => {
-        this.editModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Enveloppe modifiee');
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updateEnvelopeUC.execute(id, data));
+      this.editModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Enveloppe modifiee');
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
-  protected creditEnvelope(event: { amount: number; date: string; accountId: string | null }) {
+  protected async creditEnvelope(event: { amount: number; date: string; accountId: string | null }) {
     const envelope = this.selectedEnvelope();
     if (!envelope) return;
-    this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date).subscribe({
-      next: () => {
-        this.creditModalRef().close();
-        this._refresh.update((v) => v + 1);
-        this.toaster.success(event.amount > 0 ? 'Enveloppe creditee' : 'Enveloppe debitee');
-        if (event.accountId && event.amount > 0) {
-          this.createEntryUC
-            .execute({
-              label: `Crédit enveloppe — ${envelope.name}`,
-              amount: event.amount,
-              type: 'spending',
-              accountId: event.accountId,
-              memberId: envelope.memberId,
-              dayOfMonth: null,
-              date: event.date || null,
-              category: 'Enveloppe',
-              payslipKey: null,
-            })
-            .subscribe();
-        }
-      },
-      error: () => this.toaster.error("Erreur lors de l'operation"),
-    });
+    try {
+      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date));
+      this.creditModalRef().close();
+      this._refresh.update((v) => v + 1);
+      this.toaster.success(event.amount > 0 ? 'Enveloppe creditee' : 'Enveloppe debitee');
+      if (event.accountId && event.amount > 0) {
+        await lastValueFrom(
+          this.createEntryUC.execute({
+            label: `Crédit enveloppe — ${envelope.name}`,
+            amount: event.amount,
+            type: 'spending',
+            accountId: event.accountId,
+            memberId: envelope.memberId,
+            dayOfMonth: null,
+            date: event.date || null,
+            category: 'Enveloppe',
+            payslipKey: null,
+          }),
+        );
+      }
+    } catch {
+      this.toaster.error("Erreur lors de l'operation");
+    }
   }
 
   protected async deleteEnvelope(id: string) {
     if (!(await this.confirm.delete('cette enveloppe'))) return;
-    this.deleteEnvelopeUC.execute(id).subscribe({
-      next: () => {
-        this._refresh.update((v) => v + 1);
-        this.toaster.success('Enveloppe supprimee');
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteEnvelopeUC.execute(id));
+      this._refresh.update((v) => v + 1);
+      this.toaster.success('Enveloppe supprimee');
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 
-  protected updateMemberColor(memberId: string, event: Event) {
+  protected async updateMemberColor(memberId: string, event: Event) {
     const color = (event.target as HTMLInputElement).value;
-    this.updateMemberColorUC.execute(memberId, color).subscribe({
-      next: () => this._refresh.update((v) => v + 1),
-    });
+    await lastValueFrom(this.updateMemberColorUC.execute(memberId, color));
+    this._refresh.update((v) => v + 1);
   }
 }

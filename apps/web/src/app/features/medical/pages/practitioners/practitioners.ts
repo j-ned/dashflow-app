@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Practitioner } from '../../domain/models/practitioner.model';
 import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
 import { CreatePractitionerUseCase } from '../../domain/use-cases/create-practitioner.use-case';
@@ -141,38 +141,38 @@ export class Practitioners {
     this.selectedPractitioner.set(null);
   }
 
-  protected createPractitioner(data: Omit<Practitioner, 'id'>) {
-    this.createPractitionerUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Praticien cree');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createPractitioner(data: Omit<Practitioner, 'id'>) {
+    try {
+      await lastValueFrom(this.createPractitionerUC.execute(data));
+      this.toaster.success('Praticien cree');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updatePractitioner(data: Omit<Practitioner, 'id'>) {
+  protected async updatePractitioner(data: Omit<Practitioner, 'id'>) {
     const id = this.selectedPractitioner()?.id;
     if (!id) return;
-    this.updatePractitionerUC.execute(id, data).subscribe({
-      next: () => {
-        this.toaster.success('Praticien modifie');
-        this.editModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updatePractitionerUC.execute(id, data));
+      this.toaster.success('Praticien modifie');
+      this.editModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
   protected async deletePractitioner(id: string) {
     if (!await this.confirm.delete('ce praticien')) return;
-    this.deletePractitionerUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Praticien supprime');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deletePractitionerUC.execute(id));
+      this.toaster.success('Praticien supprime');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

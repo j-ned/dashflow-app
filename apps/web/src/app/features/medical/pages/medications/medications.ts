@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { lastValueFrom, switchMap } from 'rxjs';
 import { Medication } from '../../domain/models/medication.model';
 import { GetMedicationsUseCase } from '../../domain/use-cases/get-medications.use-case';
 import { CreateMedicationUseCase } from '../../domain/use-cases/create-medication.use-case';
@@ -239,51 +239,51 @@ export class Medications {
     this.selectedMedication.set(null);
   }
 
-  protected createMedication(data: Omit<Medication, 'id'>) {
-    this.createMedicationUC.execute(data).subscribe({
-      next: () => {
-        this.toaster.success('Medicament cree');
-        this.createModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la creation'),
-    });
+  protected async createMedication(data: Omit<Medication, 'id'>) {
+    try {
+      await lastValueFrom(this.createMedicationUC.execute(data));
+      this.toaster.success('Medicament cree');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la creation');
+    }
   }
 
-  protected updateMedication(data: Omit<Medication, 'id'>) {
+  protected async updateMedication(data: Omit<Medication, 'id'>) {
     const id = this.selectedMedication()?.id;
     if (!id) return;
-    this.updateMedicationUC.execute(id, data).subscribe({
-      next: () => {
-        this.toaster.success('Medicament modifie');
-        this.editModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la modification'),
-    });
+    try {
+      await lastValueFrom(this.updateMedicationUC.execute(id, data));
+      this.toaster.success('Medicament modifie');
+      this.editModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la modification');
+    }
   }
 
-  protected refillMedication(event: { quantity: number }) {
+  protected async refillMedication(event: { quantity: number }) {
     const id = this.selectedMedication()?.id;
     if (!id) return;
-    this.refillMedicationUC.execute(id, event.quantity).subscribe({
-      next: () => {
-        this.toaster.success('Medicament reapprovisionne');
-        this.refillModalRef().close();
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors du reapprovisionnement'),
-    });
+    try {
+      await lastValueFrom(this.refillMedicationUC.execute(id, event.quantity));
+      this.toaster.success('Medicament reapprovisionne');
+      this.refillModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors du reapprovisionnement');
+    }
   }
 
   protected async deleteMedication(id: string) {
     if (!await this.confirm.delete('ce medicament')) return;
-    this.deleteMedicationUC.execute(id).subscribe({
-      next: () => {
-        this.toaster.success('Medicament supprime');
-        this._refresh.update(v => v + 1);
-      },
-      error: () => this.toaster.error('Erreur lors de la suppression'),
-    });
+    try {
+      await lastValueFrom(this.deleteMedicationUC.execute(id));
+      this.toaster.success('Medicament supprime');
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la suppression');
+    }
   }
 }

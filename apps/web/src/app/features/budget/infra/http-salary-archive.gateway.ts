@@ -10,7 +10,7 @@ import { SalaryArchiveGateway } from '../domain/gateways/salary-archive.gateway'
 const CLEARTEXT_KEYS = ['id', 'userId', 'accountId', 'createdAt'] as const;
 
 @Injectable()
-export class HttpSalaryArchiveGateway extends SalaryArchiveGateway {
+export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
 
@@ -28,7 +28,6 @@ export class HttpSalaryArchiveGateway extends SalaryArchiveGateway {
     const key = this.crypto.getMasterKey();
     if (!key) return this.api.postForm('/salary-archives', data);
 
-    // Extract the file from FormData for encryption
     const file = data.get('file') as File | null;
     const jsonFields: Record<string, unknown> = {};
     data.forEach((value, field) => {
@@ -45,7 +44,6 @@ export class HttpSalaryArchiveGateway extends SalaryArchiveGateway {
               fd.append('originalMimeType', file.type);
               fd.append('encrypted', 'true');
               fd.append('encryptedData', encrypted.encryptedData as string);
-              // Keep cleartext keys in form data
               for (const k of CLEARTEXT_KEYS) {
                 if (encrypted[k as string] !== undefined) {
                   fd.append(k as string, String(encrypted[k as string]));
@@ -55,7 +53,6 @@ export class HttpSalaryArchiveGateway extends SalaryArchiveGateway {
             }),
           );
         }
-        // No file — just send encrypted JSON fields as FormData
         Object.entries(encrypted).forEach(([k, v]) => fd.append(k, String(v)));
         return this.api.postForm<any>('/salary-archives', fd);
       }),
