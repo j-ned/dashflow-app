@@ -197,12 +197,7 @@ export class Login {
       this.loading.set(true);
       try {
         await this.auth.loginWithToken(params['token']);
-        const user = this.auth.user();
-        if (user && user.encryptionVersion === 0) {
-          this.router.navigate(['/auth/encryption-setup'], { replaceUrl: true });
-        } else {
-          this.router.navigate(['/budget'], { replaceUrl: true });
-        }
+        this.redirectAfterLogin();
       } catch {
         this.error.set('Erreur lors de la connexion.');
       } finally {
@@ -231,12 +226,7 @@ export class Login {
     try {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email, password);
-      const user = this.auth.user();
-      if (user && user.encryptionVersion === 0) {
-        this.router.navigate(['/auth/encryption-setup']);
-      } else {
-        this.router.navigate(['/budget']);
-      }
+      this.redirectAfterLogin();
     } catch (err: unknown) {
       if (this.getErrorCode(err) === 'EMAIL_NOT_VERIFIED') {
         const { email } = this.form.getRawValue();
@@ -264,12 +254,7 @@ export class Login {
     try {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email, password, code);
-      const user = this.auth.user();
-      if (user && user.encryptionVersion === 0) {
-        this.router.navigate(['/auth/encryption-setup']);
-      } else {
-        this.router.navigate(['/budget']);
-      }
+      this.redirectAfterLogin();
     } catch {
       this.error.set('Code 2FA invalide.');
     } finally {
@@ -281,6 +266,17 @@ export class Login {
     this.step.set('credentials');
     this.totpValue.set('');
     this.error.set('');
+  }
+
+  private redirectAfterLogin(): void {
+    const user = this.auth.user();
+    if (user && user.encryptionVersion === 0) {
+      this.router.navigate(['/auth/encryption-setup'], { replaceUrl: true });
+    } else if (this.auth.needsUnlock()) {
+      this.router.navigate(['/auth/unlock'], { replaceUrl: true });
+    } else {
+      this.router.navigate(['/budget'], { replaceUrl: true });
+    }
   }
 
   private getErrorCode(err: unknown): string | undefined {

@@ -335,7 +335,16 @@ auth.post('/me/set-password', authMiddleware, async (c) => {
   }
 
   const hashed = await hash(newPassword);
-  await db.update(users).set({ password: hashed }).where(eq(users.id, userId));
+  const updateData: Record<string, unknown> = { password: hashed };
+
+  // If client sent re-wrapped key material, update it so future logins auto-unlock
+  if (body.newSalt && body.newWrappedMasterKey) {
+    updateData.encryptionSalt = body.newSalt;
+    updateData.wrappedMasterKey = body.newWrappedMasterKey;
+    updateData.encryptionPassphrase = false;
+  }
+
+  await db.update(users).set(updateData).where(eq(users.id, userId));
 
   return c.json({ message: 'Mot de passe defini avec succes' });
 });

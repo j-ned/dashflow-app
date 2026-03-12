@@ -120,7 +120,12 @@ export class AuthStore {
     this._keyMaterial = res.keyMaterial ?? null;
 
     if (res.keyMaterial && res.user.encryptionVersion === 1) {
-      await this.crypto.unlock(password, res.keyMaterial.salt, res.keyMaterial.wrappedMasterKey);
+      try {
+        await this.crypto.unlock(password, res.keyMaterial.salt, res.keyMaterial.wrappedMasterKey);
+      } catch {
+        // Auto-unlock failed — passphrase differs from login password.
+        // User will be redirected to /auth/unlock to enter their passphrase manually.
+      }
     }
   }
 
@@ -138,9 +143,11 @@ export class AuthStore {
 
   async loginWithToken(token: string): Promise<void> {
     this.api.setToken(token);
-    const user = await firstValueFrom(this.api.get<AuthUser>('/auth/me'));
+    const res = await firstValueFrom(this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'));
+    const { keyMaterial, ...user } = res;
     this._user.set(user);
     this._isAuthenticated.set(true);
+    this._keyMaterial = keyMaterial ?? null;
   }
 
   async logout(): Promise<void> {
@@ -189,11 +196,34 @@ export class AuthStore {
   }
 
   async setPassword(newPassword: string): Promise<void> {
+    const body: Record<string, string> = { newPassword };
+
+    // If crypto is unlocked, re-wrap master key with the new password
+    // so future email+password logins auto-unlock E2EE transparently
+    const masterKey = this.crypto.getMasterKey();
+    if (masterKey) {
+      const salt = this.crypto.generateSalt();
+      const wrappingKey = await this.crypto.deriveWrappingKey(newPassword, salt);
+      const wrappedMasterKey = await this.crypto.wrapKey(masterKey, wrappingKey);
+      const { bytesToHex } = await import('@core/services/crypto/crypto.store');
+      body['newSalt'] = bytesToHex(salt);
+      body['newWrappedMasterKey'] = wrappedMasterKey;
+    }
+
     await firstValueFrom(
-      this.api.post('/auth/me/set-password', { newPassword }),
+      this.api.post('/auth/me/set-password', body),
     );
     const user = this._user();
-    if (user) this._user.set({ ...user, hasPassword: true });
+    if (user) this._user.set({ ...user, hasPassword: true, hasEncryptionPassphrase: false });
+
+    // Update local key material
+    if (body['newSalt'] && body['newWrappedMasterKey']) {
+      this._keyMaterial = {
+        ...this._keyMaterial!,
+        salt: body['newSalt'],
+        wrappedMasterKey: body['newWrappedMasterKey'],
+      };
+    }
   }
 
   async deleteAccount(): Promise<void> {
