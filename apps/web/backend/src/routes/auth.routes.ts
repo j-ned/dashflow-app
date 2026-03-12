@@ -8,7 +8,7 @@ import { users, verificationCodes } from '@db/schema';
 import { authMiddleware, signToken } from '@middleware/auth';
 import { sendVerificationCode, sendPasswordResetCode } from '../mail/mailer.js';
 import { uploadAvatar, deleteAvatar, getAvatar, avatarKey } from '../storage/s3.js';
-import { validate, registerSchema, verifySchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, updatePasswordSchema, setupEncryptionKeysSchema, encryptionPassphraseSchema, migrateEncryptionSchema } from '../validation.js';
+import { validate, registerSchema, verifySchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, updatePasswordSchema, setPasswordSchema, setupEncryptionKeysSchema, encryptionPassphraseSchema, migrateEncryptionSchema } from '../validation.js';
 import type { AppEnv } from '../types.js';
 
 const auth = new Hono<AppEnv>();
@@ -319,6 +319,28 @@ auth.patch('/me/password', authMiddleware, async (c) => {
   await db.update(users).set(updateData).where(eq(users.id, userId));
 
   return c.json({ message: 'Mot de passe mis a jour' });
+});
+
+// ── Set Password (for OAuth-only accounts) ──
+auth.post('/me/set-password', authMiddleware, async (c) => {
+  const userId = c.get('userId');
+  const body = await c.req.json();
+  const v = validate(setPasswordSchema, body);
+  if (!v.success) return c.json({ error: v.error }, 400);
+  const { newPassword } = v.data;
+
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user) {
+    return c.json({ error: 'Utilisateur non trouve' }, 404);
+  }
+  if (user.password) {
+    return c.json({ error: 'Ce compte a deja un mot de passe. Utilisez la modification.' }, 400);
+  }
+
+  const hashed = await hash(newPassword);
+  await db.update(users).set({ password: hashed }).where(eq(users.id, userId));
+
+  return c.json({ message: 'Mot de passe defini avec succes' });
 });
 
 // ── Get Avatar (public) ──

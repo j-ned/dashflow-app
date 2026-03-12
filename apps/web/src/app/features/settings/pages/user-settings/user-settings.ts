@@ -154,13 +154,19 @@ type PasswordFormShape = {
             Mot de passe
           </h3>
           <p class="text-sm text-text-muted mt-1">
-            Mettez a jour votre mot de passe de connexion.
+            @if (auth.hasPassword()) {
+              Mettez a jour votre mot de passe de connexion.
+            } @else {
+              Definissez un mot de passe pour vous connecter sans Google.
+            }
           </p>
         </div>
 
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6 space-y-5">
           <fieldset class="space-y-5">
-          <legend class="sr-only">Modifier le mot de passe</legend>
+          <legend class="sr-only">{{ auth.hasPassword() ? 'Modifier le mot de passe' : 'Definir un mot de passe' }}</legend>
+
+          @if (auth.hasPassword()) {
           <div class="space-y-1.5">
             <label for="current-password" class="text-sm font-medium text-text-primary">
               Mot de passe actuel <span aria-hidden="true" class="text-ib-red">*</span>
@@ -185,10 +191,11 @@ type PasswordFormShape = {
               </p>
             }
           </div>
+          }
 
           <div class="space-y-1.5">
             <label for="new-password" class="text-sm font-medium text-text-primary">
-              Nouveau mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ auth.hasPassword() ? 'Nouveau mot de passe' : 'Mot de passe' }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -207,11 +214,11 @@ type PasswordFormShape = {
             @if (passwordForm.controls.newPassword.touched) {
               @if (passwordForm.controls.newPassword.errors?.['required']) {
                 <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                  Le nouveau mot de passe est obligatoire.
+                  Le mot de passe est obligatoire.
                 </p>
               } @else if (passwordForm.controls.newPassword.errors?.['minlength']) {
                 <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                  Le mot de passe doit contenir au moins 8 caracteres.
+                  Le mot de passe doit contenir au moins 12 caracteres.
                 </p>
               }
             }
@@ -253,7 +260,11 @@ type PasswordFormShape = {
               class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
               style="background-color: var(--color-ib-blue)"
             >
-              {{ passwordSaving() ? 'Modification...' : 'Mettre a jour' }}
+              @if (passwordSaving()) {
+                {{ auth.hasPassword() ? 'Modification...' : 'Definition...' }}
+              } @else {
+                {{ auth.hasPassword() ? 'Mettre a jour' : 'Definir le mot de passe' }}
+              }
             </button>
           </div>
         </form>
@@ -540,13 +551,10 @@ export class UserSettings {
   protected readonly passwordSaving = signal(false);
   protected readonly passwordForm = new FormGroup<PasswordFormShape>(
     {
-      currentPassword: new FormControl('', {
-        nonNullable: true,
-        validators: [Validators.required],
-      }),
+      currentPassword: new FormControl('', { nonNullable: true }),
       newPassword: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(8)],
+        validators: [Validators.required, Validators.minLength(12)],
       }),
       confirmPassword: new FormControl('', {
         nonNullable: true,
@@ -577,6 +585,14 @@ export class UserSettings {
       if (name && this.profileForm.pristine) {
         this.profileForm.patchValue({ displayName: name });
       }
+    });
+    effect(() => {
+      if (this.auth.hasPassword()) {
+        this.passwordForm.controls.currentPassword.addValidators(Validators.required);
+      } else {
+        this.passwordForm.controls.currentPassword.clearValidators();
+      }
+      this.passwordForm.controls.currentPassword.updateValueAndValidity();
     });
   }
 
@@ -619,15 +635,23 @@ export class UserSettings {
     this.passwordSaving.set(true);
     try {
       const { currentPassword, newPassword } = this.passwordForm.getRawValue();
-      if (this.auth.encryptionVersion() === 1 && this.crypto.isUnlocked()) {
+      if (!this.auth.hasPassword()) {
+        await this.auth.setPassword(newPassword);
+        this.showFeedback('success', 'Mot de passe defini avec succes. Vous pouvez maintenant vous connecter avec email + mot de passe.');
+        this.passwordForm.controls.currentPassword.addValidators(Validators.required);
+        this.passwordForm.controls.currentPassword.updateValueAndValidity();
+      } else if (this.auth.encryptionVersion() === 1 && this.crypto.isUnlocked()) {
         await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
+        this.showFeedback('success', 'Mot de passe modifie avec succes.');
       } else {
         await this.auth.updatePassword(currentPassword, newPassword);
+        this.showFeedback('success', 'Mot de passe modifie avec succes.');
       }
-      this.showFeedback('success', 'Mot de passe modifie avec succes.');
       this.passwordForm.reset();
     } catch {
-      this.showFeedback('error', 'Erreur lors de la modification du mot de passe.');
+      this.showFeedback('error', this.auth.hasPassword()
+        ? 'Erreur lors de la modification du mot de passe.'
+        : 'Erreur lors de la definition du mot de passe.');
     } finally {
       this.passwordSaving.set(false);
     }

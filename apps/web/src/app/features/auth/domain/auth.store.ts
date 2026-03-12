@@ -50,6 +50,7 @@ export class AuthStore {
     const name = this.displayName();
     return name ? name.charAt(0).toUpperCase() : '?';
   });
+  readonly hasPassword = computed(() => this._user()?.hasPassword ?? false);
   readonly encryptionVersion = computed(() => this._user()?.encryptionVersion ?? 0);
   readonly needsEncryptionSetup = computed(() => this.isAuthenticated() && this.encryptionVersion() === 0);
   readonly needsUnlock = computed(() => this.isAuthenticated() && this.encryptionVersion() === 1 && !this.crypto.isUnlocked());
@@ -185,6 +186,14 @@ export class AuthStore {
     await firstValueFrom(
       this.api.patch('/auth/me/password', { currentPassword, newPassword }),
     );
+  }
+
+  async setPassword(newPassword: string): Promise<void> {
+    await firstValueFrom(
+      this.api.post('/auth/me/set-password', { newPassword }),
+    );
+    const user = this._user();
+    if (user) this._user.set({ ...user, hasPassword: true });
   }
 
   async deleteAccount(): Promise<void> {

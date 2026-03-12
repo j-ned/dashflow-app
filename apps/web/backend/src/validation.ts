@@ -48,6 +48,10 @@ export const updatePasswordSchema = z.object({
   newPassword: z.string().min(MIN_PASSWORD_LENGTH, `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caracteres`),
 });
 
+export const setPasswordSchema = z.object({
+  newPassword: z.string().min(MIN_PASSWORD_LENGTH, `Le mot de passe doit faire au moins ${MIN_PASSWORD_LENGTH} caracteres`),
+});
+
 // ── Budget: Envelopes ──
 
 const ENVELOPE_TYPES = ['épargne', 'impôts', 'équipement', 'vacance'] as const;
