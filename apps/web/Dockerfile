@@ -35,15 +35,22 @@ RUN apk add --no-cache dumb-init \
 
 WORKDIR /app
 
-# Backend deps (production only)
+# Backend deps (production only — includes drizzle-kit for db:push)
 COPY backend/package.json backend/pnpm-lock.yaml ./
 RUN corepack enable pnpm && pnpm install --frozen-lockfile --prod
 
 # Backend build output
 COPY --from=backend-build /app/backend/dist/ dist/
 
+# Drizzle config + schema (needed for db:push at startup)
+COPY backend/drizzle.config.ts ./
+COPY backend/src/db/ src/db/
+
 # Frontend build output
 COPY --from=frontend-build /app/dist/dash-flow/browser/ static/
+
+# Entrypoint script (db:push + start)
+COPY entrypoint.sh ./
 
 # Non-root user
 USER app
@@ -59,4 +66,4 @@ HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD wget -qO- http://localhost:3000/health || exit 1
 
 ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "dist/index.js"]
+CMD ["sh", "entrypoint.sh"]
