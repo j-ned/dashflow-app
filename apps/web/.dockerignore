@@ -1,0 +1,17 @@
+node_modules
+backend/node_modules
+dist
+backend/dist
+.angular
+.git
+.github
+.vscode
+.idea
+.claude
+.gemini
+.env
+.env.local
+*.md
+*.log
+coverage
+__screenshots__

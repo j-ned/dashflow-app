@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 config({ path: process.env['DOTENV_PATH'] ?? '../.env' });
 import { serve } from '@hono/node-server';
+import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
@@ -120,6 +121,13 @@ app.route('/api', api);
 
 // ── Public medical calendar (no auth) ──
 app.route('/api/medical/calendar', medicalCalendarRoutes);
+
+// ── Static SPA serving (production) ──
+const staticRoot = process.env['STATIC_ROOT'];
+if (staticRoot) {
+  app.use('/*', serveStatic({ root: staticRoot }));
+  app.get('*', serveStatic({ root: staticRoot, path: 'index.html' }));
+}
 
 // ── Start server ──
 const port = Number(process.env['PORT'] ?? 3000);
