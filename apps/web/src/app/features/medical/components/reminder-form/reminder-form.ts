@@ -43,7 +43,7 @@ type ReminderFormShape = {
             <select id="rem-target" formControlName="target" aria-required="true"
                     class="form-select"
                     (change)="onTargetChange()">
-              <option value="medication">Medicament</option>
+              <option value="medication">Médicament</option>
               <option value="appointment">Rendez-vous</option>
             </select>
           </div>
@@ -52,11 +52,11 @@ type ReminderFormShape = {
         @if (selectedTarget() === 'medication') {
           <div>
             <label for="rem-medication" class="form-label">
-              Medicament <span aria-hidden="true" class="text-ib-red">*</span>
+              Médicament <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <select id="rem-medication" formControlName="medicationId" aria-required="true"
                     class="form-select">
-              <option value="">-- Selectionner --</option>
+              <option value="">-- Sélectionner --</option>
               @for (m of medications(); track m.id) {
                 <option [value]="m.id">{{ m.name }} ({{ m.dosage }})</option>
               }
@@ -71,7 +71,7 @@ type ReminderFormShape = {
             </label>
             <select id="rem-appointment" formControlName="appointmentId" aria-required="true"
                     class="form-select">
-              <option value="">-- Selectionner --</option>
+              <option value="">-- Sélectionner --</option>
               @for (a of appointments(); track a.id) {
                 <option [value]="a.id">{{ a.date }} {{ a.time }}</option>
               }
@@ -99,7 +99,7 @@ type ReminderFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-purple)">
-          Creer
+          Créer
         </button>
       </footer>
     </form>

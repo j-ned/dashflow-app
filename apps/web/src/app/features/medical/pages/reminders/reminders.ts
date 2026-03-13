@@ -31,7 +31,7 @@ import { Icon } from '@shared/components/icon/icon';
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Alertes</h2>
-        <p class="mt-1 text-sm text-text-muted">Notifications et rappels medicaux</p>
+        <p class="mt-1 text-sm text-text-muted">Notifications et rappels médicaux</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
@@ -56,9 +56,9 @@ import { Icon } from '@shared/components/icon/icon';
             <tr class="border-b border-border/50 bg-hover/30">
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Type</th>
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Cible</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Detail</th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Détail</th>
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">Email</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center">Active</th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center">Activé</th>
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center">Calendrier</th>
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right">Actions</th>
             </tr>
@@ -81,7 +81,7 @@ import { Icon } from '@shared/components/icon/icon';
                         [class.text-ib-orange]="reminder.target === 'medication'"
                         [class.bg-ib-blue-10]="reminder.target === 'appointment'"
                         [class.text-ib-blue]="reminder.target === 'appointment'">
-                    {{ reminder.target === 'medication' ? 'Medicament' : 'Rendez-vous' }}
+                    {{ reminder.target === 'medication' ? 'Médicament' : 'Rendez-vous' }}
                   </span>
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
@@ -107,14 +107,14 @@ import { Icon } from '@shared/components/icon/icon';
                     @if (googleCalendarUrl(reminder); as gUrl) {
                       <a [href]="gUrl" target="_blank" rel="noopener"
                          class="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
-                         title="Ajouter a Google Calendar">
+                         title="Ajouter à Google Calendar">
                         <app-icon name="calendar" size="12" /> Google
                       </a>
                     }
                     <!-- .ics download (Apple/Thunderbird/Outlook) -->
                     <button type="button"
                             class="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-                            title="Telecharger .ics (Apple, Outlook, Thunderbird)"
+                            title="Télécharger .ics (Apple, Outlook, Thunderbird)"
                             (click)="downloadIcs(reminder)">
                       <app-icon name="download" size="12" /> .ics
                     </button>
@@ -132,8 +132,8 @@ import { Icon } from '@shared/components/icon/icon';
               <tr>
                 <td colspan="7" class="px-5 py-16 text-center">
                   <app-icon name="bell" size="48" class="text-text-muted/20 mx-auto mb-3" />
-                  <p class="text-sm text-text-muted">Aucune alerte configuree</p>
-                  <p class="text-xs text-text-muted mt-1">Configurez des alertes pour vos medicaments et rendez-vous</p>
+                  <p class="text-sm text-text-muted">Aucune alerte configurée</p>
+                  <p class="text-xs text-text-muted mt-1">Configurez des alertes pour vos médicaments et rendez-vous</p>
                 </td>
               </tr>
             }
@@ -223,7 +223,7 @@ export class Reminders {
       if (!appt) return null;
       const patient = this.patientMap().get(appt.patientId) ?? 'Patient';
       const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-      const title = `RDV Medical — ${patient} chez ${practitioner}`;
+      const title = `RDV Médical — ${patient} chez ${practitioner}`;
       const start = this.toGoogleDate(appt.date, appt.time);
       const end = this.toGoogleDate(appt.date, appt.time, 60);
       const details = appt.reason ? `Motif : ${appt.reason}` : '';
@@ -250,7 +250,7 @@ export class Reminders {
       if (!appt) return;
       const patient = this.patientMap().get(appt.patientId) ?? 'Patient';
       const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-      const title = `RDV Medical — ${patient} chez ${practitioner}`;
+      const title = `RDV Médical — ${patient} chez ${practitioner}`;
       const dtStart = this.toIcsDateTime(appt.date, appt.time);
       const dtEnd = this.toIcsDateTime(appt.date, appt.time, 60);
       const description = appt.reason ? `Motif : ${appt.reason}` : '';
@@ -270,7 +270,7 @@ export class Reminders {
         'BEGIN:VALARM',
         'TRIGGER:-PT30M',
         'ACTION:DISPLAY',
-        'DESCRIPTION:Rappel rendez-vous medical',
+        'DESCRIPTION:Rappel rendez-vous médical',
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR',
@@ -308,7 +308,7 @@ export class Reminders {
         'BEGIN:VALARM',
         'TRIGGER:-PT15M',
         'ACTION:DISPLAY',
-        'DESCRIPTION:Rappel prise de medicament',
+        'DESCRIPTION:Rappel prise de médicament',
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR',
@@ -324,7 +324,7 @@ export class Reminders {
     a.download = `dashflow-alerte-${reminder.id.slice(0, 8)}.ics`;
     a.click();
     URL.revokeObjectURL(url);
-    this.toaster.success('Fichier .ics telecharge');
+    this.toaster.success('Fichier .ics téléchargé');
   }
 
   // ── Date formatting helpers ──
@@ -372,21 +372,21 @@ export class Reminders {
   protected async createReminder(data: Omit<Reminder, 'id'>) {
     try {
       await lastValueFrom(this.createReminderUC.execute(data));
-      this.toaster.success('Alerte creee');
+      this.toaster.success('Alerte créée');
       this.createReminderModalRef().close();
       this._refreshReminders.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
   protected async toggleReminder(id: string) {
     try {
       await lastValueFrom(this.toggleReminderUC.execute(id));
-      this.toaster.success('Alerte mise a jour');
+      this.toaster.success('Alerte mise à jour');
       this._refreshReminders.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la mise a jour');
+      this.toaster.error('Erreur lors de la mise à jour');
     }
   }
 
@@ -394,7 +394,7 @@ export class Reminders {
     if (!await this.confirm.delete('cette alerte')) return;
     try {
       await lastValueFrom(this.deleteReminderUC.execute(id));
-      this.toaster.success('Alerte supprimee');
+      this.toaster.success('Alerte supprimée');
       this._refreshReminders.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

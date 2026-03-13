@@ -15,7 +15,7 @@ type SharedAccessFormShape = {
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">Partager l'acces calendrier</legend>
+        <legend class="sr-only">Partager l'accès calendrier</legend>
 
         <div>
           <label for="sa-email" class="form-label">

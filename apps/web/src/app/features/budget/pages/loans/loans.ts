@@ -41,8 +41,8 @@ const MEMBER_PALETTE = [
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Prets & Dettes</h2>
-        <p class="mt-1 text-sm text-text-muted">Suivez vos prets familiaux et dettes</p>
+        <h2 class="text-2xl font-bold text-text-primary">Prêts & Dettes</h2>
+        <p class="mt-1 text-sm text-text-muted">Suivez vos prêts familiaux et dettes</p>
       </div>
       <div class="flex gap-2">
         <button
@@ -50,7 +50,7 @@ const MEMBER_PALETTE = [
           class="inline-flex items-center gap-1.5 rounded-lg bg-ib-blue px-4 py-2 text-sm font-medium text-white hover:bg-ib-blue/90 transition-colors shadow-sm"
           (click)="openLentModal()"
         >
-          <app-icon name="arrow-up-right" size="14" /> Preter
+          <app-icon name="arrow-up-right" size="14" /> Prêter
         </button>
         <button
           type="button"
@@ -83,14 +83,14 @@ const MEMBER_PALETTE = [
       </div>
     }
 
-    <!-- Pretes -->
+    <!-- Prêtés -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div
         class="flex items-center justify-between px-5 py-3 bg-ib-blue/5 border-b border-border/50"
       >
         <div class="flex items-center gap-2">
           <app-icon name="arrow-up-right" size="16" class="text-ib-blue" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Pretes</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Prêtés</h3>
         </div>
       </div>
       @if (filteredLentLoans().length > 0) {
@@ -149,7 +149,7 @@ const MEMBER_PALETTE = [
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Rembourse</p>
+                  <p class="text-[10px] text-text-muted">Remboursé</p>
                   <p class="font-mono font-medium text-ib-green">
                     {{ repaid | number: '1.2-2' }}&euro;
                   </p>
@@ -165,12 +165,12 @@ const MEMBER_PALETTE = [
               @if (loan.date || loan.dueDate) {
                 <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
-                    <p class="text-[10px] text-text-muted">Date du pret</p>
+                    <p class="text-[10px] text-text-muted">Date du prêt</p>
                     <p class="text-text-primary">{{ loan.date }}</p>
                   </div>
                   @if (loan.dueDate) {
                     <div>
-                      <p class="text-[10px] text-text-muted">Echeance</p>
+                      <p class="text-[10px] text-text-muted">Échéance</p>
                       <p class="text-text-primary">{{ loan.dueDate }}</p>
                     </div>
                   }
@@ -228,12 +228,12 @@ const MEMBER_PALETTE = [
       } @else {
         <div class="text-center py-12">
           <app-icon name="arrow-up-right" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Aucun pret en cours</p>
+          <p class="text-sm text-text-muted">Aucun prêt en cours</p>
         </div>
       }
     </section>
 
-    <!-- Empruntes -->
+    <!-- Empruntés -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div
         class="flex items-center justify-between px-5 py-3 bg-ib-orange/5 border-b border-border/50"
@@ -241,7 +241,7 @@ const MEMBER_PALETTE = [
         <div class="flex items-center gap-2">
           <app-icon name="arrow-down-left" size="16" class="text-ib-orange" />
           <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">
-            Empruntes
+            Empruntés
           </h3>
         </div>
       </div>
@@ -301,7 +301,7 @@ const MEMBER_PALETTE = [
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Rembourse</p>
+                  <p class="text-[10px] text-text-muted">Remboursé</p>
                   <p class="font-mono font-medium text-ib-green">
                     {{ repaid | number: '1.2-2' }}&euro;
                   </p>
@@ -322,7 +322,7 @@ const MEMBER_PALETTE = [
                   </div>
                   @if (loan.dueDate) {
                     <div>
-                      <p class="text-[10px] text-text-muted">Echeance</p>
+                      <p class="text-[10px] text-text-muted">Échéance</p>
                       <p class="text-text-primary">{{ loan.dueDate }}</p>
                     </div>
                   }
@@ -385,7 +385,7 @@ const MEMBER_PALETTE = [
       }
     </section>
 
-    <app-modal-dialog #lentModal title="Nouveau pret" (closed)="onModalClosed()">
+    <app-modal-dialog #lentModal title="Nouveau prêt" (closed)="onModalClosed()">
       <app-loan-form
         direction="lent"
         [members]="members()"
@@ -487,7 +487,7 @@ const MEMBER_PALETTE = [
         } @else {
           <div class="text-center py-8">
             <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Aucun remboursement enregistre</p>
+            <p class="text-sm text-text-muted">Aucun remboursement enregistré</p>
           </div>
         }
       </div>
@@ -627,9 +627,9 @@ export class Loans {
       if (data.direction === 'lent') this.lentModalRef().close();
       else this.borrowedModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(data.direction === 'lent' ? 'Pret cree' : 'Emprunt cree');
+      this.toaster.success(data.direction === 'lent' ? 'Prêt créé' : 'Emprunt créé');
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -640,7 +640,7 @@ export class Loans {
       await lastValueFrom(this.updateLoanUC.execute(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Pret modifie');
+      this.toaster.success('Prêt modifié');
     } catch {
       this.toaster.error('Erreur lors de la modification');
     }
@@ -653,10 +653,10 @@ export class Loans {
       await lastValueFrom(this.recordPaymentUC.execute(loan.id, event.amount, event.date));
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Remboursement enregistre');
+      this.toaster.success('Remboursement enregistré');
 
       if (event.accountId) {
-        const direction = loan.direction === 'borrowed' ? 'Remb. dette' : 'Remb. pret';
+        const direction = loan.direction === 'borrowed' ? 'Remb. dette' : 'Remb. prêt';
         await lastValueFrom(
           this.createEntryUC.execute({
             label: `${direction} — ${loan.person}`,
@@ -677,11 +677,11 @@ export class Loans {
   }
 
   protected async deleteLoan(id: string) {
-    if (!(await this.confirm.delete('ce pret'))) return;
+    if (!(await this.confirm.delete('ce prêt'))) return;
     try {
       await lastValueFrom(this.deleteLoanUC.execute(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Pret supprime');
+      this.toaster.success('Prêt supprimé');
     } catch {
       this.toaster.error('Erreur lors de la suppression');
     }

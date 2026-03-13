@@ -60,7 +60,7 @@ export class ConfirmService {
   delete(entityName: string): Promise<boolean> {
     return this.confirm({
       title: 'Confirmer la suppression',
-      message: `Supprimer ${entityName} ? Cette action est irreversible.`,
+      message: `Supprimer ${entityName} ? Cette action est irréversible.`,
       confirmLabel: 'Supprimer',
       variant: 'danger',
     });

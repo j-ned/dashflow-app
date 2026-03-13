@@ -15,19 +15,19 @@ type RefillFormShape = {
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">Reapprovisionner le medicament</legend>
+        <legend class="sr-only">Réapprovisionner le médicament</legend>
 
         <div>
           <label for="refill-quantity" class="form-label">
-            Quantite a ajouter <span aria-hidden="true" class="text-ib-red">*</span>
+            Quantité à ajouter <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="refill-quantity" type="number" formControlName="quantity" min="1" aria-required="true"
                  class="form-input mono" />
           @if (form.controls.quantity.touched) {
             @if (form.controls.quantity.errors?.['required']) {
-              <small class="error" role="alert">La quantite est obligatoire.</small>
+              <small class="error" role="alert">La quantité est obligatoire.</small>
             } @else if (form.controls.quantity.errors?.['min']) {
-              <small class="error" role="alert">La quantite doit etre d'au minimum 1.</small>
+              <small class="error" role="alert">La quantité doit être d'au minimum 1.</small>
             }
           }
         </div>
@@ -37,7 +37,7 @@ type RefillFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-purple)">
-          Reapprovisionner
+          Réapprovisionner
         </button>
       </footer>
     </form>

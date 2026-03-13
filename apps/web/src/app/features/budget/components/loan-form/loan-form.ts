@@ -23,7 +23,7 @@ type LoanFormShape = {
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ initial() ? 'Modifier' : (direction() === 'lent' ? 'Nouveau pret' : 'Nouvel emprunt') }}</legend>
+        <legend class="sr-only">{{ initial() ? 'Modifier' : (direction() === 'lent' ? 'Nouveau prêt' : 'Nouvel emprunt') }}</legend>
 
         <div>
           <label for="loan-member" class="form-label">Membre</label>
@@ -56,7 +56,7 @@ type LoanFormShape = {
             @if (form.controls.amount.errors?.['required']) {
               <small class="error" role="alert">Le montant est obligatoire.</small>
             } @else if (form.controls.amount.errors?.['min']) {
-              <small class="error" role="alert">Le montant doit etre superieur a 0.</small>
+              <small class="error" role="alert">Le montant doit être supérieur à 0.</small>
             }
           }
         </div>
@@ -79,12 +79,12 @@ type LoanFormShape = {
             }
           </div>
           <div>
-            <label for="loan-due-date" class="form-label">Echeance</label>
+            <label for="loan-due-date" class="form-label">Échéance</label>
             <input id="loan-due-date" type="date" formControlName="dueDate"
                    class="form-input" />
           </div>
           <div>
-            <label for="loan-due-day" class="form-label">Jour de depot</label>
+            <label for="loan-due-day" class="form-label">Jour de dépôt</label>
             <input id="loan-due-day" type="number" formControlName="dueDay" min="1" max="31"
                    placeholder="ex: 5" class="form-input mono" />
             <p class="text-xs mt-1" style="color: var(--color-text-muted)">Jour du mois</p>
@@ -97,7 +97,7 @@ type LoanFormShape = {
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit"
                 [style.background-color]="direction() === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)'">
-          {{ initial() ? 'Enregistrer' : (direction() === 'lent' ? 'Preter' : 'Emprunter') }}
+          {{ initial() ? 'Enregistrer' : (direction() === 'lent' ? 'Prêter' : 'Emprunter') }}
         </button>
       </footer>
     </form>

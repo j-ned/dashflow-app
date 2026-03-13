@@ -27,7 +27,7 @@ type Command = {
 const CATEGORY_LABELS: Record<CommandCategory, string> = {
   navigation: 'Navigation',
   budget: 'Budget',
-  medical: 'Medical',
+  medical: 'Médical',
   action: 'Actions rapides',
 };
 
@@ -112,7 +112,7 @@ function fuzzyScore(query: string, target: string): number {
             }
           } @else {
             <div class="py-8 text-center text-sm text-text-muted">
-              Aucun resultat pour « {{ query() }} »
+              Aucun résultat pour « {{ query() }} »
             </div>
           }
         </div>
@@ -231,23 +231,23 @@ export class CommandPalette {
   private readonly commands: Command[] = [
     { id: 'nav-budget',       label: 'Vue globale — Budget',     category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard budget vue globale tableau de bord',         action: () => this.go('/budget/dashboard') },
     { id: 'nav-envelopes',    label: 'Enveloppes',               category: 'budget',     icon: 'mail',             keywords: 'enveloppes epargne savings',                         action: () => this.go('/budget/envelopes') },
-    { id: 'nav-loans',        label: 'Prets & Dettes',           category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser',              action: () => this.go('/budget/loans') },
+    { id: 'nav-loans',        label: 'Prêts & Dettes',           category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser',              action: () => this.go('/budget/loans') },
     { id: 'nav-account',      label: 'Compte bancaire',          category: 'budget',     icon: 'wallet',           keywords: 'compte banque bank account solde',                   action: () => this.go('/budget/account') },
     { id: 'nav-archives',     label: 'Archives salaires',        category: 'budget',     icon: 'folder',           keywords: 'archives salaires historique revenus fiches de paie', action: () => this.go('/budget/archives') },
-    { id: 'nav-analytics',    label: 'Statistiques & Previsions', category: 'budget',    icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
+    { id: 'nav-analytics',    label: 'Statistiques & Prévisions', category: 'budget',    icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
 
-    { id: 'nav-medical',      label: 'Vue globale — Medical',    category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante',                action: () => this.go('/medical/dashboard') },
+    { id: 'nav-medical',      label: 'Vue globale — Médical',    category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante',                action: () => this.go('/medical/dashboard') },
     { id: 'nav-patients',     label: 'Patients',                 category: 'medical',    icon: 'users',            keywords: 'patients famille membres enfants',                   action: () => this.go('/medical/patients') },
     { id: 'nav-practitioners', label: 'Praticiens',              category: 'medical',    icon: 'stethoscope',      keywords: 'praticiens medecins docteur dentiste specialiste',    action: () => this.go('/medical/practitioners') },
     { id: 'nav-appointments', label: 'Rendez-vous',              category: 'medical',    icon: 'calendar',         keywords: 'rendez-vous rdv consultation visite',                action: () => this.go('/medical/appointments') },
     { id: 'nav-prescriptions', label: 'Ordonnances',             category: 'medical',    icon: 'file-text',        keywords: 'ordonnances prescriptions documents',                action: () => this.go('/medical/prescriptions') },
-    { id: 'nav-medications',  label: 'Medicaments',              category: 'medical',    icon: 'pill',             keywords: 'medicaments traitements stock pilules',              action: () => this.go('/medical/medications') },
-    { id: 'nav-documents',    label: 'Documents medicaux',       category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans',           action: () => this.go('/medical/documents') },
+    { id: 'nav-medications',  label: 'Médicaments',              category: 'medical',    icon: 'pill',             keywords: 'medicaments traitements stock pilules',              action: () => this.go('/medical/medications') },
+    { id: 'nav-documents',    label: 'Documents médicaux',       category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans',           action: () => this.go('/medical/documents') },
     { id: 'nav-reminders',    label: 'Alertes & Rappels',        category: 'medical',    icon: 'bell',             keywords: 'alertes rappels notifications reminders',            action: () => this.go('/medical/reminders') },
 
-    { id: 'nav-settings',     label: 'Parametres',               category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',         action: () => this.go('/settings') },
+    { id: 'nav-settings',     label: 'Paramètres',               category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',         action: () => this.go('/settings') },
 
-    { id: 'act-logout',       label: 'Deconnexion',              category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir',                  action: () => this.go('/auth/login') },
+    { id: 'act-logout',       label: 'Déconnexion',              category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir',                  action: () => this.go('/auth/login') },
   ];
 
   // ── Filtered + grouped ──

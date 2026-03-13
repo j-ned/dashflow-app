@@ -36,7 +36,7 @@ export type DocumentSubmitData = {
           </label>
           <select id="doc-patient" formControlName="patientId" aria-required="true"
                   class="form-select">
-            <option value="">-- Selectionner un patient --</option>
+            <option value="">-- Sélectionner un patient --</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
@@ -47,7 +47,7 @@ export type DocumentSubmitData = {
         </div>
 
         <div>
-          <label for="doc-practitioner" class="form-label">Praticien associe</label>
+          <label for="doc-practitioner" class="form-label">Praticien associé</label>
           <select id="doc-practitioner" formControlName="practitionerId"
                   class="form-select">
             <option value="">-- Aucun --</option>
@@ -86,7 +86,7 @@ export type DocumentSubmitData = {
             Titre <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="doc-title" type="text" formControlName="title" aria-required="true"
-                 placeholder="Ex: Bilan orthophonique, Facture ergotherapeute..."
+                 placeholder="Ex: Bilan orthophonique, Facture ergothérapeute..."
                  class="form-input" />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
             <small class="error" role="alert">Le titre est obligatoire.</small>
@@ -117,7 +117,7 @@ export type DocumentSubmitData = {
               </div>
             } @else {
               <p class="text-sm text-text-muted">
-                Glissez-deposez un fichier ici ou
+                Glissez-déposez un fichier ici ou
                 <label class="text-ib-purple cursor-pointer hover:underline">
                   parcourir
                   <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -134,7 +134,7 @@ export type DocumentSubmitData = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-purple)">
-          {{ initial() ? 'Enregistrer' : 'Creer' }}
+          {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>
     </form>

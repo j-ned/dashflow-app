@@ -227,11 +227,11 @@ export class Appointments {
   protected async createAppointment(data: Omit<Appointment, 'id'>) {
     try {
       await lastValueFrom(this.createAppointmentUC.execute(data));
-      this.toaster.success('Rendez-vous cree');
+      this.toaster.success('Rendez-vous créé');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -240,7 +240,7 @@ export class Appointments {
     if (!id) return;
     try {
       await lastValueFrom(this.updateAppointmentUC.execute(id, data));
-      this.toaster.success('Rendez-vous modifie');
+      this.toaster.success('Rendez-vous modifié');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
@@ -251,7 +251,7 @@ export class Appointments {
   protected async updateStatus(id: string, status: AppointmentStatus) {
     try {
       await lastValueFrom(this.updateAppointmentStatusUC.execute(id, status));
-      this.toaster.success('Statut du rendez-vous mis a jour');
+      this.toaster.success('Statut du rendez-vous mis à jour');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors du changement de statut');
@@ -262,7 +262,7 @@ export class Appointments {
     if (!await this.confirm.delete('ce rendez-vous')) return;
     try {
       await lastValueFrom(this.deleteAppointmentUC.execute(id));
-      this.toaster.success('Rendez-vous supprime');
+      this.toaster.success('Rendez-vous supprimé');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

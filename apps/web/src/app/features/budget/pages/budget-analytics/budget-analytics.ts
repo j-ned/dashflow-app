@@ -13,7 +13,7 @@ import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
 
 // ── Helpers ──
 
-const MONTH_LABELS = ['Jan', 'Fev', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aou', 'Sep', 'Oct', 'Nov', 'Dec'];
+const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
 
 function formatMonth(m: string): string {
   const [y, mo] = m.split('-');
@@ -24,7 +24,7 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Logement': 'var(--color-ib-blue)',
   'Transport': 'var(--color-ib-cyan)',
   'Alimentation': 'var(--color-ib-green)',
-  'Sante': 'var(--color-ib-red)',
+  'Santé': 'var(--color-ib-red)',
   'Loisirs': 'var(--color-ib-purple)',
   'Abonnement': 'var(--color-ib-orange)',
   'Assurance': 'var(--color-ib-yellow)',
@@ -52,12 +52,12 @@ type Forecast = {
   host: { class: 'block space-y-6' },
   template: `
     <header>
-      <h2 class="text-2xl font-bold text-text-primary">Statistiques & Previsions</h2>
+      <h2 class="text-2xl font-bold text-text-primary">Statistiques & Prévisions</h2>
       <p class="mt-1 text-sm text-text-muted">Analyse de votre budget et projections futures</p>
     </header>
 
     <!-- KPI row -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Indicateurs cles">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Indicateurs clés">
       @for (kpi of kpis(); track kpi.label) {
         <div class="rounded-xl border border-border bg-surface p-4">
           <div class="flex items-center gap-2 mb-2">
@@ -90,17 +90,17 @@ type Forecast = {
             <app-area-chart [data]="balanceHistory()" color="var(--color-ib-green)" />
           } @else {
             <div class="flex items-center justify-center h-full text-sm text-text-muted">
-              Pas assez de donnees (min. 2 archives)
+              Pas assez de données (min. 2 archives)
             </div>
           }
         </div>
       </section>
 
-      <!-- Repartition depenses par categorie -->
+      <!-- Répartition dépenses par catégorie -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-red/5 border-b border-border/50">
           <app-icon name="receipt" size="16" class="text-ib-red" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Repartition depenses</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Répartition dépenses</h3>
         </div>
         <div class="p-5">
           @if (expenseByCategory().length > 0) {
@@ -109,24 +109,24 @@ type Forecast = {
                              centerSub="par mois" />
           } @else {
             <div class="flex items-center justify-center h-32 text-sm text-text-muted">
-              Aucune depense categorisee
+              Aucune dépense catégorisée
             </div>
           }
         </div>
       </section>
 
-      <!-- Revenus vs Depenses -->
+      <!-- Revenus vs Dépenses -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
           <app-icon name="banknote" size="16" class="text-ib-blue" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Revenus vs Depenses — 6 mois</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Revenus vs Dépenses — 6 mois</h3>
         </div>
         <div class="p-4 h-52">
           @if (incomeVsExpenses().length > 0) {
             <app-bar-chart [data]="incomeVsExpenses()" />
           } @else {
             <div class="flex items-center justify-center h-full text-sm text-text-muted">
-              Pas assez de donnees
+              Pas assez de données
             </div>
           }
         </div>
@@ -135,7 +135,7 @@ type Forecast = {
             <span class="w-2.5 h-2.5 rounded-sm bg-ib-green"></span> Revenus
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-ib-red"></span> Depenses
+            <span class="w-2.5 h-2.5 rounded-sm bg-ib-red"></span> Dépenses
           </span>
         </div>
       </section>
@@ -162,7 +162,7 @@ type Forecast = {
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center gap-2 px-5 py-3 bg-ib-purple/5 border-b border-border/50">
         <app-icon name="trending-up" size="16" class="text-ib-purple" />
-        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-purple">Previsions</h3>
+        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-purple">Prévisions</h3>
       </div>
       @if (forecasts().length > 0) {
         <div class="divide-y divide-border/30">
@@ -183,8 +183,8 @@ type Forecast = {
       } @else {
         <div class="text-center py-12">
           <app-icon name="trending-up" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Aucune prevision disponible</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez des enveloppes avec objectif ou des prets pour voir les projections</p>
+          <p class="text-sm text-text-muted">Aucune prévision disponible</p>
+          <p class="text-xs text-text-muted mt-1">Ajoutez des enveloppes avec objectif ou des prêts pour voir les projections</p>
         </div>
       }
     </section>
@@ -261,9 +261,9 @@ export class BudgetAnalytics {
     const otherSpendings = spendings - envCredits - loanPay;
 
     const chargeParts: string[] = [];
-    if (annual > 0) chargeParts.push(`${annual.toFixed(0)}€ annualise`);
+    if (annual > 0) chargeParts.push(`${annual.toFixed(0)}€ annualisé`);
     if (envCredits > 0) chargeParts.push(`${envCredits.toFixed(0)}€ enveloppes`);
-    if (loanPay > 0) chargeParts.push(`${loanPay.toFixed(0)}€ prets`);
+    if (loanPay > 0) chargeParts.push(`${loanPay.toFixed(0)}€ prêts`);
     if (otherSpendings > 0) chargeParts.push(`${otherSpendings.toFixed(0)}€ autres`);
 
     return [
@@ -286,16 +286,16 @@ export class BudgetAnalytics {
         sub: chargeParts.length > 0 ? `dont ${chargeParts.join(', ')}` : null,
       },
       {
-        label: 'Reste a vivre',
+        label: 'Reste à vivre',
         icon: 'wallet' as const,
         iconBg: net >= 0 ? 'bg-ib-green/10' : 'bg-ib-red/10',
         iconColor: net >= 0 ? 'text-ib-green' : 'text-ib-red',
         value: net,
         valueColor: net >= 0 ? 'text-ib-green' : 'text-ib-red',
-        sub: net > 0 ? 'Capacite d\'epargne disponible' : 'Deficit mensuel',
+        sub: net > 0 ? 'Capacité d\'épargne disponible' : 'Déficit mensuel',
       },
       {
-        label: 'Epargne totale',
+        label: 'Épargne totale',
         icon: 'mail' as const,
         iconBg: 'bg-ib-cyan/10',
         iconColor: 'text-ib-cyan',
@@ -390,20 +390,20 @@ export class BudgetAnalytics {
 
     if (net > 0) {
       results.push({
-        label: 'Reste a vivre',
+        label: 'Reste à vivre',
         icon: 'trending-up',
         color: 'var(--color-ib-green)',
-        message: `Il vous reste ${net.toFixed(0)}€ apres toutes charges, epargne et remboursements`,
+        message: `Il vous reste ${net.toFixed(0)}€ après toutes charges, épargne et remboursements`,
         detail: `Sur 6 mois : +${(net * 6).toFixed(0)}€ | Sur 12 mois : +${(net * 12).toFixed(0)}€`,
         type: 'balance',
       });
     } else if (net < 0) {
       results.push({
-        label: 'Deficit mensuel',
+        label: 'Déficit mensuel',
         icon: 'alert-triangle',
         color: 'var(--color-ib-red)',
-        message: `Vos depenses depassent vos revenus de ${Math.abs(net).toFixed(0)}€ par mois`,
-        detail: `Reduction necessaire : ${Math.abs(net).toFixed(0)}€/mois pour equilibrer le budget`,
+        message: `Vos dépenses dépassent vos revenus de ${Math.abs(net).toFixed(0)}€ par mois`,
+        detail: `Réduction nécessaire : ${Math.abs(net).toFixed(0)}€/mois pour équilibrer le budget`,
         type: 'balance',
       });
     }
@@ -430,7 +430,7 @@ export class BudgetAnalytics {
           message: months <= 1
             ? `Objectif atteint le mois prochain !`
             : `Objectif atteint dans ${months} mois (${targetLabel})`,
-          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — reste ${remaining.toFixed(0)}€ a ~${monthlyContrib.toFixed(0)}€/mois`,
+          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — reste ${remaining.toFixed(0)}€ à ~${monthlyContrib.toFixed(0)}€/mois`,
           type: 'envelope',
         });
       } else {
@@ -439,7 +439,7 @@ export class BudgetAnalytics {
           icon: 'wallet',
           color: env.color || 'var(--color-ib-cyan)',
           message: `Reste ${remaining.toFixed(0)}€ pour atteindre l'objectif`,
-          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — aucun versement recurrent detecte`,
+          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — aucun versement récurrent détecté`,
           type: 'envelope',
         });
       }
@@ -463,26 +463,26 @@ export class BudgetAnalytics {
         const clearDate = new Date();
         clearDate.setMonth(clearDate.getMonth() + months);
         const clearLabel = `${MONTH_LABELS[clearDate.getMonth()]} ${clearDate.getFullYear()}`;
-        const direction = loan.direction === 'lent' ? 'Pret' : 'Dette';
+        const direction = loan.direction === 'lent' ? 'Prêt' : 'Dette';
 
         results.push({
           label: `${direction} — ${loan.person}`,
           icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
           color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
           message: months <= 1
-            ? `Rembourse le mois prochain !`
-            : `Rembourse dans ${months} mois (${clearLabel})`,
-          detail: `${pct.toFixed(0)}% rembourse — reste ${loanRemaining.toFixed(0)}€ a ~${monthlyPayment.toFixed(0)}€/mois`,
+            ? `Remboursé le mois prochain !`
+            : `Remboursé dans ${months} mois (${clearLabel})`,
+          detail: `${pct.toFixed(0)}% remboursé — reste ${loanRemaining.toFixed(0)}€ à ~${monthlyPayment.toFixed(0)}€/mois`,
           type: 'loan',
         });
       } else {
-        const direction = loan.direction === 'lent' ? 'Pret' : 'Dette';
+        const direction = loan.direction === 'lent' ? 'Prêt' : 'Dette';
         results.push({
           label: `${direction} — ${loan.person}`,
           icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
           color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
-          message: `Reste ${loanRemaining.toFixed(0)}€ a rembourser`,
-          detail: `${pct.toFixed(0)}% rembourse — aucun versement recurrent detecte`,
+          message: `Reste ${loanRemaining.toFixed(0)}€ à rembourser`,
+          detail: `${pct.toFixed(0)}% remboursé — aucun versement récurrent détecté`,
           type: 'loan',
         });
       }

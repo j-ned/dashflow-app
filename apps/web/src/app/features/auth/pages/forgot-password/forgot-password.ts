@@ -27,7 +27,7 @@ type ResetFormShape = {
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
-        <p class="mt-2 text-sm text-text-muted">Reinitialisation du mot de passe</p>
+        <p class="mt-2 text-sm text-text-muted">Réinitialisation du mot de passe</p>
       </header>
 
       @if (error()) {
@@ -74,7 +74,7 @@ type ResetFormShape = {
           </button>
 
           <p class="mt-4 text-center text-sm text-text-muted">
-            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">Retour a la connexion</a>
+            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">Retour à la connexion</a>
           </p>
         </form>
       }
@@ -82,16 +82,16 @@ type ResetFormShape = {
       @if (step() === 'reset') {
         <div class="mb-4 rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
           <p class="text-sm text-text-primary">
-            Un code a ete envoye a <strong>{{ pendingEmail() }}</strong>
+            Un code a été envoyé à <strong>{{ pendingEmail() }}</strong>
           </p>
         </div>
 
         <form [formGroup]="resetForm" (ngSubmit)="submitReset()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
-          <legend class="sr-only">Reinitialisation du mot de passe</legend>
+          <legend class="sr-only">Réinitialisation du mot de passe</legend>
           <div>
             <label for="code" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
-              Code de reinitialisation
+              Code de réinitialisation
             </label>
             <input
               id="code"
@@ -126,7 +126,7 @@ type ResetFormShape = {
               </button>
             </div>
             @if (resetForm.controls.newPassword.touched && resetForm.controls.newPassword.errors?.['minlength']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 6 caracteres.</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 6 caractères.</small>
             }
           </div>
 
@@ -163,7 +163,7 @@ type ResetFormShape = {
             [disabled]="resetForm.invalid || loading()"
             class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Reinitialisation...' : 'Reinitialiser le mot de passe' }}
+            {{ loading() ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
           </button>
 
           <div class="mt-2 flex justify-between text-sm">
@@ -189,21 +189,21 @@ type ResetFormShape = {
       @if (step() === 'recovery') {
         <div class="flex flex-col gap-4">
           <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
-            <p class="text-sm font-medium text-ib-amber">Donnees chiffrees detectees</p>
+            <p class="text-sm font-medium text-ib-amber">Données chiffrées détectées</p>
             <p class="mt-1 text-sm text-text-primary">
-              Vos donnees etaient chiffrees. Avez-vous votre cle de recuperation ?
+              Vos données étaient chiffrées. Avez-vous votre clé de récupération ?
             </p>
           </div>
 
           <div>
             <label for="recoveryKey" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Cle de recuperation (64 caracteres hex)
+              Clé de récupération (64 caractères hex)
             </label>
             <textarea
               id="recoveryKey"
               rows="3"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="Collez votre cle de recuperation ici..."
+              placeholder="Collez votre clé de récupération ici..."
               (input)="onRecoveryKeyInput($event)"
             ></textarea>
           </div>
@@ -214,7 +214,7 @@ type ResetFormShape = {
             [disabled]="recoveryKeyValue().length !== 64 || loading()"
             class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Recuperation...' : 'Recuperer mes donnees' }}
+            {{ loading() ? 'Récupération...' : 'Récupérer mes données' }}
           </button>
 
           <div class="relative my-2">
@@ -227,11 +227,11 @@ type ResetFormShape = {
             (click)="skipRecovery()"
             class="w-full rounded-lg border border-ib-red/30 bg-ib-red/5 px-4 py-2.5 text-sm font-medium text-ib-red hover:bg-ib-red/10 transition-colors"
           >
-            Continuer sans cle (donnees perdues)
+            Continuer sans clé (données perdues)
           </button>
 
           <p class="text-xs text-text-muted text-center">
-            Sans cle de recuperation, toutes vos donnees chiffrees seront definitivement perdues.
+            Sans clé de récupération, toutes vos données chiffrées seront définitivement perdues.
           </p>
         </div>
       }
@@ -244,7 +244,7 @@ type ResetFormShape = {
             </svg>
           </div>
           <p class="text-center text-sm text-text-primary">
-            Votre mot de passe a ete reinitialise avec succes.
+            Votre mot de passe a été réinitialisé avec succès.
           </p>
           <a
             routerLink="/auth/login"
@@ -314,7 +314,7 @@ export class ForgotPassword {
       this.pendingEmail.set(email);
       this.step.set('reset');
     } catch {
-      this.error.set('Une erreur est survenue. Veuillez reessayer.');
+      this.error.set('Une erreur est survenue. Veuillez réessayer.');
     } finally {
       this.loading.set(false);
     }
@@ -346,7 +346,7 @@ export class ForgotPassword {
         this.step.set('done');
       }
     } catch {
-      this.error.set('Code invalide ou expire. Veuillez reessayer.');
+      this.error.set('Code invalide ou expiré. Veuillez réessayer.');
     } finally {
       this.loading.set(false);
     }
@@ -359,7 +359,7 @@ export class ForgotPassword {
 
     try {
       await this.auth.forgotPassword(this.pendingEmail());
-      this.success.set('Un nouveau code a ete envoye.');
+      this.success.set('Un nouveau code a été envoyé.');
     } catch {
       this.error.set('Erreur lors du renvoi du code.');
     } finally {
@@ -384,7 +384,7 @@ export class ForgotPassword {
     try {
       const keyMaterial = this.auth.getKeyMaterial();
       if (!keyMaterial?.recoveryWrappedKey) {
-        this.error.set('Aucune cle de recuperation trouvee sur le serveur.');
+        this.error.set('Aucune clé de récupération trouvée sur le serveur.');
         return;
       }
 
@@ -411,14 +411,14 @@ export class ForgotPassword {
       await this.auth.logout();
       this.step.set('done');
     } catch {
-      this.error.set('Cle de recuperation invalide.');
+      this.error.set('Clé de récupération invalide.');
     } finally {
       this.loading.set(false);
     }
   }
 
   protected async skipRecovery(): Promise<void> {
-    if (!confirm('Etes-vous sur ? Toutes vos donnees chiffrees seront definitivement perdues.')) return;
+    if (!confirm('Êtes-vous sûr ? Toutes vos données chiffrées seront définitivement perdues.')) return;
 
     this.loading.set(true);
     this.error.set('');
@@ -428,7 +428,7 @@ export class ForgotPassword {
       await this.auth.logout();
       this.step.set('done');
     } catch {
-      this.error.set('Erreur lors de la suppression des donnees.');
+      this.error.set('Erreur lors de la suppression des données.');
     } finally {
       this.loading.set(false);
     }

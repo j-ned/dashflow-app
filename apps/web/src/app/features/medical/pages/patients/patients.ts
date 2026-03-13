@@ -76,7 +76,7 @@ import { Icon } from '@shared/components/icon/icon';
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="users" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">Aucun patient</p>
-          <p class="text-xs text-text-muted mt-1">Creez votre premier patient pour commencer</p>
+          <p class="text-xs text-text-muted mt-1">Créez votre premier patient pour commencer</p>
         </div>
       }
     </section>
@@ -125,11 +125,11 @@ export class Patients {
   protected async createPatient(data: Omit<Patient, 'id'>) {
     try {
       await lastValueFrom(this.createPatientUC.execute(data));
-      this.toaster.success('Patient cree');
+      this.toaster.success('Patient créé');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -138,7 +138,7 @@ export class Patients {
     if (!id) return;
     try {
       await lastValueFrom(this.updatePatientUC.execute(id, data));
-      this.toaster.success('Patient modifie');
+      this.toaster.success('Patient modifié');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
@@ -150,7 +150,7 @@ export class Patients {
     if (!await this.confirm.delete('ce patient')) return;
     try {
       await lastValueFrom(this.deletePatientUC.execute(id));
-      this.toaster.success('Patient supprime');
+      this.toaster.success('Patient supprimé');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

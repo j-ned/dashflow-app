@@ -73,7 +73,7 @@ type LoginFormShape = {
               @if (form.controls.password.errors?.['required']) {
                 <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
               } @else if (form.controls.password.errors?.['minlength']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 12 caracteres.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 12 caractères.</small>
               }
             }
           </div>
@@ -89,7 +89,7 @@ type LoginFormShape = {
           </button>
 
           <p class="mt-2 text-center">
-            <a routerLink="/auth/forgot-password" class="text-sm text-text-muted hover:text-ib-blue transition-colors">Mot de passe oublie ?</a>
+            <a routerLink="/auth/forgot-password" class="text-sm text-text-muted hover:text-ib-blue transition-colors">Mot de passe oublié ?</a>
           </p>
 
           <div class="relative my-4">
@@ -149,7 +149,7 @@ type LoginFormShape = {
               [disabled]="totpValue().length !== 6 || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Verification...' : 'Verifier' }}
+              {{ loading() ? 'Vérification...' : 'Vérifier' }}
             </button>
           </form>
 
@@ -186,8 +186,8 @@ export class Login {
     if (params['error']) {
       const messages: Record<string, string> = {
         oauth_failed: 'Erreur lors de la connexion OAuth.',
-        oauth_expired: 'La session OAuth a expire, reessayez.',
-        oauth_no_email: 'Aucun email recupere du fournisseur.',
+        oauth_expired: 'La session OAuth a expiré, réessayez.',
+        oauth_no_email: 'Aucun courriel récupéré du fournisseur.',
       };
       this.error.set(messages[params['error']] ?? 'Erreur de connexion.');
       return;

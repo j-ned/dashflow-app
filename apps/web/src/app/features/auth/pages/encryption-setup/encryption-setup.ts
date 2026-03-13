@@ -57,7 +57,7 @@ const API_PATHS: Record<string, string> = {
         </div>
         <h1 class="text-xl font-bold text-text-primary">Chiffrement de bout en bout</h1>
         <p class="mt-2 text-sm text-text-muted">
-          Vos donnees seront chiffrees localement. Seul vous pourrez y acceder.
+          Vos données seront chiffrées localement. Seul vous pourrez y accéder.
         </p>
       </header>
 
@@ -71,8 +71,8 @@ const API_PATHS: Record<string, string> = {
             <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
               <p class="text-sm font-medium text-ib-amber">Attention</p>
               <p class="mt-1 text-sm text-text-primary">
-                Si vous perdez votre mot de passe ET votre cle de recuperation,
-                vos donnees seront definitivement perdues. Il n'existe aucun moyen de les recuperer.
+                Si vous perdez votre mot de passe ET votre clé de récupération,
+                vos données seront définitivement perdues. Il n'existe aucun moyen de les récupérer.
               </p>
             </div>
 
@@ -82,7 +82,7 @@ const API_PATHS: Record<string, string> = {
               [disabled]="loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Preparation...' : 'Activer le chiffrement' }}
+              {{ loading() ? 'Préparation...' : 'Activer le chiffrement' }}
             </button>
           }
 
@@ -106,13 +106,13 @@ const API_PATHS: Record<string, string> = {
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </div>
-              <p class="text-sm font-medium text-text-primary">Chiffrement active avec succes !</p>
+              <p class="text-sm font-medium text-text-primary">Chiffrement activé avec succès !</p>
               <button
                 type="button"
                 (click)="goToDashboard()"
                 class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90"
               >
-                Acceder au tableau de bord
+                Accéder au tableau de bord
               </button>
             </div>
           }
@@ -146,7 +146,7 @@ export class EncryptionSetup {
   protected readonly error = signal('');
   protected readonly recoveryKey = signal('');
   protected readonly progress = signal(0);
-  protected readonly progressMessage = signal('Preparation...');
+  protected readonly progressMessage = signal('Préparation...');
 
   private _password = '';
 
@@ -177,7 +177,7 @@ export class EncryptionSetup {
       this.recoveryModal().open();
     } catch (e) {
       console.error('Encryption setup error:', e);
-      this.error.set('Erreur lors de la preparation du chiffrement.');
+      this.error.set('Erreur lors de la préparation du chiffrement.');
       this.loading.set(false);
     }
   }
@@ -225,7 +225,7 @@ export class EncryptionSetup {
 
       const masterKey = this.cryptoStore.getMasterKey();
       if (!masterKey) {
-        this.error.set('Impossible de deverrouiller le chiffrement.');
+        this.error.set('Impossible de déverrouiller le chiffrement.');
         this.step.set('init');
         return;
       }
@@ -258,7 +258,7 @@ export class EncryptionSetup {
         completed++;
       }
 
-      this.progressMessage.set('Envoi des donnees chiffrees...');
+      this.progressMessage.set('Envoi des données chiffrées...');
       this.progress.set(90);
 
       await this.auth.migrateEncryption(encryptedData);
@@ -268,7 +268,7 @@ export class EncryptionSetup {
     } catch (e) {
       console.error('Migration error:', e);
       this.step.set('init');
-      this.error.set('Erreur lors de la migration des donnees. Reessayez.');
+      this.error.set('Erreur lors de la migration des données. Réessayez.');
     }
   }
 

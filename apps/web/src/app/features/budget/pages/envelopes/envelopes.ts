@@ -50,7 +50,7 @@ const MEMBER_PALETTE = [
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Enveloppes</h2>
-        <p class="mt-1 text-sm text-text-muted">Gerez vos enveloppes virtuelles</p>
+        <p class="mt-1 text-sm text-text-muted">Gérez vos enveloppes virtuelles</p>
       </div>
       <button
         type="button"
@@ -169,7 +169,7 @@ const MEMBER_PALETTE = [
                 </div>
               </div>
             } @else {
-              <p class="text-[11px] text-text-muted mt-2 ml-10">Aucun objectif defini</p>
+              <p class="text-[11px] text-text-muted mt-2 ml-10">Aucun objectif défini</p>
             }
           </div>
 
@@ -180,7 +180,7 @@ const MEMBER_PALETTE = [
               type="button"
               class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
               (click)="openCreditModal(envelope)"
-              aria-label="Crediter/Debiter"
+              aria-label="Créditer/Débiter"
             >
               <app-icon name="plus-circle" size="14" />
             </button>
@@ -216,7 +216,7 @@ const MEMBER_PALETTE = [
         >
           <app-icon name="wallet" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">Aucune enveloppe</p>
-          <p class="text-xs text-text-muted mt-1">Creez votre premiere enveloppe</p>
+          <p class="text-xs text-text-muted mt-1">Créez votre première enveloppe</p>
         </div>
       }
     </section>
@@ -252,7 +252,7 @@ const MEMBER_PALETTE = [
       />
     </app-modal-dialog>
 
-    <app-modal-dialog #creditModal title="Crediter / Debiter" (closed)="onModalClosed()">
+    <app-modal-dialog #creditModal title="Créditer / Débiter" (closed)="onModalClosed()">
       <app-credit-envelope-form
         [accounts]="accounts()"
         (submitted)="creditEnvelope($event)"
@@ -278,7 +278,7 @@ const MEMBER_PALETTE = [
               (input)="manualTxAmount.set(+$any($event.target).value)"
             />
             <p class="text-[10px] mt-0.5" style="color: var(--color-text-muted)">
-              Positif = credit, negatif = debit
+              Positif = crédit, négatif = débit
             </p>
           </div>
           <div class="flex-1">
@@ -332,7 +332,7 @@ const MEMBER_PALETTE = [
         } @else {
           <div class="text-center py-8">
             <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Aucune operation enregistree</p>
+            <p class="text-sm text-text-muted">Aucune opération enregistrée</p>
           </div>
         }
       </div>
@@ -464,9 +464,9 @@ export class Envelopes {
       await lastValueFrom(this.createEnvelopeUC.execute(data));
       this.createModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe creee');
+      this.toaster.success('Enveloppe créée');
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -477,7 +477,7 @@ export class Envelopes {
       await lastValueFrom(this.updateEnvelopeUC.execute(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe modifiee');
+      this.toaster.success('Enveloppe modifiée');
     } catch {
       this.toaster.error('Erreur lors de la modification');
     }
@@ -490,7 +490,7 @@ export class Envelopes {
       await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(event.amount > 0 ? 'Enveloppe creditee' : 'Enveloppe debitee');
+      this.toaster.success(event.amount > 0 ? 'Enveloppe créditée' : 'Enveloppe débitée');
       if (event.accountId && event.amount > 0) {
         await lastValueFrom(
           this.createEntryUC.execute({
@@ -516,7 +516,7 @@ export class Envelopes {
     try {
       await lastValueFrom(this.deleteEnvelopeUC.execute(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe supprimee');
+      this.toaster.success('Enveloppe supprimée');
     } catch {
       this.toaster.error('Erreur lors de la suppression');
     }

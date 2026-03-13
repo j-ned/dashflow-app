@@ -14,7 +14,7 @@ import {
 
 // ── Enums ──
 
-export const envelopeTypeEnum = pgEnum('envelope_type', ['épargne', 'impôts', 'équipement', 'vacance']);
+export const envelopeTypeEnum = pgEnum('envelope_type', ['épargne', 'impôts', 'équipement', 'vacances']);
 
 export const loanDirectionEnum = pgEnum('loan_direction', ['lent', 'borrowed']);
 

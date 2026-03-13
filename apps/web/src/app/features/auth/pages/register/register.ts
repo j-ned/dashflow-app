@@ -21,7 +21,7 @@ type RegisterFormShape = {
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
-        <p class="mt-2 text-sm text-text-muted">Creez votre compte</p>
+        <p class="mt-2 text-sm text-text-muted">Créez votre compte</p>
       </header>
 
       @if (error()) {
@@ -93,7 +93,7 @@ type RegisterFormShape = {
               @if (registerForm.controls.password.errors?.['required']) {
                 <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
               } @else if (registerForm.controls.password.errors?.['minlength']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au moins 12 caracteres.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au moins 12 caractères.</small>
               }
             }
           </div>
@@ -151,7 +151,7 @@ type RegisterFormShape = {
           </div>
 
           <p class="mt-4 text-center text-sm text-text-muted">
-            Deja un compte ?
+            Déjà un compte ?
             <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">Se connecter</a>
           </p>
         </form>
@@ -161,7 +161,7 @@ type RegisterFormShape = {
         <div class="flex flex-col gap-4">
           <div class="rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
             <p class="text-sm text-text-primary">
-              Un code de verification a ete envoye a
+              Un code de vérification a été envoyé à
             </p>
             <p class="mt-1 font-semibold text-text-primary">{{ pendingEmail() }}</p>
           </div>
@@ -169,7 +169,7 @@ type RegisterFormShape = {
           <form (submit)="$event.preventDefault(); submitVerify()" class="flex flex-col gap-4">
             <div>
               <label for="code" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
-                Code de verification
+                Code de vérification
               </label>
               <input
                 #codeInput
@@ -189,7 +189,7 @@ type RegisterFormShape = {
               [disabled]="codeValue().length !== 6 || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Verification...' : 'Verifier' }}
+              {{ loading() ? 'Vérification...' : 'Vérifier' }}
             </button>
           </form>
 
@@ -285,7 +285,7 @@ export class Register {
       await this.auth.verifyCode(this.pendingEmail(), code);
       this.router.navigate(['/budget']);
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, 'Code invalide ou expire.'));
+      this.error.set(this.extractError(err, 'Code invalide ou expiré.'));
     } finally {
       this.loading.set(false);
     }
@@ -298,7 +298,7 @@ export class Register {
 
     try {
       await this.auth.resendCode(this.pendingEmail());
-      this.success.set('Un nouveau code a ete envoye.');
+      this.success.set('Un nouveau code a été envoyé.');
     } catch (err: unknown) {
       this.error.set(this.extractError(err, "Erreur lors de l'envoi du code."));
     } finally {

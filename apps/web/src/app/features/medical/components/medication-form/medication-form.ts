@@ -36,7 +36,7 @@ const DAY_LABELS = [
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ initial() ? 'Modifier medicament' : 'Nouveau medicament' }}</legend>
+        <legend class="sr-only">{{ initial() ? 'Modifier médicament' : 'Nouveau médicament' }}</legend>
 
         <div>
           <label for="med-patient" class="form-label">
@@ -44,7 +44,7 @@ const DAY_LABELS = [
           </label>
           <select id="med-patient" formControlName="patientId" aria-required="true"
                   class="form-select">
-            <option value="">-- Selectionner un patient --</option>
+            <option value="">-- Sélectionner un patient --</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
@@ -55,7 +55,7 @@ const DAY_LABELS = [
         </div>
 
         <div>
-          <label for="med-prescription" class="form-label">Ordonnance liee</label>
+          <label for="med-prescription" class="form-label">Ordonnance liée</label>
           <select id="med-prescription" formControlName="prescriptionId"
                   class="form-select">
             <option value="">-- Aucune --</option>
@@ -83,13 +83,13 @@ const DAY_LABELS = [
             </label>
             <select id="med-type" formControlName="type" aria-required="true"
                     class="form-select">
-              <option value="comprime">Comprime</option>
-              <option value="gelule">Gelule</option>
+              <option value="comprime">Comprimé</option>
+              <option value="gelule">Gélule</option>
               <option value="sirop">Sirop</option>
               <option value="patch">Patch</option>
               <option value="injection">Injection</option>
               <option value="gouttes">Gouttes</option>
-              <option value="creme">Creme</option>
+              <option value="creme">Crème</option>
               <option value="autre">Autre</option>
             </select>
           </div>
@@ -108,15 +108,15 @@ const DAY_LABELS = [
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="med-quantity" class="form-label">
-              Quantite <span aria-hidden="true" class="text-ib-red">*</span>
+              Quantité <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input id="med-quantity" type="number" formControlName="quantity" min="0" aria-required="true"
                    class="form-input mono" />
             @if (form.controls.quantity.touched) {
               @if (form.controls.quantity.errors?.['required']) {
-                <small class="error" role="alert">La quantite est obligatoire.</small>
+                <small class="error" role="alert">La quantité est obligatoire.</small>
               } @else if (form.controls.quantity.errors?.['min']) {
-                <small class="error" role="alert">La quantite ne peut pas etre negative.</small>
+                <small class="error" role="alert">La quantité ne peut pas être négative.</small>
               }
             }
           </div>
@@ -128,9 +128,9 @@ const DAY_LABELS = [
                    class="form-input mono" />
             @if (form.controls.dailyRate.touched) {
               @if (form.controls.dailyRate.errors?.['required']) {
-                <small class="error" role="alert">La consommation journaliere est obligatoire.</small>
+                <small class="error" role="alert">La consommation journalière est obligatoire.</small>
               } @else if (form.controls.dailyRate.errors?.['min']) {
-                <small class="error" role="alert">La consommation doit etre d'au minimum 0.1.</small>
+                <small class="error" role="alert">La consommation doit être d'au minimum 0.1.</small>
               }
             }
           </div>
@@ -139,12 +139,12 @@ const DAY_LABELS = [
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="med-start-date" class="form-label">
-              Date de debut <span aria-hidden="true" class="text-ib-red">*</span>
+              Date de début <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input id="med-start-date" type="date" formControlName="startDate" aria-required="true"
                    class="form-input" />
             @if (form.controls.startDate.touched && form.controls.startDate.errors?.['required']) {
-              <small class="error" role="alert">La date de debut est obligatoire.</small>
+              <small class="error" role="alert">La date de début est obligatoire.</small>
             }
           </div>
           <div>
@@ -157,7 +157,7 @@ const DAY_LABELS = [
               @if (form.controls.alertDaysBefore.errors?.['required']) {
                 <small class="error" role="alert">Le seuil d'alerte est obligatoire.</small>
               } @else if (form.controls.alertDaysBefore.errors?.['min']) {
-                <small class="error" role="alert">Le seuil doit etre d'au minimum 1 jour.</small>
+                <small class="error" role="alert">Le seuil doit être d'au minimum 1 jour.</small>
               }
             }
           </div>
@@ -166,7 +166,7 @@ const DAY_LABELS = [
         <!-- Jours de non-prise -->
         <fieldset>
           <legend class="form-label">Jours sans prise</legend>
-          <p class="text-xs text-text-muted mb-2">Cochez les jours ou le medicament n'est PAS pris</p>
+          <p class="text-xs text-text-muted mb-2">Cochez les jours où le médicament n'est PAS pris</p>
           <div class="flex gap-1">
             @for (day of days; track day.value) {
               <button type="button"
@@ -190,7 +190,7 @@ const DAY_LABELS = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-purple)">
-          {{ initial() ? 'Enregistrer' : 'Creer' }}
+          {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>
     </form>

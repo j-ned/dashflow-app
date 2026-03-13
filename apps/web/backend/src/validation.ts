@@ -54,7 +54,7 @@ export const setPasswordSchema = z.object({
 
 // ── Budget: Envelopes ──
 
-const ENVELOPE_TYPES = ['épargne', 'impôts', 'équipement', 'vacance'] as const;
+const ENVELOPE_TYPES = ['épargne', 'impôts', 'équipement', 'vacances'] as const;
 
 export const createEnvelopeSchema = z.object({
   memberId: optionalUuid,

@@ -15,7 +15,7 @@ import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 
-const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Aout', 'Septembre', 'Octobre', 'Novembre', 'Decembre'];
+const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
 
 @Component({
   selector: 'app-salary-archives',
@@ -26,7 +26,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Archives salaires</h2>
-        <p class="mt-1 text-sm text-text-muted">Historique mensuel de vos salaires et depenses</p>
+        <p class="mt-1 text-sm text-text-muted">Historique mensuel de vos salaires et dépenses</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors shadow-sm"
@@ -58,7 +58,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
                 <div class="text-right">
                   <p class="text-lg font-mono font-bold text-ib-green">{{ archive.salary | number:'1.2-2' }}<span class="text-sm ml-0.5">&euro;</span></p>
                   <p class="text-[11px] text-text-muted">
-                    Depenses : {{ +archive.totalExpenses + +archive.totalSpendings | number:'1.2-2' }}&euro;
+                    Dépenses : {{ +archive.totalExpenses + +archive.totalSpendings | number:'1.2-2' }}&euro;
                   </p>
                 </div>
                 <div class="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
@@ -101,7 +101,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow/10">
                         <app-icon name="banknote" size="12" class="text-ib-yellow" />
                       </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Depenses</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Dépenses</p>
                     </div>
                     <p class="text-lg font-mono font-bold text-ib-yellow tracking-tight">{{ archive.totalSpendings | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
@@ -134,7 +134,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
                   <div class="rounded-xl border border-border overflow-hidden">
                     <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50">
                       <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                      <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Detail des depenses</span>
+                      <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Détail des dépenses</span>
                     </div>
                     <div class="divide-y divide-border/20">
                       @for (s of archive.spendings; track $index) {
@@ -182,7 +182,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
       <div class="text-center py-16 rounded-xl border border-dashed border-border bg-surface">
         <app-icon name="folder" size="48" class="text-text-muted/20 mx-auto mb-4" />
         <p class="text-sm text-text-muted">Aucune archive pour le moment</p>
-        <p class="text-xs text-text-muted mt-1">Archivez vos mois passes pour garder un historique</p>
+        <p class="text-xs text-text-muted mt-1">Archivez vos mois passés pour garder un historique</p>
       </div>
     }
 
@@ -224,7 +224,7 @@ const MONTHS = ['Janvier', 'Fevrier', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet',
           <label class="flex items-center gap-2 text-sm text-text-muted mb-2">
             <input type="checkbox" [ngModel]="useCurrentSpendings()" (ngModelChange)="useCurrentSpendings.set($event)" name="useCurrent"
                    class="rounded border-border" />
-            Importer les depenses du mois depuis le compte
+            Importer les dépenses du mois depuis le compte
           </label>
           @if (useCurrentSpendings() && importedSpendings().length > 0) {
             <div class="rounded-xl border border-border/50 bg-canvas overflow-hidden max-h-40 overflow-y-auto">
@@ -375,19 +375,19 @@ export class SalaryArchives {
 
     try {
       await lastValueFrom(this.createArchiveUC.execute(fd));
-      this.toaster.success('Archive creee');
+      this.toaster.success('Archive créée');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation de l\'archive');
+      this.toaster.error('Erreur lors de la création de l\'archive');
     }
   }
 
   protected async deleteArchive(archive: SalaryArchive) {
-    if (!await this.confirm.confirm({ title: 'Supprimer l\'archive', message: `Supprimer l'archive de ${this.monthLabel(archive.month)} ? Cette action est irreversible.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
+    if (!await this.confirm.confirm({ title: 'Supprimer l\'archive', message: `Supprimer l'archive de ${this.monthLabel(archive.month)} ? Cette action est irréversible.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
     try {
       await lastValueFrom(this.deleteArchiveUC.execute(archive.id));
-      this.toaster.success('Archive supprimee');
+      this.toaster.success('Archive supprimée');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

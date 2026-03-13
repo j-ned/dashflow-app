@@ -39,14 +39,14 @@ type CreditFormShape = {
 
         @if (accounts().length > 0) {
           <div>
-            <label for="credit-account" class="form-label">Decompter du compte</label>
+            <label for="credit-account" class="form-label">Décompter du compte</label>
             <select id="credit-account" formControlName="accountId" class="form-select">
-              <option value="">Ne pas decompter</option>
+              <option value="">Ne pas décompter</option>
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }}</option>
               }
             </select>
-            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Creera une depense sur le compte selectionne</p>
+            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Créera une dépense sur le compte sélectionné</p>
           </div>
         }
       </fieldset>

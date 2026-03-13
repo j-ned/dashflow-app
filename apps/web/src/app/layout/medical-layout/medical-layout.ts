@@ -40,7 +40,7 @@ const NAV_ITEMS: NavItem[] = [
       </div>
 
       <!-- Navigation -->
-      <nav aria-label="Navigation Medical" class="flex-1 px-2 flex flex-col gap-0.5">
+      <nav aria-label="Navigation médicale" class="flex-1 px-2 flex flex-col gap-0.5">
         @for (item of navItems; track item.route) {
           <a [routerLink]="item.route"
              routerLinkActive="nav-link--active"
@@ -59,7 +59,7 @@ const NAV_ITEMS: NavItem[] = [
     </aside>
 
     <section aria-labelledby="medical-content-heading" class="flex-1 flex flex-col overflow-auto bg-canvas p-6">
-      <h1 id="medical-content-heading" class="sr-only">Contenu Medical</h1>
+      <h1 id="medical-content-heading" class="sr-only">Contenu médical</h1>
       <router-outlet />
     </section>
   `,

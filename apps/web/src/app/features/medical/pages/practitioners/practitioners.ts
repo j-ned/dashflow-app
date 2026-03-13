@@ -95,7 +95,7 @@ import { Icon } from '@shared/components/icon/icon';
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="stethoscope" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">Aucun praticien</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez vos praticiens pour gerer les rendez-vous</p>
+          <p class="text-xs text-text-muted mt-1">Ajoutez vos praticiens pour gérer les rendez-vous</p>
         </div>
       }
     </section>
@@ -144,11 +144,11 @@ export class Practitioners {
   protected async createPractitioner(data: Omit<Practitioner, 'id'>) {
     try {
       await lastValueFrom(this.createPractitionerUC.execute(data));
-      this.toaster.success('Praticien cree');
+      this.toaster.success('Praticien créé');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -157,7 +157,7 @@ export class Practitioners {
     if (!id) return;
     try {
       await lastValueFrom(this.updatePractitionerUC.execute(id, data));
-      this.toaster.success('Praticien modifie');
+      this.toaster.success('Praticien modifié');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
@@ -169,7 +169,7 @@ export class Practitioners {
     if (!await this.confirm.delete('ce praticien')) return;
     try {
       await lastValueFrom(this.deletePractitionerUC.execute(id));
-      this.toaster.success('Praticien supprime');
+      this.toaster.success('Praticien supprimé');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

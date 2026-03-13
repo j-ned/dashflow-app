@@ -14,8 +14,8 @@ type PractitionerFormShape = {
 };
 
 const PRACTITIONER_TYPE_LABELS: Record<PractitionerType, string> = {
-  generaliste: 'Generaliste',
-  pediatre: 'Pediatre',
+  generaliste: 'Généraliste',
+  pediatre: 'Pédiatre',
   psychiatre: 'Psychiatre',
   neurologue: 'Neurologue',
   ophtalmologue: 'Ophtalmologue',
@@ -24,8 +24,8 @@ const PRACTITIONER_TYPE_LABELS: Record<PractitionerType, string> = {
   orthophoniste: 'Orthophoniste',
   psychologue: 'Psychologue',
   psychomotricien: 'Psychomotricien',
-  ergotherapeute: 'Ergotherapeute',
-  kinesitherapeute: 'Kinesitherapeute',
+  ergotherapeute: 'Ergothérapeute',
+  kinesitherapeute: 'Kinésithérapeute',
   dermatologue: 'Dermatologue',
   cardiologue: 'Cardiologue',
   autre: 'Autre',

@@ -37,7 +37,7 @@ export type PrescriptionSubmitData = {
           </label>
           <select id="presc-patient" formControlName="patientId" aria-required="true"
                   class="form-select">
-            <option value="">-- Selectionner un patient --</option>
+            <option value="">-- Sélectionner un patient --</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
@@ -48,7 +48,7 @@ export type PrescriptionSubmitData = {
         </div>
 
         <div>
-          <label for="presc-practitioner" class="form-label">Medecin prescripteur</label>
+          <label for="presc-practitioner" class="form-label">Médecin prescripteur</label>
           <select id="presc-practitioner" formControlName="practitionerId"
                   class="form-select">
             <option value="">-- Aucun --</option>
@@ -59,7 +59,7 @@ export type PrescriptionSubmitData = {
         </div>
 
         <div>
-          <label for="presc-appointment" class="form-label">Rendez-vous lie</label>
+          <label for="presc-appointment" class="form-label">Rendez-vous lié</label>
           <select id="presc-appointment" formControlName="appointmentId"
                   class="form-select">
             <option value="">-- Aucun --</option>
@@ -72,16 +72,16 @@ export type PrescriptionSubmitData = {
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="presc-issued" class="form-label">
-              Date d'emission <span aria-hidden="true" class="text-ib-red">*</span>
+              Date d'émission <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input id="presc-issued" type="date" formControlName="issuedDate" aria-required="true"
                    class="form-input" />
             @if (form.controls.issuedDate.touched && form.controls.issuedDate.errors?.['required']) {
-              <small class="error" role="alert">La date d'emission est obligatoire.</small>
+              <small class="error" role="alert">La date d'émission est obligatoire.</small>
             }
           </div>
           <div>
-            <label for="presc-valid" class="form-label">Date de validite</label>
+            <label for="presc-valid" class="form-label">Date de validité</label>
             <input id="presc-valid" type="date" formControlName="validUntil"
                    class="form-input" />
           </div>
@@ -111,7 +111,7 @@ export type PrescriptionSubmitData = {
               </div>
             } @else {
               <p class="text-sm text-text-muted">
-                Glissez-deposez un fichier ici ou
+                Glissez-déposez un fichier ici ou
                 <label class="text-ib-purple cursor-pointer hover:underline">
                   parcourir
                   <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp"
@@ -128,7 +128,7 @@ export type PrescriptionSubmitData = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-purple)">
-          {{ initial() ? 'Enregistrer' : 'Creer' }}
+          {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>
     </form>

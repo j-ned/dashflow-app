@@ -19,8 +19,8 @@ type PassphraseFormShape = {
       <div class="flex flex-col gap-4">
         <div class="rounded-lg bg-ib-blue/10 border border-ib-blue/20 p-4">
           <p class="text-sm text-text-primary">
-            Votre compte utilise la connexion Google. Definissez une passphrase
-            pour proteger vos donnees chiffrees. Elle sera demandee a chaque connexion.
+            Votre compte utilise la connexion Google. Définissez une phrase secrète
+            pour protéger vos données chiffrées. Elle sera demandée à chaque connexion.
           </p>
         </div>
 
@@ -54,7 +54,7 @@ type PassphraseFormShape = {
               @if (form.controls.passphrase.errors?.['required']) {
                 <small class="mt-1 block text-xs text-ib-red" role="alert">La passphrase est obligatoire.</small>
               } @else if (form.controls.passphrase.errors?.['minlength']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Minimum 8 caracteres.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">Minimum 8 caractères.</small>
               }
             }
           </div>
@@ -92,7 +92,7 @@ type PassphraseFormShape = {
             [disabled]="form.invalid || loading()"
             class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Configuration...' : 'Definir la passphrase' }}
+            {{ loading() ? 'Configuration...' : 'Définir la phrase secrète' }}
           </button>
         </form>
       </div>

@@ -25,7 +25,7 @@ import { Icon } from '@shared/components/icon/icon';
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Documents</h2>
-        <p class="mt-1 text-sm text-text-muted">Comptes rendus, factures, bilans et autres documents medicaux</p>
+        <p class="mt-1 text-sm text-text-muted">Comptes rendus, factures, bilans et autres documents médicaux</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
@@ -131,7 +131,7 @@ import { Icon } from '@shared/components/icon/icon';
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="folder" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">Aucun document</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez vos documents medicaux</p>
+          <p class="text-xs text-text-muted mt-1">Ajoutez vos documents médicaux</p>
         </div>
       }
     </section>
@@ -225,7 +225,7 @@ export class Documents {
     if (!file) return;
     try {
       await lastValueFrom(this.uploadFileUC.execute(documentId, file));
-      this.toaster.success('Fichier ajoute');
+      this.toaster.success('Fichier ajouté');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de l\'ajout du fichier');
@@ -239,19 +239,19 @@ export class Documents {
       if (file) {
         try {
           await lastValueFrom(this.uploadFileUC.execute(created.id, file));
-          this.toaster.success('Document cree');
+          this.toaster.success('Document créé');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
           this.toaster.error('Erreur lors de l\'ajout du fichier');
         }
       } else {
-        this.toaster.success('Document cree');
+        this.toaster.success('Document créé');
         this.createModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -263,14 +263,14 @@ export class Documents {
       if (file) {
         try {
           await lastValueFrom(this.uploadFileUC.execute(id, file));
-          this.toaster.success('Document modifie');
+          this.toaster.success('Document modifié');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
           this.toaster.error('Erreur lors de l\'ajout du fichier');
         }
       } else {
-        this.toaster.success('Document modifie');
+        this.toaster.success('Document modifié');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
@@ -283,7 +283,7 @@ export class Documents {
     if (!await this.confirm.delete('ce document')) return;
     try {
       await lastValueFrom(this.deleteDocumentUC.execute(id));
-      this.toaster.success('Document supprime');
+      this.toaster.success('Document supprimé');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

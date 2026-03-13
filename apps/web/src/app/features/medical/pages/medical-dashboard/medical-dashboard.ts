@@ -34,12 +34,12 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
   template: `
     <header>
       <h2 class="text-2xl font-bold text-text-primary">Vue globale</h2>
-      <p class="mt-1 text-sm text-text-muted">Suivi medical familial</p>
+      <p class="mt-1 text-sm text-text-muted">Suivi médical familial</p>
     </header>
 
     <!-- KPI cards -->
     <section aria-labelledby="kpi-heading" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-      <h3 id="kpi-heading" class="sr-only">Indicateurs cles</h3>
+      <h3 id="kpi-heading" class="sr-only">Indicateurs clés</h3>
 
       <a routerLink="../patients" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-purple"></div>
@@ -62,7 +62,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
           <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Prochains RDV</p>
         </div>
         <p class="text-lg font-mono font-bold text-ib-blue tracking-tight">{{ totalUpcomingAppointments() }}</p>
-        <p class="mt-0.5 text-[10px] text-text-muted">rendez-vous a venir</p>
+        <p class="mt-0.5 text-[10px] text-text-muted">rendez-vous à venir</p>
       </a>
 
       <a routerLink="../prescriptions" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5">
@@ -118,7 +118,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="font-semibold text-text-primary truncate">{{ summary.patient.firstName }} {{ summary.patient.lastName }}</p>
-                  <p class="text-[11px] text-text-muted">{{ summary.age }} ans — Ne(e) le {{ summary.patient.birthDate | date:'d MMMM yyyy' }}</p>
+                  <p class="text-[11px] text-text-muted">{{ summary.age }} ans — Né(e) le {{ summary.patient.birthDate | date:'d MMMM yyyy' }}</p>
                 </div>
                 @if (summary.lowStockCount > 0) {
                   <span class="rounded-full px-2 py-0.5 text-[10px] font-medium bg-ib-red/10 text-ib-red shrink-0">
@@ -142,7 +142,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                       @for (appt of summary.nextAppointments; track appt.id) {
                         <a routerLink="../appointments" class="flex items-center gap-2 rounded-lg bg-ib-blue/5 border border-ib-blue/15 px-3 py-1.5 hover:bg-ib-blue/10 transition-colors">
                           <time class="text-xs font-mono font-medium text-ib-blue" [attr.datetime]="appt.date">
-                            {{ appt.date | date:'d MMM' }} a {{ appt.time }}
+                            {{ appt.date | date:'d MMM' }} à {{ appt.time }}
                           </time>
                           <span class="text-xs text-text-muted">{{ getPractitionerName(appt.practitionerId) }}</span>
                           @if (appt.reason) {
@@ -152,7 +152,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                       }
                     </div>
                   } @else {
-                    <p class="text-xs text-text-muted">Aucun rendez-vous a venir</p>
+                    <p class="text-xs text-text-muted">Aucun rendez-vous à venir</p>
                   }
                 </div>
 
@@ -190,10 +190,10 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                   }
                 </div>
 
-                <!-- Medicaments -->
+                <!-- Médicaments -->
                 <div>
                   <a routerLink="../medications" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2 hover:text-ib-orange transition-colors">
-                    <app-icon name="pill" size="12" class="text-ib-orange" /> Medicaments
+                    <app-icon name="pill" size="12" class="text-ib-orange" /> Médicaments
                   </a>
                   @if (summary.medications.length > 0) {
                     <div class="space-y-2">
@@ -215,7 +215,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                           </div>
                           <app-medication-stock-bar [daysRemaining]="med.daysRemaining" [alertDaysBefore]="med.alertDaysBefore" />
                           <div class="flex items-center justify-between mt-1">
-                            <span class="text-[10px] text-text-muted">{{ med.quantity }} unites — epuisement {{ med.estimatedRunOut | date:'d MMMM yyyy' }}</span>
+                            <span class="text-[10px] text-text-muted">{{ med.quantity }} unités — épuisement {{ med.estimatedRunOut | date:'d MMMM yyyy' }}</span>
                             @if (med.skipDays.length > 0) {
                               <div class="flex gap-px">
                                 @for (d of dayLabels; track d.idx) {
@@ -233,7 +233,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                       }
                     </div>
                   } @else {
-                    <p class="text-xs text-text-muted">Aucun medicament</p>
+                    <p class="text-xs text-text-muted">Aucun médicament</p>
                   }
                 </div>
               </div>

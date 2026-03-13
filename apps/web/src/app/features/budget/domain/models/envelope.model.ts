@@ -1,4 +1,4 @@
-export type EnvelopeType = 'épargne' | 'impôts' | 'équipement' | 'vacance';
+export type EnvelopeType = 'épargne' | 'impôts' | 'équipement' | 'vacances';
 
 export type Envelope = {
   readonly id: string;

@@ -26,9 +26,9 @@ type PasswordFormShape = {
   template: `
     <div class="max-w-5xl mx-auto p-6 pb-12">
     <header class="mb-8 border-b border-border pb-6">
-      <h2 class="text-2xl font-bold text-text-primary tracking-tight">Parametres du compte</h2>
+      <h2 class="text-2xl font-bold text-text-primary tracking-tight">Paramètres du compte</h2>
       <p class="mt-2 text-sm text-text-muted">
-        Gerez votre profil personnel et vos parametres de securite
+        Gérez votre profil personnel et vos paramètres de sécurité
       </p>
     </header>
 
@@ -56,7 +56,7 @@ type PasswordFormShape = {
         <h3 id="profile-heading" class="text-base font-semibold text-text-primary">
           Profil personnel
         </h3>
-        <p class="text-sm text-text-muted mt-1">Mettez a jour vos informations publiques.</p>
+        <p class="text-sm text-text-muted mt-1">Mettez à jour vos informations publiques.</p>
       </div>
       <div class="p-6">
         <div class="flex flex-col sm:flex-row items-start gap-8">
@@ -155,16 +155,16 @@ type PasswordFormShape = {
           </h3>
           <p class="text-sm text-text-muted mt-1">
             @if (auth.hasPassword()) {
-              Mettez a jour votre mot de passe de connexion.
+              Mettez à jour votre mot de passe de connexion.
             } @else {
-              Definissez un mot de passe pour vous connecter sans Google.
+              Définissez un mot de passe pour vous connecter sans Google.
             }
           </p>
         </div>
 
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6 space-y-5">
           <fieldset class="space-y-5">
-          <legend class="sr-only">{{ auth.hasPassword() ? 'Modifier le mot de passe' : 'Definir un mot de passe' }}</legend>
+          <legend class="sr-only">{{ auth.hasPassword() ? 'Modifier le mot de passe' : 'Définir un mot de passe' }}</legend>
 
           @if (auth.hasPassword()) {
           <div class="space-y-1.5">
@@ -218,7 +218,7 @@ type PasswordFormShape = {
                 </p>
               } @else if (passwordForm.controls.newPassword.errors?.['minlength']) {
                 <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                  Le mot de passe doit contenir au moins 12 caracteres.
+                  Le mot de passe doit contenir au moins 12 caractères.
                 </p>
               }
             }
@@ -261,9 +261,9 @@ type PasswordFormShape = {
               style="background-color: var(--color-ib-blue)"
             >
               @if (passwordSaving()) {
-                {{ auth.hasPassword() ? 'Modification...' : 'Definition...' }}
+                {{ auth.hasPassword() ? 'Modification...' : 'Définition...' }}
               } @else {
-                {{ auth.hasPassword() ? 'Mettre a jour' : 'Definir le mot de passe' }}
+                {{ auth.hasPassword() ? 'Mettre à jour' : 'Définir le mot de passe' }}
               }
             </button>
           </div>
@@ -279,15 +279,15 @@ type PasswordFormShape = {
           <div class="flex items-center justify-between">
             <div>
               <h3 id="2fa-heading" class="text-base font-semibold text-text-primary">
-                Authentification a deux facteurs
+                Authentification à deux facteurs
               </h3>
               <p class="text-sm text-text-muted mt-1">
-                Protegez votre compte avec une application TOTP.
+                Protégez votre compte avec une application TOTP.
               </p>
             </div>
             @if (auth.totpEnabled()) {
               <span class="inline-flex items-center gap-1.5 rounded-full bg-ib-green/10 px-3 py-1 text-xs font-semibold text-ib-green border border-ib-green/20">
-                Active
+                Activé
               </span>
             }
           </div>
@@ -298,7 +298,7 @@ type PasswordFormShape = {
             <!-- 2FA is enabled — show disable option -->
             <div class="space-y-4">
               <p class="text-sm text-text-primary">
-                La 2FA est activee sur votre compte. Pour la desactiver, entrez votre mot de passe.
+                La 2FA est activée sur votre compte. Pour la désactiver, entrez votre mot de passe.
               </p>
               <div class="space-y-1.5">
                 <label for="disable-2fa-password" class="text-sm font-medium text-text-primary">
@@ -325,7 +325,7 @@ type PasswordFormShape = {
                 [disabled]="!disablePassword() || totpLoading()"
                 class="w-full inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition-all hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ totpLoading() ? 'Desactivation...' : 'Desactiver la 2FA' }}
+                {{ totpLoading() ? 'Désactivation...' : 'Désactiver la 2FA' }}
               </button>
             </div>
           } @else if (totpSetup()) {
@@ -355,7 +355,7 @@ type PasswordFormShape = {
 
               <div class="space-y-1.5">
                 <label for="verify-totp" class="text-sm font-medium text-text-primary">
-                  Code de verification <span aria-hidden="true" class="text-ib-red">*</span>
+                  Code de vérification <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <input
                   #verifyTotpInput
@@ -386,7 +386,7 @@ type PasswordFormShape = {
                   class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
                   style="background-color: var(--color-ib-blue)"
                 >
-                  {{ totpLoading() ? 'Verification...' : 'Activer' }}
+                  {{ totpLoading() ? 'Vérification...' : 'Activer' }}
                 </button>
               </div>
             </div>
@@ -394,7 +394,7 @@ type PasswordFormShape = {
             <!-- 2FA not enabled — show setup button -->
             <div class="space-y-4">
               <p class="text-sm text-text-muted">
-                Ajoutez une couche de securite supplementaire en activant l'authentification a deux facteurs.
+                Ajoutez une couche de sécurité supplémentaire en activant l'authentification à deux facteurs.
                 Vous aurez besoin d'une application comme Google Authenticator ou Authy.
               </p>
               <button
@@ -424,7 +424,7 @@ type PasswordFormShape = {
               Chiffrement de bout en bout
             </h3>
             <p class="text-sm text-text-muted mt-1">
-              Vos donnees sont chiffrees localement avant d'etre envoyees au serveur.
+              Vos données sont chiffrées localement avant d'être envoyées au serveur.
             </p>
           </div>
           @if (auth.encryptionVersion() === 1) {
@@ -433,7 +433,7 @@ type PasswordFormShape = {
             </span>
           } @else {
             <span class="inline-flex items-center gap-1.5 rounded-full bg-ib-amber/10 px-3 py-1 text-xs font-semibold text-ib-amber border border-ib-amber/20">
-              Non configure
+              Non configuré
             </span>
           }
         </div>
@@ -442,7 +442,7 @@ type PasswordFormShape = {
       <div class="p-6 space-y-4">
         @if (auth.encryptionVersion() === 0) {
           <p class="text-sm text-text-muted">
-            Le chiffrement n'est pas encore active. Activez-le pour proteger vos donnees.
+            Le chiffrement n'est pas encore activé. Activez-le pour protéger vos données.
           </p>
           <button
             type="button"
@@ -462,7 +462,7 @@ type PasswordFormShape = {
                 <path d="m9 12 2 2 4-4"/>
               </svg>
             </div>
-            Vos donnees sont protegees par un chiffrement AES-256-GCM.
+            Vos données sont protégées par un chiffrement AES-256-GCM.
           </div>
 
           <button
@@ -471,7 +471,7 @@ type PasswordFormShape = {
             [disabled]="encryptionLoading()"
             class="w-full inline-flex items-center justify-center rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-raised disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ encryptionLoading() ? 'Generation...' : 'Regenerer la cle de recuperation' }}
+            {{ encryptionLoading() ? 'Génération...' : 'Régénérer la clé de récupération' }}
           </button>
         }
       </div>
@@ -497,10 +497,10 @@ type PasswordFormShape = {
       </div>
       <div class="p-6">
         <p class="text-sm text-text-primary font-medium mb-1">
-          Supprimer le compte de facon definitive
+          Supprimer le compte de façon définitive
         </p>
         <p class="text-sm text-text-muted mb-5">
-          Cette action est irreversible. Toutes vos donnees seront definitivement supprimees.
+          Cette action est irréversible. Toutes vos données seront définitivement supprimées.
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3">
@@ -607,7 +607,7 @@ export class UserSettings {
     this.profileSaving.set(true);
     try {
       await this.auth.uploadAvatar(file);
-      this.showFeedback('success', 'Avatar mis a jour.');
+      this.showFeedback('success', 'Avatar mis à jour.');
     } catch {
       this.avatarPreview.set(null);
       this.showFeedback('error', "Erreur lors de l'upload de l'avatar.");
@@ -621,10 +621,10 @@ export class UserSettings {
     this.profileSaving.set(true);
     try {
       await this.auth.updateProfile({ displayName: this.profileForm.getRawValue().displayName });
-      this.showFeedback('success', 'Profil mis a jour avec succes.');
+      this.showFeedback('success', 'Profil mis à jour avec succès.');
       this.profileForm.markAsPristine();
     } catch {
-      this.showFeedback('error', 'Erreur lors de la mise a jour du profil.');
+      this.showFeedback('error', 'Erreur lors de la mise à jour du profil.');
     } finally {
       this.profileSaving.set(false);
     }
@@ -637,21 +637,21 @@ export class UserSettings {
       const { currentPassword, newPassword } = this.passwordForm.getRawValue();
       if (!this.auth.hasPassword()) {
         await this.auth.setPassword(newPassword);
-        this.showFeedback('success', 'Mot de passe defini avec succes. Vous pouvez maintenant vous connecter avec email + mot de passe.');
+        this.showFeedback('success', 'Mot de passe défini avec succès. Vous pouvez maintenant vous connecter avec email + mot de passe.');
         this.passwordForm.controls.currentPassword.addValidators(Validators.required);
         this.passwordForm.controls.currentPassword.updateValueAndValidity();
       } else if (this.auth.encryptionVersion() === 1 && this.crypto.isUnlocked()) {
         await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
-        this.showFeedback('success', 'Mot de passe modifie avec succes.');
+        this.showFeedback('success', 'Mot de passe modifié avec succès.');
       } else {
         await this.auth.updatePassword(currentPassword, newPassword);
-        this.showFeedback('success', 'Mot de passe modifie avec succes.');
+        this.showFeedback('success', 'Mot de passe modifié avec succès.');
       }
       this.passwordForm.reset();
     } catch {
       this.showFeedback('error', this.auth.hasPassword()
         ? 'Erreur lors de la modification du mot de passe.'
-        : 'Erreur lors de la definition du mot de passe.');
+        : 'Erreur lors de la définition du mot de passe.');
     } finally {
       this.passwordSaving.set(false);
     }
@@ -680,9 +680,9 @@ export class UserSettings {
       await this.auth.verify2FA(code);
       this.totpSetup.set(null);
       this.totpVerifyCode.set('');
-      this.showFeedback('success', 'Authentification a deux facteurs activee.');
+      this.showFeedback('success', 'Authentification à deux facteurs activée.');
     } catch {
-      this.showFeedback('error', 'Code invalide. Reessayez.');
+      this.showFeedback('error', 'Code invalide. Réessayez.');
     } finally {
       this.totpLoading.set(false);
     }
@@ -696,7 +696,7 @@ export class UserSettings {
     try {
       await this.auth.disable2FA(password);
       this.disablePassword.set('');
-      this.showFeedback('success', 'Authentification a deux facteurs desactivee.');
+      this.showFeedback('success', 'Authentification à deux facteurs désactivée.');
     } catch {
       this.showFeedback('error', 'Mot de passe incorrect.');
     } finally {
@@ -711,7 +711,7 @@ export class UserSettings {
 
     const confirmed = await this.confirm.confirm({
       title: 'Supprimer votre compte',
-      message: 'Cette action est definitive et irreversible. Toutes vos donnees, y compris vos donnees chiffrees, seront definitivement supprimees. Aucune recuperation ne sera possible.',
+      message: 'Cette action est définitive et irréversible. Toutes vos données, y compris vos données chiffrées, seront définitivement supprimées. Aucune récupération ne sera possible.',
       confirmLabel: 'Supprimer mon compte',
       cancelLabel: 'Annuler',
       variant: 'danger',
@@ -739,7 +739,7 @@ export class UserSettings {
     try {
       const masterKey = this.crypto.getMasterKey();
       if (!masterKey) {
-        this.showFeedback('error', 'Vos donnees ne sont pas deverrouillees.');
+        this.showFeedback('error', 'Vos données ne sont pas déverrouillées.');
         return;
       }
 
@@ -750,14 +750,14 @@ export class UserSettings {
       this.settingsRecoveryKey.set(recoveryKey);
       this.recoveryModal()?.open();
     } catch {
-      this.showFeedback('error', 'Erreur lors de la regeneration de la cle.');
+      this.showFeedback('error', 'Erreur lors de la régénération de la clé.');
     } finally {
       this.encryptionLoading.set(false);
     }
   }
 
   protected onRecoveryKeyRegenerated(): void {
-    this.showFeedback('success', 'Cle de recuperation regeneree avec succes.');
+    this.showFeedback('success', 'Clé de récupération régénérée avec succès.');
   }
 
   private showFeedback(type: 'success' | 'error', message: string) {

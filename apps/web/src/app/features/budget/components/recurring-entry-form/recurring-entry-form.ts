@@ -23,15 +23,15 @@ type RecurringEntryFormShape = {
   template: `
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
       <fieldset class="space-y-4">
-        <legend class="sr-only">Entree recurrente</legend>
+        <legend class="sr-only">Entrée récurrente</legend>
 
         <div>
-          <label for="re-label" class="block text-sm font-medium text-text-muted mb-1">Libelle <span aria-hidden="true">*</span></label>
+          <label for="re-label" class="block text-sm font-medium text-text-muted mb-1">Libellé <span aria-hidden="true">*</span></label>
           <input id="re-label" type="text" formControlName="label" aria-required="true"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                  [placeholder]="labelPlaceholder()" />
           @if (form.controls.label.touched && form.controls.label.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">Le libelle est obligatoire.</small>
+            <small class="mt-1 block text-xs text-ib-red" role="alert">Le libellé est obligatoire.</small>
           }
         </div>
 
@@ -44,7 +44,7 @@ type RecurringEntryFormShape = {
             @if (form.controls.amount.errors?.['required']) {
               <small class="mt-1 block text-xs text-ib-red" role="alert">Le montant est obligatoire.</small>
             } @else if (form.controls.amount.errors?.['min']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Le montant doit etre superieur a 0.</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">Le montant doit être supérieur à 0.</small>
             }
           }
         </div>
@@ -55,18 +55,18 @@ type RecurringEntryFormShape = {
             <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                    placeholder="Ex: 5" />
-            <p class="mt-1 text-xs text-text-muted">Jour recurrent</p>
+            <p class="mt-1 text-xs text-text-muted">Jour récurrent</p>
           </div>
           <div>
             <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date exacte</label>
             <input id="re-date" type="date" formControlName="date"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-            <p class="mt-1 text-xs text-text-muted">Date de reception</p>
+            <p class="mt-1 text-xs text-text-muted">Date de réception</p>
           </div>
         </div>
 
         <div>
-          <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">Categorie</label>
+          <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">Catégorie</label>
           <input id="re-category" type="text" formControlName="category"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                  placeholder="Ex: Logement, Abonnement..." />
@@ -128,7 +128,7 @@ type RecurringEntryFormShape = {
                     <p class="text-xs text-text-muted mt-0.5">{{ (_pendingFile()!.size / 1024) | number:'1.0-0' }} Ko</p>
                   } @else {
                     <app-icon name="file-text" size="24" class="text-text-muted mb-1" />
-                    <p class="text-sm text-text-muted">Glissez-deposez votre fiche de paie ici</p>
+                    <p class="text-sm text-text-muted">Glissez-déposez votre fiche de paie ici</p>
                     <p class="text-xs text-text-muted mt-0.5">ou cliquez pour parcourir (PDF, JPG, PNG)</p>
                   }
                 </div>
@@ -178,9 +178,9 @@ export class RecurringEntryForm {
     switch (type) {
       case 'income': return 'Ex: Salaire, Prime...';
       case 'expense': return 'Ex: Loyer, Netflix, EDF...';
-      case 'annual_expense': return 'Ex: Assurance auto, Impots fonciers...';
+      case 'annual_expense': return 'Ex: Assurance auto, Impôts fonciers...';
       case 'spending': return 'Ex: Courses, Gasoil, Pain...';
-      default: return 'Ex: Libelle...';
+      default: return 'Ex: Libellé...';
     }
   });
 

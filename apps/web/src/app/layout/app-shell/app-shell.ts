@@ -29,7 +29,7 @@ import { ThemeStore } from '@core/services/theme.store';
         <a routerLink="/medical"
            routerLinkActive="tab--active-medical"
            class="tab">
-          <app-icon name="heart-pulse" size="15" /> Medical
+          <app-icon name="heart-pulse" size="15" /> Médical
         </a>
       </nav>
 

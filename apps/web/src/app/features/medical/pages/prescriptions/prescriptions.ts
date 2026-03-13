@@ -27,7 +27,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
     <header class="flex items-center justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Ordonnances</h2>
-        <p class="mt-1 text-sm text-text-muted">Suivi des ordonnances medicales</p>
+        <p class="mt-1 text-sm text-text-muted">Suivi des ordonnances médicales</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
@@ -54,7 +54,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                 <h3 class="font-semibold text-text-primary">{{ patientName(presc.patientId) }}</h3>
               </div>
               @if (isExpired(presc)) {
-                <span class="rounded-full px-2 py-0.5 text-[10px] font-medium bg-ib-red/10 text-ib-red">Expiree</span>
+                <span class="rounded-full px-2 py-0.5 text-[10px] font-medium bg-ib-red/10 text-ib-red">Expirée</span>
               } @else if (presc.validUntil) {
                 <span class="rounded-full px-2 py-0.5 text-[10px] font-medium bg-ib-green/10 text-ib-green">Valide</span>
               }
@@ -66,20 +66,20 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 
             <dl class="grid grid-cols-2 gap-2 text-xs mb-3 ml-10">
               <div>
-                <dt class="text-text-muted">Emission</dt>
+                <dt class="text-text-muted">Émission</dt>
                 <dd class="font-mono text-text-primary">{{ presc.issuedDate | date:'d MMMM yyyy' }}</dd>
               </div>
               <div>
-                <dt class="text-text-muted">Validite</dt>
+                <dt class="text-text-muted">Validité</dt>
                 <dd class="font-mono" [class.text-ib-red]="isExpired(presc)" [class.text-text-primary]="!isExpired(presc)">
-                  {{ presc.validUntil ? (presc.validUntil | date:'d MMMM yyyy') : 'Non definie' }}
+                  {{ presc.validUntil ? (presc.validUntil | date:'d MMMM yyyy') : 'Non définie' }}
                 </dd>
               </div>
             </dl>
 
             @if (appointmentDate(presc.appointmentId); as aDate) {
               <p class="text-xs text-text-muted mb-2 ml-10">
-                RDV lie : <span class="font-mono text-ib-purple">{{ aDate }}</span>
+                RDV lié : <span class="font-mono text-ib-purple">{{ aDate }}</span>
               </p>
             }
 
@@ -124,7 +124,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="file-text" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">Aucune ordonnance</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez votre premiere ordonnance</p>
+          <p class="text-xs text-text-muted mt-1">Ajoutez votre première ordonnance</p>
         </div>
       }
     </section>
@@ -228,7 +228,7 @@ export class Prescriptions {
     if (!file) return;
     try {
       await lastValueFrom(this.uploadDocumentUC.execute(prescriptionId, file));
-      this.toaster.success('Document ajoute');
+      this.toaster.success('Document ajouté');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de l\'ajout du document');
@@ -237,10 +237,10 @@ export class Prescriptions {
   }
 
   protected async deleteDocument(prescriptionId: string) {
-    if (!await this.confirm.confirm({ title: 'Retirer le document', message: 'Retirer le document attache a cette ordonnance ?', confirmLabel: 'Retirer', variant: 'warning' })) return;
+    if (!await this.confirm.confirm({ title: 'Retirer le document', message: 'Retirer le document attaché à cette ordonnance ?', confirmLabel: 'Retirer', variant: 'warning' })) return;
     try {
       await lastValueFrom(this.deleteDocumentUC.execute(prescriptionId));
-      this.toaster.success('Document retire');
+      this.toaster.success('Document retiré');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors du retrait du document');
@@ -253,19 +253,19 @@ export class Prescriptions {
       if (file) {
         try {
           await lastValueFrom(this.uploadDocumentUC.execute(created.id, file));
-          this.toaster.success('Ordonnance creee');
+          this.toaster.success('Ordonnance créée');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
           this.toaster.error('Erreur lors de l\'ajout du document');
         }
       } else {
-        this.toaster.success('Ordonnance creee');
+        this.toaster.success('Ordonnance créée');
         this.createModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -277,14 +277,14 @@ export class Prescriptions {
       if (file) {
         try {
           await lastValueFrom(this.uploadDocumentUC.execute(id, file));
-          this.toaster.success('Ordonnance modifiee');
+          this.toaster.success('Ordonnance modifiée');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
           this.toaster.error('Erreur lors de l\'ajout du document');
         }
       } else {
-        this.toaster.success('Ordonnance modifiee');
+        this.toaster.success('Ordonnance modifiée');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
@@ -297,7 +297,7 @@ export class Prescriptions {
     if (!await this.confirm.delete('cette ordonnance')) return;
     try {
       await lastValueFrom(this.deletePrescriptionUC.execute(id));
-      this.toaster.success('Ordonnance supprimee');
+      this.toaster.success('Ordonnance supprimée');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');

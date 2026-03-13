@@ -56,7 +56,7 @@ type MemberSummary = {
             <h3 class="text-lg font-semibold text-text-primary">{{ ms.label }}</h3>
             <p class="text-[11px] text-text-muted">
               {{ ms.envelopes.length }} enveloppe{{ ms.envelopes.length > 1 ? 's' : '' }}
-              · {{ ms.lentLoans.length + ms.borrowedLoans.length }} pret{{ (ms.lentLoans.length + ms.borrowedLoans.length) > 1 ? 's' : '' }}
+              · {{ ms.lentLoans.length + ms.borrowedLoans.length }} prêt{{ (ms.lentLoans.length + ms.borrowedLoans.length) > 1 ? 's' : '' }}
               @if (ms.incomes.length > 0) {
                 · {{ ms.incomes.length }} revenu{{ ms.incomes.length > 1 ? 's' : '' }}
               }
@@ -86,7 +86,7 @@ type MemberSummary = {
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-blue/10">
                     <app-icon name="arrow-up-right" size="12" class="text-ib-blue" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Prete</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Prêté</p>
                 </div>
                 <p class="text-lg font-mono font-bold text-ib-blue tracking-tight">{{ ms.totalLent | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
               </div>
@@ -98,7 +98,7 @@ type MemberSummary = {
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
                     <app-icon name="arrow-down-left" size="12" class="text-ib-red" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Emprunte</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Emprunté</p>
                 </div>
                 <p class="text-lg font-mono font-bold text-ib-red tracking-tight">{{ ms.totalBorrowed | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
               </div>
@@ -162,7 +162,7 @@ type MemberSummary = {
             @let pctBudget = (allCharges / ms.totalIncome) * 100;
             <div class="rounded-xl border border-border bg-surface p-3">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-text-muted">Budget utilise</span>
+                <span class="text-[11px] font-medium text-text-muted">Budget utilisé</span>
                 <span class="text-sm font-mono font-bold"
                       [class.text-ib-green]="pctBudget <= 80"
                       [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
@@ -185,16 +185,16 @@ type MemberSummary = {
               <div class="flex items-center gap-4 mt-2 text-[10px] text-text-muted">
                 <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Mensuels {{ ms.totalMonthlyExpenses | number:'1.0-0' }}&euro;</span>
                 <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ ms.monthlyAnnualExpenses | number:'1.0-0' }}&euro;/m</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Depenses {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
               </div>
             </div>
           }
 
-          <!-- Compte : prelevements mensuels / annuels / depenses -->
+          <!-- Compte : prélèvements mensuels / annuels / dépenses -->
           @if (ms.monthlyExpenses.length > 0 || ms.annualExpenses.length > 0 || ms.spendings.length > 0) {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
 
-              <!-- Prelevements mensuels -->
+              <!-- Prélèvements mensuels -->
               @if (ms.monthlyExpenses.length > 0) {
                 <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition-all hover:shadow-lg hover:shadow-ib-red/5">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50">
@@ -218,7 +218,7 @@ type MemberSummary = {
                 </a>
               }
 
-              <!-- Prelevements annuels -->
+              <!-- Prélèvements annuels -->
               @if (ms.annualExpenses.length > 0) {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition-all hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0">
@@ -240,12 +240,12 @@ type MemberSummary = {
                 </a>
               }
 
-              <!-- Depenses -->
+              <!-- Dépenses -->
               @if (ms.spendings.length > 0) {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition-all hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0">
                     <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Depenses</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</span>
                     <span class="ml-auto text-sm font-mono font-bold text-ib-yellow">{{ ms.totalSpendings | number:'1.2-2' }}&euro;</span>
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1 overflow-y-auto flex-1">
@@ -306,12 +306,12 @@ type MemberSummary = {
             </div>
           }
 
-          <!-- Prets du membre -->
+          <!-- Prêts du membre -->
           @if (ms.lentLoans.length > 0) {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-blue/5 border-b border-border/50">
                 <app-icon name="arrow-up-right" size="14" class="text-ib-blue" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Prets</h4>
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Prêts</h4>
               </div>
               <div class="divide-y divide-border/20">
                 @for (loan of ms.lentLoans; track loan.id) {

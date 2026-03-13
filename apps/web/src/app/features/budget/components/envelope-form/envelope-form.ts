@@ -56,10 +56,10 @@ const ENVELOPE_COLORS = [
           </label>
           <select id="env-type" formControlName="type" aria-required="true"
                   class="form-select">
-            <option value="épargne">Epargne</option>
-            <option value="impôts">Impots</option>
-            <option value="équipement">Materiel</option>
-            <option value="vacance">Vacances</option>
+            <option value="épargne">Épargne</option>
+            <option value="impôts">Impôts</option>
+            <option value="équipement">Matériel</option>
+            <option value="vacances">Vacances</option>
           </select>
         </div>
 
@@ -68,7 +68,7 @@ const ENVELOPE_COLORS = [
           <input id="env-balance" type="number" formControlName="balance" step="0.01" min="0"
                  class="form-input mono" />
           @if (form.controls.balance.touched && form.controls.balance.errors?.['min']) {
-            <small class="error" role="alert">Le solde ne peut pas etre negatif.</small>
+            <small class="error" role="alert">Le solde ne peut pas être négatif.</small>
           }
         </div>
 
@@ -79,7 +79,7 @@ const ENVELOPE_COLORS = [
                    class="form-input mono" />
           </div>
           <div>
-            <label for="env-due-day" class="form-label">Jour de depot</label>
+            <label for="env-due-day" class="form-label">Jour de dépôt</label>
             <input id="env-due-day" type="number" formControlName="dueDay" min="1" max="31"
                    placeholder="ex: 5" class="form-input mono" />
             <p class="text-xs mt-1" style="color: var(--color-text-muted)">Jour du mois (1-31)</p>
@@ -108,7 +108,7 @@ const ENVELOPE_COLORS = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit" style="background-color: var(--color-ib-green)">
-          {{ initial() ? 'Enregistrer' : 'Creer' }}
+          {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>
     </form>

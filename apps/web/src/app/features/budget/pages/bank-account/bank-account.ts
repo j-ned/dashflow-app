@@ -60,7 +60,7 @@ const PALETTE = [
         <button type="button"
                 class="rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
                 (click)="accountModalRef().open()">
-          <app-icon name="settings" size="12" class="inline -mt-0.5" /> Gerer
+          <app-icon name="settings" size="12" class="inline -mt-0.5" /> Gérer
         </button>
       </nav>
     </header>
@@ -80,20 +80,20 @@ const PALETTE = [
         <p class="mt-1.5 text-[11px] text-text-muted">{{ incomes().length }} source{{ incomes().length > 1 ? 's' : '' }}</p>
       </div>
 
-      <!-- Prelevements mensuels -->
+      <!-- Prélèvements mensuels -->
       <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-red/30 hover:shadow-lg hover:shadow-ib-red/5">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-red"></div>
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-red/10">
             <app-icon name="receipt" size="14" class="text-ib-red" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prelevements</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prélèvements</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-red tracking-tight">{{ totalMonthlyExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthlyExpenses().length }} prelevement{{ monthlyExpenses().length > 1 ? 's' : '' }}/mois</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthlyExpenses().length }} prélèvement{{ monthlyExpenses().length > 1 ? 's' : '' }}/mois</p>
       </div>
 
-      <!-- Prelevements annuels -->
+      <!-- Prélèvements annuels -->
       <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-orange"></div>
         <div class="flex items-center gap-2 mb-3">
@@ -106,20 +106,20 @@ const PALETTE = [
         <p class="mt-1.5 text-[11px] text-text-muted">soit ~{{ monthlyAnnualExpenses() | number:'1.2-2' }}&euro;/mois</p>
       </div>
 
-      <!-- Depenses du mois -->
+      <!-- Dépenses du mois -->
       <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-yellow"></div>
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-yellow/10">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Depenses</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Dépenses</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-yellow tracking-tight">{{ totalMonthSpendings() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthSpendings().length }} depense{{ monthSpendings().length > 1 ? 's' : '' }} en {{ spendingMonthLabel() }}</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthSpendings().length }} dépense{{ monthSpendings().length > 1 ? 's' : '' }} en {{ spendingMonthLabel() }}</p>
       </div>
 
-      <!-- Reste estime -->
+      <!-- Reste estimé -->
       <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all"
            [class.border-ib-green-40]="remaining() >= 0"
            [class.border-ib-red-40]="remaining() < 0"
@@ -144,7 +144,7 @@ const PALETTE = [
            [class.text-ib-red]="remaining() < 0">
           {{ remaining() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
         </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">apres toutes charges</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges</p>
       </div>
     </section>
 
@@ -152,7 +152,7 @@ const PALETTE = [
     @if (totalIncome() > 0 && totalAllExpenses() > 0) {
       <section class="rounded-xl border border-border bg-surface p-4">
         <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-medium text-text-muted">Budget utilise</span>
+          <span class="text-xs font-medium text-text-muted">Budget utilisé</span>
           <span class="text-sm font-mono font-bold"
                 [class.text-ib-green]="usagePercent() <= 80"
                 [class.text-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
@@ -172,11 +172,11 @@ const PALETTE = [
                [class.to-ib-red-70]="usagePercent() > 100">
           </div>
         </div>
-        <!-- Legende segmentee -->
+        <!-- Légende segmentée -->
         <div class="flex items-center gap-4 mt-2.5 text-[10px] text-text-muted">
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Prelevements {{ totalMonthlyExpenses() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Prélèvements {{ totalMonthlyExpenses() | number:'1.0-0' }}&euro;</span>
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ monthlyAnnualExpenses() | number:'1.0-0' }}&euro;/m</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Depenses {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
         </div>
       </section>
     }
@@ -255,10 +255,10 @@ const PALETTE = [
       }
     </section>
 
-    <!-- ═══ 3 colonnes : Prelevements / Annuels / Depenses ═══ -->
+    <!-- ═══ 3 colonnes : Prélèvements / Annuels / Dépenses ═══ -->
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start" #accountGrid>
 
-      <!-- Prelevements mensuels -->
+      <!-- Prélèvements mensuels -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden" #refCard>
         <div class="flex items-center justify-between px-4 py-3 bg-ib-red/5 border-b border-border/50">
           <div class="flex items-center gap-2">
@@ -316,7 +316,7 @@ const PALETTE = [
         }
       </section>
 
-      <!-- Prelevements annuels -->
+      <!-- Prélèvements annuels -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden flex flex-col" [style.max-height.px]="refCardHeight()">
         <div class="flex items-center justify-between px-4 py-3 bg-ib-orange/5 border-b border-border/50">
           <div class="flex items-center gap-2">
@@ -373,17 +373,17 @@ const PALETTE = [
           </div>
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Assurance auto, impots fonciers...</p>
+            <p class="text-xs text-text-muted text-center">Assurance auto, impôts fonciers...</p>
           </div>
         }
       </section>
 
-      <!-- Depenses -->
+      <!-- Dépenses -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden flex flex-col" [style.max-height.px]="refCardHeight()">
         <div class="flex items-center justify-between px-4 py-3 bg-ib-yellow/5 border-b border-border/50">
           <div class="flex items-center gap-2">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Depenses</h3>
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</h3>
             <div class="flex items-center gap-0.5 ml-1">
               <button type="button"
                       class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
@@ -447,7 +447,7 @@ const PALETTE = [
           </div>
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Aucune depense en {{ spendingMonthLabel() }}</p>
+            <p class="text-xs text-text-muted text-center">Aucune dépense en {{ spendingMonthLabel() }}</p>
           </div>
         }
       </section>
@@ -492,7 +492,7 @@ const PALETTE = [
                      class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                      placeholder="Ex: Compte courant, Compte joint..." />
             </div>
-            <p class="text-xs text-text-muted">Les couleurs sont attribuees automatiquement.</p>
+            <p class="text-xs text-text-muted">Les couleurs sont attribuées automatiquement.</p>
             <footer class="flex justify-end gap-3 pt-2">
               <button type="button"
                       class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
@@ -593,14 +593,14 @@ export class BankAccount {
 
   protected readonly spendingMonthLabel = computed(() => {
     const [y, m] = this.spendingMonth().split('-');
-    const MONTHS = ['Janv.', 'Fevr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Aout', 'Sept.', 'Oct.', 'Nov.', 'Dec.'];
+    const MONTHS = ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
     return `${MONTHS[Number(m) - 1]} ${y}`;
   });
 
   protected readonly monthSpendings = computed(() => {
     const ym = this.spendingMonth();
     return this.allSpendings().filter(e => {
-      if (!e.date) return true; // sans date = mois courant par defaut
+      if (!e.date) return true; // sans date = mois courant par défaut
       return e.date.startsWith(ym);
     });
   });
@@ -639,17 +639,17 @@ export class BankAccount {
   protected readonly createModalTitle = computed(() => {
     switch (this.createType()) {
       case 'income': return 'Nouveau revenu';
-      case 'expense': return 'Nouveau prelevement mensuel';
-      case 'annual_expense': return 'Nouveau prelevement annuel';
-      case 'spending': return 'Nouvelle depense';
+      case 'expense': return 'Nouveau prélèvement mensuel';
+      case 'annual_expense': return 'Nouveau prélèvement annuel';
+      case 'spending': return 'Nouvelle dépense';
     }
   });
   protected readonly editModalTitle = computed(() => {
     switch (this.selectedEntry()?.type) {
       case 'income': return 'Modifier le revenu';
-      case 'expense': return 'Modifier le prelevement mensuel';
-      case 'annual_expense': return 'Modifier le prelevement annuel';
-      case 'spending': return 'Modifier la depense';
+      case 'expense': return 'Modifier le prélèvement mensuel';
+      case 'annual_expense': return 'Modifier le prélèvement annuel';
+      case 'spending': return 'Modifier la dépense';
       default: return 'Modifier';
     }
   });
@@ -686,7 +686,7 @@ export class BankAccount {
 
   protected accountName(id: string | null): string | null {
     if (!id) return null;
-    if (this.selectedAccountId() !== null) return null; // pas besoin d'afficher si deja filtre
+    if (this.selectedAccountId() !== null) return null; // pas besoin d'afficher si déjà filtré
     return this.accountMap().get(id) ?? null;
   }
 
@@ -719,11 +719,11 @@ export class BankAccount {
     if (!name) return;
     try {
       await lastValueFrom(this.createAccountUC.execute({ name, color: null, dotColor: null }));
-      this.toaster.success('Compte cree');
+      this.toaster.success('Compte créé');
       this.newAccountName.set('');
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation du compte');
+      this.toaster.error('Erreur lors de la création du compte');
     }
   }
 
@@ -731,7 +731,7 @@ export class BankAccount {
     if (!await this.confirm.confirm({ title: 'Supprimer le compte', message: `Supprimer le compte "${account.name}" ? Les entrees seront conservees sans compte.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
     try {
       await lastValueFrom(this.deleteAccountUC.execute(account.id));
-      this.toaster.success('Compte supprime');
+      this.toaster.success('Compte supprimé');
       if (this.selectedAccountId() === account.id) {
         this.selectedAccountId.set(null);
       }
@@ -757,19 +757,19 @@ export class BankAccount {
   protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
     try {
       await lastValueFrom(this.createEntryUC.execute(data));
-      this.toaster.success('Entree creee');
+      this.toaster.success('Entrée créée');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
   protected async deleteEntry(id: string) {
-    if (!await this.confirm.delete('cette entree')) return;
+    if (!await this.confirm.delete('cette entrée')) return;
     try {
       await lastValueFrom(this.deleteEntryUC.execute(id));
-      this.toaster.success('Entree supprimee');
+      this.toaster.success('Entrée supprimée');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');
@@ -794,14 +794,14 @@ export class BankAccount {
         this._pendingPayslipFile = null;
         try {
           await lastValueFrom(this.entryGateway.uploadPayslip(id, file));
-          this.toaster.success('Entree modifiee');
+          this.toaster.success('Entrée modifiée');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
           this.toaster.error('Erreur lors de l\'ajout de la fiche de paie');
         }
       } else {
-        this.toaster.success('Entree modifiee');
+        this.toaster.success('Entrée modifiée');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
@@ -828,7 +828,7 @@ export class BankAccount {
     if (!await this.confirm.delete('la fiche de paie')) return;
     try {
       await lastValueFrom(this.entryGateway.deletePayslip(id));
-      this.toaster.success('Fiche de paie supprimee');
+      this.toaster.success('Fiche de paie supprimée');
       this._refresh.update(v => v + 1);
       const entry = this.selectedEntry();
       if (entry) {

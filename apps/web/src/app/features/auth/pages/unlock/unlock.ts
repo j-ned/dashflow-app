@@ -28,9 +28,9 @@ type RecoveryFormShape = {
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-text-primary">Deverrouiller vos donnees</h1>
+        <h1 class="text-xl font-bold text-text-primary">Déverrouiller vos données</h1>
         <p class="mt-2 text-sm text-text-muted">
-          Vos donnees sont chiffrees. Saisissez votre mot de passe pour y acceder.
+          Vos données sont chiffrées. Saisissez votre mot de passe pour y accéder.
         </p>
       </header>
 
@@ -41,10 +41,10 @@ type RecoveryFormShape = {
       @if (!useRecovery()) {
       <form [formGroup]="form" (ngSubmit)="unlock()" class="flex flex-col gap-4">
         <fieldset class="flex flex-col gap-4">
-        <legend class="sr-only">Deverrouillage</legend>
+        <legend class="sr-only">Déverrouillage</legend>
         <div>
           <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-            {{ auth.user()?.hasEncryptionPassphrase ? 'Phrase secrete' : 'Mot de passe' }}
+            {{ auth.user()?.hasEncryptionPassphrase ? 'Phrase secrète' : 'Mot de passe' }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <div class="relative">
@@ -54,7 +54,7 @@ type RecoveryFormShape = {
               formControlName="password"
               aria-required="true"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrete' : 'Votre mot de passe'"
+              [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
             />
             <button type="button" (click)="showPassword.set(!showPassword())"
               class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
@@ -73,7 +73,7 @@ type RecoveryFormShape = {
           [disabled]="form.invalid || loading()"
           class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ loading() ? 'Deverrouillage...' : 'Deverrouiller' }}
+          {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
         </button>
 
         <button
@@ -81,7 +81,7 @@ type RecoveryFormShape = {
           (click)="useRecovery.set(true)"
           class="text-sm text-ib-blue hover:underline transition-colors text-center"
         >
-          Utiliser la cle de recuperation
+          Utiliser la clé de récupération
         </button>
 
         <button
@@ -89,16 +89,16 @@ type RecoveryFormShape = {
           (click)="logout()"
           class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
         >
-          Se deconnecter
+          Se déconnecter
         </button>
       </form>
       } @else {
       <form [formGroup]="recoveryForm" (ngSubmit)="unlockWithRecovery()" class="flex flex-col gap-4">
         <fieldset class="flex flex-col gap-4">
-        <legend class="sr-only">Deverrouillage par cle de recuperation</legend>
+        <legend class="sr-only">Déverrouillage par clé de récupération</legend>
         <div>
           <label for="recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
-            Cle de recuperation <span aria-hidden="true" class="text-ib-red">*</span>
+            Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <textarea
             id="recovery-key"
@@ -106,10 +106,10 @@ type RecoveryFormShape = {
             aria-required="true"
             rows="3"
             class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-            placeholder="Collez votre cle de recuperation (64 caracteres hex)"
+            placeholder="Collez votre clé de récupération (64 caractères hex)"
           ></textarea>
           @if (recoveryForm.controls.recoveryKey.touched && recoveryForm.controls.recoveryKey.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">La cle de recuperation est obligatoire.</small>
+            <small class="mt-1 block text-xs text-ib-red" role="alert">La clé de récupération est obligatoire.</small>
           }
         </div>
         </fieldset>
@@ -119,7 +119,7 @@ type RecoveryFormShape = {
           [disabled]="recoveryForm.invalid || loading()"
           class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {{ loading() ? 'Deverrouillage...' : 'Deverrouiller' }}
+          {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
         </button>
 
         <button
@@ -135,7 +135,7 @@ type RecoveryFormShape = {
           (click)="logout()"
           class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
         >
-          Se deconnecter
+          Se déconnecter
         </button>
       </form>
       }
@@ -176,7 +176,7 @@ export class Unlock {
       await this.auth.unlockWithPassword(password);
       this.router.navigate(['/budget']);
     } catch {
-      this.error.set('Mot de passe ou phrase secrete incorrect(e).');
+      this.error.set('Mot de passe ou phrase secrète incorrect(e).');
     } finally {
       this.loading.set(false);
     }
@@ -193,7 +193,7 @@ export class Unlock {
       await this.auth.unlockWithRecovery(recoveryKey.trim());
       this.router.navigate(['/budget']);
     } catch {
-      this.error.set('Cle de recuperation invalide.');
+      this.error.set('Clé de récupération invalide.');
     } finally {
       this.loading.set(false);
     }

@@ -7,18 +7,18 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
   imports: [ModalDialog],
   host: { class: 'contents' },
   template: `
-    <app-modal-dialog #modal title="Cle de recuperation" size="md" (closed)="closed.emit()">
+    <app-modal-dialog #modal title="Clé de récupération" size="md" (closed)="closed.emit()">
       <div class="flex flex-col gap-4">
         <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
           <p class="text-sm font-medium text-ib-amber">Important</p>
           <p class="mt-1 text-sm text-text-primary">
-            Cette cle est votre seul moyen de recuperer vos donnees si vous oubliez votre mot de passe.
-            Sauvegardez-la en lieu sur. Elle ne sera plus affichee.
+            Cette clé est votre seul moyen de récupérer vos données si vous oubliez votre mot de passe.
+            Sauvegardez-la en lieu sûr. Elle ne sera plus affichée.
           </p>
         </div>
 
         <div class="rounded-lg border border-border bg-canvas p-4">
-          <p class="mb-2 text-xs font-medium text-text-muted uppercase tracking-wide">Cle de recuperation</p>
+          <p class="mb-2 text-xs font-medium text-text-muted uppercase tracking-wide">Clé de récupération</p>
           <p class="font-mono text-sm break-all leading-relaxed text-text-primary select-all">
             {{ formattedKey() }}
           </p>
@@ -29,7 +29,7 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
           (click)="copyKey()"
           class="flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2 text-sm text-text-primary hover:bg-hover transition-colors"
         >
-          {{ copied() ? 'Copie !' : 'Copier la cle' }}
+          {{ copied() ? 'Copié !' : 'Copier la clé' }}
         </button>
 
         <label class="flex items-start gap-3 cursor-pointer">
@@ -40,7 +40,7 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
             class="mt-0.5 h-4 w-4 rounded border-border text-ib-blue focus:ring-ib-blue"
           />
           <span class="text-sm text-text-primary">
-            J'ai sauvegarde cette cle en lieu sur
+            J'ai sauvegardé cette clé en lieu sûr
           </span>
         </label>
 

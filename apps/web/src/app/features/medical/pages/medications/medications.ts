@@ -29,13 +29,13 @@ const DAY_LABELS = [
 ];
 
 const TYPE_LABELS: Record<string, string> = {
-  comprime: 'Comprime',
-  gelule: 'Gelule',
+  comprime: 'Comprimé',
+  gelule: 'Gélule',
   sirop: 'Sirop',
   patch: 'Patch',
   injection: 'Injection',
   gouttes: 'Gouttes',
-  creme: 'Creme',
+  creme: 'Crème',
   autre: 'Autre',
 };
 
@@ -47,7 +47,7 @@ const TYPE_LABELS: Record<string, string> = {
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Medicaments</h2>
+        <h2 class="text-2xl font-bold text-text-primary">Médicaments</h2>
         <p class="mt-1 text-sm text-text-muted">Suivi des stocks et traitements</p>
       </div>
       <button type="button"
@@ -62,11 +62,11 @@ const TYPE_LABELS: Record<string, string> = {
         <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-red/10 shrink-0">
           <app-icon name="alert-triangle" size="16" class="text-ib-red" />
         </div>
-        <p class="text-sm font-medium text-ib-red">{{ lowStockCount() }} medicament{{ lowStockCount() > 1 ? 's' : '' }} en stock bas</p>
+        <p class="text-sm font-medium text-ib-red">{{ lowStockCount() }} médicament{{ lowStockCount() > 1 ? 's' : '' }} en stock bas</p>
       </div>
     }
 
-    <section aria-label="Liste des medicaments" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <section aria-label="Liste des médicaments" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (med of medicationsWithStock(); track med.id) {
         <article class="group relative overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
           <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl" [class.bg-ib-red]="med.isLow" [class.bg-ib-orange]="!med.isLow"></div>
@@ -104,8 +104,8 @@ const TYPE_LABELS: Record<string, string> = {
 
           <dl class="grid grid-cols-2 gap-2 text-xs mt-3">
             <div>
-              <dt class="text-text-muted">Quantite</dt>
-              <dd class="font-mono text-text-primary">{{ med.quantity }} unites</dd>
+              <dt class="text-text-muted">Quantité</dt>
+              <dd class="font-mono text-text-primary">{{ med.quantity }} unités</dd>
             </div>
             <div>
               <dt class="text-text-muted">Jours restants</dt>
@@ -114,7 +114,7 @@ const TYPE_LABELS: Record<string, string> = {
               </dd>
             </div>
             <div>
-              <dt class="text-text-muted">Epuisement estime</dt>
+              <dt class="text-text-muted">Épuisement estimé</dt>
               <dd class="font-mono text-text-primary">{{ med.estimatedRunOut }}</dd>
             </div>
             <div>
@@ -133,7 +133,7 @@ const TYPE_LABELS: Record<string, string> = {
             <button type="button"
                     class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-purple hover:border-ib-purple/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
                     (click)="openRefillModal(med)">
-              Reapprovisionner
+              Réapprovisionner
             </button>
             <button type="button"
                     class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
@@ -151,21 +151,21 @@ const TYPE_LABELS: Record<string, string> = {
       } @empty {
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="pill" size="48" class="text-text-muted/20 mx-auto mb-3" />
-          <p class="text-sm text-text-muted">Aucun medicament</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez vos medicaments pour suivre les stocks</p>
+          <p class="text-sm text-text-muted">Aucun médicament</p>
+          <p class="text-xs text-text-muted mt-1">Ajoutez vos médicaments pour suivre les stocks</p>
         </div>
       }
     </section>
 
-    <app-modal-dialog #createModal title="Nouveau medicament" (closed)="onModalClosed()">
+    <app-modal-dialog #createModal title="Nouveau médicament" (closed)="onModalClosed()">
       <app-medication-form [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="createMedication($event)" (cancelled)="createModal.close()" />
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal title="Modifier le medicament" (closed)="onModalClosed()">
+    <app-modal-dialog #editModal title="Modifier le médicament" (closed)="onModalClosed()">
       <app-medication-form [initial]="selectedMedication()" [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="updateMedication($event)" (cancelled)="editModal.close()" />
     </app-modal-dialog>
 
-    <app-modal-dialog #refillModal title="Reapprovisionner" (closed)="onModalClosed()">
+    <app-modal-dialog #refillModal title="Réapprovisionner" (closed)="onModalClosed()">
       <app-refill-medication-form (submitted)="refillMedication($event)" (cancelled)="refillModal.close()" />
     </app-modal-dialog>
   `,
@@ -242,11 +242,11 @@ export class Medications {
   protected async createMedication(data: Omit<Medication, 'id'>) {
     try {
       await lastValueFrom(this.createMedicationUC.execute(data));
-      this.toaster.success('Medicament cree');
+      this.toaster.success('Médicament créé');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la creation');
+      this.toaster.error('Erreur lors de la création');
     }
   }
 
@@ -255,7 +255,7 @@ export class Medications {
     if (!id) return;
     try {
       await lastValueFrom(this.updateMedicationUC.execute(id, data));
-      this.toaster.success('Medicament modifie');
+      this.toaster.success('Médicament modifié');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
@@ -268,19 +268,19 @@ export class Medications {
     if (!id) return;
     try {
       await lastValueFrom(this.refillMedicationUC.execute(id, event.quantity));
-      this.toaster.success('Medicament reapprovisionne');
+      this.toaster.success('Médicament réapprovisionné');
       this.refillModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors du reapprovisionnement');
+      this.toaster.error('Erreur lors du réapprovisionnement');
     }
   }
 
   protected async deleteMedication(id: string) {
-    if (!await this.confirm.delete('ce medicament')) return;
+    if (!await this.confirm.delete('ce médicament')) return;
     try {
       await lastValueFrom(this.deleteMedicationUC.execute(id));
-      this.toaster.success('Medicament supprime');
+      this.toaster.success('Médicament supprimé');
       this._refresh.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la suppression');
