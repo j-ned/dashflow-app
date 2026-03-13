@@ -45,7 +45,7 @@ type PassphraseFormShape = {
                 placeholder="Votre passphrase de chiffrement"
               />
               <button type="button" (click)="showPassphrase.set(!showPassphrase())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showPassphrase() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showPassphrase() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -73,7 +73,7 @@ type PassphraseFormShape = {
                 placeholder="Confirmer la passphrase"
               />
               <button type="button" (click)="showConfirm.set(!showConfirm())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showConfirm() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showConfirm() ? 'eye-off' : 'eye'" size="18" />
               </button>

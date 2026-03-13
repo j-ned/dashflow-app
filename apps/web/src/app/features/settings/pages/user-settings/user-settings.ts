@@ -180,7 +180,7 @@ type PasswordFormShape = {
                 class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showCurrentPassword.set(!showCurrentPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showCurrentPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showCurrentPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -206,7 +206,7 @@ type PasswordFormShape = {
                 class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showNewPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showNewPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -237,7 +237,7 @@ type PasswordFormShape = {
                 class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showConfirmPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -313,7 +313,7 @@ type PasswordFormShape = {
                     class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
                   />
                   <button type="button" (click)="showDisable2faPassword.set(!showDisable2faPassword())"
-                    class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                     [attr.aria-label]="showDisable2faPassword() ? 'Masquer' : 'Afficher'">
                     <app-icon [name]="showDisable2faPassword() ? 'eye-off' : 'eye'" size="18" />
                   </button>

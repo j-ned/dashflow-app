@@ -24,6 +24,7 @@ type ResetFormShape = {
   imports: [ReactiveFormsModule, RouterLink, Icon],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
+    <main>
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
@@ -120,7 +121,7 @@ type ResetFormShape = {
                 placeholder="••••••••"
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showNewPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showNewPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -144,7 +145,7 @@ type ResetFormShape = {
                 placeholder="••••••••"
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showConfirmPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -255,6 +256,7 @@ type ResetFormShape = {
         </div>
       }
     </article>
+    </main>
   `
 })
 export class ForgotPassword {

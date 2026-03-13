@@ -18,6 +18,7 @@ type RecoveryFormShape = {
   imports: [ReactiveFormsModule, Icon],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
+    <main>
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-6 text-center">
         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ib-amber/10">
@@ -57,7 +58,7 @@ type RecoveryFormShape = {
               [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
             />
             <button type="button" (click)="showPassword.set(!showPassword())"
-              class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+              class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
               [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
               <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
             </button>
@@ -140,6 +141,7 @@ type RecoveryFormShape = {
       </form>
       }
     </article>
+    </main>
   `,
 })
 export class Unlock {

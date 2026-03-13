@@ -46,6 +46,7 @@ const API_PATHS: Record<string, string> = {
   imports: [RecoveryKeyModal, EncryptionPassphraseModal],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
+    <main>
     <article class="w-full max-w-lg rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-6 text-center">
         <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10">
@@ -130,6 +131,7 @@ const API_PATHS: Record<string, string> = {
       (passphraseSet)="onPassphraseSet($event)"
       (closed)="onPassphraseModalClosed()"
     />
+    </main>
   `,
 })
 export class EncryptionSetup {

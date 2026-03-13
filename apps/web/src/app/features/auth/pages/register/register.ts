@@ -18,6 +18,7 @@ type RegisterFormShape = {
   imports: [ReactiveFormsModule, RouterLink, Icon],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
+    <main>
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
@@ -84,7 +85,7 @@ type RegisterFormShape = {
                 placeholder="••••••••"
               />
               <button type="button" (click)="showPassword.set(!showPassword())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -112,7 +113,7 @@ type RegisterFormShape = {
                 placeholder="••••••••"
               />
               <button type="button" (click)="showConfirm.set(!showConfirm())"
-                class="absolute right-2.5 top-1/2 -translate-y-1/2 text-text-muted hover:text-text-primary transition-colors"
+                class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
                 [attr.aria-label]="showConfirm() ? 'Masquer' : 'Afficher'">
                 <app-icon [name]="showConfirm() ? 'eye-off' : 'eye'" size="18" />
               </button>
@@ -213,6 +214,7 @@ type RegisterFormShape = {
         </div>
       }
     </article>
+    </main>
   `,
 })
 export class Register {
