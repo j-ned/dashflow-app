@@ -67,14 +67,15 @@ export class ApiClient {
   }
 
   private handleError(error: unknown): Observable<never> {
-    const httpError = error as { status?: number; error?: { error?: string } };
+    const httpError = error as { status?: number; error?: { error?: string; code?: string } };
     const message = httpError?.error?.error ?? 'Une erreur est survenue';
+    const code = httpError?.error?.code;
     const status = httpError?.status ?? 0;
 
     if (status === 401) {
       this.clearToken();
     }
 
-    return throwError(() => ({ status, message }));
+    return throwError(() => ({ status, message, code }));
   }
 }

@@ -280,9 +280,8 @@ export class Login {
   }
 
   private getErrorCode(err: unknown): string | undefined {
-    if (err && typeof err === 'object' && 'error' in err) {
-      const httpErr = err as { error?: { code?: string } };
-      return httpErr.error?.code;
+    if (err && typeof err === 'object' && 'code' in err) {
+      return (err as { code?: string }).code;
     }
     return undefined;
   }
