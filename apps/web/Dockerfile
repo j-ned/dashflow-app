@@ -8,7 +8,6 @@ COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
 COPY tsconfig.json tsconfig.app.json angular.json .postcssrc.json ./
-COPY scripts/ scripts/
 COPY src/ src/
 COPY public/ public/
 RUN pnpm build
