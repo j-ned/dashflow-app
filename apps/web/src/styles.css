@@ -1,3 +1,5 @@
+@import '@fontsource-variable/inter';
+@import '@fontsource-variable/jetbrains-mono';
 @import 'tailwindcss';
 
 @theme {
@@ -24,8 +26,8 @@
   --color-ib-pink: #cf8ac5;
 
   /* Fonts */
-  --font-sans: 'Inter', system-ui, sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+  --font-sans: 'Inter Variable', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono Variable', monospace;
 
   /* Radius */
   --radius-sm: 6px;

@@ -1,8 +1,10 @@
 import { Routes } from '@angular/router';
-import { MedicalDashboard } from './pages/medical-dashboard/medical-dashboard';
 
 export const MEDICAL_ROUTES: Routes = [
-  { path: 'dashboard', component: MedicalDashboard },
+  {
+    path: 'dashboard',
+    loadComponent: () => import('./pages/medical-dashboard/medical-dashboard').then(m => m.MedicalDashboard),
+  },
   {
     path: 'patients',
     loadComponent: () => import('./pages/patients/patients').then(m => m.Patients),

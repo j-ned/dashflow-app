@@ -1,7 +1,5 @@
 import { Routes } from '@angular/router';
 import { AppShell } from './layout/app-shell/app-shell';
-import { BudgetLayout } from './layout/budget-layout/budget-layout';
-import { MedicalLayout } from './layout/medical-layout/medical-layout';
 import { authGuard } from '@core/guards/auth.guard';
 import { guestGuard } from '@core/guards/guest.guard';
 
@@ -24,12 +22,12 @@ export const routes: Routes = [
       { path: '', redirectTo: 'budget', pathMatch: 'full' },
       {
         path: 'budget',
-        component: BudgetLayout,
+        loadComponent: () => import('./layout/budget-layout/budget-layout').then(m => m.BudgetLayout),
         loadChildren: () => import('./features/budget/budget.routes').then(m => m.BUDGET_ROUTES),
       },
       {
         path: 'medical',
-        component: MedicalLayout,
+        loadComponent: () => import('./layout/medical-layout/medical-layout').then(m => m.MedicalLayout),
         loadChildren: () => import('./features/medical/medical.routes').then(m => m.MEDICAL_ROUTES),
       },
       {

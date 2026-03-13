@@ -36,7 +36,7 @@ import { ThemeStore } from '@core/services/theme.store';
       <div class="flex items-center gap-2 shrink-0">
         <button type="button"
                 class="header-btn hidden sm:inline-flex"
-                (click)="commandPalette().open()">
+                (click)="commandPalette()?.open()">
           <app-icon name="search" size="14" />
           <span class="text-text-muted">Rechercher...</span>
           <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">⌘K</kbd>
@@ -67,9 +67,11 @@ import { ThemeStore } from '@core/services/theme.store';
       <router-outlet />
     </main>
 
-    <app-command-palette #cmdPalette />
-    <app-toast-container />
-    <app-confirm-dialog />
+    @defer (on idle) {
+      <app-command-palette #cmdPalette />
+      <app-toast-container />
+      <app-confirm-dialog />
+    }
   `,
   styles: `
     .logo-link {
@@ -165,5 +167,5 @@ import { ThemeStore } from '@core/services/theme.store';
 export class AppShell {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeStore);
-  protected readonly commandPalette = viewChild.required<CommandPalette>('cmdPalette');
+  protected readonly commandPalette = viewChild<CommandPalette>('cmdPalette');
 }
