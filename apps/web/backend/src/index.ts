@@ -4,6 +4,7 @@ import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { compress } from 'hono/compress';
 import { logger } from 'hono/logger';
 import { rateLimiter } from 'hono-rate-limiter';
 import type { AppEnv } from './types.js';
@@ -43,6 +44,7 @@ const app = new Hono<AppEnv>();
 
 // ── Global middleware ──
 app.use('*', logger());
+app.use('*', compress());
 
 // CORS — origin from env, fallback localhost for dev
 const allowedOrigins = (process.env['CORS_ORIGIN'] ?? 'http://localhost:4200').split(',');
@@ -125,6 +127,16 @@ app.route('/api/medical/calendar', medicalCalendarRoutes);
 // ── Static SPA serving (production) ──
 const staticRoot = process.env['STATIC_ROOT'];
 if (staticRoot) {
+  // Cache hashed assets for 1 year (immutable), revalidate HTML
+  app.use('/*', async (c, next) => {
+    await next();
+    const path = c.req.path;
+    if (/\.[a-f0-9]{8,}\.(js|css)$/.test(path) || /\.(woff2?|ttf|otf|svg|png|jpg|webp|avif|ico)$/.test(path)) {
+      c.header('Cache-Control', 'public, max-age=31536000, immutable');
+    } else {
+      c.header('Cache-Control', 'no-cache');
+    }
+  });
   app.use('/*', serveStatic({ root: staticRoot }));
   app.get('*', serveStatic({ root: staticRoot, path: 'index.html' }));
 }
