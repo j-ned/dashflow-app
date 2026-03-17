@@ -15,8 +15,8 @@ type LoginFormShape = {
   imports: [ReactiveFormsModule, RouterLink, Icon],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
-    <main>
-    <article class="w-full max-w-xl rounded-xl border border-border bg-surface p-10 shadow-lg">
+    <main class="w-full max-w-2xl">
+    <article class="w-full rounded-xl border border-border bg-surface p-10 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
         <p class="mt-2 text-sm text-text-muted">Votre tableau de bord personnel</p>
