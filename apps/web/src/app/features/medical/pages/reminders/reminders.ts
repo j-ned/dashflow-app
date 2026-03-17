@@ -143,7 +143,9 @@ import { Icon } from '@shared/components/icon/icon';
     </section>
 
     <app-modal-dialog #createReminderModal title="Nouvelle alerte" (closed)="onReminderModalClosed()">
-      <app-reminder-form [medications]="medications()" [appointments]="appointments()" (submitted)="createReminder($event)" (cancelled)="createReminderModal.close()" />
+      @if (createReminderModal.isOpen()) {
+        <app-reminder-form [medications]="medications()" [appointments]="appointments()" (submitted)="createReminder($event)" (cancelled)="createReminderModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

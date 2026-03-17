@@ -82,11 +82,15 @@ import { Icon } from '@shared/components/icon/icon';
     </section>
 
     <app-modal-dialog #createModal title="Nouveau patient" (closed)="onModalClosed()">
-      <app-patient-form (submitted)="createPatient($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-patient-form (submitted)="createPatient($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier le patient" (closed)="onModalClosed()">
-      <app-patient-form [initial]="selectedPatient()" (submitted)="updatePatient($event)" (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-patient-form [initial]="selectedPatient()" (submitted)="updatePatient($event)" (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

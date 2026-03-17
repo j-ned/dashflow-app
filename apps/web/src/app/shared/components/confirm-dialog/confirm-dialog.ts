@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   effect,
   ElementRef,
   inject,
@@ -83,9 +84,9 @@ export class ConfirmService {
         <div class="confirm-panel" (click)="$event.stopPropagation()">
           <div class="flex gap-4 p-5">
             <div class="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl"
-                 [class]="variantStyle(p.variant).iconBg">
+                 [class]="style().iconBg">
               <app-icon name="alert-triangle" size="20"
-                        [class]="variantStyle(p.variant).icon" />
+                        [class]="style().icon" />
             </div>
             <div class="flex-1 min-w-0">
               <h3 class="text-sm font-semibold text-text-primary">{{ p.title }}</h3>
@@ -101,7 +102,7 @@ export class ConfirmService {
             </button>
             <button type="button"
                     class="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2"
-                    [class]="variantStyle(p.variant).btn"
+                    [class]="style().btn"
                     (click)="answer(true)">
               {{ p.confirmLabel || 'Confirmer' }}
             </button>
@@ -122,8 +123,7 @@ export class ConfirmService {
     }
 
     dialog.confirm-dialog::backdrop {
-      background: rgba(0, 0, 0, 0.5);
-      backdrop-filter: blur(4px);
+      background: rgba(0, 0, 0, 0.6);
     }
 
     dialog.confirm-dialog[open] {
@@ -172,9 +172,7 @@ export class ConfirmDialog {
     });
   }
 
-  protected variantStyle(variant?: ConfirmVariant) {
-    return VARIANT_STYLES[variant ?? 'danger'];
-  }
+  protected readonly style = computed(() => VARIANT_STYLES[this.pending()?.variant ?? 'danger']);
 
   protected answer(confirmed: boolean) {
     const p = this.pending();

@@ -1,6 +1,8 @@
 import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { map } from 'rxjs';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { Member } from '../../domain/models/member.model';
 import { Icon } from '@shared/components/icon/icon';
@@ -144,7 +146,7 @@ type RecurringEntryFormShape = {
                 (click)="cancelled.emit()">
           Annuler
         </button>
-        <button type="submit" [disabled]="form.invalid"
+        <button type="submit" [disabled]="isInvalid()"
                 class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-white hover:bg-ib-green/90 transition-colors disabled:opacity-50">
           {{ initial() ? 'Modifier' : 'Ajouter' }}
         </button>
@@ -193,6 +195,11 @@ export class RecurringEntryForm {
     category: new FormControl('', { nonNullable: true }),
     memberId: new FormControl('', { nonNullable: true }),
   });
+
+  protected readonly isInvalid = toSignal(
+    this.form.statusChanges.pipe(map(() => this.form.invalid)),
+    { initialValue: this.form.invalid },
+  );
 
   constructor() {
     effect(() => {

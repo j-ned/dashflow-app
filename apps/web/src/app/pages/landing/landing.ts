@@ -117,7 +117,7 @@ import { NgOptimizedImage } from '@angular/common';
           >
             <div class="overflow-hidden rounded-xl border border-border/50 bg-canvas">
               <img
-                ngSrc="/screen/img_9.png"
+                ngSrc="/screen/img_9.webp"
                 alt="Dashboard budget DashFlow — vue globale par membre"
                 class="w-full object-cover"
                 loading="eager"
@@ -192,7 +192,7 @@ import { NgOptimizedImage } from '@angular/common';
           >
             <div class="overflow-hidden rounded-xl border border-border/50">
               <img
-                ngSrc="/screen/img.png"
+                ngSrc="/screen/img.webp"
                 alt="Interface des comptes bancaires"
                 class="w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 loading="lazy"
@@ -208,7 +208,7 @@ import { NgOptimizedImage } from '@angular/common';
           >
             <div class="overflow-hidden rounded-xl border border-border/50">
               <img
-                ngSrc="/screen/img_1.png"
+                ngSrc="/screen/img_1.webp"
                 alt="Enveloppes budgétaires avec progression"
                 class="w-full object-cover transition-transform duration-700 group-hover:scale-[1.02]"
                 loading="lazy"
@@ -281,7 +281,7 @@ import { NgOptimizedImage } from '@angular/common';
           >
             <div class="overflow-hidden rounded-xl border border-border/50">
               <img
-                ngSrc="/screen/img_2.png"
+                ngSrc="/screen/img_2.webp"
                 alt="Vue globale médical — famille"
                 class="w-full object-cover transition-transform duration-700 group-hover:scale-[1.01]"
                 loading="lazy"
@@ -314,7 +314,7 @@ import { NgOptimizedImage } from '@angular/common';
               </p>
               <div class="mt-auto overflow-hidden rounded-xl border border-border/50 bg-surface">
                 <img
-                  ngSrc="/screen/img_6.png"
+                  ngSrc="/screen/img_6.webp"
                   alt="Liste des rendez-vous"
                   class="w-full object-cover"
                   loading="lazy"
@@ -340,7 +340,7 @@ import { NgOptimizedImage } from '@angular/common';
               </p>
               <div class="mt-auto overflow-hidden rounded-xl border border-border/50 bg-surface">
                 <img
-                  ngSrc="/screen/img_4.png"
+                  ngSrc="/screen/img_4.webp"
                   alt="Suivi des médicaments"
                   class="w-full object-cover"
                   loading="lazy"
@@ -366,7 +366,7 @@ import { NgOptimizedImage } from '@angular/common';
               </p>
               <div class="mt-auto overflow-hidden rounded-xl border border-border/50 bg-surface">
                 <img
-                  ngSrc="/screen/img_7.png"
+                  ngSrc="/screen/img_7.webp"
                   alt="Carnet de praticiens"
                   class="w-full object-cover"
                   loading="lazy"
@@ -392,7 +392,7 @@ import { NgOptimizedImage } from '@angular/common';
               </p>
               <div class="mt-auto overflow-hidden rounded-xl border border-border/50 bg-surface">
                 <img
-                  ngSrc="/screen/img_3.png"
+                  ngSrc="/screen/img_3.webp"
                   alt="Documents médicaux"
                   class="w-full object-cover"
                   loading="lazy"

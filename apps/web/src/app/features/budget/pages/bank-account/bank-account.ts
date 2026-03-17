@@ -1,4 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, effect, ElementRef, inject, signal, viewChild } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
@@ -211,9 +211,9 @@ const PALETTE = [
                     @if (entry.date) {
                       <span class="text-[11px] text-text-muted">{{ entry.date | date:'dd/MM/yyyy' }}</span>
                     }
-                    @if (memberName(entry.memberId); as mName) {
+                    @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                       <span class="inline-flex items-center gap-1 text-[11px] text-text-muted">
-                        @if (memberColorById(entry.memberId); as mc) {
+                        @if (memberMap().get(entry.memberId ?? '')?.color; as mc) {
                           <span class="inline-block h-2 w-2 rounded-full shrink-0" [style.background-color]="mc"></span>
                         }
                         {{ mName }}
@@ -285,7 +285,7 @@ const PALETTE = [
                       @if (entry.category) {
                         <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
                       }
-                      @if (memberName(entry.memberId); as mName) {
+                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
                     </div>
@@ -344,7 +344,7 @@ const PALETTE = [
                       @if (entry.category) {
                         <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
                       }
-                      @if (memberName(entry.memberId); as mName) {
+                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
                     </div>
@@ -421,7 +421,7 @@ const PALETTE = [
                       @if (entry.date) {
                         <span class="text-[10px] text-text-muted">{{ entry.date | date:'dd/MM' }}</span>
                       }
-                      @if (memberName(entry.memberId); as mName) {
+                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
                     </div>
@@ -455,71 +455,77 @@ const PALETTE = [
 
     <!-- ═══ Modals ═══ -->
     <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="newAccountName.set('')">
-      <div class="space-y-6">
-        <!-- Liste des comptes existants -->
-        @if (accounts().length > 0) {
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Comptes existants</p>
-            <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
-              @for (account of accounts(); track account.id; let i = $index) {
-                <div class="flex items-center justify-between px-4 py-3 hover:bg-hover/30 transition-colors">
-                  <div class="flex items-center gap-3">
-                    <span class="inline-flex items-center gap-2">
-                      <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
-                      <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
-                    </span>
-                    <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
-                  </div>
-                  <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          (click)="deleteAccount(account)"
-                          aria-label="Supprimer le compte">
-                    <app-icon name="trash" size="14" />
-                  </button>
-                </div>
-              }
-            </div>
-          </div>
-        }
-
-        <!-- Ajouter un nouveau compte -->
-        <div>
-          <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Ajouter un compte</p>
-          <form (ngSubmit)="createAccount()" class="space-y-3">
+      @if (accountModal.isOpen()) {
+        <div class="space-y-6">
+          <!-- Liste des comptes existants -->
+          @if (accounts().length > 0) {
             <div>
-              <label for="acc-name" class="block text-sm font-medium text-text-muted mb-1">Nom <span aria-hidden="true">*</span></label>
-              <input id="acc-name" type="text" [ngModel]="newAccountName()" (ngModelChange)="newAccountName.set($event)" name="name"
-                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                     placeholder="Ex: Compte courant, Compte joint..." />
+              <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Comptes existants</p>
+              <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
+                @for (account of accounts(); track account.id; let i = $index) {
+                  <div class="flex items-center justify-between px-4 py-3 hover:bg-hover/30 transition-colors">
+                    <div class="flex items-center gap-3">
+                      <span class="inline-flex items-center gap-2">
+                        <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
+                        <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
+                      </span>
+                      <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
+                    </div>
+                    <button type="button"
+                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                            (click)="deleteAccount(account)"
+                            aria-label="Supprimer le compte">
+                      <app-icon name="trash" size="14" />
+                    </button>
+                  </div>
+                }
+              </div>
             </div>
-            <p class="text-xs text-text-muted">Les couleurs sont attribuées automatiquement.</p>
-            <footer class="flex justify-end gap-3 pt-2">
-              <button type="button"
-                      class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
-                      (click)="accountModalRef().close()">
-                Fermer
-              </button>
-              <button type="submit" [disabled]="!newAccountName().trim()"
-                      class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
-                Ajouter
-              </button>
-            </footer>
-          </form>
+          }
+
+          <!-- Ajouter un nouveau compte -->
+          <div>
+            <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Ajouter un compte</p>
+            <form (ngSubmit)="createAccount()" class="space-y-3">
+              <div>
+                <label for="acc-name" class="block text-sm font-medium text-text-muted mb-1">Nom <span aria-hidden="true">*</span></label>
+                <input id="acc-name" type="text" [ngModel]="newAccountName()" (ngModelChange)="newAccountName.set($event)" name="name"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                       placeholder="Ex: Compte courant, Compte joint..." />
+              </div>
+              <p class="text-xs text-text-muted">Les couleurs sont attribuées automatiquement.</p>
+              <footer class="flex justify-end gap-3 pt-2">
+                <button type="button"
+                        class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
+                        (click)="accountModalRef().close()">
+                  Fermer
+                </button>
+                <button type="submit" [disabled]="!newAccountName().trim()"
+                        class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
+                  Ajouter
+                </button>
+              </footer>
+            </form>
+          </div>
         </div>
-      </div>
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #createModal [title]="createModalTitle()" (closed)="onModalClosed()">
-      <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal [title]="editModalTitle()" (closed)="onModalClosed()">
-      <app-recurring-entry-form [initial]="selectedEntry()" [members]="members()"
-        (submitted)="updateEntry($event)"
-        (fileAttached)="uploadPayslip($event)"
-        (viewPayslip)="openPayslip()"
-        (removePayslip)="deletePayslip()"
-        (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-recurring-entry-form [initial]="selectedEntry()" [members]="members()"
+          (submitted)="updateEntry($event)"
+          (fileAttached)="uploadPayslip($event)"
+          (viewPayslip)="openPayslip()"
+          (removePayslip)="deletePayslip()"
+          (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })
@@ -558,17 +564,12 @@ export class BankAccount {
 
   protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
 
-  protected readonly selectedAccountId = signal<string | null>(null);
+  protected readonly selectedAccountId = linkedSignal<string | null>(() => {
+    const accs = this.accounts();
+    return accs.length > 0 ? accs[0].id : null;
+  });
 
   constructor() {
-    effect(() => {
-      const accs = this.accounts();
-      const current = this.selectedAccountId();
-      if (accs.length > 0 && (current === null || !accs.find(a => a.id === current))) {
-        this.selectedAccountId.set(accs[0].id);
-      }
-    });
-
     afterNextRender(() => {
       const el = this._refCard()?.nativeElement;
       if (!el) return;
@@ -656,10 +657,12 @@ export class BankAccount {
 
   protected readonly newAccountName = signal('');
 
-  private readonly memberMap = computed(() => {
-    const map = new Map<string, { name: string; color: string | null }>();
-    for (const m of this.members()) {
-      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: m.color });
+  protected readonly memberMap = computed(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    const members = this.members();
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: PALETTE[(i + 3) % PALETTE.length] });
     }
     return map;
   });
@@ -671,18 +674,6 @@ export class BankAccount {
     }
     return map;
   });
-
-  protected memberName(id: string | null): string | null {
-    if (!id) return null;
-    return this.memberMap().get(id)?.name ?? null;
-  }
-
-  protected memberColorById(id: string | null): string | null {
-    if (!id) return null;
-    const members = this.members();
-    const idx = members.findIndex(m => m.id === id);
-    return idx >= 0 ? PALETTE[(idx + 3) % PALETTE.length] : null;
-  }
 
   protected accountName(id: string | null): string | null {
     if (!id) return null;

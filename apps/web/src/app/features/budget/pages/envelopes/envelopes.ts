@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
@@ -68,14 +68,14 @@ const MEMBER_PALETTE = [
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            [style.border-color]="filterMemberId() === m.id ? memberColor(i) : 'var(--border)'"
-            [style.background-color]="filterMemberId() === m.id ? memberColor(i) : 'transparent'"
+            [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
+            [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
             [class.text-white]="filterMemberId() === m.id"
             [class.text-text-muted]="filterMemberId() !== m.id"
             (click)="filterMemberId.set(m.id)"
           >
             <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="memberColor(i)"></span>
+                  [style.background-color]="memberMap().get(m.id)?.color"></span>
             {{ m.firstName }}
           </button>
         }
@@ -112,15 +112,13 @@ const MEMBER_PALETTE = [
             </div>
 
             <div class="flex items-center gap-2 text-[11px] text-text-muted mb-3 ml-10">
-              @if (memberName(envelope.memberId); as mName) {
+              @if (memberMap().get(envelope.memberId ?? ''); as member) {
                 <span class="inline-flex items-center gap-1">
-                  @if (memberColorById(envelope.memberId); as mc) {
-                    <span
-                      class="inline-block h-2 w-2 rounded-full"
-                      [style.background-color]="mc"
-                    ></span>
-                  }
-                  {{ mName }}
+                  <span
+                    class="inline-block h-2 w-2 rounded-full"
+                    [style.background-color]="member.color"
+                  ></span>
+                  {{ member.name }}
                 </span>
               }
               @if (envelope.dueDay) {
@@ -236,28 +234,34 @@ const MEMBER_PALETTE = [
     </footer>
 
     <app-modal-dialog #createModal title="Nouvelle enveloppe" (closed)="onModalClosed()">
-      <app-envelope-form
-        [members]="members()"
-        (submitted)="createEnvelope($event)"
-        (cancelled)="createModal.close()"
-      />
+      @if (createModal.isOpen()) {
+        <app-envelope-form
+          [members]="members()"
+          (submitted)="createEnvelope($event)"
+          (cancelled)="createModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier l'enveloppe" (closed)="onModalClosed()">
-      <app-envelope-form
-        [initial]="selectedEnvelope()"
-        [members]="members()"
-        (submitted)="updateEnvelope($event)"
-        (cancelled)="editModal.close()"
-      />
+      @if (editModal.isOpen()) {
+        <app-envelope-form
+          [initial]="selectedEnvelope()"
+          [members]="members()"
+          (submitted)="updateEnvelope($event)"
+          (cancelled)="editModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #creditModal title="Créditer / Débiter" (closed)="onModalClosed()">
-      <app-credit-envelope-form
-        [accounts]="accounts()"
-        (submitted)="creditEnvelope($event)"
-        (cancelled)="creditModal.close()"
-      />
+      @if (creditModal.isOpen()) {
+        <app-credit-envelope-form
+          [accounts]="accounts()"
+          (submitted)="creditEnvelope($event)"
+          (cancelled)="creditModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog
@@ -265,6 +269,7 @@ const MEMBER_PALETTE = [
       [title]="'Historique — ' + (selectedEnvelope()?.name ?? '')"
       (closed)="onModalClosed()"
     >
+      @if (historyModal.isOpen()) {
       <div class="space-y-4">
         <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
           <div class="flex-1">
@@ -336,6 +341,7 @@ const MEMBER_PALETTE = [
           </div>
         }
       </div>
+      }
     </app-modal-dialog>
   `,
 })
@@ -366,23 +372,16 @@ export class Envelopes {
 
   protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
   protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
-  protected readonly filterMemberId = signal<string | null>(null);
-
   protected readonly activeMembers = computed(() => {
     const envs = this.envelopes();
     const memberIds = new Set(envs.map((e) => e.memberId).filter(Boolean));
     return this.members().filter((m) => memberIds.has(m.id));
   });
 
-  constructor() {
-    effect(() => {
-      const active = this.activeMembers();
-      const current = this.filterMemberId();
-      if (active.length > 0 && (current === null || !active.find((m) => m.id === current))) {
-        this.filterMemberId.set(active[0].id);
-      }
-    });
-  }
+  protected readonly filterMemberId = linkedSignal<string | null>(() => {
+    const active = this.activeMembers();
+    return active.length > 0 ? active[0].id : null;
+  });
 
   protected readonly filteredEnvelopes = computed(() => {
     const all = this.envelopes();
@@ -400,25 +399,15 @@ export class Envelopes {
   protected readonly manualTxAmount = signal(0);
   protected readonly manualTxDate = signal(new Date().toISOString().slice(0, 10));
 
-  private readonly memberMap = computed(() => {
-    const map = new Map<string, { name: string; color: string | null }>();
-    for (const m of this.members()) {
-      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: m.color });
+  protected readonly memberMap = computed(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    const mbrs = this.members();
+    for (let i = 0; i < mbrs.length; i++) {
+      const m = mbrs[i];
+      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: MEMBER_PALETTE[i % MEMBER_PALETTE.length] });
     }
     return map;
   });
-
-  protected memberName(id: string | null): string | null {
-    if (!id) return null;
-    return this.memberMap().get(id)?.name ?? null;
-  }
-
-  protected memberColorById(id: string | null): string | null {
-    if (!id) return null;
-    const members = this.members();
-    const idx = members.findIndex(m => m.id === id);
-    return idx >= 0 ? MEMBER_PALETTE[idx % MEMBER_PALETTE.length] : null;
-  }
 
   protected openCreateModal() {
     this.createModalRef().open();
@@ -522,7 +511,4 @@ export class Envelopes {
     }
   }
 
-  protected memberColor(index: number): string {
-    return MEMBER_PALETTE[index % MEMBER_PALETTE.length];
-  }
 }

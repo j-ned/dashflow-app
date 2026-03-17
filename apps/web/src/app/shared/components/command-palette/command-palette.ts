@@ -145,8 +145,7 @@ function fuzzyScore(query: string, target: string): number {
     }
 
     dialog.command-palette::backdrop {
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(6px);
+      background: rgba(0, 0, 0, 0.6);
     }
 
     dialog.command-palette[open] {

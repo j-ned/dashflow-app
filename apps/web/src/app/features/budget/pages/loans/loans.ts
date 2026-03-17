@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
@@ -69,14 +69,14 @@ const MEMBER_PALETTE = [
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            [style.border-color]="filterMemberId() === m.id ? memberColor(i) : 'var(--border)'"
-            [style.background-color]="filterMemberId() === m.id ? memberColor(i) : 'transparent'"
+            [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
+            [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
             [class.text-white]="filterMemberId() === m.id"
             [class.text-text-muted]="filterMemberId() !== m.id"
             (click)="filterMemberId.set(m.id)"
           >
             <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="memberColor(i)"></span>
+                  [style.background-color]="memberMap().get(m.id)?.color"></span>
             {{ m.firstName }}
           </button>
         }
@@ -112,15 +112,15 @@ const MEMBER_PALETTE = [
                   <div>
                     <p class="text-sm font-semibold text-text-primary">{{ loan.person }}</p>
                     <div class="flex items-center gap-2 mt-0.5">
-                      @if (memberName(loan.memberId); as mName) {
+                      @if (memberMap().get(loan.memberId ?? ''); as mInfo) {
                         <span class="inline-flex items-center gap-1 text-[10px] text-ib-purple">
-                          @if (memberColorById(loan.memberId); as mc) {
+                          @if (mInfo.color; as mc) {
                             <span
                               class="inline-block h-2 w-2 rounded-full"
                               [style.background-color]="mc"
                             ></span>
                           }
-                          {{ mName }}
+                          {{ mInfo.name }}
                         </span>
                       }
                       @if (loan.dueDay) {
@@ -264,15 +264,15 @@ const MEMBER_PALETTE = [
                   <div>
                     <p class="text-sm font-semibold text-text-primary">{{ loan.person }}</p>
                     <div class="flex items-center gap-2 mt-0.5">
-                      @if (memberName(loan.memberId); as mName) {
+                      @if (memberMap().get(loan.memberId ?? ''); as mInfo) {
                         <span class="inline-flex items-center gap-1 text-[10px] text-ib-purple">
-                          @if (memberColorById(loan.memberId); as mc) {
+                          @if (mInfo.color; as mc) {
                             <span
                               class="inline-block h-2 w-2 rounded-full"
                               [style.background-color]="mc"
                             ></span>
                           }
-                          {{ mName }}
+                          {{ mInfo.name }}
                         </span>
                       }
                       @if (loan.dueDay) {
@@ -386,39 +386,47 @@ const MEMBER_PALETTE = [
     </section>
 
     <app-modal-dialog #lentModal title="Nouveau prêt" (closed)="onModalClosed()">
-      <app-loan-form
-        direction="lent"
-        [members]="members()"
-        (submitted)="createLoan($event)"
-        (cancelled)="lentModal.close()"
-      />
+      @if (lentModal.isOpen()) {
+        <app-loan-form
+          direction="lent"
+          [members]="members()"
+          (submitted)="createLoan($event)"
+          (cancelled)="lentModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #borrowedModal title="Nouvel emprunt" (closed)="onModalClosed()">
-      <app-loan-form
-        direction="borrowed"
-        [members]="members()"
-        (submitted)="createLoan($event)"
-        (cancelled)="borrowedModal.close()"
-      />
+      @if (borrowedModal.isOpen()) {
+        <app-loan-form
+          direction="borrowed"
+          [members]="members()"
+          (submitted)="createLoan($event)"
+          (cancelled)="borrowedModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier" (closed)="onModalClosed()">
-      <app-loan-form
-        [direction]="selectedLoan()?.direction ?? 'lent'"
-        [initial]="selectedLoan()"
-        [members]="members()"
-        (submitted)="updateLoan($event)"
-        (cancelled)="editModal.close()"
-      />
+      @if (editModal.isOpen()) {
+        <app-loan-form
+          [direction]="selectedLoan()?.direction ?? 'lent'"
+          [initial]="selectedLoan()"
+          [members]="members()"
+          (submitted)="updateLoan($event)"
+          (cancelled)="editModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #paymentModal title="Remboursement" (closed)="onModalClosed()">
-      <app-record-payment-form
-        [accounts]="accounts()"
-        (submitted)="recordPayment($event)"
-        (cancelled)="paymentModal.close()"
-      />
+      @if (paymentModal.isOpen()) {
+        <app-record-payment-form
+          [accounts]="accounts()"
+          (submitted)="recordPayment($event)"
+          (cancelled)="paymentModal.close()"
+        />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog
@@ -426,71 +434,73 @@ const MEMBER_PALETTE = [
       [title]="'Historique — ' + (selectedLoan()?.person ?? '')"
       (closed)="onModalClosed()"
     >
-      <div class="space-y-4">
-        <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
-          <div class="flex-1">
-            <label for="tx-amount" class="text-xs text-text-muted">Montant</label>
-            <input
-              id="tx-amount"
-              type="number"
-              step="0.01"
-              min="0.01"
-              class="form-input mono"
-              [value]="manualTxAmount()"
-              (input)="manualTxAmount.set(+$any($event.target).value)"
-            />
-          </div>
-          <div class="flex-1">
-            <label for="tx-date" class="text-xs text-text-muted">Date</label>
-            <input
-              id="tx-date"
-              type="date"
-              class="form-input"
-              [value]="manualTxDate()"
-              (input)="manualTxDate.set($any($event.target).value)"
-            />
-          </div>
-          <button
-            type="submit"
-            [disabled]="!manualTxAmount() || !manualTxDate()"
-            class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
-          >
-            Ajouter
-          </button>
-        </form>
+      @if (historyModal.isOpen()) {
+        <div class="space-y-4">
+          <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
+            <div class="flex-1">
+              <label for="tx-amount" class="text-xs text-text-muted">Montant</label>
+              <input
+                id="tx-amount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                class="form-input mono"
+                [value]="manualTxAmount()"
+                (input)="manualTxAmount.set(+$any($event.target).value)"
+              />
+            </div>
+            <div class="flex-1">
+              <label for="tx-date" class="text-xs text-text-muted">Date</label>
+              <input
+                id="tx-date"
+                type="date"
+                class="form-input"
+                [value]="manualTxDate()"
+                (input)="manualTxDate.set($any($event.target).value)"
+              />
+            </div>
+            <button
+              type="submit"
+              [disabled]="!manualTxAmount() || !manualTxDate()"
+              class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
+            >
+              Ajouter
+            </button>
+          </form>
 
-        @if (transactions().length > 0) {
-          <div class="rounded-xl border border-border overflow-hidden">
-            <table class="w-full text-sm">
-              <thead>
-                <tr
-                  class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
-                >
-                  <th class="px-4 py-2.5">Date</th>
-                  <th class="px-4 py-2.5 text-right">Montant</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border/30">
-                @for (tx of transactions(); track tx.id) {
-                  <tr class="hover:bg-hover/30 transition-colors">
-                    <td class="px-4 py-2.5 text-text-primary">
-                      {{ tx.date | date: 'dd/MM/yyyy' }}
-                    </td>
-                    <td class="px-4 py-2.5 text-right font-mono font-medium text-ib-green">
-                      {{ tx.amount | number: '1.2-2' }}&euro;
-                    </td>
+          @if (transactions().length > 0) {
+            <div class="rounded-xl border border-border overflow-hidden">
+              <table class="w-full text-sm">
+                <thead>
+                  <tr
+                    class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
+                  >
+                    <th class="px-4 py-2.5">Date</th>
+                    <th class="px-4 py-2.5 text-right">Montant</th>
                   </tr>
-                }
-              </tbody>
-            </table>
-          </div>
-        } @else {
-          <div class="text-center py-8">
-            <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Aucun remboursement enregistré</p>
-          </div>
-        }
-      </div>
+                </thead>
+                <tbody class="divide-y divide-border/30">
+                  @for (tx of transactions(); track tx.id) {
+                    <tr class="hover:bg-hover/30 transition-colors">
+                      <td class="px-4 py-2.5 text-text-primary">
+                        {{ tx.date | date: 'dd/MM/yyyy' }}
+                      </td>
+                      <td class="px-4 py-2.5 text-right font-mono font-medium text-ib-green">
+                        {{ tx.amount | number: '1.2-2' }}&euro;
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          } @else {
+            <div class="text-center py-8">
+              <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
+              <p class="text-sm text-text-muted">Aucun remboursement enregistré</p>
+            </div>
+          }
+        </div>
+      }
     </app-modal-dialog>
   `,
 })
@@ -522,23 +532,16 @@ export class Loans {
 
   protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
   protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
-  protected readonly filterMemberId = signal<string | null>(null);
-
   protected readonly activeMembers = computed(() => {
     const allLoans = this.loans();
     const memberIds = new Set(allLoans.map((l) => l.memberId).filter(Boolean));
     return this.members().filter((m) => memberIds.has(m.id));
   });
 
-  constructor() {
-    effect(() => {
-      const active = this.activeMembers();
-      const current = this.filterMemberId();
-      if (active.length > 0 && (current === null || !active.find((m) => m.id === current))) {
-        this.filterMemberId.set(active[0].id);
-      }
-    });
-  }
+  protected readonly filterMemberId = linkedSignal<string | null>(() => {
+    const active = this.activeMembers();
+    return active.length > 0 ? active[0].id : null;
+  });
 
   protected readonly filteredLentLoans = computed(() => {
     const fid = this.filterMemberId();
@@ -559,25 +562,18 @@ export class Loans {
   protected readonly manualTxAmount = signal(0);
   protected readonly manualTxDate = signal(new Date().toISOString().slice(0, 10));
 
-  private readonly memberMap = computed(() => {
-    const map = new Map<string, { name: string; color: string | null }>();
-    for (const m of this.members()) {
-      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: m.color });
+  protected readonly memberMap = computed(() => {
+    const map = new Map<string, { name: string; color: string }>();
+    const members = this.members();
+    for (let i = 0; i < members.length; i++) {
+      const m = members[i];
+      map.set(m.id, {
+        name: `${m.firstName} ${m.lastName}`,
+        color: MEMBER_PALETTE[i % MEMBER_PALETTE.length],
+      });
     }
     return map;
   });
-
-  protected memberName(id: string | null): string | null {
-    if (!id) return null;
-    return this.memberMap().get(id)?.name ?? null;
-  }
-
-  protected memberColorById(id: string | null): string | null {
-    if (!id) return null;
-    const members = this.members();
-    const idx = members.findIndex(m => m.id === id);
-    return idx >= 0 ? MEMBER_PALETTE[idx % MEMBER_PALETTE.length] : null;
-  }
 
   protected openLentModal() {
     this.lentModalRef().open();
@@ -687,7 +683,4 @@ export class Loans {
     }
   }
 
-  protected memberColor(index: number): string {
-    return MEMBER_PALETTE[index % MEMBER_PALETTE.length];
-  }
 }

@@ -158,15 +158,21 @@ const TYPE_LABELS: Record<string, string> = {
     </section>
 
     <app-modal-dialog #createModal title="Nouveau médicament" (closed)="onModalClosed()">
-      <app-medication-form [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="createMedication($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-medication-form [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="createMedication($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier le médicament" (closed)="onModalClosed()">
-      <app-medication-form [initial]="selectedMedication()" [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="updateMedication($event)" (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-medication-form [initial]="selectedMedication()" [patients]="patients()" [prescriptions]="prescriptions()" (submitted)="updateMedication($event)" (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #refillModal title="Réapprovisionner" (closed)="onModalClosed()">
-      <app-refill-medication-form (submitted)="refillMedication($event)" (cancelled)="refillModal.close()" />
+      @if (refillModal.isOpen()) {
+        <app-refill-medication-form (submitted)="refillMedication($event)" (cancelled)="refillModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

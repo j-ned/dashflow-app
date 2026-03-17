@@ -101,11 +101,15 @@ import { Icon } from '@shared/components/icon/icon';
     </section>
 
     <app-modal-dialog #createModal title="Nouveau praticien" (closed)="onModalClosed()">
-      <app-practitioner-form (submitted)="createPractitioner($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-practitioner-form (submitted)="createPractitioner($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier le praticien" (closed)="onModalClosed()">
-      <app-practitioner-form [initial]="selectedPractitioner()" (submitted)="updatePractitioner($event)" (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-practitioner-form [initial]="selectedPractitioner()" (submitted)="updatePractitioner($event)" (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

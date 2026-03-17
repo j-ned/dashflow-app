@@ -130,20 +130,24 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
     </section>
 
     <app-modal-dialog #createModal title="Nouveau rendez-vous" (closed)="onModalClosed()">
-      <app-appointment-form
-        [patients]="patients()"
-        [practitioners]="practitioners()"
-        (submitted)="createAppointment($event)"
-        (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-appointment-form
+          [patients]="patients()"
+          [practitioners]="practitioners()"
+          (submitted)="createAppointment($event)"
+          (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier le rendez-vous" (closed)="onModalClosed()">
-      <app-appointment-form
-        [initial]="selectedAppointment()"
-        [patients]="patients()"
-        [practitioners]="practitioners()"
-        (submitted)="updateAppointment($event)"
-        (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-appointment-form
+          [initial]="selectedAppointment()"
+          [patients]="patients()"
+          [practitioners]="practitioners()"
+          (submitted)="updateAppointment($event)"
+          (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

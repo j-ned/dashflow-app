@@ -130,11 +130,15 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
     </section>
 
     <app-modal-dialog #createModal title="Nouvelle ordonnance" (closed)="onModalClosed()">
-      <app-prescription-form [patients]="patients()" [practitioners]="practitioners()" [appointments]="appointments()" (submitted)="createPrescription($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-prescription-form [patients]="patients()" [practitioners]="practitioners()" [appointments]="appointments()" (submitted)="createPrescription($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier l'ordonnance" (closed)="onModalClosed()">
-      <app-prescription-form [initial]="selectedPrescription()" [patients]="patients()" [practitioners]="practitioners()" [appointments]="appointments()" (submitted)="updatePrescription($event)" (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-prescription-form [initial]="selectedPrescription()" [patients]="patients()" [practitioners]="practitioners()" [appointments]="appointments()" (submitted)="updatePrescription($event)" (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })

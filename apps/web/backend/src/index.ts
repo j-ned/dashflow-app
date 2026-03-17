@@ -131,7 +131,7 @@ if (staticRoot) {
   app.use('/*', async (c, next) => {
     await next();
     const path = c.req.path;
-    if (/\.[a-f0-9]{8,}\.(js|css)$/.test(path) || /\.(woff2?|ttf|otf|svg|png|jpg|webp|avif|ico)$/.test(path)) {
+    if (/\.[a-zA-Z0-9]{6,}\.(js|css)$/.test(path) || /\.(woff2?|ttf|otf|svg|png|jpg|webp|avif|ico)$/.test(path)) {
       c.header('Cache-Control', 'public, max-age=31536000, immutable');
     } else {
       c.header('Cache-Control', 'no-cache');

@@ -253,7 +253,6 @@ dialog.modal-dialog {
 
 dialog.modal-dialog::backdrop {
   background: rgba(0, 0, 0, 0.6);
-  backdrop-filter: blur(4px);
 }
 
 dialog.modal-dialog[open] {

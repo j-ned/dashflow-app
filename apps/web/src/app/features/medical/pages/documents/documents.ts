@@ -137,11 +137,15 @@ import { Icon } from '@shared/components/icon/icon';
     </section>
 
     <app-modal-dialog #createModal title="Nouveau document" (closed)="onModalClosed()">
-      <app-document-form [patients]="patients()" [practitioners]="practitioners()" (submitted)="createDoc($event)" (cancelled)="createModal.close()" />
+      @if (createModal.isOpen()) {
+        <app-document-form [patients]="patients()" [practitioners]="practitioners()" (submitted)="createDoc($event)" (cancelled)="createModal.close()" />
+      }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal title="Modifier le document" (closed)="onModalClosed()">
-      <app-document-form [initial]="selectedDocument()" [patients]="patients()" [practitioners]="practitioners()" (submitted)="updateDoc($event)" (cancelled)="editModal.close()" />
+      @if (editModal.isOpen()) {
+        <app-document-form [initial]="selectedDocument()" [patients]="patients()" [practitioners]="practitioners()" (submitted)="updateDoc($event)" (cancelled)="editModal.close()" />
+      }
     </app-modal-dialog>
   `,
 })
