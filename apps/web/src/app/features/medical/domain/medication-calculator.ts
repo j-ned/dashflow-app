@@ -29,7 +29,7 @@ export function computeMedicationStock(med: Medication): MedicationWithStock {
   return {
     ...med,
     daysRemaining,
-    estimatedRunOut: runOutDate.toISOString().slice(0, 10),
+    estimatedRunOut: runOutDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
     isLow: daysRemaining <= med.alertDaysBefore,
   };
 }
