@@ -183,11 +183,6 @@ envelopeRoutes.patch('/:id/balance', async (c) => {
   const newBalance = String(Number(current.balance) + amount);
   const updateData: Record<string, any> = { balance: newBalance };
 
-  if (current.target) {
-    const newTarget = Math.max(0, Number(current.target) - amount);
-    updateData.target = String(newTarget);
-  }
-
   const [row] = await db.update(envelopes)
     .set(updateData)
     .where(eq(envelopes.id, id))

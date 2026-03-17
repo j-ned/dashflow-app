@@ -55,14 +55,24 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     );
   }
 
-  updateBalance(id: string, amount: number, date: string): Observable<Envelope> {
+  updateBalance(id: string, amount: number, date: string, envelope: Envelope): Observable<Envelope> {
     const key = this.crypto.getMasterKey();
-    const payload: Record<string, unknown> = { amount, date };
 
-    if (!key) return this.api.patch(`/envelopes/${id}/balance`, payload);
+    if (!key) return this.api.patch(`/envelopes/${id}/balance`, { amount, date });
 
-    return from(encryptEntity(payload, [], key)).pipe(
-      switchMap((encrypted) => this.api.patch<any>(`/envelopes/${id}/balance`, encrypted)),
+    // E2EE: recompute balance client-side, re-encrypt the full envelope, and use PUT
+    const updatedEnvelope: Record<string, unknown> = {
+      memberId: envelope.memberId,
+      name: envelope.name,
+      type: envelope.type,
+      balance: Number(envelope.balance) + amount,
+      target: envelope.target,
+      color: envelope.color,
+      dueDay: envelope.dueDay,
+    };
+
+    return from(encryptEntity(updatedEnvelope, CLEARTEXT_KEYS, key)).pipe(
+      switchMap((encrypted) => this.api.put<any>(`/envelopes/${id}`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope])),
     );
   }
