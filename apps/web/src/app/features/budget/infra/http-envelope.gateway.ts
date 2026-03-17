@@ -55,15 +55,11 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     );
   }
 
-  updateBalance(id: string, amount: number, date: string, envelope?: Envelope): Observable<Envelope> {
+  updateBalance(id: string, amount: number, date: string): Observable<Envelope> {
     const key = this.crypto.getMasterKey();
     const payload: Record<string, unknown> = { amount, date };
 
     if (!key) return this.api.patch(`/envelopes/${id}/balance`, payload);
-
-    if (envelope && envelope.target) {
-      payload['target'] = Math.max(0, Number(envelope.target) - amount);
-    }
 
     return from(encryptEntity(payload, [], key)).pipe(
       switchMap((encrypted) => this.api.patch<any>(`/envelopes/${id}/balance`, encrypted)),

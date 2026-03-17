@@ -476,7 +476,7 @@ export class Envelopes {
     const envelope = this.selectedEnvelope();
     if (!envelope) return;
     try {
-      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date, envelope));
+      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(event.amount > 0 ? 'Enveloppe créditée' : 'Enveloppe débitée');
