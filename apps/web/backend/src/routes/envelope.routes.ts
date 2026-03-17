@@ -3,7 +3,7 @@ import { eq, and, desc, inArray } from 'drizzle-orm';
 import { db } from '@db/client';
 import { envelopes, envelopeTransactions } from '@db/schema';
 import type { AppEnv } from '../types.js';
-import { validate, createEnvelopeSchema, creditEnvelopeSchema, envelopeTransactionSchema, createEncryptedEnvelopeSchema } from '../validation.js';
+import { validate, createEnvelopeSchema, creditEnvelopeSchema, envelopeTransactionSchema, createEncryptedEnvelopeSchema, creditEncryptedEnvelopeSchema } from '../validation.js';
 
 const envelopeRoutes = new Hono<AppEnv>();
 
@@ -149,19 +149,47 @@ envelopeRoutes.post('/:id/transactions', async (c) => {
 envelopeRoutes.patch('/:id/balance', async (c) => {
   const userId = c.get('userId') as string;
   const id = c.req.param('id');
-  const v = validate(creditEnvelopeSchema, await c.req.json());
-  if (!v.success) return c.json({ error: v.error }, 400);
-  const { amount, date } = v.data;
+  const body = await c.req.json();
 
   const [current] = await db.select().from(envelopes)
     .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId)))
     .limit(1);
   if (!current) return c.json({ error: 'Non trouve' }, 404);
 
+  if (body.encryptedData) {
+    const v = validate(creditEncryptedEnvelopeSchema, body);
+    if (!v.success) return c.json({ error: v.error }, 400);
+
+    const [row] = await db.update(envelopes)
+      .set({ encryptedData: v.data.encryptedData })
+      .where(eq(envelopes.id, id))
+      .returning();
+
+    await db.insert(envelopeTransactions).values({
+      envelopeId: id,
+      amount: '0',
+      date: new Date().toISOString().slice(0, 10),
+      encryptedData: v.data.encryptedData,
+    });
+
+    return c.json(row);
+  }
+
+  const v = validate(creditEnvelopeSchema, body);
+  if (!v.success) return c.json({ error: v.error }, 400);
+  const { amount, date } = v.data;
+
   const txDate = date || new Date().toISOString().slice(0, 10);
   const newBalance = String(Number(current.balance) + amount);
+  const updateData: Record<string, any> = { balance: newBalance };
+
+  if (current.target) {
+    const newTarget = Math.max(0, Number(current.target) - amount);
+    updateData.target = String(newTarget);
+  }
+
   const [row] = await db.update(envelopes)
-    .set({ balance: newBalance })
+    .set(updateData)
     .where(eq(envelopes.id, id))
     .returning();
 

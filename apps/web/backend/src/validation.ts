@@ -71,6 +71,10 @@ export const creditEnvelopeSchema = z.object({
   date: dateStr.optional(),
 });
 
+export const creditEncryptedEnvelopeSchema = z.object({
+  encryptedData: z.string().min(1),
+});
+
 export const envelopeTransactionSchema = z.object({
   amount: z.number(),
   date: dateStr,
