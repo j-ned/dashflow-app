@@ -104,22 +104,22 @@ const TYPE_LABELS: Record<string, string> = {
 
           <dl class="grid grid-cols-2 gap-2 text-xs mt-3">
             <div>
-              <dt class="text-text-muted">Quantité</dt>
-              <dd class="font-mono text-text-primary">{{ med.quantity }} unités</dd>
-            </div>
-            <div>
-              <dt class="text-text-muted">Jours restants</dt>
-              <dd class="font-mono" [class.text-ib-green]="!med.isLow" [class.text-ib-red]="med.isLow">
-                {{ med.daysRemaining }} jours
+              <dt class="text-text-muted">Stock restant</dt>
+              <dd class="font-mono font-medium" [class.text-ib-green]="!med.isLow" [class.text-ib-red]="med.isLow">
+                {{ med.remainingQuantity }} / {{ med.quantity }} unités
               </dd>
             </div>
             <div>
-              <dt class="text-text-muted">Jours de prise</dt>
-              <dd class="font-mono text-ib-green">{{ med.takeDaysRemaining }} jours</dd>
+              <dt class="text-text-muted">Consommé</dt>
+              <dd class="font-mono text-ib-orange">{{ med.consumedQuantity }} unités</dd>
+            </div>
+            <div>
+              <dt class="text-text-muted">Jours de prise restants</dt>
+              <dd class="font-mono text-ib-green">{{ med.takeDaysRemaining }}j</dd>
             </div>
             <div>
               <dt class="text-text-muted">Jours sans prise</dt>
-              <dd class="font-mono text-text-muted">{{ med.restDaysRemaining }} jours</dd>
+              <dd class="font-mono text-text-muted">{{ med.restDaysRemaining }}j</dd>
             </div>
             <div>
               <dt class="text-text-muted">Épuisement estimé</dt>

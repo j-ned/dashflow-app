@@ -215,7 +215,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                           </div>
                           <app-medication-stock-bar [daysRemaining]="med.daysRemaining" [alertDaysBefore]="med.alertDaysBefore" />
                           <div class="flex items-center justify-between mt-1">
-                            <span class="text-[10px] text-text-muted">{{ med.quantity }} unités — épuisement {{ med.estimatedRunOut | date:'d MMMM yyyy' }}</span>
+                            <span class="text-[10px] text-text-muted">{{ med.remainingQuantity }}/{{ med.quantity }} unités — épuisement {{ med.estimatedRunOut | date:'d MMMM yyyy' }}</span>
                             @if (med.skipDays.length > 0) {
                               <div class="flex gap-px">
                                 @for (d of dayLabels; track d.idx) {

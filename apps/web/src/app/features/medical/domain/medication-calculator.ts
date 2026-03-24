@@ -1,37 +1,53 @@
 import { Medication, MedicationWithStock } from './models/medication.model';
 
-export function computeMedicationStock(med: Medication): MedicationWithStock {
-  const activeDaysPerWeek = 7 - med.skipDays.length;
-  const weeklyRate = med.dailyRate * activeDaysPerWeek;
+function countActiveDays(from: Date, to: Date, skipDays: number[]): number {
+  let count = 0;
+  const cursor = new Date(from);
+  while (cursor < to) {
+    if (!skipDays.includes(cursor.getDay())) count++;
+    cursor.setDate(cursor.getDate() + 1);
+  }
+  return count;
+}
 
-  const calendarDays = weeklyRate > 0
-    ? Math.floor((med.quantity / weeklyRate) * 7)
-    : Infinity;
-
+export function computeMedicationStock(med: Medication, now = new Date()): MedicationWithStock {
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startDate = new Date(med.startDate);
-  const runOutDate = new Date(startDate);
-  let remaining = med.quantity;
+  const activeDaysPerWeek = 7 - med.skipDays.length;
 
-  if (med.dailyRate > 0 && activeDaysPerWeek > 0) {
-    while (remaining > 0) {
+  // Consumed since startDate (0 if start is in the future)
+  const activeDaysSinceStart = startDate < today
+    ? countActiveDays(startDate, today, med.skipDays)
+    : 0;
+  const consumedQuantity = Math.min(med.quantity, activeDaysSinceStart * med.dailyRate);
+  const remainingQuantity = Math.max(0, med.quantity - consumedQuantity);
+
+  // Project forward from today with remaining stock
+  let daysRemaining = 0;
+  let takeDaysRemaining = 0;
+  const runOutDate = new Date(today);
+
+  if (med.dailyRate > 0 && activeDaysPerWeek > 0 && remainingQuantity > 0) {
+    let stock = remainingQuantity;
+    while (stock > 0) {
       const dayOfWeek = runOutDate.getDay();
       if (!med.skipDays.includes(dayOfWeek)) {
-        remaining -= med.dailyRate;
+        stock -= med.dailyRate;
+        takeDaysRemaining++;
       }
-      if (remaining > 0) {
+      daysRemaining++;
+      if (stock > 0) {
         runOutDate.setDate(runOutDate.getDate() + 1);
       }
     }
   }
 
-  const daysRemaining = calendarDays === Infinity ? 9999 : calendarDays;
-  const takeDaysRemaining = med.dailyRate > 0
-    ? Math.ceil(med.quantity / med.dailyRate)
-    : 0;
   const restDaysRemaining = Math.max(0, daysRemaining - takeDaysRemaining);
 
   return {
     ...med,
+    consumedQuantity,
+    remainingQuantity,
     daysRemaining,
     takeDaysRemaining,
     restDaysRemaining,
