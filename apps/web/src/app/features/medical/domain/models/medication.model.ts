@@ -16,6 +16,8 @@ export type Medication = {
 
 export type MedicationWithStock = Medication & {
   readonly daysRemaining: number;
+  readonly takeDaysRemaining: number;
+  readonly restDaysRemaining: number;
   readonly estimatedRunOut: string;
   readonly isLow: boolean;
 };

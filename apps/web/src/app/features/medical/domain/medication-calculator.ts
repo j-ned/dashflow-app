@@ -25,10 +25,16 @@ export function computeMedicationStock(med: Medication): MedicationWithStock {
   }
 
   const daysRemaining = calendarDays === Infinity ? 9999 : calendarDays;
+  const takeDaysRemaining = med.dailyRate > 0
+    ? Math.ceil(med.quantity / med.dailyRate)
+    : 0;
+  const restDaysRemaining = Math.max(0, daysRemaining - takeDaysRemaining);
 
   return {
     ...med,
     daysRemaining,
+    takeDaysRemaining,
+    restDaysRemaining,
     estimatedRunOut: runOutDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
     isLow: daysRemaining <= med.alertDaysBefore,
   };

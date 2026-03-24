@@ -114,6 +114,14 @@ const TYPE_LABELS: Record<string, string> = {
               </dd>
             </div>
             <div>
+              <dt class="text-text-muted">Jours de prise</dt>
+              <dd class="font-mono text-ib-green">{{ med.takeDaysRemaining }} jours</dd>
+            </div>
+            <div>
+              <dt class="text-text-muted">Jours sans prise</dt>
+              <dd class="font-mono text-text-muted">{{ med.restDaysRemaining }} jours</dd>
+            </div>
+            <div>
               <dt class="text-text-muted">Épuisement estimé</dt>
               <dd class="font-mono text-text-primary">{{ med.estimatedRunOut }}</dd>
             </div>
