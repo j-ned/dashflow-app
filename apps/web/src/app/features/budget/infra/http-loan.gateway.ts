@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
@@ -60,9 +60,17 @@ export class HttpLoanGateway implements LoanGateway {
     const payload = { amount, date };
     if (!key) return this.api.patch(`/loans/${id}/payment`, payload);
 
-    return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.patch<any>(`/loans/${id}/payment`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Loan>(row, key)) : from([row as Loan])),
+    // With E2EE, backend can't read remaining/amount from encryptedData.
+    // Compute new remaining client-side, then update loan + add transaction.
+    return this.getById(id).pipe(
+      switchMap((loan) => {
+        const newRemaining = Math.max(0, loan.remaining - amount);
+        return this.update(id, { remaining: newRemaining }).pipe(
+          switchMap((updated) =>
+            this.addTransaction(id, { amount, date }).pipe(map(() => updated)),
+          ),
+        );
+      }),
     );
   }
 
