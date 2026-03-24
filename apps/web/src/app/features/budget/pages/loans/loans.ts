@@ -38,6 +38,32 @@ const MEMBER_PALETTE = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, Icon, FormsModule],
   host: { class: 'block space-y-6' },
+  styles: `
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+    }
+    .action-label {
+      max-width: 0;
+      overflow: hidden;
+      opacity: 0;
+      white-space: nowrap;
+      transition: max-width 0.25s ease, opacity 0.2s ease;
+    }
+    .action-btn:hover .action-label,
+    .action-btn:focus-visible .action-label {
+      max-width: 6rem;
+      opacity: 1;
+    }
+  `,
   template: `
     <header class="flex items-center justify-between">
       <div>
@@ -191,35 +217,43 @@ const MEMBER_PALETTE = [
               <div class="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-border/30">
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+                  class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
+                  [title]="'Remboursement — ' + loan.person"
+                  [attr.aria-label]="'Enregistrer un remboursement pour ' + loan.person"
                   (click)="openPaymentModal(loan)"
-                  aria-label="Remboursement"
                 >
                   <app-icon name="banknote" size="13" />
+                  <span class="action-label">Rembourser</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                  class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
+                  [title]="'Historique — ' + loan.person"
+                  [attr.aria-label]="'Historique de ' + loan.person"
                   (click)="openHistoryModal(loan)"
-                  aria-label="Historique"
                 >
                   <app-icon name="clock" size="13" />
+                  <span class="action-label">Historique</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+                  class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
+                  [title]="'Modifier — ' + loan.person"
+                  [attr.aria-label]="'Modifier le prêt de ' + loan.person"
                   (click)="openEditModal(loan)"
-                  aria-label="Modifier"
                 >
                   <app-icon name="pencil" size="13" />
+                  <span class="action-label">Modifier</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                  class="action-btn hover:text-ib-red hover:border-ib-red/30"
+                  [title]="'Supprimer — ' + loan.person"
+                  [attr.aria-label]="'Supprimer le prêt de ' + loan.person"
                   (click)="deleteLoan(loan.id)"
-                  aria-label="Supprimer"
                 >
                   <app-icon name="trash" size="13" />
+                  <span class="action-label">Supprimer</span>
                 </button>
               </div>
             </article>
@@ -343,35 +377,43 @@ const MEMBER_PALETTE = [
               <div class="flex items-center justify-end gap-1 mt-3 pt-3 border-t border-border/30">
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+                  class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
+                  [title]="'Remboursement — ' + loan.person"
+                  [attr.aria-label]="'Enregistrer un remboursement pour ' + loan.person"
                   (click)="openPaymentModal(loan)"
-                  aria-label="Remboursement"
                 >
                   <app-icon name="banknote" size="13" />
+                  <span class="action-label">Rembourser</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                  class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
+                  [title]="'Historique — ' + loan.person"
+                  [attr.aria-label]="'Historique de ' + loan.person"
                   (click)="openHistoryModal(loan)"
-                  aria-label="Historique"
                 >
                   <app-icon name="clock" size="13" />
+                  <span class="action-label">Historique</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+                  class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
+                  [title]="'Modifier — ' + loan.person"
+                  [attr.aria-label]="'Modifier emprunt de ' + loan.person"
                   (click)="openEditModal(loan)"
-                  aria-label="Modifier"
                 >
                   <app-icon name="pencil" size="13" />
+                  <span class="action-label">Modifier</span>
                 </button>
                 <button
                   type="button"
-                  class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                  class="action-btn hover:text-ib-red hover:border-ib-red/30"
+                  [title]="'Supprimer — ' + loan.person"
+                  [attr.aria-label]="'Supprimer emprunt de ' + loan.person"
                   (click)="deleteLoan(loan.id)"
-                  aria-label="Supprimer"
                 >
                   <app-icon name="trash" size="13" />
+                  <span class="action-label">Supprimer</span>
                 </button>
               </div>
             </article>
