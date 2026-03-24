@@ -169,7 +169,9 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                   }
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          (click)="deleteArchive(archive)" aria-label="Supprimer">
+                          [title]="'Supprimer — ' + monthLabel(archive.month)"
+                          [attr.aria-label]="'Supprimer archive ' + monthLabel(archive.month)"
+                          (click)="deleteArchive(archive)">
                     <app-icon name="trash" size="14" />
                   </button>
                 </div>

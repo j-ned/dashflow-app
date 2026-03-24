@@ -46,6 +46,32 @@ const MEMBER_PALETTE = [
     FormsModule,
   ],
   host: { class: 'block space-y-6' },
+  styles: `
+    .action-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.375rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border);
+      padding: 0.375rem 0.5rem;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--color-text-muted);
+      transition: all 0.15s;
+    }
+    .action-label {
+      max-width: 0;
+      overflow: hidden;
+      opacity: 0;
+      white-space: nowrap;
+      transition: max-width 0.25s ease, opacity 0.2s ease;
+    }
+    .action-btn:hover .action-label,
+    .action-btn:focus-visible .action-label {
+      max-width: 6rem;
+      opacity: 1;
+    }
+  `,
   template: `
     <header class="flex items-center justify-between">
       <div>
@@ -176,35 +202,43 @@ const MEMBER_PALETTE = [
           >
             <button
               type="button"
-              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+              class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
+              [title]="'Créditer/Débiter — ' + envelope.name"
+              [attr.aria-label]="'Créditer ou débiter ' + envelope.name"
               (click)="openCreditModal(envelope)"
-              aria-label="Créditer/Débiter"
             >
               <app-icon name="plus-circle" size="14" />
+              <span class="action-label">Créditer</span>
             </button>
             <button
               type="button"
-              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+              class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
+              [title]="'Historique — ' + envelope.name"
+              [attr.aria-label]="'Historique de ' + envelope.name"
               (click)="openHistoryModal(envelope)"
-              aria-label="Historique"
             >
               <app-icon name="clock" size="14" />
+              <span class="action-label">Historique</span>
             </button>
             <button
               type="button"
-              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+              class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
+              [title]="'Modifier — ' + envelope.name"
+              [attr.aria-label]="'Modifier ' + envelope.name"
               (click)="openEditModal(envelope)"
-              aria-label="Modifier"
             >
               <app-icon name="pencil" size="14" />
+              <span class="action-label">Modifier</span>
             </button>
             <button
               type="button"
-              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+              class="action-btn hover:text-ib-red hover:border-ib-red/30"
+              [title]="'Supprimer — ' + envelope.name"
+              [attr.aria-label]="'Supprimer ' + envelope.name"
               (click)="deleteEnvelope(envelope.id)"
-              aria-label="Supprimer"
             >
               <app-icon name="trash" size="14" />
+              <span class="action-label">Supprimer</span>
             </button>
           </div>
         </article>

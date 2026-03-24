@@ -234,12 +234,16 @@ const PALETTE = [
                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                          (click)="openEditModal(entry)" aria-label="Modifier">
+                          [title]="'Modifier — ' + entry.label"
+                          [attr.aria-label]="'Modifier ' + entry.label"
+                          (click)="openEditModal(entry)">
                     <app-icon name="pencil" size="13" />
                   </button>
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          (click)="deleteEntry(entry.id)" aria-label="Supprimer">
+                          [title]="'Supprimer — ' + entry.label"
+                          [attr.aria-label]="'Supprimer ' + entry.label"
+                          (click)="deleteEntry(entry.id)">
                     <app-icon name="trash" size="13" />
                   </button>
                 </div>
@@ -294,10 +298,14 @@ const PALETTE = [
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-red">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors" (click)="openEditModal(entry)" aria-label="Modifier">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
+                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            (click)="openEditModal(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors" (click)="deleteEntry(entry.id)" aria-label="Supprimer">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
+                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            (click)="deleteEntry(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
                   </div>
@@ -353,10 +361,14 @@ const PALETTE = [
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-orange">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors" (click)="openEditModal(entry)" aria-label="Modifier">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
+                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            (click)="openEditModal(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors" (click)="deleteEntry(entry.id)" aria-label="Supprimer">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
+                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            (click)="deleteEntry(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
                   </div>
@@ -430,10 +442,14 @@ const PALETTE = [
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-yellow">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors" (click)="openEditModal(entry)" aria-label="Modifier">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
+                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            (click)="openEditModal(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors" (click)="deleteEntry(entry.id)" aria-label="Supprimer">
+                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
+                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            (click)="deleteEntry(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
                   </div>
@@ -473,8 +489,9 @@ const PALETTE = [
                     </div>
                     <button type="button"
                             class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                            (click)="deleteAccount(account)"
-                            aria-label="Supprimer le compte">
+                            [title]="'Supprimer — ' + account.name"
+                            [attr.aria-label]="'Supprimer le compte ' + account.name"
+                            (click)="deleteAccount(account)">
                       <app-icon name="trash" size="14" />
                     </button>
                   </div>
