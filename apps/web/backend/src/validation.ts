@@ -286,6 +286,7 @@ export const createEncryptedEnvelopeTransactionSchema = z.object({
 
 export const createEncryptedLoanSchema = z.object({
   memberId: optionalUuid,
+  direction: z.enum(['lent', 'borrowed']).optional(),
   encryptedData: z.string().min(1),
 });
 

@@ -7,7 +7,7 @@ import { Loan } from '../domain/models/loan.model';
 import { LoanTransaction } from '../domain/models/loan-transaction.model';
 import { LoanGateway } from '../domain/gateways/loan.gateway';
 
-const CLEARTEXT_KEYS = ['id', 'userId', 'memberId'] as const;
+const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'direction'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'loanId', 'createdAt'] as const;
 
 @Injectable()
@@ -61,11 +61,12 @@ export class HttpLoanGateway implements LoanGateway {
     if (!key) return this.api.patch(`/loans/${id}/payment`, payload);
 
     // With E2EE, backend can't read remaining/amount from encryptedData.
-    // Compute new remaining client-side, then update loan + add transaction.
+    // Compute new remaining client-side, then update full loan + add transaction.
     return this.getById(id).pipe(
       switchMap((loan) => {
         const newRemaining = Math.max(0, loan.remaining - amount);
-        return this.update(id, { remaining: newRemaining }).pipe(
+        const { id: _, ...loanData } = loan;
+        return this.update(id, { ...loanData, remaining: newRemaining }).pipe(
           switchMap((updated) =>
             this.addTransaction(id, { amount, date }).pipe(map(() => updated)),
           ),

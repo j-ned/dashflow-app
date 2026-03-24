@@ -37,7 +37,7 @@ loanRoutes.post('/', async (c) => {
       userId,
       memberId: v.data.memberId ?? null,
       person: '',
-      direction: 'lent',
+      direction: v.data.direction ?? 'lent',
       amount: '0',
       remaining: '0',
       date: new Date().toISOString().slice(0, 10),
@@ -72,6 +72,7 @@ loanRoutes.put('/:id', async (c) => {
   if (body.encryptedData) {
     const setData: Record<string, unknown> = { encryptedData: body.encryptedData };
     if (body.memberId !== undefined) setData.memberId = body.memberId;
+    if (body.direction) setData.direction = body.direction;
     const [row] = await db.update(loans)
       .set(setData)
       .where(and(eq(loans.id, id), eq(loans.userId, userId)))
