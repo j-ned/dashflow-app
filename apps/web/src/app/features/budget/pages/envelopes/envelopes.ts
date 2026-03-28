@@ -524,6 +524,8 @@ export class Envelopes {
             memberId: envelope.memberId,
             dayOfMonth: null,
             date: event.date || null,
+            endDate: null,
+            toAccountId: null,
             category: 'Enveloppe',
             payslipKey: null,
           }),

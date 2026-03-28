@@ -52,11 +52,13 @@ recurringEntryRoutes.post('/', async (c) => {
     userId,
     memberId: v.data.memberId ?? null,
     accountId: v.data.accountId ?? null,
+    toAccountId: v.data.toAccountId ?? null,
     label: v.data.label,
     amount: v.data.amount,
     type: v.data.type,
     dayOfMonth: v.data.dayOfMonth ?? null,
     date: v.data.date ?? null,
+    endDate: v.data.endDate ?? null,
     category: v.data.category ?? null,
   }).returning();
   return c.json(row, 201);

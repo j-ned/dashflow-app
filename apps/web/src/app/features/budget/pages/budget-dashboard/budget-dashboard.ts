@@ -414,10 +414,11 @@ export class BudgetDashboard {
       const mEntries = filter(allEntries) as RecurringEntry[];
       const lent = mLoans.filter(l => l.direction === 'lent');
       const borrowed = mLoans.filter(l => l.direction === 'borrowed');
-      const incomes = mEntries.filter(e => e.type === 'income');
-      const monthlyExp = mEntries.filter(e => e.type === 'expense').sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32));
-      const annualExp = mEntries.filter(e => e.type === 'annual_expense');
       const currentMonth = new Date().toISOString().slice(0, 7);
+      const isActive = (e: RecurringEntry) => !e.endDate || e.endDate.slice(0, 7) >= currentMonth;
+      const incomes = mEntries.filter(e => e.type === 'income' && isActive(e));
+      const monthlyExp = mEntries.filter(e => e.type === 'expense' && isActive(e)).sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32));
+      const annualExp = mEntries.filter(e => e.type === 'annual_expense' && isActive(e));
       const spendings = mEntries.filter(e => e.type === 'spending' && (!e.date || e.date.startsWith(currentMonth)));
 
       const totalIncome = incomes.reduce((s, e) => s + Number(e.amount), 0);

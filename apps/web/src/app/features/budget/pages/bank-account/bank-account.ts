@@ -106,7 +106,9 @@ const PALETTE = [
           <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Revenus</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-green tracking-tight">{{ totalIncome() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ incomes().length }} source{{ incomes().length > 1 ? 's' : '' }}</p>
+        <p class="mt-1.5 text-[11px] text-text-muted truncate">
+          @if (incomes().length === 1) { {{ incomes()[0].label }} } @else { {{ incomes().length }} sources }
+        </p>
       </div>
 
       <!-- Prélèvements mensuels -->
@@ -261,7 +263,7 @@ const PALETTE = [
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-lg font-mono font-bold text-ib-green">+{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span></span>
-                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
                           [title]="'Modifier — ' + entry.label"
@@ -331,12 +333,17 @@ const PALETTE = [
                       } @else if (entry.dayOfMonth) {
                         <span class="text-[10px] text-text-muted">le {{ entry.dayOfMonth }}</span>
                       }
+                      @if (entry.endDate) {
+                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
+                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
+                        </span>
+                      }
                     </div>
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold" [class.text-ib-red]="!passed" [class.text-text-muted]="passed">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
                             [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
                             (click)="openEditModal(entry)">
@@ -394,12 +401,17 @@ const PALETTE = [
                       @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
+                      @if (entry.endDate) {
+                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
+                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
+                        </span>
+                      }
                     </div>
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-orange">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
                             [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
                             (click)="openEditModal(entry)">
@@ -480,7 +492,7 @@ const PALETTE = [
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-yellow">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
                             [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
                             (click)="openEditModal(entry)">
@@ -507,6 +519,138 @@ const PALETTE = [
         }
       </section>
     </div>
+
+    <!-- ═══ Virements automatiques ═══ -->
+    @if (transfers().length > 0 || accounts().length > 1) {
+      <section class="rounded-xl border border-border bg-surface overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 bg-ib-purple/5 border-b border-border/50">
+          <div class="flex items-center gap-2">
+            <app-icon name="credit-card" size="16" class="text-ib-purple" />
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-purple">Virements automatiques</h3>
+          </div>
+          <button type="button"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
+                  (click)="openCreateModal('transfer')">
+            <app-icon name="plus" size="12" /> Virement
+          </button>
+        </div>
+        @if (transfers().length > 0) {
+          <div class="divide-y divide-border/30">
+            @for (entry of transfers(); track entry.id) {
+              @let passed = isExpensePassed(entry);
+              <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-purple/3 transition-colors"
+                   [class.opacity-50]="passed">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold shrink-0"
+                       [class.bg-ib-green/10]="passed" [class.text-ib-green]="passed"
+                       [class.bg-ib-purple/10]="!passed" [class.text-ib-purple]="!passed">
+                    @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-text-primary" [class.line-through]="passed">{{ entry.label }}</p>
+                    <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                      @if (accountNameById(entry.accountId); as fromName) {
+                        <span class="text-[11px] text-text-muted">{{ fromName }}</span>
+                      }
+                      <app-icon name="arrow-right" size="10" class="text-text-muted" />
+                      @if (accountNameById(entry.toAccountId); as toName) {
+                        <span class="text-[11px] text-ib-purple font-medium">{{ toName }}</span>
+                      }
+                      @if (entry.endDate) {
+                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
+                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
+                        </span>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-lg font-mono font-bold text-ib-purple">{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span></span>
+                  <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button type="button"
+                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+                            (click)="openEditModal(entry)">
+                      <app-icon name="pencil" size="13" />
+                    </button>
+                    <button type="button"
+                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                            (click)="deleteEntry(entry.id)">
+                      <app-icon name="trash" size="13" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <div class="px-5 py-8 text-center">
+            <app-icon name="credit-card" size="32" class="text-text-muted/20 mx-auto mb-2" />
+            <p class="text-sm text-text-muted">Programmez des virements automatiques entre vos comptes</p>
+          </div>
+        }
+      </section>
+    }
+
+    <!-- ═══ Timeline du mois ═══ -->
+    @if (timelineEvents().length > 0) {
+      <section class="rounded-xl border border-border bg-surface overflow-hidden">
+        <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
+          <app-icon name="calendar" size="16" class="text-ib-blue" />
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-blue">Timeline du mois</h3>
+        </div>
+        <div class="px-5 py-4">
+          <div class="relative">
+            <!-- Ligne verticale -->
+            <div class="absolute left-3.5 top-0 bottom-0 w-px bg-border"></div>
+            <div class="space-y-0.5">
+              @for (event of timelineEvents(); track event.id) {
+                <div class="relative flex items-center gap-3 py-1.5 pl-9">
+                  <!-- Point sur la ligne -->
+                  <div class="absolute left-2 h-3 w-3 rounded-full border-2 border-surface"
+                       [class.bg-ib-green]="event.type === 'income'"
+                       [class.bg-ib-red]="event.type === 'expense'"
+                       [class.bg-ib-orange]="event.type === 'annual_expense'"
+                       [class.bg-ib-purple]="event.type === 'transfer'"
+                       [class.bg-ib-yellow]="event.type === 'spending'"
+                       [class.ring-2]="event.day === currentDay"
+                       [class.ring-ib-cyan]="event.day === currentDay"></div>
+                  <!-- Jour -->
+                  <span class="text-[11px] font-mono font-bold w-5 shrink-0"
+                        [class.text-ib-cyan]="event.day === currentDay"
+                        [class.text-text-muted]="event.day !== currentDay">
+                    {{ event.day }}
+                  </span>
+                  <!-- Label -->
+                  <span class="text-[13px] truncate flex-1"
+                        [class.text-text-muted]="event.passed"
+                        [class.line-through]="event.passed"
+                        [class.text-text-primary]="!event.passed">
+                    {{ event.label }}
+                  </span>
+                  <!-- Montant -->
+                  <span class="text-[13px] font-mono font-bold shrink-0"
+                        [class.text-ib-green]="event.type === 'income'"
+                        [class.text-ib-red]="event.type === 'expense'"
+                        [class.text-ib-orange]="event.type === 'annual_expense'"
+                        [class.text-ib-purple]="event.type === 'transfer'"
+                        [class.text-ib-yellow]="event.type === 'spending'"
+                        [class.opacity-50]="event.passed">
+                    {{ event.sign }}{{ event.amount | number:'1.2-2' }}&euro;
+                  </span>
+                </div>
+              }
+            </div>
+            <!-- Marqueur "Aujourd'hui" -->
+            <div class="relative flex items-center gap-3 py-1.5 pl-9 mt-1">
+              <div class="absolute left-1.5 h-4 w-4 rounded-full bg-ib-cyan/20 border-2 border-ib-cyan"></div>
+              <span class="text-[11px] font-mono font-bold w-5 text-ib-cyan shrink-0">{{ currentDay }}</span>
+              <span class="text-[11px] font-semibold text-ib-cyan uppercase tracking-wider">Aujourd'hui</span>
+              <span class="text-[13px] font-mono font-bold text-ib-cyan shrink-0">{{ currentBalance() | number:'1.2-2' }}&euro;</span>
+            </div>
+          </div>
+        </div>
+      </section>
+    }
 
     <!-- ═══ Modals ═══ -->
     <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="resetAccountForm()">
@@ -589,13 +733,13 @@ const PALETTE = [
 
     <app-modal-dialog #createModal [title]="createModalTitle()" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
-        <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
+        <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [accounts]="accounts()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
       }
     </app-modal-dialog>
 
     <app-modal-dialog #editModal [title]="editModalTitle()" (closed)="onModalClosed()">
       @if (editModal.isOpen()) {
-        <app-recurring-entry-form [initial]="selectedEntry()" [members]="members()"
+        <app-recurring-entry-form [initial]="selectedEntry()" [accounts]="accounts()" [members]="members()"
           (submitted)="updateEntry($event)"
           (fileAttached)="uploadPayslip($event)"
           (viewPayslip)="openPayslip()"
@@ -662,10 +806,37 @@ export class BankAccount {
     return all.filter(e => e.accountId === accountId);
   });
 
-  protected readonly incomes = computed(() => this.filteredEntries().filter(e => e.type === 'income'));
-  protected readonly monthlyExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'expense'));
-  protected readonly annualExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'annual_expense'));
+  private readonly currentMonth = new Date().toISOString().slice(0, 7);
+
+  private isActive(entry: RecurringEntry): boolean {
+    if (!entry.endDate) return true;
+    return entry.endDate.slice(0, 7) >= this.currentMonth;
+  }
+
+  protected readonly incomes = computed(() => this.filteredEntries().filter(e => e.type === 'income' && this.isActive(e)));
+  protected readonly monthlyExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'expense' && this.isActive(e)));
+  protected readonly annualExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'annual_expense' && this.isActive(e)));
   protected readonly allSpendings = computed(() => this.filteredEntries().filter(e => e.type === 'spending'));
+
+  // Virements : ceux du compte sélectionné (source) + ceux qui arrivent sur ce compte (cible)
+  protected readonly transfers = computed(() => {
+    const accountId = this.selectedAccountId();
+    const all = this.allEntries().filter(e => e.type === 'transfer' && this.isActive(e));
+    if (accountId === null) return all;
+    return all.filter(e => e.accountId === accountId || e.toAccountId === accountId);
+  });
+
+  // Virements sortants du compte sélectionné (débit)
+  private readonly outgoingTransfers = computed(() => {
+    const accountId = this.selectedAccountId();
+    return this.transfers().filter(e => e.accountId === accountId);
+  });
+
+  // Virements entrants sur le compte sélectionné (crédit)
+  private readonly incomingTransfers = computed(() => {
+    const accountId = this.selectedAccountId();
+    return this.transfers().filter(e => e.toAccountId === accountId);
+  });
 
   protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7));
 
@@ -677,10 +848,12 @@ export class BankAccount {
 
   protected readonly monthSpendings = computed(() => {
     const ym = this.spendingMonth();
-    return this.allSpendings().filter(e => {
-      if (!e.date) return true; // sans date = mois courant par défaut
-      return e.date.startsWith(ym);
-    });
+    return this.allSpendings()
+      .filter(e => {
+        if (!e.date) return true;
+        return e.date.startsWith(ym);
+      })
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
 
   protected readonly sortedMonthlyExpenses = computed(() =>
@@ -688,7 +861,7 @@ export class BankAccount {
   );
 
   protected readonly today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
-  private readonly currentDay = new Date().getDate();
+  protected readonly currentDay = new Date().getDate();
 
   protected readonly selectedAccount = computed(() => {
     const id = this.selectedAccountId();
@@ -729,22 +902,39 @@ export class BankAccount {
     this.upcomingExpenses().reduce((s, e) => s + Number(e.amount), 0)
   );
 
+  // Virements passés/à venir
+  private readonly passedOutgoing = computed(() =>
+    this.outgoingTransfers().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay).reduce((s, e) => s + Number(e.amount), 0)
+  );
+  private readonly passedIncoming = computed(() =>
+    this.incomingTransfers().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay).reduce((s, e) => s + Number(e.amount), 0)
+  );
+  private readonly totalOutgoing = computed(() =>
+    this.outgoingTransfers().reduce((s, e) => s + Number(e.amount), 0)
+  );
+  private readonly totalIncoming = computed(() =>
+    this.incomingTransfers().reduce((s, e) => s + Number(e.amount), 0)
+  );
+
   protected readonly totalAllExpenses = computed(() =>
-    this.totalMonthlyExpenses() + this.monthlyAnnualExpenses() + this.totalMonthSpendings()
+    this.totalMonthlyExpenses() + this.monthlyAnnualExpenses() + this.totalMonthSpendings() + this.totalOutgoing()
   );
 
-  // Solde actuel = solde initial + revenus - prélèvements déjà passés - annuels/12 - dépenses
+  // Solde actuel = initial + revenus + virements entrants passés - prélèvements passés - virements sortants passés - annuels/12 - dépenses
   protected readonly currentBalance = computed(() =>
-    this.selectedInitialBalance() + this.totalIncome() - this.totalPassedExpenses() - this.monthlyAnnualExpenses() - this.totalMonthSpendings()
+    this.selectedInitialBalance() + this.totalIncome() + this.passedIncoming()
+    - this.totalPassedExpenses() - this.passedOutgoing()
+    - this.monthlyAnnualExpenses() - this.totalMonthSpendings()
   );
 
-  // Solde fin de mois = solde initial + revenus - TOUS les prélèvements - annuels/12 - dépenses
+  // Solde fin de mois = initial + revenus + virements entrants - TOUTES charges - virements sortants
   protected readonly endOfMonthBalance = computed(() =>
-    this.selectedInitialBalance() + this.totalIncome() - this.totalAllExpenses()
+    this.selectedInitialBalance() + this.totalIncome() + this.totalIncoming()
+    - this.totalMonthlyExpenses() - this.monthlyAnnualExpenses() - this.totalMonthSpendings() - this.totalOutgoing()
   );
 
   protected readonly usagePercent = computed(() => {
-    const income = this.totalIncome() + this.selectedInitialBalance();
+    const income = this.totalIncome() + this.selectedInitialBalance() + this.totalIncoming();
     if (income === 0) return 0;
     return (this.totalAllExpenses() / income) * 100;
   });
@@ -755,12 +945,37 @@ export class BankAccount {
 
   protected readonly selectedEntry = signal<RecurringEntry | null>(null);
   protected readonly createType = signal<RecurringEntryType>('income');
+  // Timeline du mois : tous les événements triés par dayOfMonth
+  protected readonly timelineEvents = computed(() => {
+    const accountId = this.selectedAccountId();
+    const events: { id: string; day: number; label: string; amount: number; sign: string; type: RecurringEntryType; passed: boolean }[] = [];
+
+    for (const e of this.incomes()) {
+      if (e.dayOfMonth) events.push({ id: e.id, day: e.dayOfMonth, label: e.label, amount: Number(e.amount), sign: '+', type: 'income', passed: e.dayOfMonth <= this.currentDay });
+    }
+    for (const e of this.monthlyExpenses()) {
+      const day = e.dayOfMonth ?? 1;
+      events.push({ id: e.id, day, label: e.label, amount: Number(e.amount), sign: '-', type: 'expense', passed: day <= this.currentDay });
+    }
+    for (const e of this.outgoingTransfers()) {
+      const day = e.dayOfMonth ?? 1;
+      events.push({ id: e.id, day, label: `→ ${this.accountNameById(e.toAccountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '-', type: 'transfer', passed: day <= this.currentDay });
+    }
+    for (const e of this.incomingTransfers()) {
+      const day = e.dayOfMonth ?? 1;
+      events.push({ id: e.id + '-in', day, label: `← ${this.accountNameById(e.accountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '+', type: 'transfer', passed: day <= this.currentDay });
+    }
+
+    return events.sort((a, b) => a.day - b.day);
+  });
+
   protected readonly createModalTitle = computed(() => {
     switch (this.createType()) {
       case 'income': return 'Nouveau revenu';
       case 'expense': return 'Nouveau prélèvement mensuel';
       case 'annual_expense': return 'Nouveau prélèvement annuel';
       case 'spending': return 'Nouvelle dépense';
+      case 'transfer': return 'Nouveau virement automatique';
     }
   });
   protected readonly editModalTitle = computed(() => {
@@ -769,6 +984,7 @@ export class BankAccount {
       case 'expense': return 'Modifier le prélèvement mensuel';
       case 'annual_expense': return 'Modifier le prélèvement annuel';
       case 'spending': return 'Modifier la dépense';
+      case 'transfer': return 'Modifier le virement';
       default: return 'Modifier';
     }
   });
@@ -797,6 +1013,11 @@ export class BankAccount {
   protected accountName(id: string | null): string | null {
     if (!id) return null;
     if (this.selectedAccountId() !== null) return null; // pas besoin d'afficher si déjà filtré
+    return this.accountMap().get(id) ?? null;
+  }
+
+  protected accountNameById(id: string | null): string | null {
+    if (!id) return null;
     return this.accountMap().get(id) ?? null;
   }
 

@@ -704,6 +704,8 @@ export class Loans {
             memberId: loan.memberId,
             dayOfMonth: null,
             date: event.date || null,
+            endDate: null,
+            toAccountId: null,
             category: 'Remboursement',
             payslipKey: null,
           }),

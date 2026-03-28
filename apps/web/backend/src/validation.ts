@@ -112,16 +112,18 @@ export const createBankAccountSchema = z.object({
 
 // ── Budget: Recurring Entries ──
 
-const RECURRING_TYPES = ['income', 'expense', 'annual_expense', 'spending'] as const;
+const RECURRING_TYPES = ['income', 'expense', 'annual_expense', 'spending', 'transfer'] as const;
 
 export const createRecurringEntrySchema = z.object({
   memberId: optionalUuid,
   accountId: optionalUuid,
+  toAccountId: optionalUuid,
   label: z.string().min(1).max(255),
   amount,
   type: z.enum(RECURRING_TYPES),
   dayOfMonth: z.number().int().min(1).max(31).nullable().optional(),
   date: dateStr.nullable().optional(),
+  endDate: dateStr.nullable().optional(),
   category: z.string().max(100).nullable().optional(),
 });
 

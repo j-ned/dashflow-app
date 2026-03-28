@@ -4,6 +4,7 @@ import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
+import { BankAccount } from '../../domain/models/bank-account.model';
 import { Member } from '../../domain/models/member.model';
 import { Icon } from '@shared/components/icon/icon';
 
@@ -13,6 +14,8 @@ type RecurringEntryFormShape = {
   type: FormControl<RecurringEntryType>;
   dayOfMonth: FormControl<number | null>;
   date: FormControl<string>;
+  endDate: FormControl<string>;
+  toAccountId: FormControl<string>;
   category: FormControl<string>;
   memberId: FormControl<string>;
 };
@@ -51,21 +54,99 @@ type RecurringEntryFormShape = {
           }
         </div>
 
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour du mois</label>
-            <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
-                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                   placeholder="Ex: 5" />
-            <p class="mt-1 text-xs text-text-muted">Jour récurrent</p>
-          </div>
-          <div>
-            <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date exacte</label>
-            <input id="re-date" type="date" formControlName="date"
-                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-            <p class="mt-1 text-xs text-text-muted">Date de réception</p>
-          </div>
-        </div>
+        <!-- Champs conditionnels selon le type -->
+        @switch (activeType()) {
+          @case ('income') {
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour de versement</label>
+                <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                       placeholder="Ex: 25" />
+                <p class="mt-1 text-xs text-text-muted">Jour du mois où le revenu arrive</p>
+              </div>
+              <div>
+                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date exacte</label>
+                <input id="re-date" type="date" formControlName="date"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                <p class="mt-1 text-xs text-text-muted">Optionnel</p>
+              </div>
+            </div>
+          }
+          @case ('expense') {
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour de prélèvement <span aria-hidden="true">*</span></label>
+                <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31" aria-required="true"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                       placeholder="Ex: 5" />
+                <p class="mt-1 text-xs text-text-muted">Jour du mois où ça passe</p>
+              </div>
+              <div>
+                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">Date de fin</label>
+                <input id="re-end-date" type="date" formControlName="endDate"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                <p class="mt-1 text-xs text-text-muted">Laisser vide si permanent</p>
+              </div>
+            </div>
+          }
+          @case ('annual_expense') {
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date de prélèvement</label>
+                <input id="re-date" type="date" formControlName="date"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                <p class="mt-1 text-xs text-text-muted">Date du prélèvement annuel</p>
+              </div>
+              <div>
+                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">Date de fin</label>
+                <input id="re-end-date" type="date" formControlName="endDate"
+                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                <p class="mt-1 text-xs text-text-muted">Laisser vide si permanent</p>
+              </div>
+            </div>
+          }
+          @case ('spending') {
+            <div>
+              <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date de la dépense</label>
+              <input id="re-date" type="date" formControlName="date"
+                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+              <p class="mt-1 text-xs text-text-muted">Quand la dépense a eu lieu</p>
+            </div>
+          }
+          @case ('transfer') {
+            <div class="space-y-4">
+              @if (accounts().length > 0) {
+                <div>
+                  <label for="re-to-account" class="block text-sm font-medium text-text-muted mb-1">Vers le compte <span aria-hidden="true">*</span></label>
+                  <select id="re-to-account" formControlName="toAccountId" aria-required="true"
+                          class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary">
+                    <option value="">-- Choisir le compte cible --</option>
+                    @for (acc of targetAccounts(); track acc.id) {
+                      <option [value]="acc.id">{{ acc.name }}</option>
+                    }
+                  </select>
+                  <p class="mt-1 text-xs text-text-muted">Le montant sera débité du compte actuel et crédité sur ce compte</p>
+                </div>
+              }
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour du virement</label>
+                  <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
+                         class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                         placeholder="Ex: 1" />
+                  <p class="mt-1 text-xs text-text-muted">Jour récurrent chaque mois</p>
+                </div>
+                <div>
+                  <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">Date de fin</label>
+                  <input id="re-end-date" type="date" formControlName="endDate"
+                         class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                  <p class="mt-1 text-xs text-text-muted">Laisser vide si permanent</p>
+                </div>
+              </div>
+            </div>
+          }
+        }
 
         <div>
           <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">Catégorie</label>
@@ -158,6 +239,7 @@ export class RecurringEntryForm {
   readonly initial = input<RecurringEntry | null>(null);
   readonly forcedType = input<RecurringEntryType | null>(null);
   readonly forcedAccountId = input<string | null>(null);
+  readonly accounts = input<BankAccount[]>([]);
   readonly members = input<Member[]>([]);
   readonly submitted = output<Omit<RecurringEntry, 'id'>>();
   readonly fileAttached = output<File>();
@@ -168,6 +250,16 @@ export class RecurringEntryForm {
   protected readonly isDragging = signal(false);
   protected readonly _pendingFile = signal<File | null>(null);
 
+  protected readonly activeType = computed(() =>
+    this.forcedType() ?? this.initial()?.type ?? 'expense'
+  );
+
+  // Comptes cibles pour les virements (exclut le compte source)
+  protected readonly targetAccounts = computed(() => {
+    const sourceId = this.forcedAccountId() ?? this.initial()?.accountId;
+    return this.accounts().filter(a => a.id !== sourceId);
+  });
+
   protected readonly showPayslipZone = computed(() => {
     const type = this.forcedType() ?? this.initial()?.type;
     return type === 'income' && this.initial() !== null;
@@ -176,12 +268,12 @@ export class RecurringEntryForm {
   protected readonly hasExistingPayslip = computed(() => !!this.initial()?.payslipKey);
 
   protected readonly labelPlaceholder = computed(() => {
-    const type = this.forcedType();
-    switch (type) {
+    switch (this.activeType()) {
       case 'income': return 'Ex: Salaire, Prime...';
       case 'expense': return 'Ex: Loyer, Netflix, EDF...';
       case 'annual_expense': return 'Ex: Assurance auto, Impôts fonciers...';
       case 'spending': return 'Ex: Courses, Gasoil, Pain...';
+      case 'transfer': return 'Ex: Épargne mensuelle, Livret A...';
       default: return 'Ex: Libellé...';
     }
   });
@@ -192,6 +284,8 @@ export class RecurringEntryForm {
     type: new FormControl<RecurringEntryType>('expense', { nonNullable: true }),
     dayOfMonth: new FormControl<number | null>(null),
     date: new FormControl('', { nonNullable: true }),
+    endDate: new FormControl('', { nonNullable: true }),
+    toAccountId: new FormControl('', { nonNullable: true }),
     category: new FormControl('', { nonNullable: true }),
     memberId: new FormControl('', { nonNullable: true }),
   });
@@ -211,6 +305,8 @@ export class RecurringEntryForm {
           type: data.type,
           dayOfMonth: data.dayOfMonth,
           date: data.date ?? '',
+          endDate: data.endDate ?? '',
+          toAccountId: data.toAccountId ?? '',
           category: data.category ?? '',
           memberId: data.memberId ?? '',
         });
@@ -269,6 +365,8 @@ export class RecurringEntryForm {
       type: v.type,
       dayOfMonth: v.dayOfMonth || null,
       date: v.date || null,
+      endDate: v.endDate || null,
+      toAccountId: v.toAccountId || null,
       category: v.category || null,
       memberId: v.memberId || null,
       accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,

@@ -7,7 +7,7 @@ import { encryptFile, decryptFile } from '@core/services/crypto/file-crypto';
 import { RecurringEntry } from '../domain/models/recurring-entry.model';
 import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gateway';
 
-const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'accountId', 'createdAt'] as const;
+const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'accountId', 'toAccountId', 'createdAt'] as const;
 
 @Injectable()
 export class HttpRecurringEntryGateway implements RecurringEntryGateway {

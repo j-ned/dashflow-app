@@ -18,7 +18,7 @@ export const envelopeTypeEnum = pgEnum('envelope_type', ['épargne', 'impôts', 
 
 export const loanDirectionEnum = pgEnum('loan_direction', ['lent', 'borrowed']);
 
-export const recurringEntryTypeEnum = pgEnum('recurring_entry_type', ['income', 'expense', 'annual_expense', 'spending']);
+export const recurringEntryTypeEnum = pgEnum('recurring_entry_type', ['income', 'expense', 'annual_expense', 'spending', 'transfer']);
 
 export const consumableCategoryEnum = pgEnum('consumable_category', [
   'ink',
@@ -153,6 +153,8 @@ export const recurringEntries = pgTable('recurring_entries', {
   type: recurringEntryTypeEnum('type').notNull(),
   dayOfMonth: integer('day_of_month'),
   date: date('date'),
+  endDate: date('end_date'),
+  toAccountId: uuid('to_account_id').references(() => bankAccounts.id, { onDelete: 'set null' }),
   category: varchar('category', { length: 100 }),
   payslipKey: text('payslip_key'),
   encryptedData: text('encrypted_data'),
