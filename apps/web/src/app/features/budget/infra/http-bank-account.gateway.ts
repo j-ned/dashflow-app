@@ -6,7 +6,7 @@ import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/cr
 import { BankAccount } from '../domain/models/bank-account.model';
 import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
 
-const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
+const CLEARTEXT_KEYS = ['id', 'userId', 'initialBalance', 'createdAt'] as const;
 
 @Injectable()
 export class HttpBankAccountGateway implements BankAccountGateway {

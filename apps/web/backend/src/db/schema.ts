@@ -64,6 +64,7 @@ export const bankAccounts = pgTable('bank_accounts', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
+  initialBalance: numeric('initial_balance', { precision: 12, scale: 2 }).notNull().default('0'),
   color: varchar('color', { length: 7 }),
   dotColor: varchar('dot_color', { length: 7 }),
   encryptedData: text('encrypted_data'),

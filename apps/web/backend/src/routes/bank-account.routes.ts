@@ -35,6 +35,7 @@ bankAccountRoutes.post('/', async (c) => {
   const [row] = await db.insert(bankAccounts).values({
     userId,
     name: v.data.name,
+    initialBalance: String(v.data.initialBalance ?? 0),
     color: v.data.color ?? null,
     dotColor: v.data.dotColor ?? null,
   }).returning();

@@ -105,6 +105,7 @@ export const loanPaymentSchema = z.object({
 
 export const createBankAccountSchema = z.object({
   name: z.string().min(1).max(255),
+  initialBalance: z.number().optional().default(0),
   color,
   dotColor: color,
 });

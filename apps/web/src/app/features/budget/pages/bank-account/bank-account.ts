@@ -12,6 +12,7 @@ import { DeleteRecurringEntryUseCase } from '../../domain/use-cases/delete-recur
 import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
 import { CreateBankAccountUseCase } from '../../domain/use-cases/create-bank-account.use-case';
 import { DeleteBankAccountUseCase } from '../../domain/use-cases/delete-bank-account.use-case';
+import { UpdateBankAccountUseCase } from '../../domain/use-cases/update-bank-account.use-case';
 import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
@@ -41,7 +42,7 @@ const PALETTE = [
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">Compte bancaire</h2>
-        <p class="mt-1 text-sm text-text-muted">Estimation du solde en fin de mois</p>
+        <p class="mt-1 text-sm text-text-muted">Suivi progressif de votre solde</p>
       </div>
       <nav class="flex items-center gap-2 flex-wrap">
         @for (account of accounts(); track account.id; let i = $index) {
@@ -66,7 +67,35 @@ const PALETTE = [
     </header>
 
     <!-- ═══ KPI Cards ═══ -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
+    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
+      <!-- Solde actuel -->
+      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all"
+           [class.border-ib-cyan-40]="currentBalance() >= 0"
+           [class.border-ib-red-40]="currentBalance() < 0"
+           [class.hover:shadow-lg]="true"
+           [class.hover:shadow-ib-cyan-5]="currentBalance() >= 0"
+           [class.hover:shadow-ib-red-5]="currentBalance() < 0">
+        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
+             [class.bg-ib-cyan]="currentBalance() >= 0"
+             [class.bg-ib-red]="currentBalance() < 0"></div>
+        <div class="flex items-center gap-2 mb-3">
+          <div class="flex h-7 w-7 items-center justify-center rounded-lg"
+               [class.bg-ib-cyan-10]="currentBalance() >= 0"
+               [class.bg-ib-red-10]="currentBalance() < 0">
+            <app-icon name="wallet" size="14"
+                      [class.text-ib-cyan]="currentBalance() >= 0"
+                      [class.text-ib-red]="currentBalance() < 0" />
+          </div>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde actuel</p>
+        </div>
+        <p class="text-2xl font-mono font-bold tracking-tight"
+           [class.text-ib-cyan]="currentBalance() >= 0"
+           [class.text-ib-red]="currentBalance() < 0">
+          {{ currentBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
+        </p>
+        <p class="mt-1.5 text-[11px] text-text-muted">au {{ today }}</p>
+      </div>
+
       <!-- Revenus -->
       <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-green"></div>
@@ -90,7 +119,7 @@ const PALETTE = [
           <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prélèvements</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-red tracking-tight">{{ totalMonthlyExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthlyExpenses().length }} prélèvement{{ monthlyExpenses().length > 1 ? 's' : '' }}/mois</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ passedExpenses().length }}/{{ monthlyExpenses().length }} passés</p>
       </div>
 
       <!-- Prélèvements annuels -->
@@ -119,30 +148,30 @@ const PALETTE = [
         <p class="mt-1.5 text-[11px] text-text-muted">{{ monthSpendings().length }} dépense{{ monthSpendings().length > 1 ? 's' : '' }} en {{ spendingMonthLabel() }}</p>
       </div>
 
-      <!-- Reste estimé -->
+      <!-- Solde fin de mois -->
       <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all"
-           [class.border-ib-green-40]="remaining() >= 0"
-           [class.border-ib-red-40]="remaining() < 0"
+           [class.border-ib-green-40]="endOfMonthBalance() >= 0"
+           [class.border-ib-red-40]="endOfMonthBalance() < 0"
            [class.hover:shadow-lg]="true"
-           [class.hover:shadow-ib-green-5]="remaining() >= 0"
-           [class.hover:shadow-ib-red-5]="remaining() < 0">
+           [class.hover:shadow-ib-green-5]="endOfMonthBalance() >= 0"
+           [class.hover:shadow-ib-red-5]="endOfMonthBalance() < 0">
         <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-             [class.bg-ib-green]="remaining() >= 0"
-             [class.bg-ib-red]="remaining() < 0"></div>
+             [class.bg-ib-green]="endOfMonthBalance() >= 0"
+             [class.bg-ib-red]="endOfMonthBalance() < 0"></div>
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg"
-               [class.bg-ib-green-10]="remaining() >= 0"
-               [class.bg-ib-red-10]="remaining() < 0">
-            <app-icon name="wallet" size="14"
-                      [class.text-ib-green]="remaining() >= 0"
-                      [class.text-ib-red]="remaining() < 0" />
+               [class.bg-ib-green-10]="endOfMonthBalance() >= 0"
+               [class.bg-ib-red-10]="endOfMonthBalance() < 0">
+            <app-icon name="calendar" size="14"
+                      [class.text-ib-green]="endOfMonthBalance() >= 0"
+                      [class.text-ib-red]="endOfMonthBalance() < 0" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Reste</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Fin de mois</p>
         </div>
         <p class="text-2xl font-mono font-bold tracking-tight"
-           [class.text-ib-green]="remaining() >= 0"
-           [class.text-ib-red]="remaining() < 0">
-          {{ remaining() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
+           [class.text-ib-green]="endOfMonthBalance() >= 0"
+           [class.text-ib-red]="endOfMonthBalance() < 0">
+          {{ endOfMonthBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
         </p>
         <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges</p>
       </div>
@@ -174,7 +203,8 @@ const PALETTE = [
         </div>
         <!-- Légende segmentée -->
         <div class="flex items-center gap-4 mt-2.5 text-[10px] text-text-muted">
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Prélèvements {{ totalMonthlyExpenses() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Passés {{ totalPassedExpenses() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red/40"></span> A venir {{ totalUpcomingExpenses() | number:'1.0-0' }}&euro;</span>
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ monthlyAnnualExpenses() | number:'1.0-0' }}&euro;/m</span>
           <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
         </div>
@@ -278,13 +308,17 @@ const PALETTE = [
         @if (sortedMonthlyExpenses().length > 0) {
           <div class="divide-y divide-border/20 px-3 py-1.5">
             @for (entry of sortedMonthlyExpenses(); track entry.id) {
-              <div class="group flex items-center justify-between py-2 hover:bg-ib-red/3 rounded-lg px-1.5 -mx-1.5 transition-colors">
+              @let passed = isExpensePassed(entry);
+              <div class="group flex items-center justify-between py-2 hover:bg-ib-red/3 rounded-lg px-1.5 -mx-1.5 transition-colors"
+                   [class.opacity-50]="passed">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-red/10 text-ib-red text-[10px] font-bold shrink-0">
-                    @if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
+                       [class.bg-ib-red/10]="!passed" [class.text-ib-red]="!passed"
+                       [class.bg-ib-green/10]="passed" [class.text-ib-green]="passed">
+                    @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
                   </div>
                   <div class="min-w-0">
-                    <p class="text-[13px] font-medium text-text-primary truncate">{{ entry.label }}</p>
+                    <p class="text-[13px] font-medium text-text-primary truncate" [class.line-through]="passed">{{ entry.label }}</p>
                     <div class="flex items-center gap-1 flex-wrap">
                       @if (entry.category) {
                         <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
@@ -292,11 +326,16 @@ const PALETTE = [
                       @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
+                      @if (passed) {
+                        <span class="text-[10px] text-ib-green font-medium">Prélevé</span>
+                      } @else if (entry.dayOfMonth) {
+                        <span class="text-[10px] text-text-muted">le {{ entry.dayOfMonth }}</span>
+                      }
                     </div>
                   </div>
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="text-[13px] font-mono font-bold text-ib-red">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
+                  <span class="text-[13px] font-mono font-bold" [class.text-ib-red]="!passed" [class.text-text-muted]="passed">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
                             [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
@@ -470,7 +509,7 @@ const PALETTE = [
     </div>
 
     <!-- ═══ Modals ═══ -->
-    <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="newAccountName.set('')">
+    <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="resetAccountForm()">
       @if (accountModal.isOpen()) {
         <div class="space-y-6">
           <!-- Liste des comptes existants -->
@@ -479,21 +518,31 @@ const PALETTE = [
               <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Comptes existants</p>
               <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
                 @for (account of accounts(); track account.id; let i = $index) {
-                  <div class="flex items-center justify-between px-4 py-3 hover:bg-hover/30 transition-colors">
-                    <div class="flex items-center gap-3">
-                      <span class="inline-flex items-center gap-2">
-                        <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
-                        <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
-                      </span>
-                      <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
+                  <div class="px-4 py-3 hover:bg-hover/30 transition-colors space-y-2">
+                    <div class="flex items-center justify-between">
+                      <div class="flex items-center gap-3">
+                        <span class="inline-flex items-center gap-2">
+                          <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
+                          <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
+                        </span>
+                        <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
+                      </div>
+                      <button type="button"
+                              class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                              [title]="'Supprimer — ' + account.name"
+                              [attr.aria-label]="'Supprimer le compte ' + account.name"
+                              (click)="deleteAccount(account)">
+                        <app-icon name="trash" size="14" />
+                      </button>
                     </div>
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                            [title]="'Supprimer — ' + account.name"
-                            [attr.aria-label]="'Supprimer le compte ' + account.name"
-                            (click)="deleteAccount(account)">
-                      <app-icon name="trash" size="14" />
-                    </button>
+                    <div class="flex items-center gap-2 pl-10">
+                      <label class="text-[11px] text-text-muted whitespace-nowrap">Solde initial</label>
+                      <input type="number" step="0.01"
+                             class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
+                             [value]="account.initialBalance"
+                             (change)="updateAccountBalance(account.id, $event)" />
+                      <span class="text-[11px] text-text-muted">&euro;</span>
+                    </div>
                   </div>
                 }
               </div>
@@ -509,6 +558,16 @@ const PALETTE = [
                 <input id="acc-name" type="text" [ngModel]="newAccountName()" (ngModelChange)="newAccountName.set($event)" name="name"
                        class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                        placeholder="Ex: Compte courant, Compte joint..." />
+              </div>
+              <div>
+                <label for="acc-balance" class="block text-sm font-medium text-text-muted mb-1">Solde de départ</label>
+                <div class="relative">
+                  <input id="acc-balance" type="number" step="0.01" [ngModel]="newAccountBalance()" (ngModelChange)="newAccountBalance.set($event)" name="balance"
+                         class="w-full rounded-lg border border-border bg-raised px-3 py-2 pr-8 text-sm font-mono text-text-primary"
+                         placeholder="0.00" />
+                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted">&euro;</span>
+                </div>
+                <p class="mt-1 text-xs text-text-muted">Solde actuel de votre compte en banque</p>
               </div>
               <p class="text-xs text-text-muted">Les couleurs sont attribuées automatiquement.</p>
               <footer class="flex justify-end gap-3 pt-2">
@@ -554,6 +613,7 @@ export class BankAccount {
   private readonly getMembersUC = inject(GetMembersUseCase);
   private readonly getAccountsUC = inject(GetBankAccountsUseCase);
   private readonly createAccountUC = inject(CreateBankAccountUseCase);
+  private readonly updateAccountUC = inject(UpdateBankAccountUseCase);
   private readonly deleteAccountUC = inject(DeleteBankAccountUseCase);
   private readonly entryGateway = inject(RecurringEntryGateway);
   private readonly toaster = inject(Toaster);
@@ -627,6 +687,18 @@ export class BankAccount {
     [...this.monthlyExpenses()].sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32))
   );
 
+  protected readonly today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  private readonly currentDay = new Date().getDate();
+
+  protected readonly selectedAccount = computed(() => {
+    const id = this.selectedAccountId();
+    return this.accounts().find(a => a.id === id) ?? null;
+  });
+
+  protected readonly selectedInitialBalance = computed(() =>
+    Number(this.selectedAccount()?.initialBalance ?? 0)
+  );
+
   protected readonly totalIncome = computed(() =>
     this.incomes().reduce((s, e) => s + Number(e.amount), 0)
   );
@@ -642,15 +714,44 @@ export class BankAccount {
   protected readonly totalMonthSpendings = computed(() =>
     this.monthSpendings().reduce((s, e) => s + Number(e.amount), 0)
   );
+
+  // Prélèvements déjà passés ce mois (dayOfMonth <= aujourd'hui)
+  protected readonly passedExpenses = computed(() =>
+    this.monthlyExpenses().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay)
+  );
+  protected readonly upcomingExpenses = computed(() =>
+    this.monthlyExpenses().filter(e => (e.dayOfMonth ?? 1) > this.currentDay)
+  );
+  protected readonly totalPassedExpenses = computed(() =>
+    this.passedExpenses().reduce((s, e) => s + Number(e.amount), 0)
+  );
+  protected readonly totalUpcomingExpenses = computed(() =>
+    this.upcomingExpenses().reduce((s, e) => s + Number(e.amount), 0)
+  );
+
   protected readonly totalAllExpenses = computed(() =>
     this.totalMonthlyExpenses() + this.monthlyAnnualExpenses() + this.totalMonthSpendings()
   );
-  protected readonly remaining = computed(() => this.totalIncome() - this.totalAllExpenses());
+
+  // Solde actuel = solde initial + revenus - prélèvements déjà passés - annuels/12 - dépenses
+  protected readonly currentBalance = computed(() =>
+    this.selectedInitialBalance() + this.totalIncome() - this.totalPassedExpenses() - this.monthlyAnnualExpenses() - this.totalMonthSpendings()
+  );
+
+  // Solde fin de mois = solde initial + revenus - TOUS les prélèvements - annuels/12 - dépenses
+  protected readonly endOfMonthBalance = computed(() =>
+    this.selectedInitialBalance() + this.totalIncome() - this.totalAllExpenses()
+  );
+
   protected readonly usagePercent = computed(() => {
-    const income = this.totalIncome();
+    const income = this.totalIncome() + this.selectedInitialBalance();
     if (income === 0) return 0;
     return (this.totalAllExpenses() / income) * 100;
   });
+
+  protected isExpensePassed(entry: RecurringEntry): boolean {
+    return (entry.dayOfMonth ?? 1) <= this.currentDay;
+  }
 
   protected readonly selectedEntry = signal<RecurringEntry | null>(null);
   protected readonly createType = signal<RecurringEntryType>('income');
@@ -673,6 +774,7 @@ export class BankAccount {
   });
 
   protected readonly newAccountName = signal('');
+  protected readonly newAccountBalance = signal<number>(0);
 
   protected readonly memberMap = computed(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -722,16 +824,32 @@ export class BankAccount {
     this.spendingMonth.set(d.toISOString().slice(0, 7));
   }
 
+  protected resetAccountForm() {
+    this.newAccountName.set('');
+    this.newAccountBalance.set(0);
+  }
+
   protected async createAccount() {
     const name = this.newAccountName().trim();
     if (!name) return;
     try {
-      await lastValueFrom(this.createAccountUC.execute({ name, color: null, dotColor: null }));
+      await lastValueFrom(this.createAccountUC.execute({ name, initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
       this.toaster.success('Compte créé');
-      this.newAccountName.set('');
+      this.resetAccountForm();
       this._refreshAccounts.update(v => v + 1);
     } catch {
       this.toaster.error('Erreur lors de la création du compte');
+    }
+  }
+
+  protected async updateAccountBalance(accountId: string, event: Event) {
+    const value = Number((event.target as HTMLInputElement).value);
+    try {
+      await lastValueFrom(this.updateAccountUC.execute(accountId, { initialBalance: value }));
+      this.toaster.success('Solde initial mis à jour');
+      this._refreshAccounts.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la mise à jour');
     }
   }
 
