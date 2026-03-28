@@ -8,6 +8,7 @@ export abstract class PrescriptionGateway {
   abstract create(data: Omit<Prescription, 'id' | 'documentUrl'>): Observable<Prescription>;
   abstract update(id: string, data: Partial<Omit<Prescription, 'id' | 'documentUrl'>>): Observable<Prescription>;
   abstract uploadDocument(id: string, file: File): Observable<Prescription>;
+  abstract downloadDocument(id: string): Observable<Blob>;
   abstract deleteDocument(id: string): Observable<void>;
   abstract delete(id: string): Observable<void>;
 }

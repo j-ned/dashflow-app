@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { encryptFile, decryptFile } from '@core/services/crypto/file-crypto';
 import { RecurringEntry } from '../domain/models/recurring-entry.model';
 import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gateway';
@@ -15,7 +15,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<RecurringEntry[]> {
-    return this.api.get<any[]>('/recurring-entries').pipe(
+    return this.api.get<ApiRow[]>('/recurring-entries').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as RecurringEntry[]]);
@@ -29,7 +29,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
     if (!key) return this.api.post('/recurring-entries', data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<any>('/recurring-entries', encrypted)),
+      switchMap((encrypted) => this.api.post<ApiRow>('/recurring-entries', encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
     );
   }
@@ -39,7 +39,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
     if (!key) return this.api.put(`/recurring-entries/${id}`, data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<any>(`/recurring-entries/${id}`, encrypted)),
+      switchMap((encrypted) => this.api.put<ApiRow>(`/recurring-entries/${id}`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
     );
   }
@@ -62,7 +62,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
         fd.append('file', new File([encryptedBlob], file.name, { type: 'application/octet-stream' }));
         fd.append('originalMimeType', file.type);
         fd.append('encrypted', 'true');
-        return this.api.postForm<any>(`/recurring-entries/${id}/payslip`, fd);
+        return this.api.postForm<ApiRow>(`/recurring-entries/${id}/payslip`, fd);
       }),
       switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
     );

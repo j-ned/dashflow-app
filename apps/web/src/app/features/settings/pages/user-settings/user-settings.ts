@@ -130,8 +130,7 @@ type PasswordFormShape = {
               <button
                 type="submit"
                 [disabled]="profileForm.pristine || profileSaving()"
-                class="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
-                style="background-color: var(--color-ib-blue)"
+                class="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
                 {{ profileSaving() ? 'Enregistrement...' : 'Enregistrer' }}
               </button>
@@ -257,8 +256,7 @@ type PasswordFormShape = {
             <button
               type="submit"
               [disabled]="passwordForm.invalid || passwordSaving()"
-              class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
-              style="background-color: var(--color-ib-blue)"
+              class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
             >
               @if (passwordSaving()) {
                 {{ auth.hasPassword() ? 'Modification...' : 'Définition...' }}
@@ -383,8 +381,7 @@ type PasswordFormShape = {
                   type="button"
                   (click)="verify2FA()"
                   [disabled]="totpVerifyCode().length !== 6 || totpLoading()"
-                  class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
-                  style="background-color: var(--color-ib-blue)"
+                  class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
                 >
                   {{ totpLoading() ? 'Vérification...' : 'Activer' }}
                 </button>
@@ -401,8 +398,7 @@ type PasswordFormShape = {
                 type="button"
                 (click)="setup2FA()"
                 [disabled]="totpLoading()"
-                class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5"
-                style="background-color: var(--color-ib-blue)"
+                class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
                 {{ totpLoading() ? 'Configuration...' : 'Configurer la 2FA' }}
               </button>
@@ -447,8 +443,7 @@ type PasswordFormShape = {
           <button
             type="button"
             (click)="goToEncryptionSetup()"
-            class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-md hover:-translate-y-0.5"
-            style="background-color: var(--color-ib-blue)"
+            class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
           >
             Activer le chiffrement
           </button>
@@ -457,7 +452,7 @@ type PasswordFormShape = {
             <div class="flex h-8 w-8 items-center justify-center rounded-full bg-ib-green/10">
               <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                    stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                   class="text-ib-green">
+                   class="text-ib-green" aria-hidden="true">
                 <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
                 <path d="m9 12 2 2 4-4"/>
               </svg>

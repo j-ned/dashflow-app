@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
 import { AppShell } from './layout/app-shell/app-shell';
-import { authGuard } from '@core/guards/auth.guard';
-import { guestGuard } from '@core/guards/guest.guard';
+import { authGuard } from '@core/guards/auth';
+import { guestGuard } from '@core/guards/guest';
 
 export const routes: Routes = [
   {
     path: '',
     pathMatch: 'full',
     canMatch: [guestGuard],
-    loadComponent: () => import('./pages/landing/landing').then(m => m.Landing),
+    loadComponent: () => import('./pages/landing/landing').then(m => m.LandingComponent),
   },
   {
     path: 'auth',

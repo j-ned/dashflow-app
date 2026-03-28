@@ -53,7 +53,7 @@ import { ThemeStore } from '@core/services/theme.store';
            class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
            aria-label="Paramètres du compte">
           @if (auth.avatarUrl()) {
-            <img [src]="auth.avatarUrl()" alt="" class="w-8 h-8 rounded-full object-cover border border-border" />
+            <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
           } @else {
             <div class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-white">
               {{ auth.userInitial() }}

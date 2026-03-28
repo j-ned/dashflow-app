@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { MedicalDocument, DOCUMENT_TYPE_LABELS } from '../../domain/models/document.model';
+import { DocumentGateway } from '../../domain/gateways/document.gateway';
 import { GetDocumentsUseCase } from '../../domain/use-cases/get-documents.use-case';
 import { CreateDocumentUseCase } from '../../domain/use-cases/create-document.use-case';
 import { UpdateDocumentUseCase } from '../../domain/use-cases/update-document.use-case';
@@ -101,8 +102,9 @@ import { Icon } from '@shared/components/icon/icon';
             @if (doc.fileUrl) {
               <div class="flex items-center gap-2 rounded-lg bg-ib-purple/5 border border-ib-purple/20 p-2">
                 <span class="text-xs font-medium text-ib-purple">Fichier joint</span>
-                <a [href]="doc.fileUrl" target="_blank" rel="noopener"
-                   class="text-xs text-ib-blue hover:underline ml-auto">Voir</a>
+                <button type="button"
+                        class="text-xs text-ib-blue hover:underline ml-auto"
+                        (click)="openFile(doc.id)">Voir</button>
               </div>
             } @else {
               <label class="flex items-center gap-2 rounded-lg border border-dashed border-border p-2 cursor-pointer hover:border-ib-purple/30 transition-colors">
@@ -150,6 +152,7 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Documents {
+  private readonly documentGateway = inject(DocumentGateway);
   private readonly getDocuments = inject(GetDocumentsUseCase);
   private readonly createDocumentUC = inject(CreateDocumentUseCase);
   private readonly updateDocumentUC = inject(UpdateDocumentUseCase);
@@ -221,6 +224,12 @@ export class Documents {
 
   protected onModalClosed() {
     this.selectedDocument.set(null);
+  }
+
+  protected async openFile(id: string) {
+    const blob = await lastValueFrom(this.documentGateway.downloadFile(id));
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
   protected async uploadFile(documentId: string, event: Event) {

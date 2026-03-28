@@ -98,7 +98,7 @@ type ReminderFormShape = {
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit" style="background-color: var(--color-ib-purple)">
+                class="btn-submit bg-ib-purple">
           Créer
         </button>
       </footer>

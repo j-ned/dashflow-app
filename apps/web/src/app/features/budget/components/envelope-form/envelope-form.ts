@@ -82,7 +82,7 @@ const ENVELOPE_COLORS = [
             <label for="env-due-day" class="form-label">Jour de dépôt</label>
             <input id="env-due-day" type="number" formControlName="dueDay" min="1" max="31"
                    placeholder="ex: 5" class="form-input mono" />
-            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Jour du mois (1-31)</p>
+            <p class="text-xs mt-1 text-text-muted">Jour du mois (1-31)</p>
           </div>
         </div>
 
@@ -107,7 +107,7 @@ const ENVELOPE_COLORS = [
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit" style="background-color: var(--color-ib-green)">
+                class="btn-submit bg-ib-green">
           {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>

@@ -24,7 +24,7 @@ type CreditFormShape = {
           <label for="credit-amount" class="form-label">
             Montant <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <p class="text-xs mb-2" style="color: var(--color-text-muted)">Positif pour créditer, négatif pour débiter</p>
+          <p class="text-xs mb-2 text-text-muted">Positif pour créditer, négatif pour débiter</p>
           <input id="credit-amount" type="number" formControlName="amount" step="0.01" aria-required="true"
                  class="form-input mono" />
           @if (form.controls.amount.touched && form.controls.amount.errors?.['required']) {
@@ -46,7 +46,7 @@ type CreditFormShape = {
                 <option [value]="acc.id">{{ acc.name }}</option>
               }
             </select>
-            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Créera une dépense sur le compte sélectionné</p>
+            <p class="text-xs mt-1 text-text-muted">Créera une dépense sur le compte sélectionné</p>
           </div>
         }
       </fieldset>
@@ -54,7 +54,7 @@ type CreditFormShape = {
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit" style="background-color: var(--color-ib-blue)">
+                class="btn-submit bg-ib-blue">
           Valider
         </button>
       </footer>

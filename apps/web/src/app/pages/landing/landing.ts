@@ -519,6 +519,6 @@ import { NgOptimizedImage } from '@angular/common';
     </footer>
   `,
 })
-export class Landing {
+export class LandingComponent {
   protected readonly currentYear = new Date().getFullYear();
 }

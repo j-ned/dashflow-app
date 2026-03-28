@@ -7,5 +7,5 @@ import { RouterOutlet } from '@angular/router';
   templateUrl: './app.html',
   host: { class: 'contents' }
 })
-export class App {
+export class AppComponent {
 }

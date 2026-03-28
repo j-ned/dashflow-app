@@ -90,7 +90,7 @@ const MEMBER_PALETTE = [
     <!-- Member filter -->
     @if (activeMembers().length > 0) {
       <div class="flex gap-2 flex-wrap items-center">
-        @for (m of activeMembers(); track m.id; let i = $index) {
+        @for (m of activeMembers(); track m.id) {
           <button
             type="button"
             class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
@@ -314,9 +314,9 @@ const MEMBER_PALETTE = [
               step="0.01"
               class="form-input mono"
               [value]="manualTxAmount()"
-              (input)="manualTxAmount.set(+$any($event.target).value)"
+              (input)="manualTxAmount.set(+inputValue($event))"
             />
-            <p class="text-[10px] mt-0.5" style="color: var(--color-text-muted)">
+            <p class="text-[10px] mt-0.5 text-text-muted">
               Positif = crédit, négatif = débit
             </p>
           </div>
@@ -327,7 +327,7 @@ const MEMBER_PALETTE = [
               type="date"
               class="form-input"
               [value]="manualTxDate()"
-              (input)="manualTxDate.set($any($event.target).value)"
+              (input)="manualTxDate.set(inputValue($event))"
             />
           </div>
           <button
@@ -547,4 +547,7 @@ export class Envelopes {
     }
   }
 
+  protected inputValue(event: Event): string {
+    return (event.target as HTMLInputElement).value;
+  }
 }

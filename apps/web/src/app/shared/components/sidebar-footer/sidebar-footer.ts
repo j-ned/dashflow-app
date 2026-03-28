@@ -15,7 +15,7 @@ import { Icon } from '@shared/components/icon/icon';
         <!-- User info (expanded) -->
         <div class="flex items-center gap-3 px-3 py-2 mb-1">
           @if (auth.avatarUrl()) {
-            <img [src]="auth.avatarUrl()" alt="" class="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
+            <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
           } @else {
             <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-white shrink-0">
               {{ auth.userInitial() }}
@@ -43,7 +43,7 @@ import { Icon } from '@shared/components/icon/icon';
         <div class="flex flex-col items-center gap-0.5">
           <div class="mb-1" title="{{ auth.displayName() }}">
             @if (auth.avatarUrl()) {
-              <img [src]="auth.avatarUrl()" alt="" class="w-8 h-8 rounded-full object-cover border border-border" />
+              <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
             } @else {
               <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-white">
                 {{ auth.userInitial() }}

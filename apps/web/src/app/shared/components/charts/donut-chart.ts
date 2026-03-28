@@ -8,7 +8,8 @@ export type DonutSlice = { readonly label: string; readonly value: number; reado
   host: { class: 'block' },
   template: `
     <div class="flex items-center gap-6">
-      <svg viewBox="0 0 120 120" class="w-32 h-32 shrink-0">
+      <svg viewBox="0 0 120 120" class="w-32 h-32 shrink-0"
+           role="img" [attr.aria-label]="ariaLabel()">
         @for (arc of arcs(); track arc.label) {
           <circle cx="60" cy="60" r="48" fill="none"
                   [attr.stroke]="arc.color" stroke-width="22"
@@ -43,6 +44,7 @@ export class DonutChart {
   readonly data = input.required<DonutSlice[]>();
   readonly centerLabel = input('');
   readonly centerSub = input('');
+  readonly ariaLabel = input('Graphique en anneau');
 
   private readonly circumference = 2 * Math.PI * 48;
 

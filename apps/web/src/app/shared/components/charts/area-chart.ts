@@ -7,7 +7,8 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="none">
+    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="none"
+         role="img" [attr.aria-label]="ariaLabel()">
       <defs>
         <!-- noinspection HtmlUnknownAttribute -->
         <linearGradient [attr.id]="gradientId" x1="0" y1="0" x2="0" y2="1">
@@ -52,6 +53,7 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
 export class AreaChart {
   readonly data = input.required<AreaChartPoint[]>();
   readonly color = input('var(--color-ib-green)');
+  readonly ariaLabel = input('Graphique en courbe');
 
   protected readonly width = 500;
   protected readonly height = 200;

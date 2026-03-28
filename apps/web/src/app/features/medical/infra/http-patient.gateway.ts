@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { Patient } from '../domain/models/patient.model';
 import { PatientGateway } from '../domain/gateways/patient.gateway';
 
@@ -14,7 +14,7 @@ export class HttpPatientGateway implements PatientGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Patient[]> {
-    return this.api.get<any[]>('/patients').pipe(
+    return this.api.get<ApiRow[]>('/patients').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Patient[]]);
@@ -24,7 +24,7 @@ export class HttpPatientGateway implements PatientGateway {
   }
 
   getById(id: string): Observable<Patient> {
-    return this.api.get<any>(`/patients/${id}`).pipe(
+    return this.api.get<ApiRow>(`/patients/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Patient]);
@@ -38,7 +38,7 @@ export class HttpPatientGateway implements PatientGateway {
     if (!key) return this.api.post('/patients', data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<any>('/patients', encrypted)),
+      switchMap((encrypted) => this.api.post<ApiRow>('/patients', encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient])),
     );
   }
@@ -48,7 +48,7 @@ export class HttpPatientGateway implements PatientGateway {
     if (!key) return this.api.put(`/patients/${id}`, data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<any>(`/patients/${id}`, encrypted)),
+      switchMap((encrypted) => this.api.put<ApiRow>(`/patients/${id}`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient])),
     );
   }

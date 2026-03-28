@@ -87,7 +87,7 @@ type LoanFormShape = {
             <label for="loan-due-day" class="form-label">Jour de dépôt</label>
             <input id="loan-due-day" type="number" formControlName="dueDay" min="1" max="31"
                    placeholder="ex: 5" class="form-input mono" />
-            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Jour du mois</p>
+            <p class="text-xs mt-1 text-text-muted">Jour du mois</p>
           </div>
         </div>
       </fieldset>

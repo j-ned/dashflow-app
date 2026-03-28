@@ -10,7 +10,8 @@ export type BarGroup = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="xMidYMid meet">
+    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="xMidYMid meet"
+         role="img" [attr.aria-label]="ariaLabel()">
       <!-- Grid lines -->
       @for (y of gridLines(); track y) {
         <line [attr.x1]="pad" [attr.y1]="y" [attr.x2]="width - 8" [attr.y2]="y"
@@ -42,6 +43,7 @@ export type BarGroup = {
 })
 export class BarChart {
   readonly data = input.required<BarGroup[]>();
+  readonly ariaLabel = input('Graphique en barres');
 
   protected readonly width = 500;
   protected readonly height = 200;

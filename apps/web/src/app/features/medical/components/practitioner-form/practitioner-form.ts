@@ -95,7 +95,7 @@ const PRACTITIONER_TYPE_LABELS: Record<PractitionerType, string> = {
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit" style="background-color: var(--color-ib-purple)">
+                class="btn-submit bg-ib-purple">
           {{ initial() ? 'Enregistrer' : 'Créer' }}
         </button>
       </footer>

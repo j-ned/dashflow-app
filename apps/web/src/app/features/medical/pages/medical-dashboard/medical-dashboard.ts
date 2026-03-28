@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { lastValueFrom } from 'rxjs';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
 import { Prescription } from '../../domain/models/prescription.model';
@@ -10,6 +11,7 @@ import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case
 import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
 import { GetAppointmentsUseCase } from '../../domain/use-cases/get-appointments.use-case';
 import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
+import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
 import { GetMedicationsUseCase } from '../../domain/use-cases/get-medications.use-case';
 import { computeMedicationStock } from '../../domain/medication-calculator';
 import { MedicationStockBar } from '../../components/medication-stock-bar/medication-stock-bar';
@@ -177,10 +179,11 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                             }
                           </a>
                           @if (presc.documentUrl) {
-                            <a [href]="presc.documentUrl" target="_blank" rel="noopener"
-                               class="shrink-0 rounded-md bg-ib-purple/10 px-2 py-0.5 text-[10px] font-medium text-ib-purple hover:bg-ib-purple/20 transition-colors">
+                            <button type="button"
+                                    class="shrink-0 rounded-md bg-ib-purple/10 px-2 py-0.5 text-[10px] font-medium text-ib-purple hover:bg-ib-purple/20 transition-colors"
+                                    (click)="openDocument(presc.id); $event.preventDefault(); $event.stopPropagation()">
                               Voir PDF
-                            </a>
+                            </button>
                           }
                         </div>
                       }
@@ -245,6 +248,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
   `,
 })
 export class MedicalDashboard {
+  private readonly prescriptionGateway = inject(PrescriptionGateway);
   private readonly getPatients = inject(GetPatientsUseCase);
   private readonly getPractitioners = inject(GetPractitionersUseCase);
   private readonly getAppointments = inject(GetAppointmentsUseCase);
@@ -320,6 +324,12 @@ export class MedicalDashboard {
 
   protected getPractitionerName(id: string): string {
     return this.practitionerMap().get(id) ?? 'Inconnu';
+  }
+
+  protected async openDocument(id: string) {
+    const blob = await lastValueFrom(this.prescriptionGateway.downloadDocument(id));
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
   private computeAge(birthDate: string): number {

@@ -49,7 +49,7 @@ type PaymentFormShape = {
                 <option [value]="acc.id">{{ acc.name }}</option>
               }
             </select>
-            <p class="text-xs mt-1" style="color: var(--color-text-muted)">Créera une dépense sur le compte sélectionné</p>
+            <p class="text-xs mt-1 text-text-muted">Créera une dépense sur le compte sélectionné</p>
           </div>
         }
       </fieldset>
@@ -57,7 +57,7 @@ type PaymentFormShape = {
       <footer class="form-footer">
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
         <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit" style="background-color: var(--color-ib-blue)">
+                class="btn-submit bg-ib-blue">
           Valider
         </button>
       </footer>

@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { Prescription } from '../../domain/models/prescription.model';
+import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
 import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
 import { CreatePrescriptionUseCase } from '../../domain/use-cases/create-prescription.use-case';
 import { UpdatePrescriptionUseCase } from '../../domain/use-cases/update-prescription.use-case';
@@ -92,8 +93,9 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
               @if (presc.documentUrl) {
                 <div class="flex items-center gap-2 rounded-lg bg-ib-purple/5 border border-ib-purple/20 p-2">
                   <span class="text-xs font-medium text-ib-purple">Document joint</span>
-                  <a [href]="presc.documentUrl" target="_blank" rel="noopener"
-                     class="text-xs text-ib-blue hover:underline ml-auto">Voir</a>
+                  <button type="button"
+                          class="text-xs text-ib-blue hover:underline ml-auto"
+                          (click)="openDocument(presc.id)">Voir</button>
                   <button type="button" class="text-xs text-ib-red hover:underline"
                           (click)="deleteDocument(presc.id)">Retirer</button>
                 </div>
@@ -143,6 +145,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
   `,
 })
 export class Prescriptions {
+  private readonly prescriptionGateway = inject(PrescriptionGateway);
   private readonly getPrescriptions = inject(GetPrescriptionsUseCase);
   private readonly createPrescriptionUC = inject(CreatePrescriptionUseCase);
   private readonly updatePrescriptionUC = inject(UpdatePrescriptionUseCase);
@@ -224,6 +227,12 @@ export class Prescriptions {
   protected isExpired(presc: Prescription): boolean {
     if (!presc.validUntil) return false;
     return presc.validUntil < new Date().toISOString().slice(0, 10);
+  }
+
+  protected async openDocument(id: string) {
+    const blob = await lastValueFrom(this.prescriptionGateway.downloadDocument(id));
+    const url = URL.createObjectURL(blob);
+    window.open(url, '_blank');
   }
 
   protected async uploadDocument(prescriptionId: string, event: Event) {

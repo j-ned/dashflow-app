@@ -1,5 +1,7 @@
 import { encryptWithKey, decryptWithKey } from './crypto.store';
 
+export type ApiRow = Record<string, unknown> & { encryptedData?: string };
+
 /**
  * Encrypts an entity's sensitive fields into an `encryptedData` blob.
  * Cleartext keys (foreign keys, structural IDs) are preserved as-is.
@@ -37,11 +39,11 @@ export async function encryptEntity<T extends Record<string, unknown>>(
  * @returns The full entity object with all fields restored
  */
 export async function decryptEntity<T>(
-  row: Record<string, unknown> & { encryptedData: string },
+  row: ApiRow,
   key: CryptoKey,
 ): Promise<T> {
   const { encryptedData, ...cleartext } = row;
-  const sensitiveJson = await decryptWithKey(encryptedData, key);
+  const sensitiveJson = await decryptWithKey(encryptedData!, key);
   const sensitive = JSON.parse(sensitiveJson);
   return { ...cleartext, ...sensitive } as T;
 }
@@ -50,7 +52,7 @@ export async function decryptEntity<T>(
  * Batch decrypt multiple entities.
  */
 export async function decryptEntities<T>(
-  rows: Array<Record<string, unknown> & { encryptedData: string }>,
+  rows: ApiRow[],
   key: CryptoKey,
 ): Promise<T[]> {
   return Promise.all(rows.map((row) => decryptEntity<T>(row, key)));

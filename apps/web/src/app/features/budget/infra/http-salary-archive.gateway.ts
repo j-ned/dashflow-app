@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { encryptFile, decryptFile } from '@core/services/crypto/file-crypto';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
 import { SalaryArchiveGateway } from '../domain/gateways/salary-archive.gateway';
@@ -15,7 +15,7 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<SalaryArchive[]> {
-    return this.api.get<any[]>('/salary-archives').pipe(
+    return this.api.get<ApiRow[]>('/salary-archives').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as SalaryArchive[]]);
@@ -49,12 +49,12 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
                   fd.append(k as string, String(encrypted[k as string]));
                 }
               }
-              return this.api.postForm<any>('/salary-archives', fd);
+              return this.api.postForm<ApiRow>('/salary-archives', fd);
             }),
           );
         }
         Object.entries(encrypted).forEach(([k, v]) => fd.append(k, String(v)));
-        return this.api.postForm<any>('/salary-archives', fd);
+        return this.api.postForm<ApiRow>('/salary-archives', fd);
       }),
       switchMap((row) => row.encryptedData ? from(decryptEntity<SalaryArchive>(row, key)) : from([row as SalaryArchive])),
     );

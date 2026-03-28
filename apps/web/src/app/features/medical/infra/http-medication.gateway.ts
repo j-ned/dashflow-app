@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { Medication, MedicationWithStock } from '../domain/models/medication.model';
 import { MedicationGateway } from '../domain/gateways/medication.gateway';
 
@@ -14,7 +14,7 @@ export class HttpMedicationGateway implements MedicationGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Medication[]> {
-    return this.api.get<any[]>('/medications').pipe(
+    return this.api.get<ApiRow[]>('/medications').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Medication[]]);
@@ -24,7 +24,7 @@ export class HttpMedicationGateway implements MedicationGateway {
   }
 
   getById(id: string): Observable<Medication> {
-    return this.api.get<any>(`/medications/${id}`).pipe(
+    return this.api.get<ApiRow>(`/medications/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Medication]);
@@ -34,7 +34,7 @@ export class HttpMedicationGateway implements MedicationGateway {
   }
 
   getAlerts(): Observable<MedicationWithStock[]> {
-    return this.api.get<any[]>('/medications/alerts').pipe(
+    return this.api.get<ApiRow[]>('/medications/alerts').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as MedicationWithStock[]]);
@@ -48,7 +48,7 @@ export class HttpMedicationGateway implements MedicationGateway {
     if (!key) return this.api.post('/medications', data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<any>('/medications', encrypted)),
+      switchMap((encrypted) => this.api.post<ApiRow>('/medications', encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
     );
   }
@@ -58,7 +58,7 @@ export class HttpMedicationGateway implements MedicationGateway {
     if (!key) return this.api.put(`/medications/${id}`, data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<any>(`/medications/${id}`, encrypted)),
+      switchMap((encrypted) => this.api.put<ApiRow>(`/medications/${id}`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
     );
   }
@@ -69,7 +69,7 @@ export class HttpMedicationGateway implements MedicationGateway {
     if (!key) return this.api.patch(`/medications/${id}/refill`, payload);
 
     return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.patch<any>(`/medications/${id}/refill`, encrypted)),
+      switchMap((encrypted) => this.api.patch<ApiRow>(`/medications/${id}/refill`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
     );
   }

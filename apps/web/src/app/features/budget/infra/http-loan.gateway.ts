@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { Loan } from '../domain/models/loan.model';
 import { LoanTransaction } from '../domain/models/loan-transaction.model';
 import { LoanGateway } from '../domain/gateways/loan.gateway';
@@ -16,7 +16,7 @@ export class HttpLoanGateway implements LoanGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Loan[]> {
-    return this.api.get<any[]>('/loans').pipe(
+    return this.api.get<ApiRow[]>('/loans').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Loan[]]);
@@ -26,7 +26,7 @@ export class HttpLoanGateway implements LoanGateway {
   }
 
   getById(id: string): Observable<Loan> {
-    return this.api.get<any>(`/loans/${id}`).pipe(
+    return this.api.get<ApiRow>(`/loans/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Loan]);
@@ -40,7 +40,7 @@ export class HttpLoanGateway implements LoanGateway {
     if (!key) return this.api.post('/loans', data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<any>('/loans', encrypted)),
+      switchMap((encrypted) => this.api.post<ApiRow>('/loans', encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Loan>(row, key)) : from([row as Loan])),
     );
   }
@@ -50,7 +50,7 @@ export class HttpLoanGateway implements LoanGateway {
     if (!key) return this.api.put(`/loans/${id}`, data);
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<any>(`/loans/${id}`, encrypted)),
+      switchMap((encrypted) => this.api.put<ApiRow>(`/loans/${id}`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<Loan>(row, key)) : from([row as Loan])),
     );
   }
@@ -76,7 +76,7 @@ export class HttpLoanGateway implements LoanGateway {
   }
 
   getTransactions(loanId: string): Observable<LoanTransaction[]> {
-    return this.api.get<any[]>(`/loans/${loanId}/transactions`).pipe(
+    return this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`).pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as LoanTransaction[]]);
@@ -90,7 +90,7 @@ export class HttpLoanGateway implements LoanGateway {
     if (!key) return this.api.post(`/loans/${loanId}/transactions`, data);
 
     return from(encryptEntity(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<any>(`/loans/${loanId}/transactions`, encrypted)),
+      switchMap((encrypted) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, encrypted)),
       switchMap((row) => row.encryptedData ? from(decryptEntity<LoanTransaction>(row, key)) : from([row as LoanTransaction])),
     );
   }
