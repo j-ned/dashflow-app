@@ -15,6 +15,7 @@ import { DeleteBankAccountUseCase } from '../../domain/use-cases/delete-bank-acc
 import { UpdateBankAccountUseCase } from '../../domain/use-cases/update-bank-account.use-case';
 import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
+import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
@@ -168,14 +169,14 @@ const PALETTE = [
                       [class.text-ib-green]="endOfMonthBalance() >= 0"
                       [class.text-ib-red]="endOfMonthBalance() < 0" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Fin de mois</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prochain salaire</p>
         </div>
         <p class="text-2xl font-mono font-bold tracking-tight"
            [class.text-ib-green]="endOfMonthBalance() >= 0"
            [class.text-ib-red]="endOfMonthBalance() < 0">
           {{ endOfMonthBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
         </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges du cycle</p>
       </div>
     </section>
 
@@ -315,8 +316,8 @@ const PALETTE = [
                    [class.opacity-50]="passed">
                 <div class="flex items-center gap-2 min-w-0">
                   <div class="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
-                       [class.bg-ib-red/10]="!passed" [class.text-ib-red]="!passed"
-                       [class.bg-ib-green/10]="passed" [class.text-ib-green]="passed">
+                       [class.bg-ib-red-10]="!passed" [class.text-ib-red]="!passed"
+                       [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed">
                     @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
                   </div>
                   <div class="min-w-0">
@@ -542,8 +543,8 @@ const PALETTE = [
                    [class.opacity-50]="passed">
                 <div class="flex items-center gap-3">
                   <div class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold shrink-0"
-                       [class.bg-ib-green/10]="passed" [class.text-ib-green]="passed"
-                       [class.bg-ib-purple/10]="!passed" [class.text-ib-purple]="!passed">
+                       [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed"
+                       [class.bg-ib-purple-10]="!passed" [class.text-ib-purple]="!passed">
                     @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
                   </div>
                   <div>
@@ -760,6 +761,7 @@ export class BankAccount {
   private readonly updateAccountUC = inject(UpdateBankAccountUseCase);
   private readonly deleteAccountUC = inject(DeleteBankAccountUseCase);
   private readonly entryGateway = inject(RecurringEntryGateway);
+  private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
 
@@ -863,6 +865,28 @@ export class BankAccount {
   protected readonly today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
   protected readonly currentDay = new Date().getDate();
 
+  // Jour du salaire principal (premier revenu avec dayOfMonth, sinon 1)
+  protected readonly salaryDay = computed(() => {
+    const firstIncome = this.incomes().find(e => e.dayOfMonth);
+    return firstIncome?.dayOfMonth ?? 1;
+  });
+
+  // Un prélèvement est "passé" dans le cycle salaire → salaire
+  // Ex: salaire le 25, aujourd'hui le 3 → passés = jours 25-31 + 1-3
+  // Ex: salaire le 5, aujourd'hui le 20 → passés = jours 5-20
+  protected isExpensePassed(entry: RecurringEntry): boolean {
+    const day = entry.dayOfMonth ?? 1;
+    const salary = this.salaryDay();
+    const today = this.currentDay;
+
+    if (today >= salary) {
+      // Cycle dans le même mois : passé si entre salaryDay et today
+      return day >= salary && day <= today;
+    }
+    // Cycle à cheval sur 2 mois : passé si >= salaryDay OU <= today
+    return day >= salary || day <= today;
+  }
+
   protected readonly selectedAccount = computed(() => {
     const id = this.selectedAccountId();
     return this.accounts().find(a => a.id === id) ?? null;
@@ -888,12 +912,12 @@ export class BankAccount {
     this.monthSpendings().reduce((s, e) => s + Number(e.amount), 0)
   );
 
-  // Prélèvements déjà passés ce mois (dayOfMonth <= aujourd'hui)
+  // Prélèvements passés/à venir dans le cycle salaire
   protected readonly passedExpenses = computed(() =>
-    this.monthlyExpenses().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay)
+    this.monthlyExpenses().filter(e => this.isExpensePassed(e))
   );
   protected readonly upcomingExpenses = computed(() =>
-    this.monthlyExpenses().filter(e => (e.dayOfMonth ?? 1) > this.currentDay)
+    this.monthlyExpenses().filter(e => !this.isExpensePassed(e))
   );
   protected readonly totalPassedExpenses = computed(() =>
     this.passedExpenses().reduce((s, e) => s + Number(e.amount), 0)
@@ -902,12 +926,12 @@ export class BankAccount {
     this.upcomingExpenses().reduce((s, e) => s + Number(e.amount), 0)
   );
 
-  // Virements passés/à venir
+  // Virements passés/à venir (même logique cycle salaire)
   private readonly passedOutgoing = computed(() =>
-    this.outgoingTransfers().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay).reduce((s, e) => s + Number(e.amount), 0)
+    this.outgoingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
   );
   private readonly passedIncoming = computed(() =>
-    this.incomingTransfers().filter(e => (e.dayOfMonth ?? 1) <= this.currentDay).reduce((s, e) => s + Number(e.amount), 0)
+    this.incomingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
   );
   private readonly totalOutgoing = computed(() =>
     this.outgoingTransfers().reduce((s, e) => s + Number(e.amount), 0)
@@ -927,7 +951,7 @@ export class BankAccount {
     - this.monthlyAnnualExpenses() - this.totalMonthSpendings()
   );
 
-  // Solde fin de mois = initial + revenus + virements entrants - TOUTES charges - virements sortants
+  // Solde prochain salaire = initial + revenus + virements entrants - TOUTES charges - virements sortants
   protected readonly endOfMonthBalance = computed(() =>
     this.selectedInitialBalance() + this.totalIncome() + this.totalIncoming()
     - this.totalMonthlyExpenses() - this.monthlyAnnualExpenses() - this.totalMonthSpendings() - this.totalOutgoing()
@@ -939,34 +963,33 @@ export class BankAccount {
     return (this.totalAllExpenses() / income) * 100;
   });
 
-  protected isExpensePassed(entry: RecurringEntry): boolean {
-    return (entry.dayOfMonth ?? 1) <= this.currentDay;
-  }
-
   protected readonly selectedEntry = signal<RecurringEntry | null>(null);
   protected readonly createType = signal<RecurringEntryType>('income');
-  // Timeline du mois : tous les événements triés par dayOfMonth
+  // Timeline du mois : tous les événements triés par cycle salaire
   protected readonly timelineEvents = computed(() => {
-    const accountId = this.selectedAccountId();
+    const salary = this.salaryDay();
     const events: { id: string; day: number; label: string; amount: number; sign: string; type: RecurringEntryType; passed: boolean }[] = [];
 
     for (const e of this.incomes()) {
-      if (e.dayOfMonth) events.push({ id: e.id, day: e.dayOfMonth, label: e.label, amount: Number(e.amount), sign: '+', type: 'income', passed: e.dayOfMonth <= this.currentDay });
+      if (e.dayOfMonth) events.push({ id: e.id, day: e.dayOfMonth, label: e.label, amount: Number(e.amount), sign: '+', type: 'income', passed: this.isExpensePassed(e) });
     }
     for (const e of this.monthlyExpenses()) {
       const day = e.dayOfMonth ?? 1;
-      events.push({ id: e.id, day, label: e.label, amount: Number(e.amount), sign: '-', type: 'expense', passed: day <= this.currentDay });
+      events.push({ id: e.id, day, label: e.label, amount: Number(e.amount), sign: '-', type: 'expense', passed: this.isExpensePassed(e) });
     }
     for (const e of this.outgoingTransfers()) {
-      const day = e.dayOfMonth ?? 1;
-      events.push({ id: e.id, day, label: `→ ${this.accountNameById(e.toAccountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '-', type: 'transfer', passed: day <= this.currentDay });
+      events.push({ id: e.id, day: e.dayOfMonth ?? 1, label: `→ ${this.accountNameById(e.toAccountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '-', type: 'transfer', passed: this.isExpensePassed(e) });
     }
     for (const e of this.incomingTransfers()) {
-      const day = e.dayOfMonth ?? 1;
-      events.push({ id: e.id + '-in', day, label: `← ${this.accountNameById(e.accountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '+', type: 'transfer', passed: day <= this.currentDay });
+      events.push({ id: e.id + '-in', day: e.dayOfMonth ?? 1, label: `← ${this.accountNameById(e.accountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '+', type: 'transfer', passed: this.isExpensePassed(e) });
     }
 
-    return events.sort((a, b) => a.day - b.day);
+    // Tri dans l'ordre du cycle salaire (salaryDay en premier)
+    return events.sort((a, b) => {
+      const orderA = a.day >= salary ? a.day - salary : a.day + 31 - salary;
+      const orderB = b.day >= salary ? b.day - salary : b.day + 31 - salary;
+      return orderA - orderB;
+    });
   });
 
   protected readonly createModalTitle = computed(() => {
@@ -1101,8 +1124,44 @@ export class BankAccount {
 
   protected onModalClosed() { this.selectedEntry.set(null); }
 
+  private async archiveCurrentCycle() {
+    const salary = this.totalIncome();
+    if (salary <= 0) return;
+
+    const month = new Date().toISOString().slice(0, 7);
+    const accountId = this.selectedAccountId();
+    const totalExpenses = this.totalMonthlyExpenses() + this.monthlyAnnualExpenses();
+    const totalSpendings = this.totalMonthSpendings();
+    const spendings = this.monthSpendings().map(e => ({
+      label: e.label,
+      amount: Number(e.amount),
+      date: e.date,
+      category: e.category,
+    }));
+
+    const fd = new FormData();
+    fd.append('month', month);
+    fd.append('salary', String(salary));
+    fd.append('totalExpenses', String(totalExpenses));
+    fd.append('totalSpendings', String(totalSpendings));
+    fd.append('spendings', JSON.stringify(spendings));
+    if (accountId) fd.append('accountId', accountId);
+
+    try {
+      await lastValueFrom(this.createArchiveUC.execute(fd));
+    } catch {
+      // L'archivage silencieux échoue — on continue quand même
+    }
+  }
+
   protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
     try {
+      // Archiver le cycle en cours quand on ajoute un nouveau revenu
+      if (data.type === 'income' && this.incomes().length > 0) {
+        await this.archiveCurrentCycle();
+        this.toaster.success('Cycle archivé automatiquement');
+      }
+
       await lastValueFrom(this.createEntryUC.execute(data));
       this.toaster.success('Entrée créée');
       this.createModalRef().close();
