@@ -31,6 +31,7 @@ type MemberSummary = {
   spendings: RecurringEntry[];
   totalSpendings: number;
   remaining: number;
+  isExpensePassed: (entry: RecurringEntry) => boolean;
 };
 
 @Component({
@@ -168,12 +169,15 @@ type MemberSummary = {
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1">
                     @for (entry of ms.monthlyExpenses; track entry.id) {
-                      <div class="flex items-center justify-between py-1.5">
+                      @let passed = ms.isExpensePassed(entry);
+                      <div class="flex items-center justify-between py-1.5" [class.opacity-50]="passed">
                         <div class="flex items-center gap-2 min-w-0">
-                          <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10 text-ib-red text-[9px] font-bold shrink-0">
-                            @if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
+                          <div class="flex h-6 w-6 items-center justify-center rounded-lg text-[9px] font-bold shrink-0"
+                               [class.bg-ib-red-10]="!passed" [class.text-ib-red]="!passed"
+                               [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed">
+                            @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
                           </div>
-                          <span class="text-[13px] text-text-primary truncate">{{ entry.label }}</span>
+                          <span class="text-[13px] text-text-primary truncate" [class.line-through]="passed">{{ entry.label }}</span>
                         </div>
                         <span class="text-[13px] font-mono font-medium text-text-muted shrink-0 ml-2">{{ entry.amount | number:'1.2-2' }}&euro;</span>
                       </div>
@@ -382,9 +386,6 @@ export class BudgetDashboard {
     const claimedEntryIds = new Set<string>();
 
     const buildSummary = (id: string | null, label: string, initials: string, claimedIds?: Set<string>): MemberSummary => {
-      const filter = (items: { memberId: string | null }[]) =>
-        items.filter(i => (id ? i.memberId === id : !i.memberId));
-
       // Pour un membre : ses éléments + les non-assignés (1 seul membre → tout lui revient, sinon par accountId)
       let mEnvs: Envelope[];
       let mLoans: Loan[];
@@ -428,6 +429,15 @@ export class BudgetDashboard {
       const monthlyAnnual = totalAnnualExp / 12;
       const totalSpend = spendings.reduce((s, e) => s + Number(e.amount), 0);
 
+      // Logique "passé" dans le cycle salaire
+      const salaryDay = incomes.find(e => e.dayOfMonth)?.dayOfMonth ?? 1;
+      const today = new Date().getDate();
+      const isPassed = (entry: RecurringEntry): boolean => {
+        const day = entry.dayOfMonth ?? 1;
+        if (today >= salaryDay) return day >= salaryDay && day <= today;
+        return day >= salaryDay || day <= today;
+      };
+
       return {
         id,
         label,
@@ -448,6 +458,7 @@ export class BudgetDashboard {
         spendings,
         totalSpendings: totalSpend,
         remaining: totalIncome - totalMonthlyExp - monthlyAnnual - totalSpend,
+        isExpensePassed: isPassed,
       };
     };
 
