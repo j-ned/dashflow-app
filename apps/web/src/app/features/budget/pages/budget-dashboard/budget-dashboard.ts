@@ -385,26 +385,32 @@ export class BudgetDashboard {
       const filter = (items: { memberId: string | null }[]) =>
         items.filter(i => (id ? i.memberId === id : !i.memberId));
 
-      // Pour un membre : ses éléments + les éléments sans membre (sur mêmes comptes pour entries)
+      // Pour un membre : ses éléments + les non-assignés (1 seul membre → tout lui revient, sinon par accountId)
       let mEnvs: Envelope[];
       let mLoans: Loan[];
       let mEntries: RecurringEntry[];
+      const singleMember = mbrs.length === 1;
       if (id) {
         const own = allEntries.filter(e => e.memberId === id);
-        const accountIds = memberAccountIds.get(id)!;
-        const shared = allEntries.filter(e => !e.memberId && e.accountId && accountIds.has(e.accountId));
-        shared.forEach(e => claimedIds?.add(e.id));
-        mEntries = [...own, ...shared];
-        // Enveloppes et prêts : rattacher les sans-membre si un seul membre existe
-        const claimOrphans = mbrs.length === 1;
-        mEnvs = envs.filter(e => e.memberId === id || (claimOrphans && !e.memberId)) as Envelope[];
-        mLoans = allLoans.filter(l => l.memberId === id || (claimOrphans && !l.memberId)) as Loan[];
+        if (singleMember) {
+          // Un seul membre : toutes les entrées sans membre lui reviennent
+          const orphans = allEntries.filter(e => !e.memberId);
+          orphans.forEach(e => claimedIds?.add(e.id));
+          mEntries = [...own, ...orphans];
+        } else {
+          // Plusieurs membres : rattacher par accountId partagé
+          const accountIds = memberAccountIds.get(id)!;
+          const shared = allEntries.filter(e => !e.memberId && e.accountId && accountIds.has(e.accountId));
+          shared.forEach(e => claimedIds?.add(e.id));
+          mEntries = [...own, ...shared];
+        }
+        mEnvs = envs.filter(e => e.memberId === id || (singleMember && !e.memberId)) as Envelope[];
+        mLoans = allLoans.filter(l => l.memberId === id || (singleMember && !l.memberId)) as Loan[];
       } else {
-        // Global : seulement les éléments non réclamés
-        const claimOrphans = mbrs.length === 1;
+        // Global : seulement les éléments non réclamés par un membre
         mEntries = allEntries.filter(e => !e.memberId && !claimedIds?.has(e.id));
-        mEnvs = (claimOrphans ? [] : envs.filter(e => !e.memberId)) as Envelope[];
-        mLoans = claimOrphans ? [] : allLoans.filter(l => !l.memberId) as Loan[];
+        mEnvs = (singleMember ? [] : envs.filter(e => !e.memberId)) as Envelope[];
+        mLoans = singleMember ? [] : allLoans.filter(l => !l.memberId) as Loan[];
       }
 
       const lent = mLoans.filter(l => l.direction === 'lent');
