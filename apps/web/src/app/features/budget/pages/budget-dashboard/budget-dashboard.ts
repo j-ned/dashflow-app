@@ -66,43 +66,7 @@ type MemberSummary = {
 
         <div class="p-5 space-y-5">
           <!-- Mini KPIs du membre -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-            @if (ms.envelopes.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-cyan"></div>
-                <div class="flex items-center gap-1.5 mb-2">
-                  <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-cyan/10">
-                    <app-icon name="wallet" size="12" class="text-ib-cyan" />
-                  </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Enveloppes</p>
-                </div>
-                <p class="text-lg font-mono font-bold text-ib-cyan tracking-tight">{{ ms.totalEnvelopes | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
-              </div>
-            }
-            @if (ms.lentLoans.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-blue/30 hover:shadow-lg hover:shadow-ib-blue/5">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-blue"></div>
-                <div class="flex items-center gap-1.5 mb-2">
-                  <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-blue/10">
-                    <app-icon name="arrow-up-right" size="12" class="text-ib-blue" />
-                  </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Prêté</p>
-                </div>
-                <p class="text-lg font-mono font-bold text-ib-blue tracking-tight">{{ ms.totalLent | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
-              </div>
-            }
-            @if (ms.borrowedLoans.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-red/30 hover:shadow-lg hover:shadow-ib-red/5">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-red"></div>
-                <div class="flex items-center gap-1.5 mb-2">
-                  <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
-                    <app-icon name="arrow-down-left" size="12" class="text-ib-red" />
-                  </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Emprunté</p>
-                </div>
-                <p class="text-lg font-mono font-bold text-ib-red tracking-tight">{{ ms.totalBorrowed | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
-              </div>
-            }
+          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             @if (ms.incomes.length > 0) {
               <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
                 <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-green"></div>
@@ -421,10 +385,9 @@ export class BudgetDashboard {
       const filter = (items: { memberId: string | null }[]) =>
         items.filter(i => (id ? i.memberId === id : !i.memberId));
 
-      const mEnvs = filter(envs) as Envelope[];
-      const mLoans = filter(allLoans) as Loan[];
-
-      // Pour un membre : ses entrées + les entrées sans membre sur ses mêmes comptes
+      // Pour un membre : ses éléments + les éléments sans membre (sur mêmes comptes pour entries)
+      let mEnvs: Envelope[];
+      let mLoans: Loan[];
       let mEntries: RecurringEntry[];
       if (id) {
         const own = allEntries.filter(e => e.memberId === id);
@@ -432,9 +395,16 @@ export class BudgetDashboard {
         const shared = allEntries.filter(e => !e.memberId && e.accountId && accountIds.has(e.accountId));
         shared.forEach(e => claimedIds?.add(e.id));
         mEntries = [...own, ...shared];
+        // Enveloppes et prêts : rattacher les sans-membre si un seul membre existe
+        const claimOrphans = mbrs.length === 1;
+        mEnvs = envs.filter(e => e.memberId === id || (claimOrphans && !e.memberId)) as Envelope[];
+        mLoans = allLoans.filter(l => l.memberId === id || (claimOrphans && !l.memberId)) as Loan[];
       } else {
-        // Global : seulement les entrées non réclamées par un membre
+        // Global : seulement les éléments non réclamés
+        const claimOrphans = mbrs.length === 1;
         mEntries = allEntries.filter(e => !e.memberId && !claimedIds?.has(e.id));
+        mEnvs = (claimOrphans ? [] : envs.filter(e => !e.memberId)) as Envelope[];
+        mLoans = claimOrphans ? [] : allLoans.filter(l => !l.memberId) as Loan[];
       }
 
       const lent = mLoans.filter(l => l.direction === 'lent');
