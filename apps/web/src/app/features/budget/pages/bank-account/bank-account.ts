@@ -169,7 +169,7 @@ const PALETTE = [
                       [class.text-ib-green]="endOfMonthBalance() >= 0"
                       [class.text-ib-red]="endOfMonthBalance() < 0" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prochain salaire</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde fin de cycle</p>
         </div>
         <p class="text-2xl font-mono font-bold tracking-tight"
            [class.text-ib-green]="endOfMonthBalance() >= 0"

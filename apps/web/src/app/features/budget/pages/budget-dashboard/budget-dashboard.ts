@@ -405,13 +405,38 @@ export class BudgetDashboard {
     const allEntries = this.entries();
     const mbrs = this.members();
 
-    const buildSummary = (id: string | null, label: string, initials: string): MemberSummary => {
+    // Collecter les accountIds liés à chaque membre (via ses revenus)
+    const memberAccountIds = new Map<string, Set<string>>();
+    for (const m of mbrs) {
+      const accountIds = new Set<string>();
+      for (const e of allEntries) {
+        if (e.memberId === m.id && e.accountId) accountIds.add(e.accountId);
+      }
+      memberAccountIds.set(m.id, accountIds);
+    }
+    // IDs des entrées sans membre déjà rattachées à un membre via accountId
+    const claimedEntryIds = new Set<string>();
+
+    const buildSummary = (id: string | null, label: string, initials: string, claimedIds?: Set<string>): MemberSummary => {
       const filter = (items: { memberId: string | null }[]) =>
         items.filter(i => (id ? i.memberId === id : !i.memberId));
 
       const mEnvs = filter(envs) as Envelope[];
       const mLoans = filter(allLoans) as Loan[];
-      const mEntries = filter(allEntries) as RecurringEntry[];
+
+      // Pour un membre : ses entrées + les entrées sans membre sur ses mêmes comptes
+      let mEntries: RecurringEntry[];
+      if (id) {
+        const own = allEntries.filter(e => e.memberId === id);
+        const accountIds = memberAccountIds.get(id)!;
+        const shared = allEntries.filter(e => !e.memberId && e.accountId && accountIds.has(e.accountId));
+        shared.forEach(e => claimedIds?.add(e.id));
+        mEntries = [...own, ...shared];
+      } else {
+        // Global : seulement les entrées non réclamées par un membre
+        mEntries = allEntries.filter(e => !e.memberId && !claimedIds?.has(e.id));
+      }
+
       const lent = mLoans.filter(l => l.direction === 'lent');
       const borrowed = mLoans.filter(l => l.direction === 'borrowed');
       const currentMonth = new Date().toISOString().slice(0, 7);
@@ -452,20 +477,22 @@ export class BudgetDashboard {
 
     const summaries: MemberSummary[] = [];
 
-    const global = buildSummary(null, 'Global (famille)', 'GL');
-    if (global.envelopes.length > 0 || global.lentLoans.length > 0 || global.borrowedLoans.length > 0
-        || global.incomes.length > 0 || global.monthlyExpenses.length > 0
-        || global.annualExpenses.length > 0 || global.spendings.length > 0) {
-      summaries.push(global);
-    }
-
+    // D'abord les membres (pour réclamer les entrées partagées par accountId)
     for (const m of mbrs) {
-      const ms = buildSummary(m.id, `${m.firstName} ${m.lastName}`, `${m.firstName[0]}${m.lastName[0]}`);
+      const ms = buildSummary(m.id, `${m.firstName} ${m.lastName}`, `${m.firstName[0]}${m.lastName[0]}`, claimedEntryIds);
       if (ms.envelopes.length > 0 || ms.lentLoans.length > 0 || ms.borrowedLoans.length > 0
           || ms.incomes.length > 0 || ms.monthlyExpenses.length > 0
           || ms.annualExpenses.length > 0 || ms.spendings.length > 0) {
         summaries.push(ms);
       }
+    }
+
+    // Puis le global (seulement les entrées non réclamées)
+    const global = buildSummary(null, 'Global (famille)', 'GL', claimedEntryIds);
+    if (global.envelopes.length > 0 || global.lentLoans.length > 0 || global.borrowedLoans.length > 0
+        || global.incomes.length > 0 || global.monthlyExpenses.length > 0
+        || global.annualExpenses.length > 0 || global.spendings.length > 0) {
+      summaries.unshift(global);
     }
 
     return summaries;
