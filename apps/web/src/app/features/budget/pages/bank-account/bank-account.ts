@@ -1156,9 +1156,12 @@ export class BankAccount {
 
   protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
     try {
-      // Archiver le cycle en cours quand on ajoute un nouveau revenu
+      // Archiver le cycle en cours et supprimer les anciens revenus
       if (data.type === 'income' && this.incomes().length > 0) {
         await this.archiveCurrentCycle();
+        for (const old of this.incomes()) {
+          await lastValueFrom(this.deleteEntryUC.execute(old.id));
+        }
         this.toaster.success('Cycle archivé automatiquement');
       }
 
