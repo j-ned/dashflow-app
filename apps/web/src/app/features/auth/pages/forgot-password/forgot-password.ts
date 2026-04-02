@@ -315,8 +315,8 @@ export class ForgotPassword {
       await this.auth.forgotPassword(email);
       this.pendingEmail.set(email);
       this.step.set('reset');
-    } catch {
-      this.error.set('Une erreur est survenue. Veuillez réessayer.');
+    } catch (err: unknown) {
+      this.error.set(this.extractError(err, 'Une erreur est survenue. Veuillez réessayer.'));
     } finally {
       this.loading.set(false);
     }
@@ -362,8 +362,8 @@ export class ForgotPassword {
     try {
       await this.auth.forgotPassword(this.pendingEmail());
       this.success.set('Un nouveau code a été envoyé.');
-    } catch {
-      this.error.set('Erreur lors du renvoi du code.');
+    } catch (err: unknown) {
+      this.error.set(this.extractError(err, 'Erreur lors du renvoi du code.'));
     } finally {
       this.loading.set(false);
     }
@@ -434,5 +434,13 @@ export class ForgotPassword {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  private extractError(err: unknown, fallback: string): string {
+    if (err && typeof err === 'object' && 'error' in err) {
+      const httpErr = err as { error?: { error?: string } };
+      return httpErr.error?.error ?? fallback;
+    }
+    return fallback;
   }
 }

@@ -75,9 +75,12 @@ auth.post('/register', async (c) => {
 
   await db.insert(verificationCodes).values({ email, code, expiresAt });
 
-  sendVerificationCode(email, code).catch((err) =>
-    console.error(`[MAIL] Failed to send code to ${email}:`, err.message),
-  );
+  try {
+    await sendVerificationCode(email, code);
+  } catch (err) {
+    console.error(`[MAIL] Failed to send code to ${email}:`, (err as Error).message);
+    return c.json({ error: 'Impossible d\'envoyer l\'email de verification. Reessayez plus tard.' }, 502);
+  }
 
   return c.json({ message: 'Code de verification envoye', email }, 201);
 });
@@ -146,9 +149,12 @@ auth.post('/resend-code', async (c) => {
 
   await db.insert(verificationCodes).values({ email, code, expiresAt });
 
-  sendVerificationCode(email, code).catch((err) =>
-    console.error(`[MAIL] Failed to send code to ${email}:`, err.message),
-  );
+  try {
+    await sendVerificationCode(email, code);
+  } catch (err) {
+    console.error(`[MAIL] Failed to send code to ${email}:`, (err as Error).message);
+    return c.json({ error: 'Impossible d\'envoyer l\'email. Reessayez plus tard.' }, 502);
+  }
 
   return c.json({ message: 'Code renvoye' });
 });
@@ -216,9 +222,12 @@ auth.post('/forgot-password', async (c) => {
 
   await db.insert(verificationCodes).values({ email, code, expiresAt });
 
-  sendPasswordResetCode(email, code).catch((err) =>
-    console.error(`[MAIL] Failed to send reset code to ${email}:`, err.message),
-  );
+  try {
+    await sendPasswordResetCode(email, code);
+  } catch (err) {
+    console.error(`[MAIL] Failed to send reset code to ${email}:`, (err as Error).message);
+    return c.json({ error: 'Impossible d\'envoyer l\'email. Reessayez plus tard.' }, 502);
+  }
 
   return c.json({ message: 'Si un compte existe avec cet email, un code a ete envoye' });
 });
