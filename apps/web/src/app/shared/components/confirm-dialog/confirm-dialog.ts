@@ -23,8 +23,15 @@ type ConfirmOptions = {
   readonly variant?: ConfirmVariant;
 };
 
+type ChoiceOptions = ConfirmOptions & {
+  readonly alternativeLabel: string;
+};
+
+export type ChoiceResult = 'confirm' | 'alternative' | 'cancel';
+
 type PendingConfirm = ConfirmOptions & {
-  resolve: (confirmed: boolean) => void;
+  alternativeLabel?: string;
+  resolve: (result: boolean | ChoiceResult) => void;
 };
 
 const VARIANT_STYLES: Record<ConfirmVariant, { icon: string; iconBg: string; btn: string }> = {
@@ -53,7 +60,7 @@ export class ConfirmService {
 
   confirm(options: ConfirmOptions): Promise<boolean> {
     return new Promise(resolve => {
-      this._pending.set({ ...options, resolve });
+      this._pending.set({ ...options, resolve: (r: boolean | ChoiceResult) => resolve(r === true || r === 'confirm') });
     });
   }
 
@@ -64,6 +71,13 @@ export class ConfirmService {
       message: `Supprimer ${entityName} ? Cette action est irréversible.`,
       confirmLabel: 'Supprimer',
       variant: 'danger',
+    });
+  }
+
+  /** Three-choice dialog: confirm / alternative / cancel */
+  choose(options: ChoiceOptions): Promise<ChoiceResult> {
+    return new Promise(resolve => {
+      this._pending.set({ ...options, resolve: (r: boolean | ChoiceResult) => resolve(typeof r === 'boolean' ? (r ? 'confirm' : 'cancel') : r) });
     });
   }
 }
@@ -97,13 +111,20 @@ export class ConfirmService {
           <div class="flex justify-end gap-2 px-5 pb-4">
             <button type="button"
                     class="rounded-lg px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                    (click)="answer(false)">
+                    (click)="answer('cancel')">
               {{ p.cancelLabel || 'Annuler' }}
             </button>
+            @if (p.alternativeLabel) {
+              <button type="button"
+                      class="rounded-lg px-4 py-2 text-sm font-medium text-text-primary bg-hover hover:bg-border transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                      (click)="answer('alternative')">
+                {{ p.alternativeLabel }}
+              </button>
+            }
             <button type="button"
                     class="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2"
                     [class]="style().btn"
-                    (click)="answer(true)">
+                    (click)="answer('confirm')">
               {{ p.confirmLabel || 'Confirmer' }}
             </button>
           </div>
@@ -174,25 +195,25 @@ export class ConfirmDialog {
 
   protected readonly style = computed(() => VARIANT_STYLES[this.pending()?.variant ?? 'danger']);
 
-  protected answer(confirmed: boolean) {
+  protected answer(result: boolean | ChoiceResult) {
     const p = this.pending();
     if (p) {
-      p.resolve(confirmed);
+      p.resolve(result);
       this.service._pending.set(null);
     }
   }
 
   protected onBackdropClick(e: MouseEvent) {
     if (e.target === this.dialogRef().nativeElement) {
-      this.answer(false);
+      this.answer('cancel');
     }
   }
 
   protected onDialogClose() {
-    // Escape key pressed — resolve as false
+    // Escape key pressed — resolve as cancel
     const p = this.pending();
     if (p) {
-      p.resolve(false);
+      p.resolve('cancel');
       this.service._pending.set(null);
     }
   }

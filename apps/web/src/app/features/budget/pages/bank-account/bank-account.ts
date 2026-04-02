@@ -15,12 +15,12 @@ import { DeleteBankAccountUseCase } from '../../domain/use-cases/delete-bank-acc
 import { UpdateBankAccountUseCase } from '../../domain/use-cases/update-bank-account.use-case';
 import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
-import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -761,9 +761,9 @@ export class BankAccount {
   private readonly updateAccountUC = inject(UpdateBankAccountUseCase);
   private readonly deleteAccountUC = inject(DeleteBankAccountUseCase);
   private readonly entryGateway = inject(RecurringEntryGateway);
-  private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -1124,6 +1124,39 @@ export class BankAccount {
 
   protected onModalClosed() { this.selectedEntry.set(null); }
 
+  protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
+    try {
+      // Si c'est un revenu et qu'il en existe déjà, demander à l'utilisateur
+      if (data.type === 'income' && this.incomes().length > 0) {
+        const choice = await this.confirm.choose({
+          title: 'Ajouter un revenu',
+          message: 'Vous avez déjà des revenus enregistrés. Souhaitez-vous démarrer un nouveau cycle (archiver les anciens) ou simplement ajouter ce revenu au mois en cours ?',
+          confirmLabel: 'Nouveau cycle',
+          alternativeLabel: 'Ajouter au mois',
+          cancelLabel: 'Annuler',
+          variant: 'info',
+        });
+
+        if (choice === 'cancel') return;
+
+        if (choice === 'confirm') {
+          await this.archiveCurrentCycle();
+          for (const old of this.incomes()) {
+            await lastValueFrom(this.deleteEntryUC.execute(old.id));
+          }
+          this.toaster.success('Cycle archivé');
+        }
+      }
+
+      await lastValueFrom(this.createEntryUC.execute(data));
+      this.toaster.success('Entrée créée');
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error('Erreur lors de la création');
+    }
+  }
+
   private async archiveCurrentCycle() {
     const salary = this.totalIncome();
     if (salary <= 0) return;
@@ -1151,26 +1184,6 @@ export class BankAccount {
       await lastValueFrom(this.createArchiveUC.execute(fd));
     } catch {
       // L'archivage silencieux échoue — on continue quand même
-    }
-  }
-
-  protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
-    try {
-      // Archiver le cycle en cours et supprimer les anciens revenus
-      if (data.type === 'income' && this.incomes().length > 0) {
-        await this.archiveCurrentCycle();
-        for (const old of this.incomes()) {
-          await lastValueFrom(this.deleteEntryUC.execute(old.id));
-        }
-        this.toaster.success('Cycle archivé automatiquement');
-      }
-
-      await lastValueFrom(this.createEntryUC.execute(data));
-      this.toaster.success('Entrée créée');
-      this.createModalRef().close();
-      this._refresh.update(v => v + 1);
-    } catch {
-      this.toaster.error('Erreur lors de la création');
     }
   }
 
