@@ -1,3 +1,5 @@
+import { config } from 'dotenv';
+config({ path: process.env['DOTENV_PATH'] ?? '../.env' });
 import { createTransport } from 'nodemailer';
 
 const transporter = createTransport({
