@@ -1059,13 +1059,13 @@ export class BankAccount {
   protected prevMonth() {
     const [y, m] = this.spendingMonth().split('-').map(Number);
     const d = new Date(y, m - 2, 1);
-    this.spendingMonth.set(d.toISOString().slice(0, 7));
+    this.spendingMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
 
   protected nextMonth() {
     const [y, m] = this.spendingMonth().split('-').map(Number);
     const d = new Date(y, m, 1);
-    this.spendingMonth.set(d.toISOString().slice(0, 7));
+    this.spendingMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
 
   protected resetAccountForm() {
