@@ -10,7 +10,11 @@ const transporter = createTransport({
     user: process.env['SMTP_USER'],
     pass: process.env['SMTP_PASS'],
   },
-  connectionTimeout: 30000, // 30 seconds
+  tls: {
+    rejectUnauthorized: false
+  },
+  connectionTimeout: 30000,
+ // 30 seconds
   greetingTimeout: 30000,
   socketTimeout: 45000,
 });
