@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import { db } from '@db/client';
 import { users } from '@db/schema';
@@ -82,7 +82,7 @@ oauth.get('/google/callback', async (c) => {
     // Find or create user
     const { token, user } = await findOrCreateGoogleUser({
       googleId: profile.id,
-      email: profile.email,
+      email: profile.email.toLowerCase(),
       displayName: profile.name ?? profile.email.split('@')[0],
       avatarUrl: profile.picture ?? null,
     });
@@ -116,7 +116,7 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   // 2. Try find by email (link accounts)
   const [byEmail] = await db.select().from(users)
-    .where(eq(users.email, profile.email))
+    .where(eq(sql`LOWER(${users.email})`, profile.email.toLowerCase()))
     .limit(1);
 
   if (byEmail) {

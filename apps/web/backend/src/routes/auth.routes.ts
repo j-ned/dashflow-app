@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, gt } from 'drizzle-orm';
+import { eq, and, gt, sql } from 'drizzle-orm';
 import { hash, verify } from 'argon2';
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
@@ -46,7 +46,7 @@ auth.post('/register', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email, password, displayName } = v.data;
 
-  const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const existing = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
   if (existing.length > 0 && existing[0].emailVerified) {
     return c.json({ error: 'Email deja utilise' }, 409);
   }
@@ -67,7 +67,7 @@ auth.post('/register', async (c) => {
   }
 
   // Delete old codes for this email
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   // Generate new code (expires in 10 minutes)
   const code = generateCode();
@@ -77,6 +77,7 @@ auth.post('/register', async (c) => {
 
   try {
     await sendVerificationCode(email, code);
+    console.log(`[AUTH] Verification code sent successfully to: ${email}`);
   } catch (err) {
     console.error(`[MAIL] Failed to send code to ${email}:`, (err as Error).message);
     return c.json({ error: 'Impossible d\'envoyer l\'email de verification. Reessayez plus tard.' }, 502);
@@ -94,7 +95,7 @@ auth.post('/verify', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(verificationCodes.email, email),
+      eq(sql`LOWER(${verificationCodes.email})`, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -107,7 +108,7 @@ auth.post('/verify', async (c) => {
   // Mark user as verified
   const [user] = await db.update(users)
     .set({ emailVerified: new Date() })
-    .where(eq(users.email, email))
+    .where(eq(sql`LOWER(${users.email})`, email))
     .returning();
 
   if (!user) {
@@ -115,7 +116,7 @@ auth.post('/verify', async (c) => {
   }
 
   // Cleanup codes
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   // Auto-login after verification
   const token = await signToken({ sub: user.id, email: user.email });
@@ -131,7 +132,7 @@ auth.post('/resend-code', async (c) => {
     return c.json({ error: 'Email requis' }, 400);
   }
 
-  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
   if (!user) {
     return c.json({ error: 'Aucun compte avec cet email' }, 404);
   }
@@ -141,7 +142,7 @@ auth.post('/resend-code', async (c) => {
   }
 
   // Delete old codes
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   // Generate new code
   const code = generateCode();
@@ -151,6 +152,7 @@ auth.post('/resend-code', async (c) => {
 
   try {
     await sendVerificationCode(email, code);
+    console.log(`[AUTH] Verification code sent successfully to: ${email}`);
   } catch (err) {
     console.error(`[MAIL] Failed to send code to ${email}:`, (err as Error).message);
     return c.json({ error: 'Impossible d\'envoyer l\'email. Reessayez plus tard.' }, 502);
@@ -165,7 +167,7 @@ auth.post('/login', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email, password, totpCode } = v.data;
 
-  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
   if (!user) {
     return c.json({ error: 'Identifiants invalides' }, 401);
   }
@@ -206,15 +208,22 @@ auth.post('/forgot-password', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email } = v.data;
 
-  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
+  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
 
-  // Always return success to avoid email enumeration
-  if (!user || !user.emailVerified) {
+  if (!user) {
+    console.log(`[AUTH] Forgot password request for non-existent email: ${email}`);
     return c.json({ message: 'Si un compte existe avec cet email, un code a ete envoye' });
   }
 
+  if (!user.emailVerified) {
+    console.log(`[AUTH] Forgot password request for unverified account: ${email}`);
+    return c.json({ message: 'Si un compte existe avec cet email, un code a ete envoye' });
+  }
+
+  console.log(`[AUTH] Sending reset code to: ${email}`);
+
   // Delete old codes for this email
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   // Generate new code (expires in 10 minutes)
   const code = generateCode();
@@ -224,6 +233,7 @@ auth.post('/forgot-password', async (c) => {
 
   try {
     await sendPasswordResetCode(email, code);
+    console.log(`[AUTH] Reset code sent successfully to: ${email}`);
   } catch (err) {
     console.error(`[MAIL] Failed to send reset code to ${email}:`, (err as Error).message);
     return c.json({ error: 'Impossible d\'envoyer l\'email. Reessayez plus tard.' }, 502);
@@ -241,7 +251,7 @@ auth.post('/reset-password', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(verificationCodes.email, email),
+      eq(sql`LOWER(${verificationCodes.email})`, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -255,7 +265,7 @@ auth.post('/reset-password', async (c) => {
   const hashed = await hash(newPassword);
   const [user] = await db.update(users)
     .set({ password: hashed })
-    .where(eq(users.email, email))
+    .where(eq(sql`LOWER(${users.email})`, email))
     .returning();
 
   if (!user) {
@@ -263,7 +273,7 @@ auth.post('/reset-password', async (c) => {
   }
 
   // Cleanup codes
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   return c.json({ message: 'Mot de passe reinitialise avec succes' });
 });
@@ -619,7 +629,7 @@ auth.post('/reset-password-with-recovery', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(verificationCodes.email, email),
+      eq(sql`LOWER(${verificationCodes.email})`, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -639,14 +649,14 @@ auth.post('/reset-password-with-recovery', async (c) => {
 
   const [user] = await db.update(users)
     .set(updateData)
-    .where(eq(users.email, email))
+    .where(eq(sql`LOWER(${users.email})`, email))
     .returning();
 
   if (!user) {
     return c.json({ error: 'Utilisateur non trouve' }, 404);
   }
 
-  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
+  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
 
   return c.json({ message: 'Mot de passe reinitialise avec succes' });
 });
