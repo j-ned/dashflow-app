@@ -531,13 +531,13 @@ const PALETTE = [
           </div>
           <button type="button"
                   class="inline-flex items-center gap-1 rounded-lg bg-ib-purple px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
-                  (click)="openCreateModal('transfer')">
-            <app-icon name="plus" size="12" /> Virement
+                  (click)="openCreateModal('transfer', 'recurring')">
+            <app-icon name="plus" size="12" /> Virement récurrent
           </button>
         </div>
-        @if (transfers().length > 0) {
+        @if (recurringTransfers().length > 0) {
           <div class="divide-y divide-border/30">
-            @for (entry of transfers(); track entry.id) {
+            @for (entry of recurringTransfers(); track entry.id) {
               @let passed = isExpensePassed(entry);
               <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-purple/3 transition-colors"
                    [class.opacity-50]="passed">
@@ -570,11 +570,13 @@ const PALETTE = [
                   <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button"
                             class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
                             (click)="openEditModal(entry)">
                       <app-icon name="pencil" size="13" />
                     </button>
                     <button type="button"
                             class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
                             (click)="deleteEntry(entry.id)">
                       <app-icon name="trash" size="13" />
                     </button>
@@ -587,6 +589,102 @@ const PALETTE = [
           <div class="px-5 py-8 text-center">
             <app-icon name="credit-card" size="32" class="text-text-muted/20 mx-auto mb-2" />
             <p class="text-sm text-text-muted">Programmez des virements automatiques entre vos comptes</p>
+          </div>
+        }
+      </section>
+
+      <!-- ═══ Virements ponctuels ═══ -->
+      <section class="rounded-xl border border-border bg-surface overflow-hidden">
+        <div class="flex items-center justify-between px-5 py-3 bg-ib-cyan/5 border-b border-border/50">
+          <div class="flex items-center gap-2">
+            <app-icon name="arrow-left-right" size="16" class="text-ib-cyan" />
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-cyan">Virements ponctuels</h3>
+            <div class="flex items-center gap-0.5 ml-1">
+              <button type="button"
+                      class="rounded p-0.5 text-text-muted hover:text-ib-cyan hover:bg-ib-cyan/10 transition-colors"
+                      aria-label="Mois précédent"
+                      (click)="prevMonth()">
+                <app-icon name="chevron-right" size="12" class="rotate-180" />
+              </button>
+              <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ spendingMonthLabel() }}</span>
+              <button type="button"
+                      class="rounded p-0.5 text-text-muted hover:text-ib-cyan hover:bg-ib-cyan/10 transition-colors"
+                      aria-label="Mois suivant"
+                      (click)="nextMonth()">
+                <app-icon name="chevron-right" size="12" />
+              </button>
+            </div>
+          </div>
+          <button type="button"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors shadow-sm"
+                  (click)="openCreateModal('transfer', 'one_time')">
+            <app-icon name="plus" size="12" /> Virement ponctuel
+          </button>
+        </div>
+        @if (monthOneTimeTransfers().length > 0) {
+          <div class="divide-y divide-border/30">
+            @for (entry of monthOneTimeTransfers(); track entry.id) {
+              @let isOutgoing = entry.accountId === selectedAccountId();
+              <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-cyan/3 transition-colors">
+                <div class="flex items-center gap-3">
+                  <div class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold shrink-0 bg-ib-cyan/10 text-ib-cyan">
+                    @if (entry.date) { {{ entry.date | date:'dd' }} } @else { — }
+                  </div>
+                  <div>
+                    <p class="text-sm font-semibold text-text-primary">{{ entry.label }}</p>
+                    <div class="flex items-center gap-2 mt-0.5 flex-wrap">
+                      @if (accountNameById(entry.accountId); as fromName) {
+                        <span class="text-[11px] text-text-muted">{{ fromName }}</span>
+                      }
+                      <app-icon name="arrow-right" size="10" class="text-text-muted" />
+                      @if (accountNameById(entry.toAccountId); as toName) {
+                        <span class="text-[11px] text-ib-cyan font-medium">{{ toName }}</span>
+                      }
+                      @if (entry.date) {
+                        <span class="text-[10px] text-text-muted">{{ entry.date | date:'dd/MM' }}</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+                <div class="flex items-center gap-3">
+                  <span class="text-lg font-mono font-bold"
+                        [class.text-ib-red]="isOutgoing"
+                        [class.text-ib-green]="!isOutgoing">
+                    {{ isOutgoing ? '-' : '+' }}{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span>
+                  </span>
+                  <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                    <button type="button"
+                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
+                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            (click)="openEditModal(entry)">
+                      <app-icon name="pencil" size="13" />
+                    </button>
+                    <button type="button"
+                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            (click)="deleteEntry(entry.id)">
+                      <app-icon name="trash" size="13" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+            }
+          </div>
+          <div class="px-5 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
+            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total du mois</span>
+            <div class="flex items-center gap-3 text-[11px] font-mono">
+              @if (totalOneTimeOutgoing() > 0) {
+                <span class="text-ib-red">-{{ totalOneTimeOutgoing() | number:'1.2-2' }}&euro;</span>
+              }
+              @if (totalOneTimeIncoming() > 0) {
+                <span class="text-ib-green">+{{ totalOneTimeIncoming() | number:'1.2-2' }}&euro;</span>
+              }
+            </div>
+          </div>
+        } @else {
+          <div class="px-5 py-8 text-center">
+            <app-icon name="arrow-left-right" size="32" class="text-text-muted/20 mx-auto mb-2" />
+            <p class="text-sm text-text-muted">Aucun virement ponctuel en {{ spendingMonthLabel() }}</p>
           </div>
         }
       </section>
@@ -734,7 +832,7 @@ const PALETTE = [
 
     <app-modal-dialog #createModal [title]="createModalTitle()" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
-        <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [accounts]="accounts()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
+        <app-recurring-entry-form [forcedType]="createType()" [forcedAccountId]="selectedAccountId()" [initialTransferMode]="createTransferMode()" [accounts]="accounts()" [members]="members()" (submitted)="createEntry($event)" (cancelled)="createModal.close()" />
       }
     </app-modal-dialog>
 
@@ -828,16 +926,34 @@ export class BankAccount {
     return all.filter(e => e.accountId === accountId || e.toAccountId === accountId);
   });
 
-  // Virements sortants du compte sélectionné (débit)
-  private readonly outgoingTransfers = computed(() => {
-    const accountId = this.selectedAccountId();
-    return this.transfers().filter(e => e.accountId === accountId);
+  // Virements récurrents (avec dayOfMonth)
+  protected readonly recurringTransfers = computed(() =>
+    this.transfers().filter(e => e.dayOfMonth != null)
+  );
+
+  // Virements ponctuels (avec date, sans dayOfMonth)
+  protected readonly oneTimeTransfers = computed(() =>
+    this.transfers().filter(e => !e.dayOfMonth && !!e.date)
+  );
+
+  // Virements ponctuels du mois sélectionné
+  protected readonly monthOneTimeTransfers = computed(() => {
+    const ym = this.spendingMonth();
+    return this.oneTimeTransfers()
+      .filter(e => e.date!.startsWith(ym))
+      .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
 
-  // Virements entrants sur le compte sélectionné (crédit)
+  // Virements sortants du compte sélectionné (débit) — récurrents uniquement
+  private readonly outgoingTransfers = computed(() => {
+    const accountId = this.selectedAccountId();
+    return this.recurringTransfers().filter(e => e.accountId === accountId);
+  });
+
+  // Virements entrants sur le compte sélectionné (crédit) — récurrents uniquement
   private readonly incomingTransfers = computed(() => {
     const accountId = this.selectedAccountId();
-    return this.transfers().filter(e => e.toAccountId === accountId);
+    return this.recurringTransfers().filter(e => e.toAccountId === accountId);
   });
 
   protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7));
@@ -926,18 +1042,36 @@ export class BankAccount {
     this.upcomingExpenses().reduce((s, e) => s + Number(e.amount), 0)
   );
 
-  // Virements passés/à venir (même logique cycle salaire)
+  // Virements ponctuels sortants/entrants du mois (tous considérés comme passés)
+  protected readonly totalOneTimeOutgoing = computed(() => {
+    const accountId = this.selectedAccountId();
+    return this.monthOneTimeTransfers()
+      .filter(e => e.accountId === accountId)
+      .reduce((s, e) => s + Number(e.amount), 0);
+  });
+  protected readonly totalOneTimeIncoming = computed(() => {
+    const accountId = this.selectedAccountId();
+    return this.monthOneTimeTransfers()
+      .filter(e => e.toAccountId === accountId)
+      .reduce((s, e) => s + Number(e.amount), 0);
+  });
+
+  // Virements passés/à venir (cycle salaire pour récurrents + ponctuels du mois)
   private readonly passedOutgoing = computed(() =>
     this.outgoingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
+    + this.totalOneTimeOutgoing()
   );
   private readonly passedIncoming = computed(() =>
     this.incomingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
+    + this.totalOneTimeIncoming()
   );
   private readonly totalOutgoing = computed(() =>
     this.outgoingTransfers().reduce((s, e) => s + Number(e.amount), 0)
+    + this.totalOneTimeOutgoing()
   );
   private readonly totalIncoming = computed(() =>
     this.incomingTransfers().reduce((s, e) => s + Number(e.amount), 0)
+    + this.totalOneTimeIncoming()
   );
 
   protected readonly totalAllExpenses = computed(() =>
@@ -965,6 +1099,7 @@ export class BankAccount {
 
   protected readonly selectedEntry = signal<RecurringEntry | null>(null);
   protected readonly createType = signal<RecurringEntryType>('income');
+  protected readonly createTransferMode = signal<'recurring' | 'one_time'>('recurring');
   // Timeline du mois : tous les événements triés par cycle salaire
   protected readonly timelineEvents = computed(() => {
     const salary = this.salaryDay();
@@ -998,7 +1133,7 @@ export class BankAccount {
       case 'expense': return 'Nouveau prélèvement mensuel';
       case 'annual_expense': return 'Nouveau prélèvement annuel';
       case 'spending': return 'Nouvelle dépense';
-      case 'transfer': return 'Nouveau virement automatique';
+      case 'transfer': return this.createTransferMode() === 'one_time' ? 'Nouveau virement ponctuel' : 'Nouveau virement automatique';
     }
   });
   protected readonly editModalTitle = computed(() => {
@@ -1112,8 +1247,9 @@ export class BankAccount {
     }
   }
 
-  protected openCreateModal(type: RecurringEntryType) {
+  protected openCreateModal(type: RecurringEntryType, transferMode: 'recurring' | 'one_time' = 'recurring') {
     this.createType.set(type);
+    this.createTransferMode.set(transferMode);
     this.createModalRef().open();
   }
 

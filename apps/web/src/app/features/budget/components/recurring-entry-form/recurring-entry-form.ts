@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, effect, input, output, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, input, linkedSignal, output, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -116,6 +116,31 @@ type RecurringEntryFormShape = {
           }
           @case ('transfer') {
             <div class="space-y-4">
+              <!-- Toggle récurrent / ponctuel -->
+              <div>
+                <p class="text-xs font-medium text-text-muted mb-2">Type de virement</p>
+                <div class="flex rounded-lg border border-border overflow-hidden" role="group" aria-label="Type de virement">
+                  <button type="button"
+                          class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                          [class.bg-ib-purple]="transferMode() === 'recurring'"
+                          [class.text-white]="transferMode() === 'recurring'"
+                          [class.text-text-muted]="transferMode() !== 'recurring'"
+                          [attr.aria-pressed]="transferMode() === 'recurring'"
+                          (click)="setTransferMode('recurring')">
+                    Automatique (récurrent)
+                  </button>
+                  <button type="button"
+                          class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
+                          [class.bg-ib-purple]="transferMode() === 'one_time'"
+                          [class.text-white]="transferMode() === 'one_time'"
+                          [class.text-text-muted]="transferMode() !== 'one_time'"
+                          [attr.aria-pressed]="transferMode() === 'one_time'"
+                          (click)="setTransferMode('one_time')">
+                    Ponctuel (une fois)
+                  </button>
+                </div>
+              </div>
+
               @if (accounts().length > 0) {
                 <div>
                   <label for="re-to-account" class="block text-sm font-medium text-text-muted mb-1">Vers le compte <span aria-hidden="true">*</span></label>
@@ -129,21 +154,31 @@ type RecurringEntryFormShape = {
                   <p class="mt-1 text-xs text-text-muted">Le montant sera débité du compte actuel et crédité sur ce compte</p>
                 </div>
               }
-              <div class="grid grid-cols-2 gap-4">
-                <div>
-                  <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour du virement</label>
-                  <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
-                         class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                         placeholder="Ex: 1" />
-                  <p class="mt-1 text-xs text-text-muted">Jour récurrent chaque mois</p>
+
+              @if (transferMode() === 'recurring') {
+                <div class="grid grid-cols-2 gap-4">
+                  <div>
+                    <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">Jour du virement</label>
+                    <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
+                           class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                           placeholder="Ex: 10" />
+                    <p class="mt-1 text-xs text-text-muted">Jour récurrent chaque mois</p>
+                  </div>
+                  <div>
+                    <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">Date de fin</label>
+                    <input id="re-end-date" type="date" formControlName="endDate"
+                           class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
+                    <p class="mt-1 text-xs text-text-muted">Laisser vide si permanent</p>
+                  </div>
                 </div>
+              } @else {
                 <div>
-                  <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">Date de fin</label>
-                  <input id="re-end-date" type="date" formControlName="endDate"
+                  <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">Date du virement</label>
+                  <input id="re-date" type="date" formControlName="date"
                          class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                  <p class="mt-1 text-xs text-text-muted">Laisser vide si permanent</p>
+                  <p class="mt-1 text-xs text-text-muted">Date à laquelle le virement a eu lieu</p>
                 </div>
-              </div>
+              }
             </div>
           }
         }
@@ -239,6 +274,7 @@ export class RecurringEntryForm {
   readonly initial = input<RecurringEntry | null>(null);
   readonly forcedType = input<RecurringEntryType | null>(null);
   readonly forcedAccountId = input<string | null>(null);
+  readonly initialTransferMode = input<'recurring' | 'one_time'>('recurring');
   readonly accounts = input<BankAccount[]>([]);
   readonly members = input<Member[]>([]);
   readonly submitted = output<Omit<RecurringEntry, 'id'>>();
@@ -253,6 +289,15 @@ export class RecurringEntryForm {
   protected readonly activeType = computed(() =>
     this.forcedType() ?? this.initial()?.type ?? 'expense'
   );
+
+  // Mode virement : détecté depuis les données initiales, overridable par l'utilisateur
+  protected readonly transferMode = linkedSignal<'recurring' | 'one_time'>(() => {
+    const initial = this.initial();
+    if (initial?.type === 'transfer') {
+      return initial.dayOfMonth != null ? 'recurring' : 'one_time';
+    }
+    return this.initialTransferMode();
+  });
 
   // Comptes cibles pour les virements (exclut le compte source)
   protected readonly targetAccounts = computed(() => {
@@ -319,6 +364,16 @@ export class RecurringEntryForm {
       }
       this._pendingFile.set(null);
     });
+  }
+
+  protected setTransferMode(mode: 'recurring' | 'one_time') {
+    this.transferMode.set(mode);
+    if (mode === 'one_time') {
+      this.form.controls.dayOfMonth.setValue(null);
+      this.form.controls.endDate.setValue('');
+    } else {
+      this.form.controls.date.setValue('');
+    }
   }
 
   protected onDragOver(event: DragEvent) {

@@ -14,7 +14,7 @@ export type IconName =
   | 'plus-circle'
   | 'heart-pulse' | 'stethoscope' | 'pill' | 'bell' | 'folder'
   | 'sun' | 'moon'
-  | 'chart-line' | 'arrow-right' | 'credit-card' | 'activity' | 'heart' | 'monitor'
+  | 'chart-line' | 'arrow-right' | 'arrow-left-right' | 'credit-card' | 'activity' | 'heart' | 'monitor'
   | 'shield-check' | 'copy' | 'lock' | 'key';
 
 @Component({
