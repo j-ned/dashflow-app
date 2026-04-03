@@ -192,7 +192,7 @@ export class Unlock {
 
     try {
       const { recoveryKey } = this.recoveryForm.getRawValue();
-      await this.auth.unlockWithRecovery(recoveryKey.trim());
+      await this.auth.unlockWithRecovery(recoveryKey.replace(/\s/g, ''));
       this.router.navigate(['/budget']);
     } catch {
       this.error.set('Clé de récupération invalide.');
