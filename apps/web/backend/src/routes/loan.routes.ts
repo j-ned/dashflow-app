@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, getTableColumns } from 'drizzle-orm';
 import { db } from '@db/client';
 import { loans, loanTransactions } from '@db/schema';
 import type { AppEnv } from '../types.js';
@@ -90,15 +90,16 @@ loanRoutes.put('/:id', async (c) => {
   return c.json(row);
 });
 
-// GET all transactions for user (migration/encryption)
+// GET all transactions for user (migration/encryption) — single JOIN query
 loanRoutes.get('/transactions/all', async (c) => {
   const userId = c.get('userId') as string;
-  const userLoans = await db.select({ id: loans.id }).from(loans)
-    .where(eq(loans.userId, userId));
-  if (userLoans.length === 0) return c.json([]);
-  const ids = userLoans.map(l => l.id);
-  const rows = await db.select().from(loanTransactions)
-    .where(inArray(loanTransactions.loanId, ids))
+  const rows = await db
+    .select(getTableColumns(loanTransactions))
+    .from(loanTransactions)
+    .innerJoin(loans, and(
+      eq(loanTransactions.loanId, loans.id),
+      eq(loans.userId, userId),
+    ))
     .limit(1000);
   return c.json(rows);
 });
@@ -166,15 +167,18 @@ loanRoutes.patch('/:id/payment', async (c) => {
 
   const txDate = date || new Date().toISOString().slice(0, 10);
   const newRemaining = String(Math.max(0, Number(current.remaining) - amount));
-  const [row] = await db.update(loans)
-    .set({ remaining: newRemaining })
-    .where(eq(loans.id, id))
-    .returning();
 
-  await db.insert(loanTransactions).values({
-    loanId: id,
-    amount: String(amount),
-    date: txDate,
+  const row = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(loans)
+      .set({ remaining: newRemaining })
+      .where(and(eq(loans.id, id), eq(loans.userId, userId)))
+      .returning();
+    await tx.insert(loanTransactions).values({
+      loanId: id,
+      amount: String(amount),
+      date: txDate,
+    });
+    return updated;
   });
 
   return c.json(row);

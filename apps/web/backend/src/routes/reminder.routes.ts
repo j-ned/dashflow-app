@@ -61,14 +61,15 @@ reminderRoutes.patch('/:id/toggle', async (c) => {
   const userId = c.get('userId') as string;
   const id = c.req.param('id');
 
-  const [current] = await db.select().from(reminders)
+  const [current] = await db.select({ enabled: reminders.enabled })
+    .from(reminders)
     .where(and(eq(reminders.id, id), eq(reminders.userId, userId)))
     .limit(1);
   if (!current) return c.json({ error: 'Non trouve' }, 404);
 
   const [row] = await db.update(reminders)
     .set({ enabled: !current.enabled })
-    .where(eq(reminders.id, id))
+    .where(and(eq(reminders.id, id), eq(reminders.userId, userId)))
     .returning();
   return c.json(row);
 });

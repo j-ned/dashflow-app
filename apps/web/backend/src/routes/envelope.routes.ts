@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, desc, inArray } from 'drizzle-orm';
+import { eq, and, desc, getTableColumns } from 'drizzle-orm';
 import { db } from '@db/client';
 import { envelopes, envelopeTransactions } from '@db/schema';
 import type { AppEnv } from '../types.js';
@@ -84,15 +84,16 @@ envelopeRoutes.put('/:id', async (c) => {
   return c.json(row);
 });
 
-// GET all transactions for user (migration/encryption)
+// GET all transactions for user (migration/encryption) — single JOIN query
 envelopeRoutes.get('/transactions/all', async (c) => {
   const userId = c.get('userId') as string;
-  const userEnvelopes = await db.select({ id: envelopes.id }).from(envelopes)
-    .where(eq(envelopes.userId, userId));
-  if (userEnvelopes.length === 0) return c.json([]);
-  const ids = userEnvelopes.map(e => e.id);
-  const rows = await db.select().from(envelopeTransactions)
-    .where(inArray(envelopeTransactions.envelopeId, ids))
+  const rows = await db
+    .select(getTableColumns(envelopeTransactions))
+    .from(envelopeTransactions)
+    .innerJoin(envelopes, and(
+      eq(envelopeTransactions.envelopeId, envelopes.id),
+      eq(envelopes.userId, userId),
+    ))
     .limit(1000);
   return c.json(rows);
 });
@@ -160,16 +161,18 @@ envelopeRoutes.patch('/:id/balance', async (c) => {
     const v = validate(creditEncryptedEnvelopeSchema, body);
     if (!v.success) return c.json({ error: v.error }, 400);
 
-    const [row] = await db.update(envelopes)
-      .set({ encryptedData: v.data.encryptedData })
-      .where(eq(envelopes.id, id))
-      .returning();
-
-    await db.insert(envelopeTransactions).values({
-      envelopeId: id,
-      amount: '0',
-      date: new Date().toISOString().slice(0, 10),
-      encryptedData: v.data.encryptedData,
+    const row = await db.transaction(async (tx) => {
+      const [updated] = await tx.update(envelopes)
+        .set({ encryptedData: v.data.encryptedData })
+        .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId)))
+        .returning();
+      await tx.insert(envelopeTransactions).values({
+        envelopeId: id,
+        amount: '0',
+        date: new Date().toISOString().slice(0, 10),
+        encryptedData: v.data.encryptedData,
+      });
+      return updated;
     });
 
     return c.json(row);
@@ -181,17 +184,18 @@ envelopeRoutes.patch('/:id/balance', async (c) => {
 
   const txDate = date || new Date().toISOString().slice(0, 10);
   const newBalance = String(Number(current.balance) + amount);
-  const updateData: Record<string, any> = { balance: newBalance };
 
-  const [row] = await db.update(envelopes)
-    .set(updateData)
-    .where(eq(envelopes.id, id))
-    .returning();
-
-  await db.insert(envelopeTransactions).values({
-    envelopeId: id,
-    amount: String(amount),
-    date: txDate,
+  const row = await db.transaction(async (tx) => {
+    const [updated] = await tx.update(envelopes)
+      .set({ balance: newBalance })
+      .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId)))
+      .returning();
+    await tx.insert(envelopeTransactions).values({
+      envelopeId: id,
+      amount: String(amount),
+      date: txDate,
+    });
+    return updated;
   });
 
   return c.json(row);

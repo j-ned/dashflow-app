@@ -9,7 +9,6 @@ const medicalCalendarRoutes = new Hono();
 medicalCalendarRoutes.get('/:token', async (c) => {
   const token = c.req.param('token');
 
-  // Look up shared access by token
   const [access] = await db.select().from(sharedAccess)
     .where(eq(sharedAccess.calendarToken, token))
     .limit(1);
@@ -17,21 +16,13 @@ medicalCalendarRoutes.get('/:token', async (c) => {
 
   const userId = access.userId;
 
-  // Fetch appointments for this user
-  const userAppointments = await db.select().from(appointments)
-    .where(eq(appointments.userId, userId))
-    .limit(500);
+  const [userAppointments, userPractitioners, userMedications] = await Promise.all([
+    db.select().from(appointments).where(eq(appointments.userId, userId)).limit(500),
+    db.select().from(practitioners).where(eq(practitioners.userId, userId)).limit(500),
+    db.select().from(medications).where(eq(medications.userId, userId)).limit(500),
+  ]);
 
-  // Fetch practitioners for name lookup
-  const userPractitioners = await db.select().from(practitioners)
-    .where(eq(practitioners.userId, userId))
-    .limit(500);
   const practitionerMap = new Map(userPractitioners.map((p) => [p.id, p.name]));
-
-  // Fetch medications for this user
-  const userMedications = await db.select().from(medications)
-    .where(eq(medications.userId, userId))
-    .limit(500);
 
   // Build iCal
   const lines: string[] = [
@@ -43,7 +34,6 @@ medicalCalendarRoutes.get('/:token', async (c) => {
     'X-WR-CALNAME:DashFlow Medical',
   ];
 
-  // Add appointment events
   for (const apt of userAppointments) {
     const dateStr = apt.date.replace(/-/g, '');
     const timeStr = apt.time.replace(':', '') + '00';
@@ -59,7 +49,6 @@ medicalCalendarRoutes.get('/:token', async (c) => {
     lines.push('END:VEVENT');
   }
 
-  // Add medication refill events
   for (const med of userMedications) {
     const dailyRate = Number(med.dailyRate);
     if (dailyRate <= 0) continue;

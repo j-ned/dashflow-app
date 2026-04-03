@@ -105,7 +105,6 @@ recurringEntryRoutes.post('/:id/payslip', async (c) => {
   const file = formData.get('file') as File | null;
   if (!file) return c.json({ error: 'Fichier requis' }, 400);
 
-  // Delete old payslip if any
   if (row.payslipKey) {
     await deleteSalaryPayslip(row.payslipKey);
   }
@@ -115,7 +114,7 @@ recurringEntryRoutes.post('/:id/payslip', async (c) => {
 
   const [updated] = await db.update(recurringEntries)
     .set({ payslipKey: key })
-    .where(eq(recurringEntries.id, id))
+    .where(and(eq(recurringEntries.id, id), eq(recurringEntries.userId, userId)))
     .returning();
 
   return c.json(updated);
@@ -152,7 +151,7 @@ recurringEntryRoutes.delete('/:id/payslip', async (c) => {
   await deleteSalaryPayslip(row.payslipKey);
   await db.update(recurringEntries)
     .set({ payslipKey: null })
-    .where(eq(recurringEntries.id, id));
+    .where(and(eq(recurringEntries.id, id), eq(recurringEntries.userId, userId)));
 
   return c.json({ ok: true });
 });
@@ -162,7 +161,6 @@ recurringEntryRoutes.delete('/:id', async (c) => {
   const userId = c.get('userId') as string;
   const id = c.req.param('id');
 
-  // Clean up payslip if exists
   const [row] = await db.select().from(recurringEntries)
     .where(and(eq(recurringEntries.id, id), eq(recurringEntries.userId, userId)))
     .limit(1);

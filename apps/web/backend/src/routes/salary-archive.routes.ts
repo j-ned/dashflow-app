@@ -15,7 +15,8 @@ app.get('/', async (c) => {
     .select()
     .from(salaryArchives)
     .where(eq(salaryArchives.userId, userId))
-    .orderBy(desc(salaryArchives.month));
+    .orderBy(desc(salaryArchives.month))
+    .limit(200);
   return c.json(rows);
 });
 
@@ -67,14 +68,13 @@ app.post('/', async (c) => {
     })
     .returning();
 
-  // Upload payslip if provided
   if (file && row) {
     const key = payslipKey(userId, row.id, file.type);
     await uploadPayslip(key, await file.arrayBuffer(), file.type);
     const [updated] = await db
       .update(salaryArchives)
       .set({ payslipKey: key })
-      .where(eq(salaryArchives.id, row.id))
+      .where(and(eq(salaryArchives.id, row.id), eq(salaryArchives.userId, userId)))
       .returning();
     return c.json(updated, 201);
   }
@@ -151,7 +151,7 @@ app.delete('/:id', async (c) => {
     await deletePayslip(row.payslipKey);
   }
 
-  await db.delete(salaryArchives).where(eq(salaryArchives.id, id));
+  await db.delete(salaryArchives).where(and(eq(salaryArchives.id, id), eq(salaryArchives.userId, userId)));
   return c.json({ ok: true });
 });
 

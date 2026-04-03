@@ -108,7 +108,7 @@ medicationRoutes.put('/:id', async (c) => {
   return c.json(row);
 });
 
-// PATCH refill (add quantity to existing)
+// PATCH refill — add quantity to existing
 medicationRoutes.patch('/:id/refill', async (c) => {
   const userId = c.get('userId') as string;
   const id = c.req.param('id');
@@ -116,15 +116,15 @@ medicationRoutes.patch('/:id/refill', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { quantity } = v.data;
 
-  const [current] = await db.select().from(medications)
+  const [current] = await db.select({ quantity: medications.quantity })
+    .from(medications)
     .where(and(eq(medications.id, id), eq(medications.userId, userId)))
     .limit(1);
   if (!current) return c.json({ error: 'Non trouve' }, 404);
 
-  const newQuantity = current.quantity + quantity;
   const [row] = await db.update(medications)
-    .set({ quantity: newQuantity })
-    .where(eq(medications.id, id))
+    .set({ quantity: current.quantity + quantity })
+    .where(and(eq(medications.id, id), eq(medications.userId, userId)))
     .returning();
   return c.json(row);
 });
