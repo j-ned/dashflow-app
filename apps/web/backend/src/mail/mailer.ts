@@ -1,5 +1,3 @@
-import { config } from 'dotenv';
-config({ path: process.env['DOTENV_PATH'] ?? '../.env' });
 import { createTransport } from 'nodemailer';
 
 const transporter = createTransport({
@@ -10,6 +8,9 @@ const transporter = createTransport({
     user: process.env['SMTP_USER'],
     pass: process.env['SMTP_PASS'],
   },
+  connectionTimeout: 10000, // 10 seconds
+  greetingTimeout: 10000,
+  socketTimeout: 15000,
 });
 
 const FROM = process.env['SMTP_FROM'] ?? 'DashFlow <noreply@example.com>';

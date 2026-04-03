@@ -116,7 +116,7 @@ async function findOrCreateGoogleUser(profile: GoogleProfile) {
 
   // 2. Try find by email (link accounts)
   const [byEmail] = await db.select().from(users)
-    .where(eq(sql`LOWER(${users.email})`, profile.email.toLowerCase()))
+    .where(eq(users.email, profile.email.toLowerCase()))
     .limit(1);
 
   if (byEmail) {

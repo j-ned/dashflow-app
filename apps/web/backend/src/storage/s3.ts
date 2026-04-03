@@ -1,5 +1,3 @@
-import { config } from 'dotenv';
-config({ path: process.env['DOTENV_PATH'] ?? '../.env' });
 import { S3Client, PutObjectCommand, DeleteObjectCommand, GetObjectCommand } from '@aws-sdk/client-s3';
 
 const s3 = new S3Client({

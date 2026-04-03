@@ -46,7 +46,7 @@ auth.post('/register', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email, password, displayName } = v.data;
 
-  const existing = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
+  const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0 && existing[0].emailVerified) {
     return c.json({ error: 'Email deja utilise' }, 409);
   }
@@ -67,7 +67,7 @@ auth.post('/register', async (c) => {
   }
 
   // Delete old codes for this email
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   // Generate new code (expires in 10 minutes)
   const code = generateCode();
@@ -95,7 +95,7 @@ auth.post('/verify', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(sql`LOWER(${verificationCodes.email})`, email),
+      eq(verificationCodes.email, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -108,7 +108,7 @@ auth.post('/verify', async (c) => {
   // Mark user as verified
   const [user] = await db.update(users)
     .set({ emailVerified: new Date() })
-    .where(eq(sql`LOWER(${users.email})`, email))
+    .where(eq(users.email, email))
     .returning();
 
   if (!user) {
@@ -116,7 +116,7 @@ auth.post('/verify', async (c) => {
   }
 
   // Cleanup codes
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   // Auto-login after verification
   const token = await signToken({ sub: user.id, email: user.email });
@@ -132,7 +132,7 @@ auth.post('/resend-code', async (c) => {
     return c.json({ error: 'Email requis' }, 400);
   }
 
-  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!user) {
     return c.json({ error: 'Aucun compte avec cet email' }, 404);
   }
@@ -142,7 +142,7 @@ auth.post('/resend-code', async (c) => {
   }
 
   // Delete old codes
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   // Generate new code
   const code = generateCode();
@@ -167,7 +167,7 @@ auth.post('/login', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email, password, totpCode } = v.data;
 
-  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (!user) {
     return c.json({ error: 'Identifiants invalides' }, 401);
   }
@@ -208,7 +208,9 @@ auth.post('/forgot-password', async (c) => {
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email } = v.data;
 
-  const [user] = await db.select().from(users).where(eq(sql`LOWER(${users.email})`, email)).limit(1);
+  console.log(`[AUTH] Forgot password request received for: ${email}`);
+
+  const [user] = await db.select().from(users).where(eq(users.email, email)).limit(1);
 
   if (!user) {
     console.log(`[AUTH] Forgot password request for non-existent email: ${email}`);
@@ -223,7 +225,7 @@ auth.post('/forgot-password', async (c) => {
   console.log(`[AUTH] Sending reset code to: ${email}`);
 
   // Delete old codes for this email
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   // Generate new code (expires in 10 minutes)
   const code = generateCode();
@@ -251,7 +253,7 @@ auth.post('/reset-password', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(sql`LOWER(${verificationCodes.email})`, email),
+      eq(verificationCodes.email, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -265,7 +267,7 @@ auth.post('/reset-password', async (c) => {
   const hashed = await hash(newPassword);
   const [user] = await db.update(users)
     .set({ password: hashed })
-    .where(eq(sql`LOWER(${users.email})`, email))
+    .where(eq(users.email, email))
     .returning();
 
   if (!user) {
@@ -273,7 +275,7 @@ auth.post('/reset-password', async (c) => {
   }
 
   // Cleanup codes
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   return c.json({ message: 'Mot de passe reinitialise avec succes' });
 });
@@ -629,7 +631,7 @@ auth.post('/reset-password-with-recovery', async (c) => {
   const [record] = await db.select()
     .from(verificationCodes)
     .where(and(
-      eq(sql`LOWER(${verificationCodes.email})`, email),
+      eq(verificationCodes.email, email),
       eq(verificationCodes.code, code),
       gt(verificationCodes.expiresAt, new Date()),
     ))
@@ -649,14 +651,14 @@ auth.post('/reset-password-with-recovery', async (c) => {
 
   const [user] = await db.update(users)
     .set(updateData)
-    .where(eq(sql`LOWER(${users.email})`, email))
+    .where(eq(users.email, email))
     .returning();
 
   if (!user) {
     return c.json({ error: 'Utilisateur non trouve' }, 404);
   }
 
-  await db.delete(verificationCodes).where(eq(sql`LOWER(${verificationCodes.email})`, email));
+  await db.delete(verificationCodes).where(eq(verificationCodes.email, email));
 
   return c.json({ message: 'Mot de passe reinitialise avec succes' });
 });
