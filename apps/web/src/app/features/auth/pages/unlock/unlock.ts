@@ -12,6 +12,13 @@ type RecoveryFormShape = {
   recoveryKey: FormControl<string>;
 };
 
+type RepairFormShape = {
+  recoveryKey: FormControl<string>;
+  password: FormControl<string>;
+};
+
+type Mode = 'password' | 'recovery' | 'repair';
+
 @Component({
   selector: 'app-unlock',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -29,9 +36,21 @@ type RecoveryFormShape = {
             <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-text-primary">Déverrouiller vos données</h1>
+        <h1 class="text-xl font-bold text-text-primary">
+          @switch (mode()) {
+            @case ('repair') { Réparer la synchronisation }
+            @default { Déverrouiller vos données }
+          }
+        </h1>
         <p class="mt-2 text-sm text-text-muted">
-          Vos données sont chiffrées. Saisissez votre mot de passe pour y accéder.
+          @switch (mode()) {
+            @case ('repair') {
+              Votre clé de chiffrement est désynchronisée avec votre mot de passe. Saisissez votre clé de récupération et votre mot de passe actuel pour resynchroniser.
+            }
+            @default {
+              Vos données sont chiffrées. Saisissez votre mot de passe pour y accéder.
+            }
+          }
         </p>
       </header>
 
@@ -39,106 +58,185 @@ type RecoveryFormShape = {
         <p role="alert" class="mb-4 rounded-md bg-ib-red/10 p-3 text-sm text-ib-red">{{ error() }}</p>
       }
 
-      @if (!useRecovery()) {
-      <form [formGroup]="form" (ngSubmit)="unlock()" class="flex flex-col gap-4">
-        <fieldset class="flex flex-col gap-4">
-        <legend class="sr-only">Déverrouillage</legend>
-        <div>
-          <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-            {{ auth.user()?.hasEncryptionPassphrase ? 'Phrase secrète' : 'Mot de passe' }}
-            <span aria-hidden="true" class="text-ib-red">*</span>
-          </label>
-          <div class="relative">
-            <input
-              [type]="showPassword() ? 'text' : 'password'"
-              id="password"
-              formControlName="password"
-              aria-required="true"
-              class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
-            />
-            <button type="button" (click)="showPassword.set(!showPassword())"
-              class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-              [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
-              <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
+      @switch (mode()) {
+        @case ('password') {
+          <form [formGroup]="form" (ngSubmit)="unlock()" class="flex flex-col gap-4">
+            <fieldset class="flex flex-col gap-4">
+              <legend class="sr-only">Déverrouillage</legend>
+              <div>
+                <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
+                  {{ auth.user()?.hasEncryptionPassphrase ? 'Phrase secrète' : 'Mot de passe' }}
+                  <span aria-hidden="true" class="text-ib-red">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    [type]="showPassword() ? 'text' : 'password'"
+                    id="password"
+                    formControlName="password"
+                    aria-required="true"
+                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                    [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
+                  />
+                  <button type="button" (click)="showPassword.set(!showPassword())"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
+                    [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                    <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
+                  </button>
+                </div>
+                @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
+                  <small class="mt-1 block text-xs text-ib-red" role="alert">Ce champ est obligatoire.</small>
+                }
+              </div>
+            </fieldset>
+
+            <button
+              type="submit"
+              [disabled]="form.invalid || loading()"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
             </button>
-          </div>
-          @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">Ce champ est obligatoire.</small>
-          }
-        </div>
-        </fieldset>
 
-        <button
-          type="submit"
-          [disabled]="form.invalid || loading()"
-          class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
-        </button>
+            @if (passwordFailed()) {
+              <button
+                type="button"
+                (click)="setMode('repair')"
+                class="rounded-lg border border-ib-amber/30 bg-ib-amber/10 px-3 py-2 text-sm text-ib-amber hover:bg-ib-amber/15 transition-colors text-center"
+              >
+                Réparer la synchronisation avec ma clé de récupération
+              </button>
+            }
 
-        <button
-          type="button"
-          (click)="useRecovery.set(true)"
-          class="text-sm text-ib-blue hover:underline transition-colors text-center"
-        >
-          Utiliser la clé de récupération
-        </button>
+            <button
+              type="button"
+              (click)="setMode('recovery')"
+              class="text-sm text-ib-blue hover:underline transition-colors text-center"
+            >
+              Utiliser la clé de récupération
+            </button>
 
-        <button
-          type="button"
-          (click)="logout()"
-          class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
-        >
-          Se déconnecter
-        </button>
-      </form>
-      } @else {
-      <form [formGroup]="recoveryForm" (ngSubmit)="unlockWithRecovery()" class="flex flex-col gap-4">
-        <fieldset class="flex flex-col gap-4">
-        <legend class="sr-only">Déverrouillage par clé de récupération</legend>
-        <div>
-          <label for="recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
-            Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
-          </label>
-          <textarea
-            id="recovery-key"
-            formControlName="recoveryKey"
-            aria-required="true"
-            rows="3"
-            class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-            placeholder="Collez votre clé de récupération (64 caractères hex)"
-          ></textarea>
-          @if (recoveryForm.controls.recoveryKey.touched && recoveryForm.controls.recoveryKey.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">La clé de récupération est obligatoire.</small>
-          }
-        </div>
-        </fieldset>
+            <button
+              type="button"
+              (click)="logout()"
+              class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
+            >
+              Se déconnecter
+            </button>
+          </form>
+        }
 
-        <button
-          type="submit"
-          [disabled]="recoveryForm.invalid || loading()"
-          class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
-        </button>
+        @case ('recovery') {
+          <form [formGroup]="recoveryForm" (ngSubmit)="unlockWithRecovery()" class="flex flex-col gap-4">
+            <fieldset class="flex flex-col gap-4">
+              <legend class="sr-only">Déverrouillage par clé de récupération</legend>
+              <div>
+                <label for="recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
+                  Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
+                </label>
+                <textarea
+                  id="recovery-key"
+                  formControlName="recoveryKey"
+                  aria-required="true"
+                  rows="3"
+                  class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                  placeholder="Collez votre clé de récupération (64 caractères hex)"
+                ></textarea>
+                @if (recoveryForm.controls.recoveryKey.touched && recoveryForm.controls.recoveryKey.errors?.['required']) {
+                  <small class="mt-1 block text-xs text-ib-red" role="alert">La clé de récupération est obligatoire.</small>
+                }
+              </div>
+            </fieldset>
 
-        <button
-          type="button"
-          (click)="useRecovery.set(false); error.set('')"
-          class="text-sm text-ib-blue hover:underline transition-colors text-center"
-        >
-          Retour au mot de passe
-        </button>
+            <button
+              type="submit"
+              [disabled]="recoveryForm.invalid || loading()"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
+            </button>
 
-        <button
-          type="button"
-          (click)="logout()"
-          class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
-        >
-          Se déconnecter
-        </button>
-      </form>
+            <button
+              type="button"
+              (click)="setMode('password')"
+              class="text-sm text-ib-blue hover:underline transition-colors text-center"
+            >
+              Retour au mot de passe
+            </button>
+
+            <button
+              type="button"
+              (click)="logout()"
+              class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
+            >
+              Se déconnecter
+            </button>
+          </form>
+        }
+
+        @case ('repair') {
+          <form [formGroup]="repairForm" (ngSubmit)="repair()" class="flex flex-col gap-4">
+            <fieldset class="flex flex-col gap-4">
+              <legend class="sr-only">Resynchronisation par clé de récupération</legend>
+              <div>
+                <label for="repair-recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
+                  Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
+                </label>
+                <textarea
+                  id="repair-recovery-key"
+                  formControlName="recoveryKey"
+                  aria-required="true"
+                  rows="3"
+                  class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                  placeholder="Collez votre clé de récupération (64 caractères hex)"
+                ></textarea>
+              </div>
+              <div>
+                <label for="repair-password" class="mb-1.5 block text-sm font-medium text-text-primary">
+                  Mot de passe actuel <span aria-hidden="true" class="text-ib-red">*</span>
+                </label>
+                <div class="relative">
+                  <input
+                    [type]="showPassword() ? 'text' : 'password'"
+                    id="repair-password"
+                    formControlName="password"
+                    aria-required="true"
+                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                    placeholder="Le mot de passe avec lequel vous venez de vous connecter"
+                  />
+                  <button type="button" (click)="showPassword.set(!showPassword())"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
+                    [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                    <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
+                  </button>
+                </div>
+              </div>
+            </fieldset>
+
+            <button
+              type="submit"
+              [disabled]="repairForm.invalid || loading()"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {{ loading() ? 'Réparation...' : 'Réparer' }}
+            </button>
+
+            <button
+              type="button"
+              (click)="setMode('password')"
+              class="text-sm text-ib-blue hover:underline transition-colors text-center"
+            >
+              Retour au mot de passe
+            </button>
+
+            <button
+              type="button"
+              (click)="logout()"
+              class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
+            >
+              Se déconnecter
+            </button>
+          </form>
+        }
       }
     </article>
     </main>
@@ -151,7 +249,8 @@ export class Unlock {
   protected readonly showPassword = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal('');
-  protected readonly useRecovery = signal(false);
+  protected readonly mode = signal<Mode>('password');
+  protected readonly passwordFailed = signal(false);
 
   protected readonly form = new FormGroup<UnlockFormShape>({
     password: new FormControl('', {
@@ -167,6 +266,22 @@ export class Unlock {
     }),
   });
 
+  protected readonly repairForm = new FormGroup<RepairFormShape>({
+    recoveryKey: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+    password: new FormControl('', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
+  });
+
+  protected setMode(mode: Mode): void {
+    this.mode.set(mode);
+    this.error.set('');
+  }
+
   protected async unlock(): Promise<void> {
     if (this.form.invalid) return;
 
@@ -178,6 +293,7 @@ export class Unlock {
       await this.auth.unlockWithPassword(password);
       this.router.navigate(['/budget']);
     } catch {
+      this.passwordFailed.set(true);
       this.error.set('Mot de passe ou phrase secrète incorrect(e).');
     } finally {
       this.loading.set(false);
@@ -196,6 +312,23 @@ export class Unlock {
       this.router.navigate(['/budget']);
     } catch {
       this.error.set('Clé de récupération invalide.');
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  protected async repair(): Promise<void> {
+    if (this.repairForm.invalid) return;
+
+    this.loading.set(true);
+    this.error.set('');
+
+    try {
+      const { recoveryKey, password } = this.repairForm.getRawValue();
+      await this.auth.repairWithRecovery(recoveryKey.replace(/\s/g, ''), password);
+      this.router.navigate(['/budget']);
+    } catch {
+      this.error.set('Clé de récupération invalide ou erreur de resynchronisation.');
     } finally {
       this.loading.set(false);
     }

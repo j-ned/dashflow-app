@@ -247,6 +247,27 @@ export class AuthStore {
     await this.crypto.unlockWithRecovery(recoveryHex, this._keyMaterial.recoveryWrappedKey);
   }
 
+  async repairWithRecovery(recoveryHex: string, password: string): Promise<void> {
+    if (!this._keyMaterial?.recoveryWrappedKey) throw new Error('No recovery key material');
+
+    await this.crypto.unlockWithRecovery(recoveryHex, this._keyMaterial.recoveryWrappedKey);
+    const masterKey = this.crypto.getMasterKey();
+    if (!masterKey) throw new Error('Failed to unlock with recovery');
+
+    const salt = this.crypto.generateSalt();
+    const wrappingKey = await this.crypto.deriveWrappingKey(password, salt);
+    const wrappedMasterKey = await this.crypto.wrapKey(masterKey, wrappingKey);
+    const { bytesToHex } = await import('@core/services/crypto/crypto.store');
+    const saltHex = bytesToHex(salt);
+    const recoveryWrappedKey = this._keyMaterial.recoveryWrappedKey;
+
+    await firstValueFrom(
+      this.api.patch('/auth/me/encryption-keys', { salt: saltHex, wrappedMasterKey, recoveryWrappedKey }),
+    );
+
+    this._keyMaterial = { salt: saltHex, wrappedMasterKey, recoveryWrappedKey };
+  }
+
   async setupEncryption(password: string): Promise<string> {
     const masterKey = await this.crypto.generateMasterKey();
     const salt = this.crypto.generateSalt();

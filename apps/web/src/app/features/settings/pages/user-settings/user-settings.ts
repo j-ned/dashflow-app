@@ -630,12 +630,23 @@ export class UserSettings {
     this.passwordSaving.set(true);
     try {
       const { currentPassword, newPassword } = this.passwordForm.getRawValue();
+
       if (!this.auth.hasPassword()) {
         await this.auth.setPassword(newPassword);
         this.showFeedback('success', 'Mot de passe défini avec succès. Vous pouvez maintenant vous connecter avec email + mot de passe.');
         this.passwordForm.controls.currentPassword.addValidators(Validators.required);
         this.passwordForm.controls.currentPassword.updateValueAndValidity();
-      } else if (this.auth.encryptionVersion() === 1 && this.crypto.isUnlocked()) {
+      } else if (this.auth.encryptionVersion() === 1) {
+        // E2EE: re-wrap obligatoire pour garder wrappedMasterKey synchro avec le nouveau mot de passe.
+        // Si le CryptoStore est locked, on le déverrouille avec currentPassword avant.
+        if (!this.crypto.isUnlocked()) {
+          try {
+            await this.auth.unlockWithPassword(currentPassword);
+          } catch {
+            this.showFeedback('error', 'Mot de passe actuel incorrect ou données désynchronisées. Déconnectez-vous, puis utilisez « Réparer » sur la page de déverrouillage.');
+            return;
+          }
+        }
         await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
         this.showFeedback('success', 'Mot de passe modifié avec succès.');
       } else {

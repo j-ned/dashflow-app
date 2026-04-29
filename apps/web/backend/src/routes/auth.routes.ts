@@ -1,5 +1,5 @@
 import { Hono } from 'hono';
-import { eq, and, gt, sql } from 'drizzle-orm';
+import { eq, and, gt } from 'drizzle-orm';
 import { hash, verify } from 'argon2';
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
@@ -322,6 +322,9 @@ auth.patch('/me/password', authMiddleware, async (c) => {
   if (!user.password) {
     return c.json({ error: 'Ce compte utilise la connexion Google' }, 400);
   }
+  if (user.encryptionVersion === 1 && (!body.newSalt || !body.newWrappedMasterKey)) {
+    return c.json({ error: 'Re-wrap de la cle de chiffrement requis. Deverrouillez vos donnees avant de changer le mot de passe.' }, 400);
+  }
 
   const valid = await verify(user.password, currentPassword);
   if (!valid) {
@@ -353,6 +356,9 @@ auth.post('/me/set-password', authMiddleware, async (c) => {
   const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
   if (!user) {
     return c.json({ error: 'Utilisateur non trouve' }, 404);
+  }
+  if (user.encryptionVersion === 1 && (!body.newSalt || !body.newWrappedMasterKey)) {
+    return c.json({ error: 'Re-wrap de la cle de chiffrement requis. Deverrouillez vos donnees avant de definir le mot de passe.' }, 400);
   }
 
   const hashed = await hash(newPassword);
