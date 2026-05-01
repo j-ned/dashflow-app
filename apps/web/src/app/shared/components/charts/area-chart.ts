@@ -35,7 +35,7 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
         <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5"
                 [attr.fill]="color()" stroke="var(--bg-surface)" stroke-width="2" />
         <text [attr.x]="pt.x" [attr.y]="height - 4" text-anchor="middle"
-              fill="var(--text-muted)" font-size="9" font-family="var(--font-sans)">
+              fill="var(--text-muted)" font-size="11" font-family="var(--font-sans)">
           {{ pt.label }}
         </text>
       }
@@ -43,7 +43,7 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
       <!-- Y-axis labels -->
       @for (gl of gridLabels(); track gl.y) {
         <text [attr.x]="pad - 4" [attr.y]="gl.y + 3" text-anchor="end"
-              fill="var(--text-muted)" font-size="8" font-family="var(--font-mono)">
+              fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">
           {{ gl.label }}
         </text>
       }
@@ -55,10 +55,12 @@ export class AreaChart {
   readonly color = input('var(--color-ib-green)');
   readonly ariaLabel = input('Graphique en courbe');
 
+  private static sequence = 0;
+
   protected readonly width = 500;
   protected readonly height = 200;
   protected readonly pad = 45;
-  protected readonly gradientId = 'area-grad-' + Math.random().toString(36).slice(2, 8);
+  protected readonly gradientId = `area-grad-${++AreaChart.sequence}`;
 
   private readonly chartArea = computed(() => {
     const topPad = 16;

@@ -16,7 +16,7 @@ export type DonutSlice = { readonly label: string; readonly value: number; reado
                   [attr.stroke-dasharray]="arc.dashArray"
                   [attr.stroke-dashoffset]="arc.dashOffset"
                   stroke-linecap="round"
-                  class="transition-all duration-500" />
+                  class="transition duration-500" />
         }
         <text x="60" y="56" text-anchor="middle" fill="var(--text-primary)"
               font-size="16" font-weight="700" font-family="var(--font-mono)">

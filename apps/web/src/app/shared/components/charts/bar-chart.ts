@@ -31,7 +31,7 @@ export type BarGroup = {
         @for (bar of group.bars; track $index) {
           <rect [attr.x]="bar.x" [attr.y]="bar.y"
                 [attr.width]="bar.w" [attr.height]="bar.h"
-                [attr.fill]="bar.color" rx="3" class="transition-all duration-300" />
+                [attr.fill]="bar.color" rx="3" class="transition duration-300" />
         }
         <text [attr.x]="group.cx" [attr.y]="height - 4" text-anchor="middle"
               fill="var(--text-muted)" font-size="9" font-family="var(--font-sans)">
