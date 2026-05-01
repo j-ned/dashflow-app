@@ -39,7 +39,7 @@ import { ThemeStore } from '@core/services/theme.store';
                 (click)="commandPalette()?.open()">
           <app-icon name="search" size="14" />
           <span class="text-text-muted">Rechercher...</span>
-          <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">⌘K</kbd>
+          <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">{{ kbdShortcut }}</kbd>
         </button>
 
         <button type="button"
@@ -55,7 +55,7 @@ import { ThemeStore } from '@core/services/theme.store';
           @if (auth.avatarUrl()) {
             <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
           } @else {
-            <div class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-white">
+            <div class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-canvas">
               {{ auth.userInitial() }}
             </div>
           }
@@ -112,16 +112,35 @@ import { ThemeStore } from '@core/services/theme.store';
       display: inline-flex;
       align-items: center;
       gap: 0.5rem;
-      padding: 0.375rem 1rem;
+      padding: 0.5rem 1rem;
+      min-height: 36px;
       border-radius: 0.5rem;
       font-size: 0.8125rem;
       font-weight: 500;
       color: var(--text-muted);
-      transition: color 150ms, background-color 150ms, box-shadow 150ms;
+      transition: color 150ms, background-color 150ms;
     }
 
     .tab:hover {
       color: var(--text-primary);
+    }
+
+    .tab--active-budget {
+      color: var(--color-ib-blue);
+      background: var(--color-ib-blue-10);
+    }
+
+    .tab--active-budget:hover {
+      color: var(--color-ib-blue);
+    }
+
+    .tab--active-medical {
+      color: var(--color-ib-purple);
+      background: var(--color-ib-purple-10);
+    }
+
+    .tab--active-medical:hover {
+      color: var(--color-ib-purple);
     }
 
     .header-btn {
@@ -168,4 +187,5 @@ export class AppShell {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeStore);
   protected readonly commandPalette = viewChild<CommandPalette>('cmdPalette');
+  protected readonly kbdShortcut = /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
 }
