@@ -8,12 +8,13 @@ import { ToastContainer } from '@shared/components/toast/toast';
 import { ConfirmDialog } from '@shared/components/confirm-dialog/confirm-dialog';
 import { ThemeStore } from '@core/services/theme.store';
 import { LocaleStore } from '@core/services/locale.store';
+import { DemoBanner } from '../components/demo-banner/demo-banner';
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-screen overflow-hidden' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ToastContainer, ConfirmDialog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ToastContainer, ConfirmDialog, DemoBanner],
   template: `
     <header class="header">
 
@@ -71,6 +72,8 @@ import { LocaleStore } from '@core/services/locale.store';
         </a>
       </div>
     </header>
+
+    <app-demo-banner />
 
     <main class="flex-1 flex min-h-0">
       <router-outlet />
