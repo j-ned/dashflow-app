@@ -21,6 +21,8 @@ import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
+import { BankKpiGrid } from './bank-kpi-grid/bank-kpi-grid';
+import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -36,7 +38,7 @@ const PALETTE = [
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, RecurringEntryForm, Icon],
+  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar],
   host: { class: 'block space-y-6' },
   template: `
     <!-- Header + compte selector -->
@@ -68,137 +70,29 @@ const PALETTE = [
     </header>
 
     <!-- ═══ KPI Cards ═══ -->
-    <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
-      <!-- Solde actuel -->
-      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition"
-           [class.border-ib-cyan-40]="currentBalance() >= 0"
-           [class.border-ib-red-40]="currentBalance() < 0"
-           [class.hover:shadow-lg]="true"
-           [class.hover:shadow-ib-cyan-5]="currentBalance() >= 0"
-           [class.hover:shadow-ib-red-5]="currentBalance() < 0">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg"
-               [class.bg-ib-cyan-10]="currentBalance() >= 0"
-               [class.bg-ib-red-10]="currentBalance() < 0">
-            <app-icon name="wallet" size="14"
-                      [class.text-ib-cyan]="currentBalance() >= 0"
-                      [class.text-ib-red]="currentBalance() < 0" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde actuel</p>
-        </div>
-        <p class="text-2xl font-mono font-bold tracking-tight"
-           [class.text-ib-cyan]="currentBalance() >= 0"
-           [class.text-ib-red]="currentBalance() < 0">
-          {{ currentBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
-        </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">au {{ today }}</p>
-      </div>
-
-      <!-- Revenus -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-green/10">
-            <app-icon name="trending-up" size="14" class="text-ib-green" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Revenus</p>
-        </div>
-        <p class="text-2xl font-mono font-bold text-ib-green tracking-tight">{{ totalIncome() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted truncate">
-          @if (incomes().length === 1) { {{ incomes()[0].label }} } @else { {{ incomes().length }} sources }
-        </p>
-      </div>
-
-      <!-- Prélèvements mensuels -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-red/30 hover:shadow-lg hover:shadow-ib-red/5">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-red/10">
-            <app-icon name="receipt" size="14" class="text-ib-red" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prélèvements</p>
-        </div>
-        <p class="text-2xl font-mono font-bold text-ib-red tracking-tight">{{ totalMonthlyExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ passedExpenses().length }}/{{ monthlyExpenses().length }} passés</p>
-      </div>
-
-      <!-- Prélèvements annuels -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10">
-            <app-icon name="calendar" size="14" class="text-ib-orange" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Annuels</p>
-        </div>
-        <p class="text-2xl font-mono font-bold text-ib-orange tracking-tight">{{ totalAnnualExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;/an</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">soit ~{{ monthlyAnnualExpenses() | number:'1.2-2' }}&euro;/mois</p>
-      </div>
-
-      <!-- Dépenses du mois -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-yellow/10">
-            <app-icon name="banknote" size="14" class="text-ib-yellow" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Dépenses</p>
-        </div>
-        <p class="text-2xl font-mono font-bold text-ib-yellow tracking-tight">{{ totalMonthSpendings() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">{{ monthSpendings().length }} dépense{{ monthSpendings().length > 1 ? 's' : '' }} en {{ spendingMonthLabel() }}</p>
-      </div>
-
-      <!-- Solde fin de mois -->
-      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition"
-           [class.border-ib-green-40]="endOfMonthBalance() >= 0"
-           [class.border-ib-red-40]="endOfMonthBalance() < 0"
-           [class.hover:shadow-lg]="true"
-           [class.hover:shadow-ib-green-5]="endOfMonthBalance() >= 0"
-           [class.hover:shadow-ib-red-5]="endOfMonthBalance() < 0">
-        <div class="flex items-center gap-2 mb-3">
-          <div class="flex h-7 w-7 items-center justify-center rounded-lg"
-               [class.bg-ib-green-10]="endOfMonthBalance() >= 0"
-               [class.bg-ib-red-10]="endOfMonthBalance() < 0">
-            <app-icon name="calendar" size="14"
-                      [class.text-ib-green]="endOfMonthBalance() >= 0"
-                      [class.text-ib-red]="endOfMonthBalance() < 0" />
-          </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde fin de cycle</p>
-        </div>
-        <p class="text-2xl font-mono font-bold tracking-tight"
-           [class.text-ib-green]="endOfMonthBalance() >= 0"
-           [class.text-ib-red]="endOfMonthBalance() < 0">
-          {{ endOfMonthBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
-        </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges du cycle</p>
-      </div>
-    </section>
+    <app-bank-kpi-grid
+      [currentBalance]="currentBalance()"
+      [totalIncome]="totalIncome()"
+      [totalMonthlyExpenses]="totalMonthlyExpenses()"
+      [totalAnnualExpenses]="totalAnnualExpenses()"
+      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
+      [totalMonthSpendings]="totalMonthSpendings()"
+      [endOfMonthBalance]="endOfMonthBalance()"
+      [today]="today"
+      [incomesLabel]="incomesLabel()"
+      [monthlyExpensesLabel]="monthlyExpensesLabel()"
+      [monthSpendingsLabel]="monthSpendingsLabel()" />
 
     <!-- ═══ Barre de progression ═══ -->
-    @if (totalIncome() > 0 && totalAllExpenses() > 0) {
-      <section class="rounded-xl border border-border bg-surface p-4">
-        <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-medium text-text-muted">Budget utilisé</span>
-          <span class="text-sm font-mono font-bold"
-                [class.text-ib-green]="usagePercent() <= 80"
-                [class.text-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
-                [class.text-ib-red]="usagePercent() > 100">
-            {{ usagePercent() | number:'1.0-0' }}%
-          </span>
-        </div>
-        <div class="h-2.5 rounded-full bg-hover overflow-hidden">
-          <div class="h-full rounded-full transition duration-500 ease-out"
-               [style.width.%]="usagePercent() > 100 ? 100 : usagePercent()"
-               [class.bg-ib-green]="usagePercent() <= 80"
-               [class.bg-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
-               [class.bg-ib-red]="usagePercent() > 100">
-          </div>
-        </div>
-        <!-- Légende segmentée -->
-        <div class="flex items-center gap-4 mt-2.5 text-[10px] text-text-muted">
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Passés {{ totalPassedExpenses() | number:'1.0-0' }}&euro;</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red/40"></span> A venir {{ totalUpcomingExpenses() | number:'1.0-0' }}&euro;</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ monthlyAnnualExpenses() | number:'1.0-0' }}&euro;/m</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
-        </div>
-      </section>
-    }
+    <app-budget-usage-bar
+      [totalIncome]="totalIncome()"
+      [totalAllExpenses]="totalAllExpenses()"
+      [usagePercent]="usagePercent()"
+      [totalPassedExpenses]="totalPassedExpenses()"
+      [totalUpcomingExpenses]="totalUpcomingExpenses()"
+      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
+      [totalMonthSpendings]="totalMonthSpendings()" />
+
 
     <!-- ═══ Revenus ═══ -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
@@ -948,6 +842,21 @@ export class BankAccount {
     const [y, m] = this.spendingMonth().split('-');
     const MONTHS = ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
     return `${MONTHS[Number(m) - 1]} ${y}`;
+  });
+
+  protected readonly incomesLabel = computed(() => {
+    const list = this.incomes();
+    if (list.length === 1) return list[0].label;
+    return `${list.length} sources`;
+  });
+
+  protected readonly monthlyExpensesLabel = computed(() =>
+    `${this.passedExpenses().length}/${this.monthlyExpenses().length} passés`
+  );
+
+  protected readonly monthSpendingsLabel = computed(() => {
+    const count = this.monthSpendings().length;
+    return `${count} dépense${count > 1 ? 's' : ''} en ${this.spendingMonthLabel()}`;
   });
 
   protected readonly monthSpendings = computed(() => {
