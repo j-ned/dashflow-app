@@ -17,7 +17,7 @@ import { Icon } from '@shared/components/icon/icon';
           @if (auth.avatarUrl()) {
             <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
           } @else {
-            <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-white shrink-0">
+            <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas shrink-0">
               {{ auth.userInitial() }}
             </div>
           }
@@ -45,7 +45,7 @@ import { Icon } from '@shared/components/icon/icon';
             @if (auth.avatarUrl()) {
               <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
             } @else {
-              <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-white">
+              <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas">
                 {{ auth.userInitial() }}
               </div>
             }

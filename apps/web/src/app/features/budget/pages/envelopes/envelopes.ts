@@ -80,7 +80,7 @@ const MEMBER_PALETTE = [
       </div>
       <button
         type="button"
-        class="inline-flex items-center gap-1.5 rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-white hover:bg-ib-green/90 transition-colors shadow-sm"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
         (click)="openCreateModal()"
       >
         <app-icon name="plus" size="14" /> Nouvelle enveloppe
@@ -96,7 +96,7 @@ const MEMBER_PALETTE = [
             class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
             [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
             [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
-            [class.text-white]="filterMemberId() === m.id"
+            [class.text-canvas]="filterMemberId() === m.id"
             [class.text-text-muted]="filterMemberId() !== m.id"
             (click)="filterMemberId.set(m.id)"
           >
@@ -114,7 +114,7 @@ const MEMBER_PALETTE = [
     >
       @for (envelope of filteredEnvelopes(); track envelope.id) {
         <article
-          class="group relative overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5"
+          class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5"
         >
           <div
             class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
@@ -186,7 +186,7 @@ const MEMBER_PALETTE = [
                 </div>
                 <div class="h-2 rounded-full bg-hover overflow-hidden">
                   <div
-                    class="h-full rounded-full transition-all duration-500 ease-out"
+                    class="h-full rounded-full transition duration-500 ease-out"
                     [style.width.%]="pct > 100 ? 100 : pct"
                     [style.background-color]="envelope.color"
                   ></div>
@@ -333,7 +333,7 @@ const MEMBER_PALETTE = [
           <button
             type="submit"
             [disabled]="!manualTxAmount() || !manualTxDate()"
-            class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
+            class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
           >
             Ajouter
           </button>

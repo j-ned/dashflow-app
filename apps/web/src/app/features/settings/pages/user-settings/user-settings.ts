@@ -35,7 +35,7 @@ type PasswordFormShape = {
     @if (feedback(); as msg) {
       <div
         role="alert"
-        class="rounded-xl border p-4 text-sm mb-8 flex items-center gap-3 shadow-sm transition-all"
+        class="rounded-xl border p-4 text-sm mb-8 flex items-center gap-3 shadow-sm transition"
         [class.border-ib-green-30]="msg.type === 'success'"
         [class.bg-ib-green-10]="msg.type === 'success'"
         [class.text-ib-green]="msg.type === 'success'"
@@ -74,15 +74,15 @@ type PasswordFormShape = {
                 />
               } @else {
                 <div
-                  class="w-24 h-24 rounded-full bg-linear-to-br from-ib-purple to-ib-blue flex items-center justify-center text-3xl font-bold text-white shadow-sm border-4 border-surface"
+                  class="w-24 h-24 rounded-full bg-linear-to-br from-ib-purple to-ib-blue flex items-center justify-center text-3xl font-bold text-canvas shadow-sm border-4 border-surface"
                 >
                   {{ auth.userInitial() }}
                 </div>
               }
               <div
-                class="absolute inset-0 rounded-full bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity backdrop-blur-[2px]"
+                class="absolute inset-0 rounded-full bg-canvas/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
               >
-                <app-icon name="camera" size="28" class="text-white" />
+                <app-icon name="camera" size="28" class="text-text-primary" />
               </div>
             </button>
             <input
@@ -130,7 +130,7 @@ type PasswordFormShape = {
               <button
                 type="submit"
                 [disabled]="profileForm.pristine || profileSaving()"
-                class="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+                class="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
                 {{ profileSaving() ? 'Enregistrement...' : 'Enregistrer' }}
               </button>
@@ -176,7 +176,7 @@ type PasswordFormShape = {
                 [type]="showCurrentPassword() ? 'text' : 'password'"
                 formControlName="currentPassword"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-12 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showCurrentPassword.set(!showCurrentPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
@@ -202,7 +202,7 @@ type PasswordFormShape = {
                 [type]="showNewPassword() ? 'text' : 'password'"
                 formControlName="newPassword"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-12 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
@@ -233,7 +233,7 @@ type PasswordFormShape = {
                 [type]="showConfirmPassword() ? 'text' : 'password'"
                 formControlName="confirmPassword"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-12 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
@@ -256,7 +256,7 @@ type PasswordFormShape = {
             <button
               type="submit"
               [disabled]="passwordForm.invalid || passwordSaving()"
-              class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+              class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
             >
               @if (passwordSaving()) {
                 {{ auth.hasPassword() ? 'Modification...' : 'Définition...' }}
@@ -308,7 +308,7 @@ type PasswordFormShape = {
                     id="disable-2fa-password"
                     [type]="showDisable2faPassword() ? 'text' : 'password'"
                     (input)="disablePassword.set(disable2faInput.value)"
-                    class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-10 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
+                    class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 pr-12 text-sm transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
                   />
                   <button type="button" (click)="showDisable2faPassword.set(!showDisable2faPassword())"
                     class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
@@ -321,7 +321,7 @@ type PasswordFormShape = {
                 type="button"
                 (click)="disable2FA()"
                 [disabled]="!disablePassword() || totpLoading()"
-                class="w-full inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition-all hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
+                class="w-full inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ totpLoading() ? 'Désactivation...' : 'Désactiver la 2FA' }}
               </button>
@@ -381,7 +381,7 @@ type PasswordFormShape = {
                   type="button"
                   (click)="verify2FA()"
                   [disabled]="totpVerifyCode().length !== 6 || totpLoading()"
-                  class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+                  class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
                 >
                   {{ totpLoading() ? 'Vérification...' : 'Activer' }}
                 </button>
@@ -398,7 +398,7 @@ type PasswordFormShape = {
                 type="button"
                 (click)="setup2FA()"
                 [disabled]="totpLoading()"
-                class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+                class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
                 {{ totpLoading() ? 'Configuration...' : 'Configurer la 2FA' }}
               </button>
@@ -443,7 +443,7 @@ type PasswordFormShape = {
           <button
             type="button"
             (click)="goToEncryptionSetup()"
-            class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-white transition-all hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+            class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
           >
             Activer le chiffrement
           </button>
@@ -512,7 +512,7 @@ type PasswordFormShape = {
             type="button"
             (click)="deleteAccount()"
             [disabled]="deleteConfirmValue() !== auth.email() || deleting()"
-            class="inline-flex shrink-0 items-center justify-center rounded-lg bg-ib-red px-6 py-2.5 text-sm font-medium text-white hover:bg-ib-red/90 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red focus-visible:ring-offset-2"
+            class="inline-flex shrink-0 items-center justify-center rounded-lg bg-ib-red px-6 py-2.5 text-sm font-medium text-canvas hover:bg-ib-red/90 transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red focus-visible:ring-offset-2"
           >
             {{ deleting() ? 'Suppression...' : 'Supprimer' }}
           </button>

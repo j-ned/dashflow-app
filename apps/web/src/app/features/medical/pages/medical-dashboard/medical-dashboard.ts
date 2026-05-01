@@ -43,8 +43,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
     <section aria-labelledby="kpi-heading" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
       <h3 id="kpi-heading" class="sr-only">Indicateurs clés</h3>
 
-      <a routerLink="../patients" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-purple"></div>
+      <a routerLink="../patients" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-purple/10">
             <app-icon name="users" size="12" class="text-ib-purple" />
@@ -55,8 +54,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
         <p class="mt-0.5 text-[10px] text-text-muted">membre{{ patients().length > 1 ? 's' : '' }} de la famille</p>
       </a>
 
-      <a routerLink="../appointments" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-blue/30 hover:shadow-lg hover:shadow-ib-blue/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-blue"></div>
+      <a routerLink="../appointments" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-blue/30 hover:shadow-lg hover:shadow-ib-blue/5">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-blue/10">
             <app-icon name="calendar" size="12" class="text-ib-blue" />
@@ -67,8 +65,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
         <p class="mt-0.5 text-[10px] text-text-muted">rendez-vous à venir</p>
       </a>
 
-      <a routerLink="../prescriptions" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-cyan"></div>
+      <a routerLink="../prescriptions" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-cyan/10">
             <app-icon name="file-text" size="12" class="text-ib-cyan" />
@@ -79,8 +76,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
         <p class="mt-0.5 text-[10px] text-text-muted">ordonnance{{ totalActivePrescriptions() > 1 ? 's' : '' }} active{{ totalActivePrescriptions() > 1 ? 's' : '' }}</p>
       </a>
 
-      <a routerLink="../medications" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl" [class.bg-ib-red]="totalLowStock() > 0" [class.bg-ib-green]="totalLowStock() === 0"></div>
+      <a routerLink="../medications" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
         <div class="flex items-center gap-1.5 mb-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg" [class.bg-ib-red-10]="totalLowStock() > 0" [class.bg-ib-green-10]="totalLowStock() === 0">
             <app-icon name="pill" size="12" [class.text-ib-red]="totalLowStock() > 0" [class.text-ib-green]="totalLowStock() === 0" />
@@ -106,11 +102,10 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
         <h3 id="family-heading" class="text-lg font-semibold text-text-primary mb-3">Famille</h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
           @for (summary of patientSummaries(); track summary.patient.id) {
-            <article class="group relative overflow-hidden rounded-xl border bg-surface transition-all"
+            <article class="group relative overflow-hidden rounded-xl border bg-surface transition"
                      [class.border-ib-red-30]="summary.lowStockCount > 0"
                      [class.border-border]="summary.lowStockCount === 0"
                      [class.hover:shadow-lg]="true">
-              <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-purple"></div>
 
               <!-- Header patient -->
               <a routerLink="../patients"

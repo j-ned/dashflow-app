@@ -37,7 +37,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
         <p class="mt-1 text-sm text-text-muted">Gérez vos rendez-vous médicaux</p>
       </div>
       <button type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
         <app-icon name="plus" size="14" /> Nouveau rendez-vous
       </button>

@@ -122,7 +122,7 @@ export class ConfirmService {
               </button>
             }
             <button type="button"
-                    class="rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors focus-visible:outline-none focus-visible:ring-2"
+                    class="rounded-lg px-4 py-2 text-sm font-medium text-canvas transition-colors focus-visible:outline-none focus-visible:ring-2"
                     [class]="style().btn"
                     (click)="answer('confirm')">
               {{ p.confirmLabel || 'Confirmer' }}

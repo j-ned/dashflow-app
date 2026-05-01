@@ -2,7 +2,6 @@ import {
   ChangeDetectionStrategy,
   Component,
   ElementRef,
-  HostListener,
   inject,
   signal,
   computed,
@@ -66,7 +65,10 @@ function fuzzyScore(query: string, target: string): number {
   selector: 'app-command-palette',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon],
-  host: { class: 'contents' },
+  host: {
+    class: 'contents',
+    '(document:keydown)': 'onGlobalKey($event)',
+  },
   template: `
     <dialog #dialog
             class="command-palette"
@@ -285,8 +287,7 @@ export class CommandPalette {
 
   // ── Keyboard shortcut ──
 
-  @HostListener('document:keydown', ['$event'])
-  onGlobalKey(e: KeyboardEvent) {
+  protected onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
       this._open() ? this.close() : this.open();

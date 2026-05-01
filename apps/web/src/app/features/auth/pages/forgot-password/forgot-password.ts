@@ -69,7 +69,7 @@ type ResetFormShape = {
           <button
             type="submit"
             [disabled]="emailForm.invalid || loading()"
-            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading() ? 'Envoi...' : 'Envoyer le code' }}
           </button>
@@ -117,7 +117,7 @@ type ResetFormShape = {
                 id="newPassword"
                 formControlName="newPassword"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                 placeholder="••••••••"
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
@@ -141,7 +141,7 @@ type ResetFormShape = {
                 id="confirmPassword"
                 formControlName="confirmPassword"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                 placeholder="••••••••"
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
@@ -162,7 +162,7 @@ type ResetFormShape = {
           <button
             type="submit"
             [disabled]="resetForm.invalid || loading()"
-            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading() ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
           </button>
@@ -213,7 +213,7 @@ type ResetFormShape = {
             type="button"
             (click)="recoverWithKey()"
             [disabled]="recoveryKeyValue().length !== 64 || loading()"
-            class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading() ? 'Récupération...' : 'Récupérer mes données' }}
           </button>
@@ -249,7 +249,7 @@ type ResetFormShape = {
           </p>
           <a
             routerLink="/auth/login"
-            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-center text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-center text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
           >
             Se connecter
           </a>

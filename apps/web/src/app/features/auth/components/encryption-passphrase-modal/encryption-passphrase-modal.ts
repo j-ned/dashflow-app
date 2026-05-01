@@ -41,7 +41,7 @@ type PassphraseFormShape = {
                 id="passphrase"
                 formControlName="passphrase"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                 placeholder="Votre passphrase de chiffrement"
               />
               <button type="button" (click)="showPassphrase.set(!showPassphrase())"
@@ -69,7 +69,7 @@ type PassphraseFormShape = {
                 id="confirm"
                 formControlName="confirm"
                 aria-required="true"
-                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                 placeholder="Confirmer la passphrase"
               />
               <button type="button" (click)="showConfirm.set(!showConfirm())"
@@ -90,7 +90,7 @@ type PassphraseFormShape = {
           <button
             type="submit"
             [disabled]="form.invalid || loading()"
-            class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {{ loading() ? 'Configuration...' : 'Définir la phrase secrète' }}
           </button>

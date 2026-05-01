@@ -73,14 +73,14 @@ const MEMBER_PALETTE = [
       <div class="flex gap-2">
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-ib-blue px-4 py-2 text-sm font-medium text-white hover:bg-ib-blue/90 transition-colors shadow-sm"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-ib-blue px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-blue/90 transition-colors shadow-sm"
           (click)="openLentModal()"
         >
           <app-icon name="arrow-up-right" size="14" /> Prêter
         </button>
         <button
           type="button"
-          class="inline-flex items-center gap-1.5 rounded-lg bg-ib-orange px-4 py-2 text-sm font-medium text-white hover:bg-ib-orange/90 transition-colors shadow-sm"
+          class="inline-flex items-center gap-1.5 rounded-lg bg-ib-orange px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-orange/90 transition-colors shadow-sm"
           (click)="openBorrowedModal()"
         >
           <app-icon name="arrow-down-left" size="14" /> Emprunter
@@ -97,7 +97,7 @@ const MEMBER_PALETTE = [
             class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
             [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
             [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
-            [class.text-white]="filterMemberId() === m.id"
+            [class.text-canvas]="filterMemberId() === m.id"
             [class.text-text-muted]="filterMemberId() !== m.id"
             (click)="filterMemberId.set(m.id)"
           >
@@ -125,9 +125,8 @@ const MEMBER_PALETTE = [
             @let repaid = loan.amount - loan.remaining;
             @let pct = loan.amount > 0 ? (repaid / loan.amount) * 100 : 0;
             <article
-              class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition-all hover:bg-ib-blue/3"
+              class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition hover:bg-ib-blue/3"
             >
-              <div class="absolute inset-y-0 left-0 w-1 bg-ib-blue"></div>
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div
@@ -209,7 +208,7 @@ const MEMBER_PALETTE = [
               </div>
               <div class="h-2 rounded-full bg-hover overflow-hidden">
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-ib-blue to-ib-blue/70 transition-all duration-500 ease-out"
+                  class="h-full rounded-full bg-gradient-to-r from-ib-blue to-ib-blue/70 transition duration-500 ease-out"
                   [style.width.%]="pct > 100 ? 100 : pct"
                 ></div>
               </div>
@@ -285,9 +284,8 @@ const MEMBER_PALETTE = [
             @let repaid = loan.amount - loan.remaining;
             @let pct = loan.amount > 0 ? (repaid / loan.amount) * 100 : 0;
             <article
-              class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition-all hover:bg-ib-orange/3"
+              class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition hover:bg-ib-orange/3"
             >
-              <div class="absolute inset-y-0 left-0 w-1 bg-ib-orange"></div>
               <div class="flex items-start justify-between mb-3">
                 <div class="flex items-center gap-3">
                   <div
@@ -369,7 +367,7 @@ const MEMBER_PALETTE = [
               </div>
               <div class="h-2 rounded-full bg-hover overflow-hidden">
                 <div
-                  class="h-full rounded-full bg-gradient-to-r from-ib-orange to-ib-orange/70 transition-all duration-500 ease-out"
+                  class="h-full rounded-full bg-gradient-to-r from-ib-orange to-ib-orange/70 transition duration-500 ease-out"
                   [style.width.%]="pct > 100 ? 100 : pct"
                 ></div>
               </div>
@@ -504,7 +502,7 @@ const MEMBER_PALETTE = [
             <button
               type="submit"
               [disabled]="!manualTxAmount() || !manualTxDate()"
-              class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
+              class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
             >
               Ajouter
             </button>

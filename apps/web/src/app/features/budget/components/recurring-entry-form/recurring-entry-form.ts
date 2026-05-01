@@ -123,7 +123,7 @@ type RecurringEntryFormShape = {
                   <button type="button"
                           class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
                           [class.bg-ib-purple]="transferMode() === 'recurring'"
-                          [class.text-white]="transferMode() === 'recurring'"
+                          [class.text-canvas]="transferMode() === 'recurring'"
                           [class.text-text-muted]="transferMode() !== 'recurring'"
                           [attr.aria-pressed]="transferMode() === 'recurring'"
                           (click)="setTransferMode('recurring')">
@@ -132,7 +132,7 @@ type RecurringEntryFormShape = {
                   <button type="button"
                           class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
                           [class.bg-ib-purple]="transferMode() === 'one_time'"
-                          [class.text-white]="transferMode() === 'one_time'"
+                          [class.text-canvas]="transferMode() === 'one_time'"
                           [class.text-text-muted]="transferMode() !== 'one_time'"
                           [attr.aria-pressed]="transferMode() === 'one_time'"
                           (click)="setTransferMode('one_time')">
@@ -263,7 +263,7 @@ type RecurringEntryFormShape = {
           Annuler
         </button>
         <button type="submit" [disabled]="isInvalid()"
-                class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-white hover:bg-ib-green/90 transition-colors disabled:opacity-50">
+                class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors disabled:opacity-50">
           {{ initial() ? 'Modifier' : 'Ajouter' }}
         </button>
       </footer>

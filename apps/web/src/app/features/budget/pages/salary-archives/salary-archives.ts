@@ -29,7 +29,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
         <p class="mt-1 text-sm text-text-muted">Historique mensuel de vos salaires et dépenses</p>
       </div>
       <button type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors shadow-sm"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
         <app-icon name="plus" size="14" /> Archiver un mois
       </button>
@@ -38,7 +38,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
     @if (archives().length > 0) {
       <div class="space-y-4">
         @for (archive of archives(); track archive.id) {
-          <article class="group rounded-xl border border-border bg-surface overflow-hidden transition-all hover:shadow-lg hover:shadow-ib-cyan/5">
+          <article class="group rounded-xl border border-border bg-surface overflow-hidden transition hover:shadow-lg hover:shadow-ib-cyan/5">
             <!-- Header -->
             <button type="button"
                     class="w-full flex items-center justify-between px-5 py-4 hover:bg-hover/30 transition-colors"
@@ -76,7 +76,6 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                 <!-- KPI row -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4">
-                    <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-green"></div>
                     <div class="flex items-center gap-1.5 mb-2">
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10">
                         <app-icon name="trending-up" size="12" class="text-ib-green" />
@@ -86,7 +85,6 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                     <p class="text-lg font-mono font-bold text-ib-green tracking-tight">{{ archive.salary | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
                   <div class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4">
-                    <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-red"></div>
                     <div class="flex items-center gap-1.5 mb-2">
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
                         <app-icon name="receipt" size="12" class="text-ib-red" />
@@ -96,7 +94,6 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                     <p class="text-lg font-mono font-bold text-ib-red tracking-tight">{{ archive.totalExpenses | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
                   <div class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4">
-                    <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-yellow"></div>
                     <div class="flex items-center gap-1.5 mb-2">
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow/10">
                         <app-icon name="banknote" size="12" class="text-ib-yellow" />
@@ -108,9 +105,6 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                   <div class="relative overflow-hidden rounded-xl border bg-canvas p-4"
                        [class.border-ib-green-30]="archiveRemaining(archive) >= 0"
                        [class.border-ib-red-30]="archiveRemaining(archive) < 0">
-                    <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-                         [class.bg-ib-green]="archiveRemaining(archive) >= 0"
-                         [class.bg-ib-red]="archiveRemaining(archive) < 0"></div>
                     <div class="flex items-center gap-1.5 mb-2">
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg"
                            [class.bg-ib-green-10]="archiveRemaining(archive) >= 0"
@@ -259,7 +253,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
             Annuler
           </button>
           <button type="submit" [disabled]="!formMonth() || !formSalary()"
-                  class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
+                  class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
             Archiver
           </button>
         </footer>

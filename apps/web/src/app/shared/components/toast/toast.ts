@@ -29,22 +29,19 @@ const TOAST_ICONS: Record<ToastType, IconName> = {
   info: 'eye',
 };
 
-const TOAST_STYLES: Record<ToastType, { accent: string; bg: string; icon: string; bar: string }> = {
+const TOAST_STYLES: Record<ToastType, { bg: string; icon: string; bar: string }> = {
   success: {
-    accent: 'border-l-ib-green',
-    bg: 'bg-ib-green/5',
+    bg: 'bg-ib-green/10',
     icon: 'text-ib-green',
     bar: 'bg-ib-green',
   },
   error: {
-    accent: 'border-l-ib-red',
-    bg: 'bg-ib-red/5',
+    bg: 'bg-ib-red/10',
     icon: 'text-ib-red',
     bar: 'bg-ib-red',
   },
   info: {
-    accent: 'border-l-ib-blue',
-    bg: 'bg-ib-blue/5',
+    bg: 'bg-ib-blue/10',
     icon: 'text-ib-blue',
     bar: 'bg-ib-blue',
   },
@@ -106,8 +103,8 @@ export class Toaster {
          aria-live="polite"
          aria-relevant="additions">
       @for (toast of toasts(); track toast.id) {
-        <div class="toast-card pointer-events-auto border-l-[3px]"
-             [class]="style(toast.type).accent + ' ' + style(toast.type).bg"
+        <div class="toast-card pointer-events-auto"
+             [class]="style(toast.type).bg"
              [class.toast-enter]="!toast.leaving"
              [class.toast-leave]="toast.leaving"
              role="status">

@@ -48,10 +48,10 @@ const PALETTE = [
       <nav class="flex items-center gap-2 flex-wrap">
         @for (account of accounts(); track account.id; let i = $index) {
           <button type="button"
-                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition-all"
+                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition"
                   [style.border-color]="selectedAccountId() === account.id ? accountColor(i) : 'var(--border)'"
                   [style.background-color]="selectedAccountId() === account.id ? accountColor(i) : 'transparent'"
-                  [class.text-white]="selectedAccountId() === account.id"
+                  [class.text-canvas]="selectedAccountId() === account.id"
                   [class.text-text-muted]="selectedAccountId() !== account.id"
                   (click)="selectAccount(account.id)">
             <span class="inline-block h-2.5 w-2.5 rounded-full"
@@ -70,15 +70,12 @@ const PALETTE = [
     <!-- ═══ KPI Cards ═══ -->
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
       <!-- Solde actuel -->
-      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all"
+      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition"
            [class.border-ib-cyan-40]="currentBalance() >= 0"
            [class.border-ib-red-40]="currentBalance() < 0"
            [class.hover:shadow-lg]="true"
            [class.hover:shadow-ib-cyan-5]="currentBalance() >= 0"
            [class.hover:shadow-ib-red-5]="currentBalance() < 0">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-             [class.bg-ib-cyan]="currentBalance() >= 0"
-             [class.bg-ib-red]="currentBalance() < 0"></div>
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg"
                [class.bg-ib-cyan-10]="currentBalance() >= 0"
@@ -98,8 +95,7 @@ const PALETTE = [
       </div>
 
       <!-- Revenus -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-green"></div>
+      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-green/10">
             <app-icon name="trending-up" size="14" class="text-ib-green" />
@@ -113,8 +109,7 @@ const PALETTE = [
       </div>
 
       <!-- Prélèvements mensuels -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-red/30 hover:shadow-lg hover:shadow-ib-red/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-red"></div>
+      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-red/30 hover:shadow-lg hover:shadow-ib-red/5">
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-red/10">
             <app-icon name="receipt" size="14" class="text-ib-red" />
@@ -126,8 +121,7 @@ const PALETTE = [
       </div>
 
       <!-- Prélèvements annuels -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-orange"></div>
+      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10">
             <app-icon name="calendar" size="14" class="text-ib-orange" />
@@ -139,8 +133,7 @@ const PALETTE = [
       </div>
 
       <!-- Dépenses du mois -->
-      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition-all hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-yellow"></div>
+      <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-5 transition hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5">
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-yellow/10">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
@@ -152,15 +145,12 @@ const PALETTE = [
       </div>
 
       <!-- Solde fin de mois -->
-      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition-all"
+      <div class="group relative overflow-hidden rounded-xl border bg-surface p-5 transition"
            [class.border-ib-green-40]="endOfMonthBalance() >= 0"
            [class.border-ib-red-40]="endOfMonthBalance() < 0"
            [class.hover:shadow-lg]="true"
            [class.hover:shadow-ib-green-5]="endOfMonthBalance() >= 0"
            [class.hover:shadow-ib-red-5]="endOfMonthBalance() < 0">
-        <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-             [class.bg-ib-green]="endOfMonthBalance() >= 0"
-             [class.bg-ib-red]="endOfMonthBalance() < 0"></div>
         <div class="flex items-center gap-2 mb-3">
           <div class="flex h-7 w-7 items-center justify-center rounded-lg"
                [class.bg-ib-green-10]="endOfMonthBalance() >= 0"
@@ -193,7 +183,7 @@ const PALETTE = [
           </span>
         </div>
         <div class="h-2.5 rounded-full bg-hover overflow-hidden">
-          <div class="h-full rounded-full transition-all duration-500 ease-out"
+          <div class="h-full rounded-full transition duration-500 ease-out"
                [style.width.%]="usagePercent() > 100 ? 100 : usagePercent()"
                [class.bg-gradient-to-r]="true"
                [class.from-ib-green]="usagePercent() <= 80"
@@ -222,7 +212,7 @@ const PALETTE = [
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-green">Revenus</h3>
         </div>
         <button type="button"
-                class="inline-flex items-center gap-1 rounded-lg bg-ib-green px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-green/90 transition-colors shadow-sm"
+                class="inline-flex items-center gap-1 rounded-lg bg-ib-green px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
                 (click)="openCreateModal('income')">
           <app-icon name="plus" size="12" /> Revenu
         </button>
@@ -303,7 +293,7 @@ const PALETTE = [
             <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Mensuels</h3>
           </div>
           <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-white hover:bg-ib-red/80 transition-colors shadow-sm"
+                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-canvas hover:bg-ib-red/80 transition-colors shadow-sm"
                   (click)="openCreateModal('expense')">
             <app-icon name="plus" size="12" />
           </button>
@@ -379,7 +369,7 @@ const PALETTE = [
             <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Annuels</h3>
           </div>
           <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-white hover:bg-ib-orange/80 transition-colors shadow-sm"
+                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-canvas hover:bg-ib-orange/80 transition-colors shadow-sm"
                   (click)="openCreateModal('annual_expense')">
             <app-icon name="plus" size="12" />
           </button>
@@ -463,7 +453,7 @@ const PALETTE = [
             </div>
           </div>
           <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-white hover:bg-ib-yellow/80 transition-colors shadow-sm"
+                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-canvas hover:bg-ib-yellow/80 transition-colors shadow-sm"
                   (click)="openCreateModal('spending')">
             <app-icon name="plus" size="12" />
           </button>
@@ -530,7 +520,7 @@ const PALETTE = [
             <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-purple">Virements automatiques</h3>
           </div>
           <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
                   (click)="openCreateModal('transfer', 'recurring')">
             <app-icon name="plus" size="12" /> Virement récurrent
           </button>
@@ -616,7 +606,7 @@ const PALETTE = [
             </div>
           </div>
           <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan px-3 py-1.5 text-xs font-medium text-white hover:bg-ib-cyan/90 transition-colors shadow-sm"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
                   (click)="openCreateModal('transfer', 'one_time')">
             <app-icon name="plus" size="12" /> Virement ponctuel
           </button>
@@ -820,7 +810,7 @@ const PALETTE = [
                   Fermer
                 </button>
                 <button type="submit" [disabled]="!newAccountName().trim()"
-                        class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-white hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
+                        class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
                   Ajouter
                 </button>
               </footer>

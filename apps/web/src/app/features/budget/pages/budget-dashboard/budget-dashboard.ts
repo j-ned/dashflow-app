@@ -69,8 +69,7 @@ type MemberSummary = {
           <!-- Mini KPIs du membre -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             @if (ms.incomes.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-green"></div>
+              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
                 <div class="flex items-center gap-1.5 mb-2">
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10">
                     <app-icon name="trending-up" size="12" class="text-ib-green" />
@@ -81,8 +80,7 @@ type MemberSummary = {
               </div>
             }
             @if (ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition-all hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-orange"></div>
+              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
                 <div class="flex items-center gap-1.5 mb-2">
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange/10">
                     <app-icon name="receipt" size="12" class="text-ib-orange" />
@@ -93,15 +91,12 @@ type MemberSummary = {
               </div>
             }
             @if (ms.incomes.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border bg-surface p-4 transition-all"
+              <div class="group relative overflow-hidden rounded-xl border bg-surface p-4 transition"
                    [class.border-ib-green-40]="ms.remaining >= 0"
                    [class.border-ib-red-40]="ms.remaining < 0"
                    [class.hover:shadow-lg]="true"
                    [class.hover:shadow-ib-green-5]="ms.remaining >= 0"
                    [class.hover:shadow-ib-red-5]="ms.remaining < 0">
-                <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-                     [class.bg-ib-green]="ms.remaining >= 0"
-                     [class.bg-ib-red]="ms.remaining < 0"></div>
                 <div class="flex items-center gap-1.5 mb-2">
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg"
                        [class.bg-ib-green-10]="ms.remaining >= 0"
@@ -136,7 +131,7 @@ type MemberSummary = {
                 </span>
               </div>
               <div class="h-2.5 rounded-full bg-hover overflow-hidden">
-                <div class="h-full rounded-full transition-all duration-500 ease-out"
+                <div class="h-full rounded-full transition duration-500 ease-out"
                      [style.width.%]="pctBudget > 100 ? 100 : pctBudget"
                      [class.bg-gradient-to-r]="true"
                      [class.from-ib-green]="pctBudget <= 80"
@@ -161,7 +156,7 @@ type MemberSummary = {
 
               <!-- Prélèvements mensuels -->
               @if (ms.monthlyExpenses.length > 0) {
-                <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition-all hover:shadow-lg hover:shadow-ib-red/5">
+                <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition hover:shadow-lg hover:shadow-ib-red/5">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50">
                     <app-icon name="receipt" size="13" class="text-ib-red" />
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Mensuels</span>
@@ -188,7 +183,7 @@ type MemberSummary = {
 
               <!-- Prélèvements annuels -->
               @if (ms.annualExpenses.length > 0) {
-                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition-all hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
+                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0">
                     <app-icon name="calendar" size="13" class="text-ib-orange" />
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Annuels</span>
@@ -210,7 +205,7 @@ type MemberSummary = {
 
               <!-- Dépenses -->
               @if (ms.spendings.length > 0) {
-                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition-all hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
+                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0">
                     <app-icon name="banknote" size="13" class="text-ib-yellow" />
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</span>
@@ -262,7 +257,7 @@ type MemberSummary = {
                           <span class="font-mono">{{ pct | number:'1.0-0' }}%</span>
                         </div>
                         <div class="h-1.5 rounded-full bg-hover overflow-hidden">
-                          <div class="h-full rounded-full transition-all"
+                          <div class="h-full rounded-full transition"
                                [style.width.%]="pct > 100 ? 100 : pct"
                                [style.background-color]="env.color"></div>
                         </div>
@@ -292,7 +287,7 @@ type MemberSummary = {
                       <div class="min-w-0">
                         <p class="text-sm font-medium text-text-primary truncate">{{ loan.person }}</p>
                         <div class="h-1 w-24 rounded-full bg-hover mt-1 overflow-hidden">
-                          <div class="h-full rounded-full bg-ib-blue transition-all" [style.width.%]="pct > 100 ? 100 : pct"></div>
+                          <div class="h-full rounded-full bg-ib-blue transition" [style.width.%]="pct > 100 ? 100 : pct"></div>
                         </div>
                       </div>
                     </div>
@@ -321,7 +316,7 @@ type MemberSummary = {
                       <div class="min-w-0">
                         <p class="text-sm font-medium text-text-primary truncate">{{ loan.person }}</p>
                         <div class="h-1 w-24 rounded-full bg-hover mt-1 overflow-hidden">
-                          <div class="h-full rounded-full bg-ib-orange transition-all" [style.width.%]="pct > 100 ? 100 : pct"></div>
+                          <div class="h-full rounded-full bg-ib-orange transition" [style.width.%]="pct > 100 ? 100 : pct"></div>
                         </div>
                       </div>
                     </div>

@@ -91,9 +91,9 @@ const ENVELOPE_COLORS = [
           <div class="flex gap-2 flex-wrap">
             @for (c of colors; track c) {
               <button type="button"
-                      class="h-8 w-8 rounded-full border-2 transition-all"
+                      class="h-8 w-8 rounded-full border-2 transition"
                       [style.background-color]="c"
-                      [class.border-white]="form.controls.color.value === c"
+                      [class.border-text-primary]="form.controls.color.value === c"
                       [class.border-transparent]="form.controls.color.value !== c"
                       [class.scale-110]="form.controls.color.value === c"
                       (click)="form.controls.color.setValue(c)"

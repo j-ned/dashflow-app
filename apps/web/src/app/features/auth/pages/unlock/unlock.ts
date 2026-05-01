@@ -74,7 +74,7 @@ type Mode = 'password' | 'recovery' | 'repair';
                     id="password"
                     formControlName="password"
                     aria-required="true"
-                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                     [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
                   />
                   <button type="button" (click)="showPassword.set(!showPassword())"
@@ -92,7 +92,7 @@ type Mode = 'password' | 'recovery' | 'repair';
             <button
               type="submit"
               [disabled]="form.invalid || loading()"
-              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
             </button>
@@ -150,7 +150,7 @@ type Mode = 'password' | 'recovery' | 'repair';
             <button
               type="submit"
               [disabled]="recoveryForm.invalid || loading()"
-              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
             </button>
@@ -200,7 +200,7 @@ type Mode = 'password' | 'recovery' | 'repair';
                     id="repair-password"
                     formControlName="password"
                     aria-required="true"
-                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-10 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                    class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                     placeholder="Le mot de passe avec lequel vous venez de vous connecter"
                   />
                   <button type="button" (click)="showPassword.set(!showPassword())"
@@ -215,7 +215,7 @@ type Mode = 'password' | 'recovery' | 'repair';
             <button
               type="submit"
               [disabled]="repairForm.invalid || loading()"
-              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading() ? 'Réparation...' : 'Réparer' }}
             </button>

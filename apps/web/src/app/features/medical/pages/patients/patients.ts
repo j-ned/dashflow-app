@@ -25,7 +25,7 @@ import { Icon } from '@shared/components/icon/icon';
         <p class="mt-1 text-sm text-text-muted">Gérez vos patients</p>
       </div>
       <button type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-white hover:bg-ib-purple/90 transition-colors shadow-sm"
+              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
         <app-icon name="plus" size="14" /> Nouveau patient
       </button>
@@ -33,8 +33,7 @@ import { Icon } from '@shared/components/icon/icon';
 
     <section aria-label="Liste des patients" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (patient of patients(); track patient.id) {
-        <article class="group relative overflow-hidden rounded-xl border border-border bg-surface transition-all hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
-          <div class="absolute inset-y-0 left-0 w-1 rounded-l-xl bg-ib-purple"></div>
+        <article class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
           <div class="p-5">
             <div class="flex items-center justify-between mb-3">
               <div class="flex items-center gap-2">

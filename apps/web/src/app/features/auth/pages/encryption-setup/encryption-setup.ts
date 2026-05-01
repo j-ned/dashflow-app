@@ -81,7 +81,7 @@ const API_PATHS: Record<string, string> = {
               type="button"
               (click)="startSetup()"
               [disabled]="loading()"
-              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {{ loading() ? 'Préparation...' : 'Activer le chiffrement' }}
             </button>
@@ -92,7 +92,7 @@ const API_PATHS: Record<string, string> = {
               <div class="h-8 w-8 animate-spin rounded-full border-2 border-ib-blue border-t-transparent"></div>
               <p class="text-sm text-text-muted">{{ progressMessage() }}</p>
               <div class="w-full bg-canvas rounded-full h-2">
-                <div class="bg-ib-blue h-2 rounded-full transition-all duration-300"
+                <div class="bg-ib-blue h-2 rounded-full transition duration-300"
                      [style.width.%]="progress()"></div>
               </div>
             </div>
@@ -111,7 +111,7 @@ const API_PATHS: Record<string, string> = {
               <button
                 type="button"
                 (click)="goToDashboard()"
-                class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-ib-blue/90"
+                class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90"
               >
                 Accéder au tableau de bord
               </button>
