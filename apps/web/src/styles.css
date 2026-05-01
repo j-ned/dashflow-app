@@ -33,6 +33,80 @@
   --radius-sm: 6px;
   --radius-md: 8px;
   --radius-lg: 12px;
+
+  /* ── Opacity-suffixed accent tokens ──
+     Generates bg/text/border/ring/shadow utilities like `bg-ib-red-10`
+     for use with Angular class bindings (which can't carry a `/` in the
+     class name). Equivalent to vanilla Tailwind `bg-ib-red/10`. */
+  --color-ib-blue-5:    color-mix(in srgb, var(--color-ib-blue)   5%, transparent);
+  --color-ib-blue-10:   color-mix(in srgb, var(--color-ib-blue)  10%, transparent);
+  --color-ib-blue-15:   color-mix(in srgb, var(--color-ib-blue)  15%, transparent);
+  --color-ib-blue-20:   color-mix(in srgb, var(--color-ib-blue)  20%, transparent);
+  --color-ib-blue-30:   color-mix(in srgb, var(--color-ib-blue)  30%, transparent);
+  --color-ib-blue-40:   color-mix(in srgb, var(--color-ib-blue)  40%, transparent);
+  --color-ib-blue-50:   color-mix(in srgb, var(--color-ib-blue)  50%, transparent);
+
+  --color-ib-cyan-5:    color-mix(in srgb, var(--color-ib-cyan)   5%, transparent);
+  --color-ib-cyan-10:   color-mix(in srgb, var(--color-ib-cyan)  10%, transparent);
+  --color-ib-cyan-15:   color-mix(in srgb, var(--color-ib-cyan)  15%, transparent);
+  --color-ib-cyan-20:   color-mix(in srgb, var(--color-ib-cyan)  20%, transparent);
+  --color-ib-cyan-30:   color-mix(in srgb, var(--color-ib-cyan)  30%, transparent);
+  --color-ib-cyan-40:   color-mix(in srgb, var(--color-ib-cyan)  40%, transparent);
+  --color-ib-cyan-50:   color-mix(in srgb, var(--color-ib-cyan)  50%, transparent);
+
+  --color-ib-green-5:   color-mix(in srgb, var(--color-ib-green)  5%, transparent);
+  --color-ib-green-10:  color-mix(in srgb, var(--color-ib-green) 10%, transparent);
+  --color-ib-green-15:  color-mix(in srgb, var(--color-ib-green) 15%, transparent);
+  --color-ib-green-20:  color-mix(in srgb, var(--color-ib-green) 20%, transparent);
+  --color-ib-green-30:  color-mix(in srgb, var(--color-ib-green) 30%, transparent);
+  --color-ib-green-40:  color-mix(in srgb, var(--color-ib-green) 40%, transparent);
+  --color-ib-green-50:  color-mix(in srgb, var(--color-ib-green) 50%, transparent);
+
+  --color-ib-orange-5:  color-mix(in srgb, var(--color-ib-orange)  5%, transparent);
+  --color-ib-orange-10: color-mix(in srgb, var(--color-ib-orange) 10%, transparent);
+  --color-ib-orange-15: color-mix(in srgb, var(--color-ib-orange) 15%, transparent);
+  --color-ib-orange-20: color-mix(in srgb, var(--color-ib-orange) 20%, transparent);
+  --color-ib-orange-30: color-mix(in srgb, var(--color-ib-orange) 30%, transparent);
+  --color-ib-orange-40: color-mix(in srgb, var(--color-ib-orange) 40%, transparent);
+  --color-ib-orange-50: color-mix(in srgb, var(--color-ib-orange) 50%, transparent);
+
+  --color-ib-red-5:     color-mix(in srgb, var(--color-ib-red)    5%, transparent);
+  --color-ib-red-10:    color-mix(in srgb, var(--color-ib-red)   10%, transparent);
+  --color-ib-red-15:    color-mix(in srgb, var(--color-ib-red)   15%, transparent);
+  --color-ib-red-20:    color-mix(in srgb, var(--color-ib-red)   20%, transparent);
+  --color-ib-red-30:    color-mix(in srgb, var(--color-ib-red)   30%, transparent);
+  --color-ib-red-40:    color-mix(in srgb, var(--color-ib-red)   40%, transparent);
+  --color-ib-red-50:    color-mix(in srgb, var(--color-ib-red)   50%, transparent);
+
+  --color-ib-purple-5:  color-mix(in srgb, var(--color-ib-purple)  5%, transparent);
+  --color-ib-purple-10: color-mix(in srgb, var(--color-ib-purple) 10%, transparent);
+  --color-ib-purple-15: color-mix(in srgb, var(--color-ib-purple) 15%, transparent);
+  --color-ib-purple-20: color-mix(in srgb, var(--color-ib-purple) 20%, transparent);
+  --color-ib-purple-30: color-mix(in srgb, var(--color-ib-purple) 30%, transparent);
+  --color-ib-purple-40: color-mix(in srgb, var(--color-ib-purple) 40%, transparent);
+  --color-ib-purple-50: color-mix(in srgb, var(--color-ib-purple) 50%, transparent);
+
+  --color-ib-yellow-5:  color-mix(in srgb, var(--color-ib-yellow)  5%, transparent);
+  --color-ib-yellow-10: color-mix(in srgb, var(--color-ib-yellow) 10%, transparent);
+  --color-ib-yellow-15: color-mix(in srgb, var(--color-ib-yellow) 15%, transparent);
+  --color-ib-yellow-20: color-mix(in srgb, var(--color-ib-yellow) 20%, transparent);
+  --color-ib-yellow-30: color-mix(in srgb, var(--color-ib-yellow) 30%, transparent);
+  --color-ib-yellow-40: color-mix(in srgb, var(--color-ib-yellow) 40%, transparent);
+  --color-ib-yellow-50: color-mix(in srgb, var(--color-ib-yellow) 50%, transparent);
+
+  --color-ib-pink-5:    color-mix(in srgb, var(--color-ib-pink)   5%, transparent);
+  --color-ib-pink-10:   color-mix(in srgb, var(--color-ib-pink)  10%, transparent);
+  --color-ib-pink-15:   color-mix(in srgb, var(--color-ib-pink)  15%, transparent);
+  --color-ib-pink-20:   color-mix(in srgb, var(--color-ib-pink)  20%, transparent);
+  --color-ib-pink-30:   color-mix(in srgb, var(--color-ib-pink)  30%, transparent);
+  --color-ib-pink-40:   color-mix(in srgb, var(--color-ib-pink)  40%, transparent);
+  --color-ib-pink-50:   color-mix(in srgb, var(--color-ib-pink)  50%, transparent);
+
+  /* Neutral-suffixed tokens for muted/border alpha variants */
+  --color-text-muted-30: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
+  --color-text-muted-50: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
+  --color-border-30:     color-mix(in srgb, var(--color-border)     30%, transparent);
+  --color-border-50:     color-mix(in srgb, var(--color-border)     50%, transparent);
 }
 
 /* ══════════════════════════════════════════════════
@@ -287,4 +361,35 @@ dialog.modal-dialog .modal-xl { min-width: 40rem; max-width: 64rem; }
 @keyframes backdrop-fade-in {
   from { opacity: 0; }
   to { opacity: 1; }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Global focus-visible — fallback when components don't define their own */
+*:focus-visible {
+  outline: 2px solid var(--color-ib-blue);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* Components that already manage their own focus styling opt out */
+.form-input:focus-visible,
+.form-select:focus-visible,
+.btn-submit:focus-visible {
+  outline: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  html {
+    scroll-behavior: auto !important;
+  }
 }
