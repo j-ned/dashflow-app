@@ -981,6 +981,17 @@
       "submitEdit": "Edit"
     }
   },
+  "demo": {
+    "banner": {
+      "label": "Demo account",
+      "resetEvery": "Resets every 6 hours",
+      "resetNow": "Reset now"
+    },
+    "login": {
+      "loading": "Loading demo…",
+      "error": "Could not load demo, please retry"
+    }
+  },
   "medical": {
     "dashboard": {
       "title": "Family overview",

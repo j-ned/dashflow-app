@@ -981,6 +981,17 @@
       "submitEdit": "Modifier"
     }
   },
+  "demo": {
+    "banner": {
+      "label": "Compte démo",
+      "resetEvery": "Réinitialisé toutes les 6 heures",
+      "resetNow": "Réinitialiser maintenant"
+    },
+    "login": {
+      "loading": "Chargement de la démo…",
+      "error": "Impossible de charger la démo, réessayez"
+    }
+  },
   "medical": {
     "dashboard": {
       "title": "Vue globale",
