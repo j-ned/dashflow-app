@@ -17,7 +17,7 @@ function generateCode(): string {
   return String(Math.floor(100000 + Math.random() * 900000));
 }
 
-function toPublicUser(user: { id: string; email: string; password: string | null; displayName: string | null; avatarUrl: string | null; totpEnabled: Date | null; googleId: string | null; encryptionVersion: number; encryptionPassphrase: boolean; encryptionSalt: string | null; wrappedMasterKey: string | null; recoveryWrappedKey: string | null }) {
+function toPublicUser(user: { id: string; email: string; password: string | null; displayName: string | null; avatarUrl: string | null; totpEnabled: Date | null; googleId: string | null; encryptionVersion: number; encryptionPassphrase: boolean; encryptionSalt: string | null; wrappedMasterKey: string | null; recoveryWrappedKey: string | null; isDemoAccount: boolean }) {
   return {
     id: user.id,
     email: user.email,
@@ -28,6 +28,7 @@ function toPublicUser(user: { id: string; email: string; password: string | null
     googleLinked: !!user.googleId,
     encryptionVersion: user.encryptionVersion,
     hasEncryptionPassphrase: user.encryptionPassphrase,
+    isDemoAccount: user.isDemoAccount,
   };
 }
 
@@ -45,6 +46,10 @@ auth.post('/register', async (c) => {
   const v = validate(registerSchema, await c.req.json());
   if (!v.success) return c.json({ error: v.error }, 400);
   const { email, password, displayName } = v.data;
+
+  if (email === 'demo@dashflow.app') {
+    return c.json({ error: 'Cet email est réservé' }, 409);
+  }
 
   const existing = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing.length > 0 && existing[0].emailVerified) {
