@@ -8,6 +8,7 @@ import { logger } from 'hono/logger';
 import { rateLimiter } from 'hono-rate-limiter';
 import type { AppEnv } from './types.js';
 import { authMiddleware } from '@middleware/auth';
+import { startDemoResetCron } from './cron/demo-reset.js';
 import authRoutes from './routes/auth.routes.js';
 import envelopeRoutes from './routes/envelope.routes.js';
 import loanRoutes from './routes/loan.routes.js';
@@ -143,5 +144,7 @@ if (staticRoot) {
 // ── Start server ──
 const port = Number(process.env['PORT'] ?? 3000);
 console.log(`Server running on http://localhost:${port}`);
+
+startDemoResetCron();
 
 serve({ fetch: app.fetch, port });
