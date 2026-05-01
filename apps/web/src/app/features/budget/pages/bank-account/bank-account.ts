@@ -1,5 +1,4 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
@@ -23,6 +22,10 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
 import { BankKpiGrid } from './bank-kpi-grid/bank-kpi-grid';
 import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
+import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
+import { BankExpenseColumns } from './bank-expense-columns/bank-expense-columns';
+import { BankTransfersPanel } from './bank-transfers-panel/bank-transfers-panel';
+import { BankTimeline } from './bank-timeline/bank-timeline';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -38,7 +41,7 @@ const PALETTE = [
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar],
+  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline],
   host: { class: 'block space-y-6' },
   template: `
     <!-- Header + compte selector -->
@@ -93,543 +96,60 @@ const PALETTE = [
       [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
       [totalMonthSpendings]="totalMonthSpendings()" />
 
-
     <!-- ═══ Revenus ═══ -->
-    <section class="rounded-xl border border-border bg-surface overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-3 bg-ib-green/5 border-b border-border/50">
-        <div class="flex items-center gap-2">
-          <app-icon name="trending-up" size="16" class="text-ib-green" />
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-green">Revenus</h3>
-        </div>
-        <button type="button"
-                class="inline-flex items-center gap-1 rounded-lg bg-ib-green min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
-                (click)="openCreateModal('income')">
-          <app-icon name="plus" size="12" /> Revenu
-        </button>
-      </div>
-      @if (incomes().length > 0) {
-        <div class="divide-y divide-border/30">
-          @for (entry of incomes(); track entry.id) {
-            <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-green/3 transition-colors">
-              <div class="flex items-center gap-3">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-ib-green/10 text-ib-green text-xs font-bold shrink-0">
-                  @if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
-                </div>
-                <div>
-                  <p class="text-sm font-semibold text-text-primary">{{ entry.label }}</p>
-                  <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                    @if (entry.category) {
-                      <span class="inline-flex items-center rounded-md bg-raised px-1.5 py-0.5 text-[10px] font-medium text-text-muted">{{ entry.category }}</span>
-                    }
-                    @if (entry.date) {
-                      <span class="text-[11px] text-text-muted">{{ entry.date | date:'dd/MM/yyyy' }}</span>
-                    }
-                    @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
-                      <span class="inline-flex items-center gap-1 text-[11px] text-text-muted">
-                        @if (memberMap().get(entry.memberId ?? '')?.color; as mc) {
-                          <span class="inline-block h-2 w-2 rounded-full shrink-0" [style.background-color]="mc"></span>
-                        }
-                        {{ mName }}
-                      </span>
-                    }
-                    @if (entry.payslipKey) {
-                      <button type="button"
-                              class="inline-flex items-center gap-0.5 rounded-md bg-ib-green/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-green hover:bg-ib-green/20 transition-colors cursor-pointer"
-                              (click)="openPayslipById(entry.id); $event.stopPropagation()">
-                        <app-icon name="file-text" size="10" /> Fiche de paie
-                      </button>
-                    }
-                  </div>
-                </div>
-              </div>
-              <div class="flex items-center gap-3">
-                <span class="text-lg font-mono font-bold text-ib-green">+{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span></span>
-                <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                  <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                          [title]="'Modifier — ' + entry.label"
-                          [attr.aria-label]="'Modifier ' + entry.label"
-                          (click)="openEditModal(entry)">
-                    <app-icon name="pencil" size="13" />
-                  </button>
-                  <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          [title]="'Supprimer — ' + entry.label"
-                          [attr.aria-label]="'Supprimer ' + entry.label"
-                          (click)="deleteEntry(entry.id)">
-                    <app-icon name="trash" size="13" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="px-5 py-8 text-center">
-          <app-icon name="trending-up" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Ajoutez votre salaire ou autres revenus mensuels</p>
-        </div>
-      }
-    </section>
+    <app-bank-incomes-table
+      [incomes]="incomes()"
+      [memberMap]="memberMap()"
+      [selectedAccountId]="selectedAccountId()"
+      (create)="openCreateModal('income')"
+      (edit)="openEditModal($event)"
+      (delete)="deleteEntry($event)"
+      (openPayslip)="openPayslipById($event)" />
 
     <!-- ═══ 3 colonnes : Prélèvements / Annuels / Dépenses ═══ -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start" #accountGrid>
+    <app-bank-expense-columns
+      [monthlyExpenses]="sortedMonthlyExpenses()"
+      [annualExpenses]="annualExpenses()"
+      [monthSpendings]="monthSpendings()"
+      [totalMonthlyExpenses]="totalMonthlyExpenses()"
+      [totalAnnualExpenses]="totalAnnualExpenses()"
+      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
+      [totalMonthSpendings]="totalMonthSpendings()"
+      [spendingMonthLabel]="spendingMonthLabel()"
+      [memberMap]="memberMap()"
+      [isExpensePassed]="isExpensePassedFn"
+      (createMonthly)="openCreateModal('expense')"
+      (createAnnual)="openCreateModal('annual_expense')"
+      (createSpending)="openCreateModal('spending')"
+      (edit)="openEditModal($event)"
+      (delete)="deleteEntry($event)"
+      (prevMonth)="prevMonth()"
+      (nextMonth)="nextMonth()" />
 
-      <!-- Prélèvements mensuels -->
-      <section class="rounded-xl border border-border bg-surface overflow-hidden" #refCard>
-        <div class="flex items-center justify-between px-4 py-3 bg-ib-red/5 border-b border-border/50">
-          <div class="flex items-center gap-2">
-            <app-icon name="receipt" size="14" class="text-ib-red" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Mensuels</h3>
-          </div>
-          <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-canvas hover:bg-ib-red/80 transition-colors shadow-sm"
-                  (click)="openCreateModal('expense')">
-            <app-icon name="plus" size="12" />
-          </button>
-        </div>
-        @if (sortedMonthlyExpenses().length > 0) {
-          <div class="divide-y divide-border/20 px-3 py-1.5">
-            @for (entry of sortedMonthlyExpenses(); track entry.id) {
-              @let passed = isExpensePassed(entry);
-              <div class="group flex items-center justify-between py-2 hover:bg-ib-red/3 rounded-lg px-1.5 -mx-1.5 transition-colors"
-                   [class.opacity-50]="passed">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-lg text-[10px] font-bold shrink-0"
-                       [class.bg-ib-red-10]="!passed" [class.text-ib-red]="!passed"
-                       [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed">
-                    @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-[13px] font-medium text-text-primary truncate" [class.line-through]="passed">{{ entry.label }}</p>
-                    <div class="flex items-center gap-1 flex-wrap">
-                      @if (entry.category) {
-                        <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
-                      }
-                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
-                        <span class="text-[10px] text-text-muted">{{ mName }}</span>
-                      }
-                      @if (passed) {
-                        <span class="text-[10px] text-ib-green font-medium">Prélevé</span>
-                      } @else if (entry.dayOfMonth) {
-                        <span class="text-[10px] text-text-muted">le {{ entry.dayOfMonth }}</span>
-                      }
-                      @if (entry.endDate) {
-                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
-                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="text-[13px] font-mono font-bold" [class.text-ib-red]="!passed" [class.text-text-muted]="passed">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
-                            (click)="openEditModal(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
-                            (click)="deleteEntry(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
-            <span class="text-sm font-mono font-bold text-ib-red">{{ totalMonthlyExpenses() | number:'1.2-2' }} &euro;</span>
-          </div>
-        } @else {
-          <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Loyer, abonnements, assurances...</p>
-          </div>
-        }
-      </section>
-
-      <!-- Prélèvements annuels -->
-      <section class="rounded-xl border border-border bg-surface overflow-hidden flex flex-col" [style.max-height.px]="refCardHeight()">
-        <div class="flex items-center justify-between px-4 py-3 bg-ib-orange/5 border-b border-border/50">
-          <div class="flex items-center gap-2">
-            <app-icon name="calendar" size="14" class="text-ib-orange" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Annuels</h3>
-          </div>
-          <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-canvas hover:bg-ib-orange/80 transition-colors shadow-sm"
-                  (click)="openCreateModal('annual_expense')">
-            <app-icon name="plus" size="12" />
-          </button>
-        </div>
-        @if (annualExpenses().length > 0) {
-          <div class="divide-y divide-border/20 px-3 py-1.5 overflow-y-auto flex-1">
-            @for (entry of annualExpenses(); track entry.id) {
-              <div class="group flex items-center justify-between py-2 hover:bg-ib-orange/3 rounded-lg px-1.5 -mx-1.5 transition-colors">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10 text-ib-orange text-[10px] font-bold shrink-0">
-                    @if (entry.date) { {{ entry.date | date:'MMM' }} } @else { AN }
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-[13px] font-medium text-text-primary truncate">{{ entry.label }}</p>
-                    <div class="flex items-center gap-1 flex-wrap">
-                      <span class="text-[10px] text-text-muted">~{{ entry.amount / 12 | number:'1.2-2' }}&euro;/mois</span>
-                      @if (entry.category) {
-                        <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
-                      }
-                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
-                        <span class="text-[10px] text-text-muted">{{ mName }}</span>
-                      }
-                      @if (entry.endDate) {
-                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
-                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="text-[13px] font-mono font-bold text-ib-orange">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
-                            (click)="openEditModal(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
-                            (click)="deleteEntry(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
-            <div class="text-right">
-              <span class="text-sm font-mono font-bold text-ib-orange">{{ totalAnnualExpenses() | number:'1.2-2' }} &euro;/an</span>
-              <span class="text-[10px] text-text-muted ml-1">(~{{ monthlyAnnualExpenses() | number:'1.2-2' }}&euro;/m)</span>
-            </div>
-          </div>
-        } @else {
-          <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Assurance auto, impôts fonciers...</p>
-          </div>
-        }
-      </section>
-
-      <!-- Dépenses -->
-      <section class="rounded-xl border border-border bg-surface overflow-hidden flex flex-col" [style.max-height.px]="refCardHeight()">
-        <div class="flex items-center justify-between px-4 py-3 bg-ib-yellow/5 border-b border-border/50">
-          <div class="flex items-center gap-2">
-            <app-icon name="banknote" size="14" class="text-ib-yellow" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</h3>
-            <div class="flex items-center gap-0.5 ml-1">
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
-                      (click)="prevMonth()">
-                <app-icon name="chevron-right" size="12" class="rotate-180" />
-              </button>
-              <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ spendingMonthLabel() }}</span>
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
-                      (click)="nextMonth()">
-                <app-icon name="chevron-right" size="12" />
-              </button>
-            </div>
-          </div>
-          <button type="button"
-                  class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-canvas hover:bg-ib-yellow/80 transition-colors shadow-sm"
-                  (click)="openCreateModal('spending')">
-            <app-icon name="plus" size="12" />
-          </button>
-        </div>
-        @if (monthSpendings().length > 0) {
-          <div class="divide-y divide-border/20 px-3 py-1.5 overflow-y-auto flex-1">
-            @for (entry of monthSpendings(); track entry.id) {
-              <div class="group flex items-center justify-between py-2 hover:bg-ib-yellow/3 rounded-lg px-1.5 -mx-1.5 transition-colors">
-                <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-yellow/10 text-ib-yellow text-[10px] font-bold shrink-0">
-                    @if (entry.date) { {{ entry.date | date:'dd' }} } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
-                  </div>
-                  <div class="min-w-0">
-                    <p class="text-[13px] font-medium text-text-primary truncate">{{ entry.label }}</p>
-                    <div class="flex items-center gap-1 flex-wrap">
-                      @if (entry.category) {
-                        <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
-                      }
-                      @if (entry.date) {
-                        <span class="text-[10px] text-text-muted">{{ entry.date | date:'dd/MM' }}</span>
-                      }
-                      @if (memberMap().get(entry.memberId ?? '')?.name; as mName) {
-                        <span class="text-[10px] text-text-muted">{{ mName }}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-1.5 shrink-0">
-                  <span class="text-[13px] font-mono font-bold text-ib-yellow">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
-                            (click)="openEditModal(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
-                            (click)="deleteEntry(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
-            <span class="text-sm font-mono font-bold text-ib-yellow">{{ totalMonthSpendings() | number:'1.2-2' }} &euro;</span>
-          </div>
-        } @else {
-          <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Aucune dépense en {{ spendingMonthLabel() }}</p>
-          </div>
-        }
-      </section>
-    </div>
-
-    <!-- ═══ Virements automatiques ═══ -->
-    @if (transfers().length > 0 || accounts().length > 1) {
-      <section class="rounded-xl border border-border bg-surface overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-3 bg-ib-purple/5 border-b border-border/50">
-          <div class="flex items-center gap-2">
-            <app-icon name="credit-card" size="16" class="text-ib-purple" />
-            <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-purple">Virements automatiques</h3>
-          </div>
-          <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
-                  (click)="openCreateModal('transfer', 'recurring')">
-            <app-icon name="plus" size="12" /> Virement récurrent
-          </button>
-        </div>
-        @if (recurringTransfers().length > 0) {
-          <div class="divide-y divide-border/30">
-            @for (entry of recurringTransfers(); track entry.id) {
-              @let passed = isExpensePassed(entry);
-              <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-purple/3 transition-colors"
-                   [class.opacity-50]="passed">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold shrink-0"
-                       [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed"
-                       [class.bg-ib-purple-10]="!passed" [class.text-ib-purple]="!passed">
-                    @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-text-primary" [class.line-through]="passed">{{ entry.label }}</p>
-                    <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                      @if (accountNameById(entry.accountId); as fromName) {
-                        <span class="text-[11px] text-text-muted">{{ fromName }}</span>
-                      }
-                      <app-icon name="arrow-right" size="10" class="text-text-muted" />
-                      @if (accountNameById(entry.toAccountId); as toName) {
-                        <span class="text-[11px] text-ib-purple font-medium">{{ toName }}</span>
-                      }
-                      @if (entry.endDate) {
-                        <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
-                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="text-lg font-mono font-bold text-ib-purple">{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span></span>
-                  <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
-                            (click)="openEditModal(entry)">
-                      <app-icon name="pencil" size="13" />
-                    </button>
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
-                            (click)="deleteEntry(entry.id)">
-                      <app-icon name="trash" size="13" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-        } @else {
-          <div class="px-5 py-8 text-center">
-            <app-icon name="credit-card" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Programmez des virements automatiques entre vos comptes</p>
-          </div>
-        }
-      </section>
-
-      <!-- ═══ Virements ponctuels ═══ -->
-      <section class="rounded-xl border border-border bg-surface overflow-hidden">
-        <div class="flex items-center justify-between px-5 py-3 bg-ib-cyan/5 border-b border-border/50">
-          <div class="flex items-center gap-2">
-            <app-icon name="arrow-left-right" size="16" class="text-ib-cyan" />
-            <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-cyan">Virements ponctuels</h3>
-            <div class="flex items-center gap-0.5 ml-1">
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-cyan hover:bg-ib-cyan/10 transition-colors"
-                      aria-label="Mois précédent"
-                      (click)="prevMonth()">
-                <app-icon name="chevron-right" size="12" class="rotate-180" />
-              </button>
-              <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ spendingMonthLabel() }}</span>
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-cyan hover:bg-ib-cyan/10 transition-colors"
-                      aria-label="Mois suivant"
-                      (click)="nextMonth()">
-                <app-icon name="chevron-right" size="12" />
-              </button>
-            </div>
-          </div>
-          <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
-                  (click)="openCreateModal('transfer', 'one_time')">
-            <app-icon name="plus" size="12" /> Virement ponctuel
-          </button>
-        </div>
-        @if (monthOneTimeTransfers().length > 0) {
-          <div class="divide-y divide-border/30">
-            @for (entry of monthOneTimeTransfers(); track entry.id) {
-              @let isOutgoing = entry.accountId === selectedAccountId();
-              <div class="group flex items-center justify-between px-5 py-3.5 hover:bg-ib-cyan/3 transition-colors">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-9 w-9 items-center justify-center rounded-xl text-xs font-bold shrink-0 bg-ib-cyan/10 text-ib-cyan">
-                    @if (entry.date) { {{ entry.date | date:'dd' }} } @else { — }
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-text-primary">{{ entry.label }}</p>
-                    <div class="flex items-center gap-2 mt-0.5 flex-wrap">
-                      @if (accountNameById(entry.accountId); as fromName) {
-                        <span class="text-[11px] text-text-muted">{{ fromName }}</span>
-                      }
-                      <app-icon name="arrow-right" size="10" class="text-text-muted" />
-                      @if (accountNameById(entry.toAccountId); as toName) {
-                        <span class="text-[11px] text-ib-cyan font-medium">{{ toName }}</span>
-                      }
-                      @if (entry.date) {
-                        <span class="text-[10px] text-text-muted">{{ entry.date | date:'dd/MM' }}</span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="flex items-center gap-3">
-                  <span class="text-lg font-mono font-bold"
-                        [class.text-ib-red]="isOutgoing"
-                        [class.text-ib-green]="!isOutgoing">
-                    {{ isOutgoing ? '-' : '+' }}{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span>
-                  </span>
-                  <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
-                            (click)="openEditModal(entry)">
-                      <app-icon name="pencil" size="13" />
-                    </button>
-                    <button type="button"
-                            class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
-                            (click)="deleteEntry(entry.id)">
-                      <app-icon name="trash" size="13" />
-                    </button>
-                  </div>
-                </div>
-              </div>
-            }
-          </div>
-          <div class="px-5 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total du mois</span>
-            <div class="flex items-center gap-3 text-[11px] font-mono">
-              @if (totalOneTimeOutgoing() > 0) {
-                <span class="text-ib-red">-{{ totalOneTimeOutgoing() | number:'1.2-2' }}&euro;</span>
-              }
-              @if (totalOneTimeIncoming() > 0) {
-                <span class="text-ib-green">+{{ totalOneTimeIncoming() | number:'1.2-2' }}&euro;</span>
-              }
-            </div>
-          </div>
-        } @else {
-          <div class="px-5 py-8 text-center">
-            <app-icon name="arrow-left-right" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Aucun virement ponctuel en {{ spendingMonthLabel() }}</p>
-          </div>
-        }
-      </section>
-    }
+    <!-- ═══ Virements ═══ -->
+    <app-bank-transfers-panel
+      [recurringTransfers]="recurringTransfers()"
+      [monthOneTimeTransfers]="monthOneTimeTransfers()"
+      [totalOneTimeOutgoing]="totalOneTimeOutgoing()"
+      [totalOneTimeIncoming]="totalOneTimeIncoming()"
+      [selectedAccountId]="selectedAccountId()"
+      [memberMap]="memberMap()"
+      [accountNameById]="accountNameByIdFn"
+      [isExpensePassed]="isExpensePassedFn"
+      [spendingMonthLabel]="spendingMonthLabel()"
+      [accountsCount]="accounts().length"
+      (createRecurring)="openCreateModal('transfer', 'recurring')"
+      (createOneTime)="openCreateModal('transfer', 'one_time')"
+      (edit)="openEditModal($event)"
+      (delete)="deleteEntry($event)"
+      (prevMonth)="prevMonth()"
+      (nextMonth)="nextMonth()" />
 
     <!-- ═══ Timeline du mois ═══ -->
-    @if (timelineEvents().length > 0) {
-      <section class="rounded-xl border border-border bg-surface overflow-hidden">
-        <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
-          <app-icon name="calendar" size="16" class="text-ib-blue" />
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-blue">Timeline du mois</h3>
-        </div>
-        <div class="px-5 py-4">
-          <div class="relative">
-            <!-- Ligne verticale -->
-            <div class="absolute left-3.5 top-0 bottom-0 w-px bg-border"></div>
-            <div class="space-y-0.5">
-              @for (event of timelineEvents(); track event.id) {
-                <div class="relative flex items-center gap-3 py-1.5 pl-9">
-                  <!-- Point sur la ligne -->
-                  <div class="absolute left-2 h-3 w-3 rounded-full border-2 border-surface"
-                       [class.bg-ib-green]="event.type === 'income'"
-                       [class.bg-ib-red]="event.type === 'expense'"
-                       [class.bg-ib-orange]="event.type === 'annual_expense'"
-                       [class.bg-ib-purple]="event.type === 'transfer'"
-                       [class.bg-ib-yellow]="event.type === 'spending'"
-                       [class.ring-2]="event.day === currentDay"
-                       [class.ring-ib-cyan]="event.day === currentDay"></div>
-                  <!-- Jour -->
-                  <span class="text-[11px] font-mono font-bold w-5 shrink-0"
-                        [class.text-ib-cyan]="event.day === currentDay"
-                        [class.text-text-muted]="event.day !== currentDay">
-                    {{ event.day }}
-                  </span>
-                  <!-- Label -->
-                  <span class="text-[13px] truncate flex-1"
-                        [class.text-text-muted]="event.passed"
-                        [class.line-through]="event.passed"
-                        [class.text-text-primary]="!event.passed">
-                    {{ event.label }}
-                  </span>
-                  <!-- Montant -->
-                  <span class="text-[13px] font-mono font-bold shrink-0"
-                        [class.text-ib-green]="event.type === 'income'"
-                        [class.text-ib-red]="event.type === 'expense'"
-                        [class.text-ib-orange]="event.type === 'annual_expense'"
-                        [class.text-ib-purple]="event.type === 'transfer'"
-                        [class.text-ib-yellow]="event.type === 'spending'"
-                        [class.opacity-50]="event.passed">
-                    {{ event.sign }}{{ event.amount | number:'1.2-2' }}&euro;
-                  </span>
-                </div>
-              }
-            </div>
-            <!-- Marqueur "Aujourd'hui" -->
-            <div class="relative flex items-center gap-3 py-1.5 pl-9 mt-1">
-              <div class="absolute left-1.5 h-4 w-4 rounded-full bg-ib-cyan/20 border-2 border-ib-cyan"></div>
-              <span class="text-[11px] font-mono font-bold w-5 text-ib-cyan shrink-0">{{ currentDay }}</span>
-              <span class="text-[11px] font-semibold text-ib-cyan uppercase tracking-wider">Aujourd'hui</span>
-              <span class="text-[13px] font-mono font-bold text-ib-cyan shrink-0">{{ currentBalance() | number:'1.2-2' }}&euro;</span>
-            </div>
-          </div>
-        </div>
-      </section>
-    }
+    <app-bank-timeline
+      [timelineEvents]="timelineEvents()"
+      [currentDay]="currentDay"
+      [currentBalance]="currentBalance()" />
 
     <!-- ═══ Modals ═══ -->
     <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="resetAccountForm()">
@@ -746,9 +266,6 @@ export class BankAccount {
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
   protected readonly accountModalRef = viewChild.required<ModalDialog>('accountModal');
-  private readonly _refCard = viewChild<ElementRef<HTMLElement>>('refCard');
-
-  protected readonly refCardHeight = signal<number | null>(null);
 
   private readonly _refresh = signal(0);
   private readonly _refreshAccounts = signal(0);
@@ -769,15 +286,6 @@ export class BankAccount {
     const accs = this.accounts();
     return accs.length > 0 ? accs[0].id : null;
   });
-
-  constructor() {
-    afterNextRender(() => {
-      const el = this._refCard()?.nativeElement;
-      if (!el) return;
-      const ro = new ResizeObserver(([entry]) => this.refCardHeight.set(entry.borderBoxSize[0].blockSize));
-      ro.observe(el);
-    });
-  }
 
   protected readonly filteredEntries = computed(() => {
     const accountId = this.selectedAccountId();
@@ -897,6 +405,10 @@ export class BankAccount {
     // Cycle à cheval sur 2 mois : passé si >= salaryDay OU <= today
     return day >= salary || day <= today;
   }
+
+  // Bound function references for child components (kept stable)
+  protected readonly isExpensePassedFn = (entry: RecurringEntry) => this.isExpensePassed(entry);
+  protected readonly accountNameByIdFn = (id: string | null) => this.accountNameById(id);
 
   protected readonly selectedAccount = computed(() => {
     const id = this.selectedAccountId();
@@ -1062,12 +574,6 @@ export class BankAccount {
     }
     return map;
   });
-
-  protected accountName(id: string | null): string | null {
-    if (!id) return null;
-    if (this.selectedAccountId() !== null) return null; // pas besoin d'afficher si déjà filtré
-    return this.accountMap().get(id) ?? null;
-  }
 
   protected accountNameById(id: string | null): string | null {
     if (!id) return null;
