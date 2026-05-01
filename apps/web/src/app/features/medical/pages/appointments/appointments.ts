@@ -92,23 +92,23 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
                   <div class="flex items-center justify-end gap-1">
                     @if (appt.status === 'scheduled') {
                       <button type="button"
-                              class="rounded-lg border border-border px-2 py-1 text-xs font-medium text-text-muted hover:text-ib-green hover:border-ib-green/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-green"
+                              class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-green hover:border-ib-green/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-green"
                               (click)="updateStatus(appt.id, 'completed')">
                         Compléter
                       </button>
                       <button type="button"
-                              class="rounded-lg border border-border px-2 py-1 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
+                              class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
                               (click)="updateStatus(appt.id, 'cancelled')">
                         Annuler
                       </button>
                     }
                     <button type="button"
-                            class="rounded-lg border border-border px-2 py-1 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                            class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                             (click)="openEditModal(appt)">
                       Modifier
                     </button>
                     <button type="button"
-                            class="rounded-lg border border-border px-2 py-1 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+                            class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                             (click)="deleteAppointment(appt.id)">
                       Supprimer
                     </button>

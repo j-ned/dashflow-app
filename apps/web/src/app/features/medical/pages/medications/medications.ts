@@ -138,17 +138,17 @@ const TYPE_LABELS: Record<string, string> = {
 
           <div class="mt-4 flex gap-2 pt-3 border-t border-border/50">
             <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-purple hover:border-ib-purple/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-purple hover:border-ib-purple/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
                     (click)="openRefillModal(med)">
               Réapprovisionner
             </button>
             <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
                     (click)="openEditModal(med)">
               Modifier
             </button>
             <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                     (click)="deleteMedication(med.id)">
               Supprimer
             </button>

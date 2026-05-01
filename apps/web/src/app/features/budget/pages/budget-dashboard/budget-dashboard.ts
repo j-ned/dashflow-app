@@ -133,13 +133,9 @@ type MemberSummary = {
               <div class="h-2.5 rounded-full bg-hover overflow-hidden">
                 <div class="h-full rounded-full transition duration-500 ease-out"
                      [style.width.%]="pctBudget > 100 ? 100 : pctBudget"
-                     [class.bg-gradient-to-r]="true"
-                     [class.from-ib-green]="pctBudget <= 80"
-                     [class.to-ib-green-70]="pctBudget <= 80"
-                     [class.from-ib-orange]="pctBudget > 80 && pctBudget <= 100"
-                     [class.to-ib-orange-70]="pctBudget > 80 && pctBudget <= 100"
-                     [class.from-ib-red]="pctBudget > 100"
-                     [class.to-ib-red-70]="pctBudget > 100">
+                     [class.bg-ib-green]="pctBudget <= 80"
+                     [class.bg-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                     [class.bg-ib-red]="pctBudget > 100">
                 </div>
               </div>
               <div class="flex items-center gap-4 mt-2 text-[10px] text-text-muted">

@@ -106,14 +106,14 @@ import { Icon } from '@shared/components/icon/icon';
                     <!-- Google Calendar -->
                     @if (googleCalendarUrl(reminder); as gUrl) {
                       <a [href]="gUrl" target="_blank" rel="noopener"
-                         class="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+                         class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
                          title="Ajouter à Google Calendar">
                         <app-icon name="calendar" size="12" /> Google
                       </a>
                     }
                     <!-- .ics download (Apple/Thunderbird/Outlook) -->
                     <button type="button"
-                            class="inline-flex items-center gap-1 rounded-lg border border-border px-2 py-1 text-[10px] font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                            class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
                             title="Télécharger .ics (Apple, Outlook, Thunderbird)"
                             (click)="downloadIcs(reminder)">
                       <app-icon name="download" size="12" /> .ics
@@ -122,7 +122,7 @@ import { Icon } from '@shared/components/icon/icon';
                 </td>
                 <td class="px-5 py-3 text-right">
                   <button type="button"
-                          class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+                          class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                           (click)="deleteReminder(reminder.id)">
                     Supprimer
                   </button>

@@ -154,7 +154,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                   @if (archive.payslipKey) {
                     <button type="button"
                        (click)="openPayslip(archive.id)"
-                       class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan/10 px-3 py-1.5 text-xs font-medium text-ib-cyan hover:bg-ib-cyan/20 transition-colors">
+                       class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan/10 min-h-8 px-3 py-1.5 text-xs font-medium text-ib-cyan hover:bg-ib-cyan/20 transition-colors">
                       <app-icon name="file-text" size="14" />
                       Voir la fiche de paie
                     </button>
@@ -340,6 +340,7 @@ export class SalaryArchives {
     const blob = await lastValueFrom(this.gateway.downloadPayslip(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   protected onFileSelected(event: Event) {

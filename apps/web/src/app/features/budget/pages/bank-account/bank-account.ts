@@ -48,7 +48,7 @@ const PALETTE = [
       <nav class="flex items-center gap-2 flex-wrap">
         @for (account of accounts(); track account.id; let i = $index) {
           <button type="button"
-                  class="inline-flex items-center gap-2 rounded-lg border px-3 py-1.5 text-xs font-medium transition"
+                  class="inline-flex items-center gap-2 rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"
                   [style.border-color]="selectedAccountId() === account.id ? accountColor(i) : 'var(--border)'"
                   [style.background-color]="selectedAccountId() === account.id ? accountColor(i) : 'transparent'"
                   [class.text-canvas]="selectedAccountId() === account.id"
@@ -60,7 +60,7 @@ const PALETTE = [
           </button>
         }
         <button type="button"
-                class="rounded-lg border border-dashed border-border px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
+                class="rounded-lg border border-dashed border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
                 (click)="accountModalRef().open()">
           <app-icon name="settings" size="12" class="inline -mt-0.5" /> Gérer
         </button>
@@ -185,13 +185,9 @@ const PALETTE = [
         <div class="h-2.5 rounded-full bg-hover overflow-hidden">
           <div class="h-full rounded-full transition duration-500 ease-out"
                [style.width.%]="usagePercent() > 100 ? 100 : usagePercent()"
-               [class.bg-gradient-to-r]="true"
-               [class.from-ib-green]="usagePercent() <= 80"
-               [class.to-ib-green-70]="usagePercent() <= 80"
-               [class.from-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
-               [class.to-ib-orange-70]="usagePercent() > 80 && usagePercent() <= 100"
-               [class.from-ib-red]="usagePercent() > 100"
-               [class.to-ib-red-70]="usagePercent() > 100">
+               [class.bg-ib-green]="usagePercent() <= 80"
+               [class.bg-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
+               [class.bg-ib-red]="usagePercent() > 100">
           </div>
         </div>
         <!-- Légende segmentée -->
@@ -212,7 +208,7 @@ const PALETTE = [
           <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-green">Revenus</h3>
         </div>
         <button type="button"
-                class="inline-flex items-center gap-1 rounded-lg bg-ib-green px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
+                class="inline-flex items-center gap-1 rounded-lg bg-ib-green min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
                 (click)="openCreateModal('income')">
           <app-icon name="plus" size="12" /> Revenu
         </button>
@@ -520,7 +516,7 @@ const PALETTE = [
             <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-purple">Virements automatiques</h3>
           </div>
           <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-purple min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
                   (click)="openCreateModal('transfer', 'recurring')">
             <app-icon name="plus" size="12" /> Virement récurrent
           </button>
@@ -606,7 +602,7 @@ const PALETTE = [
             </div>
           </div>
           <button type="button"
-                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
+                  class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
                   (click)="openCreateModal('transfer', 'one_time')">
             <app-icon name="plus" size="12" /> Virement ponctuel
           </button>
@@ -1368,6 +1364,7 @@ export class BankAccount {
     const blob = await lastValueFrom(this.entryGateway.downloadPayslip(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   protected async deletePayslip() {

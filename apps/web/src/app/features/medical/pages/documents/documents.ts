@@ -116,12 +116,12 @@ import { Icon } from '@shared/components/icon/icon';
 
           <div class="flex gap-2 pt-3 border-t border-border/50">
             <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
                     (click)="openEditModal(doc)">
               Modifier
             </button>
             <button type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                     (click)="deleteDoc(doc.id)">
               Supprimer
             </button>
@@ -229,6 +229,7 @@ export class Documents {
     const blob = await lastValueFrom(this.documentGateway.downloadFile(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   protected async uploadFile(documentId: string, event: Event) {

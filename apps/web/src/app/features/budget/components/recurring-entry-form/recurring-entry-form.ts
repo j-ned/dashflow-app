@@ -216,12 +216,12 @@ type RecurringEntryFormShape = {
                 </div>
                 <div class="flex gap-2">
                   <button type="button"
-                          class="rounded border border-border px-2 py-1 text-[10px] text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                          class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
                           (click)="viewPayslip.emit()">
                     Voir
                   </button>
                   <button type="button"
-                          class="rounded border border-border px-2 py-1 text-[10px] text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                          class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
                           (click)="removePayslip.emit()">
                     Supprimer
                   </button>

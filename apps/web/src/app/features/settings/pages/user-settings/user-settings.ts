@@ -335,6 +335,7 @@ type PasswordFormShape = {
               </p>
 
               <div class="flex justify-center">
+                <!-- bg-white intentional: QR scanners require white background regardless of theme -->
                 <img
                   [src]="totpSetup()!.qrCode"
                   alt="QR code 2FA"
