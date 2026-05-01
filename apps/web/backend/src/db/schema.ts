@@ -45,6 +45,7 @@ export const users = pgTable('users', {
   recoveryWrappedKey: text('recovery_wrapped_key'),
   encryptionVersion: integer('encryption_version').notNull().default(0),
   encryptionPassphrase: boolean('encryption_passphrase').notNull().default(false),
+  isDemoAccount: boolean('is_demo_account').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
