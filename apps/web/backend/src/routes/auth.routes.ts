@@ -10,6 +10,7 @@ import { authMiddleware, signToken } from '@middleware/auth';
 import { sendVerificationCode, sendPasswordResetCode } from '../mail/mailer.js';
 import { uploadAvatar, deleteAvatar, getAvatar, avatarKey } from '../storage/s3.js';
 import { validate, registerSchema, verifySchema, loginSchema, forgotPasswordSchema, resetPasswordSchema, updateProfileSchema, updatePasswordSchema, setPasswordSchema, setupEncryptionKeysSchema, encryptionPassphraseSchema, migrateEncryptionSchema } from '../validation.js';
+import { runDemoReset } from '../scripts/seed-demo/index.js';
 import type { AppEnv } from '../types.js';
 
 const auth = new Hono<AppEnv>();
@@ -741,5 +742,21 @@ auth.post(
     return c.json({ token, user: toPublicUser(user), keyMaterial: null });
   },
 );
+
+// ── Demo Reset (auth required, isDemoAccount only) ──
+auth.post('/demo-reset', authMiddleware, async (c) => {
+  const userId = c.get('userId') as string;
+  const [user] = await db.select().from(users).where(eq(users.id, userId)).limit(1);
+  if (!user?.isDemoAccount) {
+    return c.json({ error: 'Forbidden' }, 403);
+  }
+  try {
+    await runDemoReset();
+    return c.json({ ok: true });
+  } catch (err) {
+    console.error('[auth] Demo reset failed', err);
+    return c.json({ error: 'Reset failed' }, 500);
+  }
+});
 
 export default auth;
