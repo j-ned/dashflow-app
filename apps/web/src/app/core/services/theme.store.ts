@@ -1,30 +1,51 @@
-import { Injectable, signal, effect } from '@angular/core';
+import { Injectable, signal, effect, computed } from '@angular/core';
 
-export type Theme = 'dark' | 'light';
+export type ThemePreference = 'system' | 'dark' | 'light';
+export type ResolvedTheme = 'dark' | 'light';
 
 const STORAGE_KEY = 'theme';
+const SYSTEM_QUERY = '(prefers-color-scheme: light)';
+
+function readStoredPreference(): ThemePreference {
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === 'dark' || stored === 'light' || stored === 'system') return stored;
+  return 'system';
+}
 
 @Injectable({ providedIn: 'root' })
 export class ThemeStore {
-  private readonly _theme = signal<Theme>(
-    (localStorage.getItem(STORAGE_KEY) as Theme) || 'dark',
+  private readonly _preference = signal<ThemePreference>(readStoredPreference());
+  private readonly _systemTheme = signal<ResolvedTheme>(
+    window.matchMedia(SYSTEM_QUERY).matches ? 'light' : 'dark',
   );
 
-  readonly theme = this._theme.asReadonly();
-  readonly isDark = () => this._theme() === 'dark';
+  readonly preference = this._preference.asReadonly();
+  readonly resolved = computed<ResolvedTheme>(() => {
+    const pref = this._preference();
+    return pref === 'system' ? this._systemTheme() : pref;
+  });
+  readonly isDark = computed(() => this.resolved() === 'dark');
 
   constructor() {
-    effect(() => {
-      const t = this._theme();
-      document.documentElement.setAttribute('data-theme', t);
+    window.matchMedia(SYSTEM_QUERY).addEventListener('change', e => {
+      this._systemTheme.set(e.matches ? 'light' : 'dark');
     });
 
-    document.documentElement.setAttribute('data-theme', this._theme());
+    effect(() => {
+      document.documentElement.setAttribute('data-theme', this.resolved());
+    });
   }
 
-  toggle() {
-    const next: Theme = this._theme() === 'dark' ? 'light' : 'dark';
-    this._theme.set(next);
-    localStorage.setItem(STORAGE_KEY, next);
+  set(pref: ThemePreference): void {
+    this._preference.set(pref);
+    if (pref === 'system') {
+      localStorage.removeItem(STORAGE_KEY);
+    } else {
+      localStorage.setItem(STORAGE_KEY, pref);
+    }
+  }
+
+  toggle(): void {
+    this.set(this.resolved() === 'dark' ? 'light' : 'dark');
   }
 }
