@@ -19,6 +19,7 @@ export type AuthUser = {
   googleLinked: boolean;
   encryptionVersion: number;
   hasEncryptionPassphrase: boolean;
+  isDemoAccount: boolean;
 };
 
 @Injectable({ providedIn: 'root' })
@@ -52,8 +53,18 @@ export class AuthStore {
   });
   readonly hasPassword = computed(() => this._user()?.hasPassword ?? false);
   readonly encryptionVersion = computed(() => this._user()?.encryptionVersion ?? 0);
-  readonly needsEncryptionSetup = computed(() => this.isAuthenticated() && this.encryptionVersion() === 0);
-  readonly needsUnlock = computed(() => this.isAuthenticated() && this.encryptionVersion() === 1 && !this.crypto.isUnlocked());
+  readonly needsEncryptionSetup = computed(() =>
+    this.isAuthenticated()
+    && this.encryptionVersion() === 0
+    && !this._user()?.isDemoAccount
+  );
+
+  readonly needsUnlock = computed(() =>
+    this.isAuthenticated()
+    && this.encryptionVersion() === 1
+    && !this.crypto.isUnlocked()
+    && !this._user()?.isDemoAccount
+  );
 
   constructor() {
     this.checkSession();
@@ -92,6 +103,21 @@ export class AuthStore {
     await firstValueFrom(
       this.api.post('/auth/register', { email, password, displayName }),
     );
+  }
+
+  async demoLogin(): Promise<void> {
+    this._isLoading.set(true);
+    try {
+      const res = await firstValueFrom(
+        this.api.post<{ token: string; user: AuthUser; keyMaterial: null }>('/auth/demo-login', {}),
+      );
+      this.api.setToken(res.token);
+      this._user.set(res.user);
+      this._isAuthenticated.set(true);
+      this._keyMaterial = null;
+    } finally {
+      this._isLoading.set(false);
+    }
   }
 
   async verifyCode(email: string, code: string): Promise<void> {
