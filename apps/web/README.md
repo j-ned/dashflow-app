@@ -1,5 +1,7 @@
 <div align="center">
 
+**Français** · [English](./README.en.md)
+
 # ⚡ DashFlow
 
 ### Tableau de bord personnel **tout-en-un** — budget & suivi médical familial
@@ -87,6 +89,7 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 - 📊 **Charts SVG** custom — area, donut, bar, **zéro dépendance externe**
 - 🔑 **2FA (TOTP)** — compatible Google Authenticator / Authy
 - 🌙 **Dark mode** optimisé
+- 🌍 **i18n FR/EN** — bascule de langue runtime avec listener `prefers-language`
 
 ---
 
@@ -177,6 +180,7 @@ backend/
 - **Framework** : Angular 21 (zoneless, Signals, standalone components)
 - **Styling** : TailwindCSS v4 (dark-first)
 - **Fonts** : Inter Variable + JetBrains Mono Variable (auto-hébergées)
+- **i18n** : `@jsverse/transloco` (bascule runtime FR/EN)
 - **Tests** : Vitest (unit + component)
 - **Build** : @angular/build avec esbuild
 
@@ -299,6 +303,7 @@ docker run -p 80:80 --env-file .env dashflow
 - [x] Charts SVG custom
 - [x] Command Palette `Ctrl+K`
 - [x] 2FA TOTP
+- [x] i18n FR/EN runtime
 - [ ] Import automatique fichiers bancaires (OFX / CSV)
 - [ ] Export PDF rapports mensuels
 - [ ] PWA offline-first
