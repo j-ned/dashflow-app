@@ -3,7 +3,7 @@ import { RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
 
-const DEMO_URL = 'https://dashflow.j-ned.dev';
+const DEMO_URL = 'https://dashflow.j-ned.dev/auth/register';
 const GITHUB_URL = 'https://github.com/j-ned/dash-flow';
 const PORTFOLIO_URL = 'https://j-ned.dev';
 
