@@ -1,0 +1,29 @@
+{
+  "common": {
+    "search": "Rechercher...",
+    "settings": "Paramètres du compte",
+    "save": "Enregistrer",
+    "cancel": "Annuler",
+    "delete": "Supprimer",
+    "edit": "Modifier",
+    "confirm": "Confirmer",
+    "close": "Fermer",
+    "loading": "Chargement...",
+    "saving": "Enregistrement...",
+    "back": "Retour"
+  },
+  "theme": {
+    "toLight": "Passer en mode clair",
+    "toDark": "Passer en mode sombre"
+  },
+  "locale": {
+    "toEnglish": "Switch to English",
+    "toFrench": "Passer en français",
+    "current": "Français"
+  },
+  "nav": {
+    "budget": "Budget",
+    "medical": "Médical",
+    "settings": "Paramètres"
+  }
+}

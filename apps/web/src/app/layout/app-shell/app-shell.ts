@@ -1,17 +1,19 @@
 import { Component, ChangeDetectionStrategy, inject, viewChild } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { CommandPalette } from '@shared/components/command-palette/command-palette';
 import { ToastContainer } from '@shared/components/toast/toast';
 import { ConfirmDialog } from '@shared/components/confirm-dialog/confirm-dialog';
 import { ThemeStore } from '@core/services/theme.store';
+import { LocaleStore } from '@core/services/locale.store';
 
 @Component({
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-screen overflow-hidden' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Icon, CommandPalette, ToastContainer, ConfirmDialog],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ToastContainer, ConfirmDialog],
   template: `
     <header class="header">
 
@@ -38,20 +40,27 @@ import { ThemeStore } from '@core/services/theme.store';
                 class="header-btn hidden sm:inline-flex"
                 (click)="commandPalette()?.open()">
           <app-icon name="search" size="14" />
-          <span class="text-text-muted">Rechercher...</span>
+          <span class="text-text-muted">{{ 'common.search' | transloco }}</span>
           <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">{{ kbdShortcut }}</kbd>
+        </button>
+
+        <button type="button"
+                class="icon-btn font-mono text-[11px] font-semibold tracking-tight uppercase"
+                (click)="locale.toggle()"
+                [attr.aria-label]="(locale.isFrench() ? 'locale.toEnglish' : 'locale.toFrench') | transloco">
+          {{ locale.isFrench() ? 'EN' : 'FR' }}
         </button>
 
         <button type="button"
                 class="icon-btn"
                 (click)="theme.toggle()"
-                [attr.aria-label]="theme.isDark() ? 'Passer en mode clair' : 'Passer en mode sombre'">
+                [attr.aria-label]="(theme.isDark() ? 'theme.toLight' : 'theme.toDark') | transloco">
           <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" size="18" />
         </button>
 
         <a routerLink="/settings"
            class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-           aria-label="Paramètres du compte">
+           [attr.aria-label]="'common.settings' | transloco">
           @if (auth.avatarUrl()) {
             <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
           } @else {
@@ -186,6 +195,7 @@ import { ThemeStore } from '@core/services/theme.store';
 export class AppShell {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeStore);
+  protected readonly locale = inject(LocaleStore);
   protected readonly commandPalette = viewChild<CommandPalette>('cmdPalette');
   protected readonly kbdShortcut = /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
 }

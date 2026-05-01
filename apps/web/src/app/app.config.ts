@@ -3,9 +3,12 @@ import { registerLocaleData } from '@angular/common';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import localeFr from '@angular/common/locales/fr';
+import localeEn from '@angular/common/locales/en';
 
 registerLocaleData(localeFr);
+registerLocaleData(localeEn);
 import { routes } from './app.routes';
+import { transloco, readInitialLang } from './core/i18n/transloco.config';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { HttpEnvelopeGateway } from '@features/budget/infra/http-envelope.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
@@ -37,7 +40,7 @@ import { HttpSharedAccessGateway } from '@features/medical/infra/http-shared-acc
 
 export const appConfig: ApplicationConfig = {
   providers: [
-    { provide: LOCALE_ID, useValue: 'fr' },
+    { provide: LOCALE_ID, useFactory: readInitialLang },
     provideRouter(
       routes,
       withComponentInputBinding(),
@@ -48,6 +51,7 @@ export const appConfig: ApplicationConfig = {
       }),
     ),
     provideHttpClient(withFetch()),
+    transloco,
 
     { provide: EnvelopeGateway, useClass: HttpEnvelopeGateway },
     { provide: LoanGateway, useClass: HttpLoanGateway },
