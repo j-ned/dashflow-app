@@ -243,27 +243,42 @@ const CRYPTO_SNIPPET = `async function encryptPayload(data, kek) {
             />
           </figure>
 
-          <dl class="mt-12 grid gap-x-10 gap-y-8 border-t border-border pt-10 sm:grid-cols-3">
-            <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Médicaments</dt>
-              <dd class="mt-3 text-base leading-relaxed text-text-primary">
-                Stocks, posologies, jours restants estimés.
-                Alertes automatiques quand un traitement arrive en fin de boîte.
-              </dd>
+          <dl class="mt-12 max-w-3xl space-y-7 border-t border-border pt-10">
+            <div class="flex items-start gap-5">
+              <div class="shrink-0 mt-0.5 flex h-9 w-9 items-center justify-center rounded-md border border-ib-purple/30 bg-ib-purple/10">
+                <app-icon name="pill" [size]="16" class="text-ib-purple" />
+              </div>
+              <div>
+                <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Médicaments</dt>
+                <dd class="mt-1 text-base leading-relaxed text-text-primary">
+                  Stocks, posologies, jours restants estimés. Alertes automatiques
+                  quand un traitement arrive en fin de boîte.
+                </dd>
+              </div>
             </div>
-            <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Documents</dt>
-              <dd class="mt-3 text-base leading-relaxed text-text-primary">
-                Bilans sanguins, certificats, ordonnances.
-                Stockage S3 chiffré côté client avant upload.
-              </dd>
+            <div class="flex items-start gap-5">
+              <div class="shrink-0 mt-0.5 flex h-9 w-9 items-center justify-center rounded-md border border-ib-purple/30 bg-ib-purple/10">
+                <app-icon name="folder" [size]="16" class="text-ib-purple" />
+              </div>
+              <div>
+                <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Documents</dt>
+                <dd class="mt-1 text-base leading-relaxed text-text-primary">
+                  Bilans sanguins, certificats, ordonnances. Stockage S3 chiffré
+                  côté client avant upload.
+                </dd>
+              </div>
             </div>
-            <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Rendez-vous</dt>
-              <dd class="mt-3 text-base leading-relaxed text-text-primary">
-                Planning par patient et par praticien.
-                Historique consultations, motifs, comptes rendus.
-              </dd>
+            <div class="flex items-start gap-5">
+              <div class="shrink-0 mt-0.5 flex h-9 w-9 items-center justify-center rounded-md border border-ib-purple/30 bg-ib-purple/10">
+                <app-icon name="calendar" [size]="16" class="text-ib-purple" />
+              </div>
+              <div>
+                <dt class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Rendez-vous</dt>
+                <dd class="mt-1 text-base leading-relaxed text-text-primary">
+                  Planning par patient et par praticien. Historique consultations,
+                  motifs, comptes rendus.
+                </dd>
+              </div>
             </div>
           </dl>
         </div>
