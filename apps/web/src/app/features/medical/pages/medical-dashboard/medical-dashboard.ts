@@ -39,61 +39,67 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
       <p class="mt-1 text-sm text-text-muted">Suivi médical familial</p>
     </header>
 
-    <!-- KPI cards -->
-    <section aria-labelledby="kpi-heading" class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+    <section aria-labelledby="kpi-heading" class="space-y-4">
       <h3 id="kpi-heading" class="sr-only">Indicateurs clés</h3>
 
-      <a routerLink="../patients" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-purple/10">
-            <app-icon name="users" size="12" class="text-ib-purple" />
-          </div>
-          <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Patients</p>
+      <a routerLink="../medications"
+         class="group flex items-center gap-5 rounded-xl border bg-surface px-5 py-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+         [class.border-ib-red-30]="totalLowStock() > 0"
+         [class.bg-ib-red-5]="totalLowStock() > 0"
+         [class.hover:border-ib-red-50]="totalLowStock() > 0"
+         [class.focus-visible:ring-ib-red]="totalLowStock() > 0"
+         [class.border-border]="totalLowStock() === 0"
+         [class.hover:border-ib-green-30]="totalLowStock() === 0"
+         [class.focus-visible:ring-ib-green]="totalLowStock() === 0">
+        <div class="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg"
+             [class.bg-ib-red-15]="totalLowStock() > 0"
+             [class.bg-ib-green-15]="totalLowStock() === 0">
+          <app-icon name="pill" [size]="22"
+                    [class.text-ib-red]="totalLowStock() > 0"
+                    [class.text-ib-green]="totalLowStock() === 0" />
         </div>
-        <p class="text-lg font-mono font-bold text-ib-purple tracking-tight">{{ patients().length }}</p>
-        <p class="mt-0.5 text-[10px] text-text-muted">membre{{ patients().length > 1 ? 's' : '' }} de la famille</p>
+        <div class="flex-1 min-w-0">
+          <p class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Alertes stock</p>
+          @if (totalLowStock() > 0) {
+            <p class="mt-1 text-xl font-semibold tracking-tight text-ib-red">
+              {{ totalLowStock() }} médicament{{ totalLowStock() > 1 ? 's' : '' }} en stock bas
+            </p>
+          } @else {
+            <p class="mt-1 text-xl font-semibold tracking-tight text-ib-green">
+              Tous les stocks sont OK
+            </p>
+          }
+        </div>
+        <app-icon name="arrow-right" [size]="18"
+                  class="shrink-0 text-text-muted opacity-60 transition group-hover:translate-x-0.5 group-hover:text-text-primary group-hover:opacity-100" />
       </a>
 
-      <a routerLink="../appointments" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-blue/30 hover:shadow-lg hover:shadow-ib-blue/5">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-blue/10">
-            <app-icon name="calendar" size="12" class="text-ib-blue" />
+      <nav class="grid grid-cols-3 gap-3" aria-label="Navigation rapide">
+        <a routerLink="../patients"
+           class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-purple/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <app-icon name="users" [size]="16" class="shrink-0 text-ib-purple" />
+          <div class="min-w-0">
+            <p class="text-xs text-text-muted">Patients</p>
+            <p class="font-mono text-lg font-semibold text-text-primary">{{ patients().length }}</p>
           </div>
-          <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Prochains RDV</p>
-        </div>
-        <p class="text-lg font-mono font-bold text-ib-blue tracking-tight">{{ totalUpcomingAppointments() }}</p>
-        <p class="mt-0.5 text-[10px] text-text-muted">rendez-vous à venir</p>
-      </a>
-
-      <a routerLink="../prescriptions" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-cyan/10">
-            <app-icon name="file-text" size="12" class="text-ib-cyan" />
+        </a>
+        <a routerLink="../appointments"
+           class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-blue/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <app-icon name="calendar" [size]="16" class="shrink-0 text-ib-blue" />
+          <div class="min-w-0">
+            <p class="text-xs text-text-muted">Rendez-vous à venir</p>
+            <p class="font-mono text-lg font-semibold text-text-primary">{{ totalUpcomingAppointments() }}</p>
           </div>
-          <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Ordonnances</p>
-        </div>
-        <p class="text-lg font-mono font-bold text-ib-cyan tracking-tight">{{ totalActivePrescriptions() }}</p>
-        <p class="mt-0.5 text-[10px] text-text-muted">ordonnance{{ totalActivePrescriptions() > 1 ? 's' : '' }} active{{ totalActivePrescriptions() > 1 ? 's' : '' }}</p>
-      </a>
-
-      <a routerLink="../medications" class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
-        <div class="flex items-center gap-1.5 mb-2">
-          <div class="flex h-6 w-6 items-center justify-center rounded-lg" [class.bg-ib-red-10]="totalLowStock() > 0" [class.bg-ib-green-10]="totalLowStock() === 0">
-            <app-icon name="pill" size="12" [class.text-ib-red]="totalLowStock() > 0" [class.text-ib-green]="totalLowStock() === 0" />
+        </a>
+        <a routerLink="../prescriptions"
+           class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-cyan/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
+          <app-icon name="file-text" [size]="16" class="shrink-0 text-ib-cyan" />
+          <div class="min-w-0">
+            <p class="text-xs text-text-muted">Ordonnances actives</p>
+            <p class="font-mono text-lg font-semibold text-text-primary">{{ totalActivePrescriptions() }}</p>
           </div>
-          <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Alertes</p>
-        </div>
-        <p class="text-lg font-mono font-bold tracking-tight"
-           [class.text-ib-green]="totalLowStock() === 0"
-           [class.text-ib-red]="totalLowStock() > 0">
-          {{ totalLowStock() }}
-        </p>
-        @if (totalLowStock() > 0) {
-          <p class="mt-0.5 text-[10px] text-ib-red">{{ totalLowStock() }} stock{{ totalLowStock() > 1 ? 's' : '' }} bas</p>
-        } @else {
-          <p class="mt-0.5 text-[10px] text-ib-green">Tous les stocks OK</p>
-        }
-      </a>
+        </a>
+      </nav>
     </section>
 
     <!-- Patient cards -->
@@ -325,6 +331,7 @@ export class MedicalDashboard {
     const blob = await lastValueFrom(this.prescriptionGateway.downloadDocument(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
   private computeAge(birthDate: string): number {
