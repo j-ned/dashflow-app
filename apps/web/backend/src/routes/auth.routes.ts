@@ -3,6 +3,7 @@ import { eq, and, gt } from 'drizzle-orm';
 import { hash, verify } from 'argon2';
 import * as OTPAuth from 'otpauth';
 import QRCode from 'qrcode';
+import { rateLimiter } from 'hono-rate-limiter';
 import { db } from '@db/client';
 import { users, verificationCodes } from '@db/schema';
 import { authMiddleware, signToken } from '@middleware/auth';
@@ -710,5 +711,35 @@ auth.delete('/me', authMiddleware, async (c) => {
   await db.delete(users).where(eq(users.id, userId));
   return c.json({ message: 'Compte supprime' });
 });
+
+// ── Demo Login (no auth, gated by DEMO_ENABLED env) ──
+auth.post(
+  '/demo-login',
+  rateLimiter({
+    windowMs: 60_000,
+    limit: 10,
+    keyGenerator: (c) => c.req.header('x-forwarded-for') ?? c.req.header('x-real-ip') ?? 'anon',
+  }),
+  async (c) => {
+    if (process.env['DEMO_ENABLED'] !== 'true') {
+      return c.json({ error: 'Demo désactivée' }, 403);
+    }
+
+    const [user] = await db
+      .select()
+      .from(users)
+      .where(eq(users.isDemoAccount, true))
+      .limit(1);
+
+    if (!user) {
+      return c.json({ error: 'Compte démo non initialisé' }, 503);
+    }
+
+    const token = await signToken({ sub: user.id, email: user.email });
+    console.log(`[auth] Demo login from ${c.req.header('x-forwarded-for') ?? 'unknown'}`);
+
+    return c.json({ token, user: toPublicUser(user), keyMaterial: null });
+  },
+);
 
 export default auth;
