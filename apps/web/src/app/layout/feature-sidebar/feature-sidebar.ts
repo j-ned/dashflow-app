@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { SidebarFooter } from '@shared/components/sidebar-footer/sidebar-footer';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 import { SidebarStore } from '@core/services/sidebar.store';
@@ -7,14 +8,14 @@ import { SidebarStore } from '@core/services/sidebar.store';
 export type FeatureSidebarItem = {
   readonly route: string;
   readonly icon: IconName;
-  readonly label: string;
+  readonly labelKey: string;
 };
 
 @Component({
   selector: 'app-feature-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
-  imports: [RouterLink, RouterLinkActive, SidebarFooter, Icon],
+  imports: [RouterLink, RouterLinkActive, SidebarFooter, Icon, TranslocoPipe],
   template: `
     <aside class="sidebar" [class.sidebar--collapsed]="sidebar.collapsed()">
       <div
@@ -26,7 +27,7 @@ export type FeatureSidebarItem = {
           type="button"
           (click)="sidebar.toggle()"
           class="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-hover hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-          [attr.aria-label]="sidebar.collapsed() ? 'Ouvrir le menu' : 'Réduire le menu'"
+          [attr.aria-label]="(sidebar.collapsed() ? 'layout.sidebar.expand' : 'layout.sidebar.collapse') | transloco"
           [attr.aria-expanded]="!sidebar.collapsed()"
         >
           <app-icon
@@ -36,18 +37,18 @@ export type FeatureSidebarItem = {
         </button>
       </div>
 
-      <nav [attr.aria-label]="navLabel()" class="flex-1 px-2 flex flex-col gap-0.5">
+      <nav [attr.aria-label]="navLabelKey() | transloco" class="flex-1 px-2 flex flex-col gap-0.5">
         @for (item of items(); track item.route) {
           <a
             [routerLink]="item.route"
             routerLinkActive="nav-link--active"
             class="nav-link"
             [class.nav-link--collapsed]="sidebar.collapsed()"
-            [attr.title]="sidebar.collapsed() ? item.label : null"
+            [attr.title]="sidebar.collapsed() ? (item.labelKey | transloco) : null"
           >
             <app-icon [name]="item.icon" size="18" class="shrink-0" />
             @if (!sidebar.collapsed()) {
-              <span class="truncate">{{ item.label }}</span>
+              <span class="truncate">{{ item.labelKey | transloco }}</span>
             }
           </a>
         }
@@ -112,7 +113,7 @@ export type FeatureSidebarItem = {
 })
 export class FeatureSidebar {
   readonly items = input.required<readonly FeatureSidebarItem[]>();
-  readonly navLabel = input.required<string>();
+  readonly navLabelKey = input.required<string>();
 
   protected readonly sidebar = inject(SidebarStore);
 }

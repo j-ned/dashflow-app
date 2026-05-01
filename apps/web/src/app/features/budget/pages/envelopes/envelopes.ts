@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Envelope } from '../../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../../domain/models/envelope-transaction.model';
 import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
@@ -44,6 +45,7 @@ const MEMBER_PALETTE = [
     CreditEnvelopeForm,
     Icon,
     FormsModule,
+    TranslocoPipe,
   ],
   host: { class: 'block space-y-6' },
   styles: `
@@ -75,15 +77,15 @@ const MEMBER_PALETTE = [
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Enveloppes</h2>
-        <p class="mt-1 text-sm text-text-muted">Gérez vos enveloppes virtuelles</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.envelope.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'budget.envelope.subtitle' | transloco }}</p>
       </div>
       <button
         type="button"
         class="inline-flex items-center gap-1.5 rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
         (click)="openCreateModal()"
       >
-        <app-icon name="plus" size="14" /> Nouvelle enveloppe
+        <app-icon name="plus" size="14" /> {{ 'budget.envelope.newEnvelope' | transloco }}
       </button>
     </header>
 
@@ -109,7 +111,7 @@ const MEMBER_PALETTE = [
     }
 
     <section
-      aria-label="Liste des enveloppes"
+      [attr.aria-label]="'budget.envelope.listAria' | transloco"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
     >
       @for (envelope of filteredEnvelopes(); track envelope.id) {
@@ -164,13 +166,13 @@ const MEMBER_PALETTE = [
               <div class="mt-3 ml-10">
                 <div class="grid grid-cols-2 gap-2 text-xs mb-2">
                   <div>
-                    <p class="text-[10px] text-text-muted">Objectif</p>
+                    <p class="text-[10px] text-text-muted">{{ 'budget.envelope.objective' | transloco }}</p>
                     <p class="font-mono font-medium text-text-primary">
                       {{ envelope.target | number: '1.2-2' }}&euro;
                     </p>
                   </div>
                   <div>
-                    <p class="text-[10px] text-text-muted">Restant</p>
+                    <p class="text-[10px] text-text-muted">{{ 'budget.envelope.remainingAmount' | transloco }}</p>
                     <p
                       class="font-mono font-medium"
                       [class.text-ib-green]="remaining <= 0"
@@ -181,7 +183,7 @@ const MEMBER_PALETTE = [
                   </div>
                 </div>
                 <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                  <span>Progression</span>
+                  <span>{{ 'budget.envelope.progress' | transloco }}</span>
                   <span class="font-mono font-semibold">{{ pct | number: '1.0-0' }}%</span>
                 </div>
                 <div class="h-2 rounded-full bg-hover overflow-hidden">
@@ -193,7 +195,7 @@ const MEMBER_PALETTE = [
                 </div>
               </div>
             } @else {
-              <p class="text-[11px] text-text-muted mt-2 ml-10">Aucun objectif défini</p>
+              <p class="text-[11px] text-text-muted mt-2 ml-10">{{ 'budget.envelope.noObjective' | transloco }}</p>
             }
           </div>
 
@@ -203,42 +205,42 @@ const MEMBER_PALETTE = [
             <button
               type="button"
               class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
-              [title]="'Créditer/Débiter — ' + envelope.name"
-              [attr.aria-label]="'Créditer ou débiter ' + envelope.name"
+              [title]="'budget.envelope.creditTitle' | transloco: { name: envelope.name }"
+              [attr.aria-label]="'budget.envelope.creditAria' | transloco: { name: envelope.name }"
               (click)="openCreditModal(envelope)"
             >
               <app-icon name="plus-circle" size="14" />
-              <span class="action-label">Créditer</span>
+              <span class="action-label">{{ 'budget.envelope.creditAction' | transloco }}</span>
             </button>
             <button
               type="button"
               class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
-              [title]="'Historique — ' + envelope.name"
-              [attr.aria-label]="'Historique de ' + envelope.name"
+              [title]="'budget.envelope.historyTitle' | transloco: { name: envelope.name }"
+              [attr.aria-label]="'budget.envelope.historyAria' | transloco: { name: envelope.name }"
               (click)="openHistoryModal(envelope)"
             >
               <app-icon name="clock" size="14" />
-              <span class="action-label">Historique</span>
+              <span class="action-label">{{ 'budget.actions.history' | transloco }}</span>
             </button>
             <button
               type="button"
               class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
-              [title]="'Modifier — ' + envelope.name"
-              [attr.aria-label]="'Modifier ' + envelope.name"
+              [title]="'budget.envelope.editTitle' | transloco: { name: envelope.name }"
+              [attr.aria-label]="'budget.envelope.editAria' | transloco: { name: envelope.name }"
               (click)="openEditModal(envelope)"
             >
               <app-icon name="pencil" size="14" />
-              <span class="action-label">Modifier</span>
+              <span class="action-label">{{ 'budget.actions.edit' | transloco }}</span>
             </button>
             <button
               type="button"
               class="action-btn hover:text-ib-red hover:border-ib-red/30"
-              [title]="'Supprimer — ' + envelope.name"
-              [attr.aria-label]="'Supprimer ' + envelope.name"
+              [title]="'budget.envelope.deleteTitle' | transloco: { name: envelope.name }"
+              [attr.aria-label]="'budget.envelope.deleteAria' | transloco: { name: envelope.name }"
               (click)="deleteEnvelope(envelope.id)"
             >
               <app-icon name="trash" size="14" />
-              <span class="action-label">Supprimer</span>
+              <span class="action-label">{{ 'budget.actions.delete' | transloco }}</span>
             </button>
           </div>
         </article>
@@ -247,8 +249,8 @@ const MEMBER_PALETTE = [
           class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface"
         >
           <app-icon name="wallet" size="48" class="text-text-muted/20 mx-auto mb-3" />
-          <p class="text-sm text-text-muted">Aucune enveloppe</p>
-          <p class="text-xs text-text-muted mt-1">Créez votre première enveloppe</p>
+          <p class="text-sm text-text-muted">{{ 'budget.envelope.empty' | transloco }}</p>
+          <p class="text-xs text-text-muted mt-1">{{ 'budget.envelope.emptyHint' | transloco }}</p>
         </div>
       }
     </section>
@@ -258,7 +260,7 @@ const MEMBER_PALETTE = [
         <div class="flex items-center gap-2">
           <app-icon name="wallet" size="16" class="text-ib-cyan" />
           <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan"
-            >Total toutes enveloppes</span
+            >{{ 'budget.envelope.totalAll' | transloco }}</span
           >
         </div>
         <span class="text-xl font-mono font-bold text-ib-cyan"
@@ -267,7 +269,7 @@ const MEMBER_PALETTE = [
       </div>
     </footer>
 
-    <app-modal-dialog #createModal title="Nouvelle enveloppe" (closed)="onModalClosed()">
+    <app-modal-dialog #createModal [title]="'budget.envelope.modal.create' | transloco" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
         <app-envelope-form
           [members]="members()"
@@ -277,7 +279,7 @@ const MEMBER_PALETTE = [
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal title="Modifier l'enveloppe" (closed)="onModalClosed()">
+    <app-modal-dialog #editModal [title]="'budget.envelope.modal.edit' | transloco" (closed)="onModalClosed()">
       @if (editModal.isOpen()) {
         <app-envelope-form
           [initial]="selectedEnvelope()"
@@ -288,7 +290,7 @@ const MEMBER_PALETTE = [
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #creditModal title="Créditer / Débiter" (closed)="onModalClosed()">
+    <app-modal-dialog #creditModal [title]="'budget.envelope.modal.credit' | transloco" (closed)="onModalClosed()">
       @if (creditModal.isOpen()) {
         <app-credit-envelope-form
           [accounts]="accounts()"
@@ -300,14 +302,14 @@ const MEMBER_PALETTE = [
 
     <app-modal-dialog
       #historyModal
-      [title]="'Historique — ' + (selectedEnvelope()?.name ?? '')"
+      [title]="'budget.envelope.modal.history' | transloco: { name: selectedEnvelope()?.name ?? '' }"
       (closed)="onModalClosed()"
     >
       @if (historyModal.isOpen()) {
       <div class="space-y-4">
         <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
           <div class="flex-1">
-            <label for="env-tx-amount" class="text-xs text-text-muted">Montant</label>
+            <label for="env-tx-amount" class="text-xs text-text-muted">{{ 'budget.envelope.modal.amount' | transloco }}</label>
             <input
               id="env-tx-amount"
               type="number"
@@ -317,11 +319,11 @@ const MEMBER_PALETTE = [
               (input)="manualTxAmount.set(+inputValue($event))"
             />
             <p class="text-[10px] mt-0.5 text-text-muted">
-              Positif = crédit, négatif = débit
+              {{ 'budget.envelope.modal.amountHint' | transloco }}
             </p>
           </div>
           <div class="flex-1">
-            <label for="env-tx-date" class="text-xs text-text-muted">Date</label>
+            <label for="env-tx-date" class="text-xs text-text-muted">{{ 'budget.envelope.modal.date' | transloco }}</label>
             <input
               id="env-tx-date"
               type="date"
@@ -335,7 +337,7 @@ const MEMBER_PALETTE = [
             [disabled]="!manualTxAmount() || !manualTxDate()"
             class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
           >
-            Ajouter
+            {{ 'budget.actions.add' | transloco }}
           </button>
         </form>
 
@@ -346,8 +348,8 @@ const MEMBER_PALETTE = [
                 <tr
                   class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
                 >
-                  <th class="px-4 py-2.5">Date</th>
-                  <th class="px-4 py-2.5 text-right">Montant</th>
+                  <th class="px-4 py-2.5">{{ 'budget.envelope.modal.tableDate' | transloco }}</th>
+                  <th class="px-4 py-2.5 text-right">{{ 'budget.envelope.modal.tableAmount' | transloco }}</th>
                 </tr>
               </thead>
               <tbody class="divide-y divide-border/30">
@@ -371,7 +373,7 @@ const MEMBER_PALETTE = [
         } @else {
           <div class="text-center py-8">
             <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">Aucune opération enregistrée</p>
+            <p class="text-sm text-text-muted">{{ 'budget.envelope.modal.noTransactions' | transloco }}</p>
           </div>
         }
       </div>
@@ -392,6 +394,7 @@ export class Envelopes {
   private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -487,9 +490,9 @@ export class Envelopes {
       await lastValueFrom(this.createEnvelopeUC.execute(data));
       this.createModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe créée');
+      this.toaster.success(this._i18n.translate('budget.envelope.messages.created'));
     } catch {
-      this.toaster.error('Erreur lors de la création');
+      this.toaster.error(this._i18n.translate('budget.envelope.messages.createError'));
     }
   }
 
@@ -500,9 +503,9 @@ export class Envelopes {
       await lastValueFrom(this.updateEnvelopeUC.execute(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe modifiée');
+      this.toaster.success(this._i18n.translate('budget.envelope.messages.updated'));
     } catch {
-      this.toaster.error('Erreur lors de la modification');
+      this.toaster.error(this._i18n.translate('budget.envelope.messages.updateError'));
     }
   }
 
@@ -513,11 +516,11 @@ export class Envelopes {
       await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date, envelope));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(event.amount > 0 ? 'Enveloppe créditée' : 'Enveloppe débitée');
+      this.toaster.success(this._i18n.translate(event.amount > 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited'));
       if (event.accountId && event.amount > 0) {
         await lastValueFrom(
           this.createEntryUC.execute({
-            label: `Crédit enveloppe — ${envelope.name}`,
+            label: this._i18n.translate('budget.envelope.messages.envelopeCreditLabel', { name: envelope.name }),
             amount: event.amount,
             type: 'spending',
             accountId: event.accountId,
@@ -526,24 +529,24 @@ export class Envelopes {
             date: event.date || null,
             endDate: null,
             toAccountId: null,
-            category: 'Enveloppe',
+            category: this._i18n.translate('budget.envelope.messages.envelopeCreditCategory'),
             payslipKey: null,
           }),
         );
       }
     } catch {
-      this.toaster.error("Erreur lors de l'operation");
+      this.toaster.error(this._i18n.translate('budget.envelope.messages.creditError'));
     }
   }
 
   protected async deleteEnvelope(id: string) {
-    if (!(await this.confirm.delete('cette enveloppe'))) return;
+    if (!(await this.confirm.delete(this._i18n.translate('budget.envelope.messages.deleteTarget')))) return;
     try {
       await lastValueFrom(this.deleteEnvelopeUC.execute(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Enveloppe supprimée');
+      this.toaster.success(this._i18n.translate('budget.envelope.messages.deleted'));
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('budget.envelope.messages.deleteError'));
     }
   }
 

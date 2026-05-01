@@ -1,12 +1,13 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 
 @Component({
   selector: 'app-sidebar-footer',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RouterLink, RouterLinkActive, Icon],
+  imports: [RouterLink, RouterLinkActive, Icon, TranslocoPipe],
   host: { class: 'block mt-auto' },
   template: `
     <div class="border-t border-border p-2 space-y-0.5">
@@ -30,18 +31,18 @@ import { Icon } from '@shared/components/icon/icon';
         <a routerLink="/settings" routerLinkActive="bg-hover text-text-primary"
            class="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary">
           <app-icon name="settings" size="16" />
-          Paramètres
+          {{ 'layout.sidebar.settings' | transloco }}
         </a>
 
         <button type="button" (click)="onLogout()"
                 class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-ib-red">
           <app-icon name="log-out" size="16" />
-          Déconnexion
+          {{ 'layout.sidebar.logout' | transloco }}
         </button>
       } @else {
         <!-- Collapsed: icons only -->
         <div class="flex flex-col items-center gap-0.5">
-          <div class="mb-1" title="{{ auth.displayName() }}">
+          <div class="mb-1" [title]="auth.displayName()">
             @if (auth.avatarUrl()) {
               <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
             } @else {
@@ -53,13 +54,13 @@ import { Icon } from '@shared/components/icon/icon';
 
           <a routerLink="/settings" routerLinkActive="bg-hover text-text-primary"
              class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
-             title="Paramètres">
+             [title]="'layout.sidebar.settings' | transloco">
             <app-icon name="settings" size="16" />
           </a>
 
           <button type="button" (click)="onLogout()"
                   class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-ib-red"
-                  title="Déconnexion">
+                  [title]="'layout.sidebar.logout' | transloco">
             <app-icon name="log-out" size="16" />
           </button>
         </div>

@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 import { AreaChart, type AreaChartPoint } from '@shared/components/charts/area-chart';
 import { DonutChart, type DonutSlice } from '@shared/components/charts/donut-chart';
@@ -10,15 +11,6 @@ import { GetSalaryArchivesUseCase } from '../../domain/use-cases/get-salary-arch
 import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
 import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
 import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
-
-// ── Helpers ──
-
-const MONTH_LABELS = ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Jun', 'Jul', 'Aoû', 'Sep', 'Oct', 'Nov', 'Déc'];
-
-function formatMonth(m: string): string {
-  const [y, mo] = m.split('-');
-  return `${MONTH_LABELS[Number(mo) - 1]} ${y.slice(2)}`;
-}
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Logement': 'var(--color-ib-blue)',
@@ -30,6 +22,18 @@ const CATEGORY_COLORS: Record<string, string> = {
   'Assurance': 'var(--color-ib-yellow)',
   'Enveloppe': 'var(--color-ib-cyan)',
   'Remboursement': 'var(--color-ib-pink)',
+};
+
+const KNOWN_CATEGORY_KEYS: Record<string, string> = {
+  'Logement': 'budget.analytics.category.housing',
+  'Transport': 'budget.analytics.category.transport',
+  'Alimentation': 'budget.analytics.category.food',
+  'Santé': 'budget.analytics.category.health',
+  'Loisirs': 'budget.analytics.category.leisure',
+  'Abonnement': 'budget.analytics.category.subscription',
+  'Assurance': 'budget.analytics.category.insurance',
+  'Enveloppe': 'budget.analytics.category.envelope',
+  'Remboursement': 'budget.analytics.category.repayment',
 };
 
 function categoryColor(cat: string): string {
@@ -48,16 +52,16 @@ type Forecast = {
 @Component({
   selector: 'app-budget-analytics',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, Icon, AreaChart, DonutChart, BarChart],
+  imports: [DecimalPipe, Icon, AreaChart, DonutChart, BarChart, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header>
-      <h2 class="text-2xl font-bold text-text-primary">Statistiques & Prévisions</h2>
-      <p class="mt-1 text-sm text-text-muted">Analyse de votre budget et projections futures</p>
+      <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.analytics.title' | transloco }}</h2>
+      <p class="mt-1 text-sm text-text-muted">{{ 'budget.analytics.subtitle' | transloco }}</p>
     </header>
 
     <!-- KPI row -->
-    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" aria-label="Indicateurs clés">
+    <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" [attr.aria-label]="'budget.analytics.kpiAriaLabel' | transloco">
       @for (kpi of kpis(); track kpi.label) {
         <div class="rounded-xl border border-border bg-surface p-4">
           <div class="flex items-center gap-2 mb-2">
@@ -83,14 +87,14 @@ type Forecast = {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-green/5 border-b border-border/50">
           <app-icon name="trending-up" size="16" class="text-ib-green" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-green">Solde net — 12 mois</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-green">{{ 'budget.analytics.balanceHistoryTitle' | transloco }}</h3>
         </div>
         <div class="p-4 h-52">
           @if (balanceHistory().length > 1) {
             <app-area-chart [data]="balanceHistory()" color="var(--color-ib-green)" />
           } @else {
             <div class="flex items-center justify-center h-full text-sm text-text-muted">
-              Pas assez de données (min. 2 archives)
+              {{ 'budget.analytics.balanceHistoryEmpty' | transloco }}
             </div>
           }
         </div>
@@ -100,16 +104,16 @@ type Forecast = {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-red/5 border-b border-border/50">
           <app-icon name="receipt" size="16" class="text-ib-red" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Répartition dépenses</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">{{ 'budget.analytics.expenseDistributionTitle' | transloco }}</h3>
         </div>
         <div class="p-5">
           @if (expenseByCategory().length > 0) {
             <app-donut-chart [data]="expenseByCategory()"
                              [centerLabel]="totalExpensesLabel()"
-                             centerSub="par mois" />
+                             [centerSub]="'budget.analytics.perMonth' | transloco" />
           } @else {
             <div class="flex items-center justify-center h-32 text-sm text-text-muted">
-              Aucune dépense catégorisée
+              {{ 'budget.analytics.expenseDistributionEmpty' | transloco }}
             </div>
           }
         </div>
@@ -119,23 +123,23 @@ type Forecast = {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
           <app-icon name="banknote" size="16" class="text-ib-blue" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Revenus vs Dépenses — 6 mois</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.analytics.incomeVsExpensesTitle' | transloco }}</h3>
         </div>
         <div class="p-4 h-52">
           @if (incomeVsExpenses().length > 0) {
             <app-bar-chart [data]="incomeVsExpenses()" />
           } @else {
             <div class="flex items-center justify-center h-full text-sm text-text-muted">
-              Pas assez de données
+              {{ 'budget.analytics.incomeVsExpensesEmpty' | transloco }}
             </div>
           }
         </div>
         <div class="flex items-center justify-center gap-6 pb-3 text-[10px] text-text-muted">
           <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-ib-green"></span> Revenus
+            <span class="w-2.5 h-2.5 rounded-sm bg-ib-green"></span> {{ 'budget.analytics.income' | transloco }}
           </span>
           <span class="flex items-center gap-1.5">
-            <span class="w-2.5 h-2.5 rounded-sm bg-ib-red"></span> Dépenses
+            <span class="w-2.5 h-2.5 rounded-sm bg-ib-red"></span> {{ 'budget.analytics.expenses' | transloco }}
           </span>
         </div>
       </section>
@@ -144,14 +148,14 @@ type Forecast = {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-cyan/5 border-b border-border/50">
           <app-icon name="trending-up" size="16" class="text-ib-cyan" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">Projection enveloppes — 6 mois</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">{{ 'budget.analytics.envelopeForecastTitle' | transloco }}</h3>
         </div>
         <div class="p-4 h-52">
           @if (envelopeForecastChart().length > 1) {
             <app-area-chart [data]="envelopeForecastChart()" color="var(--color-ib-cyan)" />
           } @else {
             <div class="flex items-center justify-center h-full text-sm text-text-muted">
-              Aucune enveloppe avec objectif
+              {{ 'budget.analytics.envelopeForecastEmpty' | transloco }}
             </div>
           }
         </div>
@@ -162,7 +166,7 @@ type Forecast = {
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center gap-2 px-5 py-3 bg-ib-purple/5 border-b border-border/50">
         <app-icon name="trending-up" size="16" class="text-ib-purple" />
-        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-purple">Prévisions</h3>
+        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-purple">{{ 'budget.analytics.forecastsTitle' | transloco }}</h3>
       </div>
       @if (forecasts().length > 0) {
         <div class="divide-y divide-border/30">
@@ -183,8 +187,8 @@ type Forecast = {
       } @else {
         <div class="text-center py-12">
           <app-icon name="trending-up" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Aucune prévision disponible</p>
-          <p class="text-xs text-text-muted mt-1">Ajoutez des enveloppes avec objectif ou des prêts pour voir les projections</p>
+          <p class="text-sm text-text-muted">{{ 'budget.analytics.forecastsEmpty' | transloco }}</p>
+          <p class="text-xs text-text-muted mt-1">{{ 'budget.analytics.forecastsEmptyHint' | transloco }}</p>
         </div>
       }
     </section>
@@ -195,6 +199,22 @@ export class BudgetAnalytics {
   private readonly getEntries = inject(GetRecurringEntriesUseCase);
   private readonly getEnvelopes = inject(GetEnvelopesUseCase);
   private readonly getLoans = inject(GetLoansUseCase);
+  private readonly _i18n = inject(TranslocoService);
+
+  private formatMonth(m: string): string {
+    const [y, mo] = m.split('-');
+    const monthName = this._i18n.translate(`budget.analytics.monthShort.${Number(mo)}`);
+    return `${monthName} ${y.slice(2)}`;
+  }
+
+  private categoryLabel(cat: string): string {
+    const key = KNOWN_CATEGORY_KEYS[cat];
+    return key ? this._i18n.translate(key) : cat;
+  }
+
+  private otherCategoryLabel(): string {
+    return this._i18n.translate('budget.analytics.category.other');
+  }
 
   private readonly allData = toSignal(
     forkJoin({
@@ -261,14 +281,14 @@ export class BudgetAnalytics {
     const otherSpendings = spendings - envCredits - loanPay;
 
     const chargeParts: string[] = [];
-    if (annual > 0) chargeParts.push(`${annual.toFixed(0)}€ annualisé`);
-    if (envCredits > 0) chargeParts.push(`${envCredits.toFixed(0)}€ enveloppes`);
-    if (loanPay > 0) chargeParts.push(`${loanPay.toFixed(0)}€ prêts`);
-    if (otherSpendings > 0) chargeParts.push(`${otherSpendings.toFixed(0)}€ autres`);
+    if (annual > 0) chargeParts.push(this._i18n.translate('budget.analytics.kpi.annualizedShare', { value: annual.toFixed(0) }));
+    if (envCredits > 0) chargeParts.push(this._i18n.translate('budget.analytics.kpi.envelopesShare', { value: envCredits.toFixed(0) }));
+    if (loanPay > 0) chargeParts.push(this._i18n.translate('budget.analytics.kpi.loansShare', { value: loanPay.toFixed(0) }));
+    if (otherSpendings > 0) chargeParts.push(this._i18n.translate('budget.analytics.kpi.otherShare', { value: otherSpendings.toFixed(0) }));
 
     return [
       {
-        label: 'Revenu mensuel',
+        label: this._i18n.translate('budget.analytics.kpi.monthlyIncome'),
         icon: 'trending-up' as const,
         iconBg: 'bg-ib-green/10',
         iconColor: 'text-ib-green',
@@ -277,31 +297,31 @@ export class BudgetAnalytics {
         sub: null,
       },
       {
-        label: 'Charges totales',
+        label: this._i18n.translate('budget.analytics.kpi.totalCharges'),
         icon: 'receipt' as const,
         iconBg: 'bg-ib-red/10',
         iconColor: 'text-ib-red',
         value: totalCharges,
         valueColor: 'text-ib-red',
-        sub: chargeParts.length > 0 ? `dont ${chargeParts.join(', ')}` : null,
+        sub: chargeParts.length > 0 ? this._i18n.translate('budget.analytics.kpi.chargesDetail', { detail: chargeParts.join(', ') }) : null,
       },
       {
-        label: 'Reste à vivre',
+        label: this._i18n.translate('budget.analytics.kpi.disposable'),
         icon: 'wallet' as const,
         iconBg: net >= 0 ? 'bg-ib-green/10' : 'bg-ib-red/10',
         iconColor: net >= 0 ? 'text-ib-green' : 'text-ib-red',
         value: net,
         valueColor: net >= 0 ? 'text-ib-green' : 'text-ib-red',
-        sub: net > 0 ? 'Capacité d\'épargne disponible' : 'Déficit mensuel',
+        sub: net > 0 ? this._i18n.translate('budget.analytics.kpi.savingsCapacity') : this._i18n.translate('budget.analytics.kpi.monthlyDeficit'),
       },
       {
-        label: 'Épargne totale',
+        label: this._i18n.translate('budget.analytics.kpi.totalSavings'),
         icon: 'mail' as const,
         iconBg: 'bg-ib-cyan/10',
         iconColor: 'text-ib-cyan',
         value: this.totalEnvelopeBalance(),
         valueColor: 'text-ib-cyan',
-        sub: `${this.envelopes().length} enveloppes`,
+        sub: this._i18n.translate('budget.analytics.kpi.envelopesCount', { count: this.envelopes().length }),
       },
     ];
   });
@@ -311,7 +331,7 @@ export class BudgetAnalytics {
   protected readonly balanceHistory = computed<AreaChartPoint[]>(() => {
     const arch = this.archives().slice(-12);
     return arch.map(a => ({
-      label: formatMonth(a.month),
+      label: this.formatMonth(a.month),
       value: Number(a.salary) - Number(a.totalExpenses) - Number(a.totalSpendings),
     }));
   });
@@ -331,7 +351,11 @@ export class BudgetAnalytics {
     return [...catMap.entries()]
       .sort((a, b) => b[1] - a[1])
       .slice(0, 8)
-      .map(([label, value]) => ({ label, value, color: categoryColor(label) }));
+      .map(([rawLabel, value]) => ({
+        label: rawLabel === 'Autre' ? this.otherCategoryLabel() : this.categoryLabel(rawLabel),
+        value,
+        color: categoryColor(rawLabel),
+      }));
   });
 
   protected readonly totalExpensesLabel = computed(() => {
@@ -344,7 +368,7 @@ export class BudgetAnalytics {
   protected readonly incomeVsExpenses = computed<BarGroup[]>(() => {
     const arch = this.archives().slice(-6);
     return arch.map(a => ({
-      label: formatMonth(a.month),
+      label: this.formatMonth(a.month),
       bars: [
         { value: Number(a.salary), color: 'var(--color-ib-green)' },
         { value: Number(a.totalExpenses) + Number(a.totalSpendings), color: 'var(--color-ib-red)' },
@@ -364,13 +388,13 @@ export class BudgetAnalytics {
     const monthlyContrib = envCredits > 0 ? envCredits : (totalTarget - totalBalance) / 12;
 
     const now = new Date();
-    const points: AreaChartPoint[] = [{ label: 'Auj.', value: totalBalance }];
+    const points: AreaChartPoint[] = [{ label: this._i18n.translate('budget.analytics.todayLabel'), value: totalBalance }];
 
     for (let i = 1; i <= 6; i++) {
       const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
       const projected = Math.min(totalBalance + monthlyContrib * i, totalTarget);
       points.push({
-        label: MONTH_LABELS[d.getMonth()],
+        label: this._i18n.translate(`budget.analytics.monthShort.${d.getMonth() + 1}`),
         value: projected,
       });
     }
@@ -390,20 +414,23 @@ export class BudgetAnalytics {
 
     if (net > 0) {
       results.push({
-        label: 'Reste à vivre',
+        label: this._i18n.translate('budget.analytics.forecast.remainingTitle'),
         icon: 'trending-up',
         color: 'var(--color-ib-green)',
-        message: `Il vous reste ${net.toFixed(0)}€ après toutes charges, épargne et remboursements`,
-        detail: `Sur 6 mois : +${(net * 6).toFixed(0)}€ | Sur 12 mois : +${(net * 12).toFixed(0)}€`,
+        message: this._i18n.translate('budget.analytics.forecast.remainingMessage', { net: net.toFixed(0) }),
+        detail: this._i18n.translate('budget.analytics.forecast.remainingDetail', {
+          half: (net * 6).toFixed(0),
+          year: (net * 12).toFixed(0),
+        }),
         type: 'balance',
       });
     } else if (net < 0) {
       results.push({
-        label: 'Déficit mensuel',
+        label: this._i18n.translate('budget.analytics.forecast.deficitTitle'),
         icon: 'alert-triangle',
         color: 'var(--color-ib-red)',
-        message: `Vos dépenses dépassent vos revenus de ${Math.abs(net).toFixed(0)}€ par mois`,
-        detail: `Réduction nécessaire : ${Math.abs(net).toFixed(0)}€/mois pour équilibrer le budget`,
+        message: this._i18n.translate('budget.analytics.forecast.deficitMessage', { amount: Math.abs(net).toFixed(0) }),
+        detail: this._i18n.translate('budget.analytics.forecast.deficitDetail', { amount: Math.abs(net).toFixed(0) }),
         type: 'balance',
       });
     }
@@ -421,25 +448,33 @@ export class BudgetAnalytics {
         const months = Math.ceil(remaining / monthlyContrib);
         const targetDate = new Date();
         targetDate.setMonth(targetDate.getMonth() + months);
-        const targetLabel = `${MONTH_LABELS[targetDate.getMonth()]} ${targetDate.getFullYear()}`;
+        const targetLabel = `${this._i18n.translate(`budget.analytics.monthShort.${targetDate.getMonth() + 1}`)} ${targetDate.getFullYear()}`;
 
         results.push({
-          label: `Enveloppe « ${env.name} »`,
+          label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', { name: env.name }),
           icon: 'wallet',
           color: env.color || 'var(--color-ib-cyan)',
           message: months <= 1
-            ? `Objectif atteint le mois prochain !`
-            : `Objectif atteint dans ${months} mois (${targetLabel})`,
-          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — reste ${remaining.toFixed(0)}€ à ~${monthlyContrib.toFixed(0)}€/mois`,
+            ? this._i18n.translate('budget.analytics.forecast.envelopeNextMonth')
+            : this._i18n.translate('budget.analytics.forecast.envelopeIn', { months, date: targetLabel }),
+          detail: this._i18n.translate('budget.analytics.forecast.envelopeDetail', {
+            balance: envBalance.toFixed(0),
+            target: envTarget.toFixed(0),
+            remaining: remaining.toFixed(0),
+            contrib: monthlyContrib.toFixed(0),
+          }),
           type: 'envelope',
         });
       } else {
         results.push({
-          label: `Enveloppe « ${env.name} »`,
+          label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', { name: env.name }),
           icon: 'wallet',
           color: env.color || 'var(--color-ib-cyan)',
-          message: `Reste ${remaining.toFixed(0)}€ pour atteindre l'objectif`,
-          detail: `${envBalance.toFixed(0)}€ / ${envTarget.toFixed(0)}€ — aucun versement récurrent détecté`,
+          message: this._i18n.translate('budget.analytics.forecast.envelopeNoContrib', { remaining: remaining.toFixed(0) }),
+          detail: this._i18n.translate('budget.analytics.forecast.envelopeNoContribDetail', {
+            balance: envBalance.toFixed(0),
+            target: envTarget.toFixed(0),
+          }),
           type: 'envelope',
         });
       }
@@ -458,31 +493,36 @@ export class BudgetAnalytics {
         ? loanPay / Math.max(activeLoans.length, 1)
         : 0;
 
+      const prefix = this._i18n.translate(loan.direction === 'lent' ? 'budget.analytics.forecast.loanPrefixLent' : 'budget.analytics.forecast.loanPrefixBorrowed');
+      const label = this._i18n.translate('budget.analytics.forecast.loanLabel', { prefix, person: loan.person });
+
       if (monthlyPayment > 0) {
         const months = Math.ceil(loanRemaining / monthlyPayment);
         const clearDate = new Date();
         clearDate.setMonth(clearDate.getMonth() + months);
-        const clearLabel = `${MONTH_LABELS[clearDate.getMonth()]} ${clearDate.getFullYear()}`;
-        const direction = loan.direction === 'lent' ? 'Prêt' : 'Dette';
+        const clearLabel = `${this._i18n.translate(`budget.analytics.monthShort.${clearDate.getMonth() + 1}`)} ${clearDate.getFullYear()}`;
 
         results.push({
-          label: `${direction} — ${loan.person}`,
+          label,
           icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
           color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
           message: months <= 1
-            ? `Remboursé le mois prochain !`
-            : `Remboursé dans ${months} mois (${clearLabel})`,
-          detail: `${pct.toFixed(0)}% remboursé — reste ${loanRemaining.toFixed(0)}€ à ~${monthlyPayment.toFixed(0)}€/mois`,
+            ? this._i18n.translate('budget.analytics.forecast.loanNextMonth')
+            : this._i18n.translate('budget.analytics.forecast.loanIn', { months, date: clearLabel }),
+          detail: this._i18n.translate('budget.analytics.forecast.loanDetail', {
+            pct: pct.toFixed(0),
+            remaining: loanRemaining.toFixed(0),
+            payment: monthlyPayment.toFixed(0),
+          }),
           type: 'loan',
         });
       } else {
-        const direction = loan.direction === 'lent' ? 'Prêt' : 'Dette';
         results.push({
-          label: `${direction} — ${loan.person}`,
+          label,
           icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
           color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
-          message: `Reste ${loanRemaining.toFixed(0)}€ à rembourser`,
-          detail: `${pct.toFixed(0)}% remboursé — aucun versement récurrent détecté`,
+          message: this._i18n.translate('budget.analytics.forecast.loanNoPayment', { remaining: loanRemaining.toFixed(0) }),
+          detail: this._i18n.translate('budget.analytics.forecast.loanNoPaymentDetail', { pct: pct.toFixed(0) }),
           type: 'loan',
         });
       }

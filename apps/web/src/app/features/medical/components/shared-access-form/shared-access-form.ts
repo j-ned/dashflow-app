@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, output } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 type SharedAccessFormShape = {
   invitedEmail: FormControl<string>;
@@ -10,34 +11,34 @@ type SharedAccessFormShape = {
 @Component({
   selector: 'app-shared-access-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">Partager l'accès calendrier</legend>
+        <legend class="sr-only">{{ 'medical.sharedAccess.form.legend' | transloco }}</legend>
 
         <div>
           <label for="sa-email" class="form-label">
-            Email <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.sharedAccess.form.email' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="sa-email" type="email" formControlName="invitedEmail" aria-required="true"
                  class="form-input" />
           @if (form.controls.invitedEmail.touched) {
             @if (form.controls.invitedEmail.errors?.['required']) {
-              <small class="error" role="alert">L'email est obligatoire.</small>
+              <small class="error" role="alert">{{ 'medical.sharedAccess.form.emailRequired' | transloco }}</small>
             } @else if (form.controls.invitedEmail.errors?.['email']) {
-              <small class="error" role="alert">Format email invalide.</small>
+              <small class="error" role="alert">{{ 'medical.sharedAccess.form.emailInvalid' | transloco }}</small>
             }
           }
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit bg-ib-purple">
-          Partager
+          {{ 'medical.sharedAccess.form.submit' | transloco }}
         </button>
       </footer>
     </form>

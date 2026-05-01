@@ -3,6 +3,7 @@ import { DecimalPipe, DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { GetSalaryArchivesUseCase } from '../../domain/use-cases/get-salary-archives.use-case';
@@ -15,23 +16,21 @@ import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 
-const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
-
 @Component({
   selector: 'app-salary-archives',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, Icon],
+  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Archives salaires</h2>
-        <p class="mt-1 text-sm text-text-muted">Historique mensuel de vos salaires et dépenses</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.salaryArchive.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'budget.salaryArchive.subtitle' | transloco }}</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
-        <app-icon name="plus" size="14" /> Archiver un mois
+        <app-icon name="plus" size="14" /> {{ 'budget.salaryArchive.archiveMonth' | transloco }}
       </button>
     </header>
 
@@ -58,7 +57,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                 <div class="text-right">
                   <p class="text-lg font-mono font-bold text-ib-green">{{ archive.salary | number:'1.2-2' }}<span class="text-sm ml-0.5">&euro;</span></p>
                   <p class="text-[11px] text-text-muted">
-                    Dépenses : {{ +archive.totalExpenses + +archive.totalSpendings | number:'1.2-2' }}&euro;
+                    {{ 'budget.salaryArchive.expensesLabel' | transloco: { value: (+archive.totalExpenses + +archive.totalSpendings | number:'1.2-2') } }}
                   </p>
                 </div>
                 <div class="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
@@ -80,7 +79,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10">
                         <app-icon name="trending-up" size="12" class="text-ib-green" />
                       </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Salaire</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.kpi.salary' | transloco }}</p>
                     </div>
                     <p class="text-lg font-mono font-bold text-ib-green tracking-tight">{{ archive.salary | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
@@ -89,7 +88,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
                         <app-icon name="receipt" size="12" class="text-ib-red" />
                       </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Charges fixes</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.kpi.fixedCharges' | transloco }}</p>
                     </div>
                     <p class="text-lg font-mono font-bold text-ib-red tracking-tight">{{ archive.totalExpenses | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
@@ -98,7 +97,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow/10">
                         <app-icon name="banknote" size="12" class="text-ib-yellow" />
                       </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Dépenses</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.kpi.spendings' | transloco }}</p>
                     </div>
                     <p class="text-lg font-mono font-bold text-ib-yellow tracking-tight">{{ archive.totalSpendings | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
@@ -113,7 +112,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                                   [class.text-ib-green]="archiveRemaining(archive) >= 0"
                                   [class.text-ib-red]="archiveRemaining(archive) < 0" />
                       </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Reste</p>
+                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.kpi.remaining' | transloco }}</p>
                     </div>
                     <p class="text-lg font-mono font-bold tracking-tight"
                        [class.text-ib-green]="archiveRemaining(archive) >= 0"
@@ -128,7 +127,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                   <div class="rounded-xl border border-border overflow-hidden">
                     <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50">
                       <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                      <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Détail des dépenses</span>
+                      <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">{{ 'budget.salaryArchive.spendingsDetail' | transloco }}</span>
                     </div>
                     <div class="divide-y divide-border/20">
                       @for (s of archive.spendings; track $index) {
@@ -156,15 +155,15 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                        (click)="openPayslip(archive.id)"
                        class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan/10 min-h-8 px-3 py-1.5 text-xs font-medium text-ib-cyan hover:bg-ib-cyan/20 transition-colors">
                       <app-icon name="file-text" size="14" />
-                      Voir la fiche de paie
+                      {{ 'budget.salaryArchive.viewPayslip' | transloco }}
                     </button>
                   } @else {
-                    <span class="text-[11px] text-text-muted">Pas de fiche de paie</span>
+                    <span class="text-[11px] text-text-muted">{{ 'budget.salaryArchive.noPayslip' | transloco }}</span>
                   }
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          [title]="'Supprimer — ' + monthLabel(archive.month)"
-                          [attr.aria-label]="'Supprimer archive ' + monthLabel(archive.month)"
+                          [title]="'budget.salaryArchive.deleteTitle' | transloco: { month: monthLabel(archive.month) }"
+                          [attr.aria-label]="'budget.salaryArchive.deleteAria' | transloco: { month: monthLabel(archive.month) }"
                           (click)="deleteArchive(archive)">
                     <app-icon name="trash" size="14" />
                   </button>
@@ -177,22 +176,22 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
     } @else {
       <div class="text-center py-16 rounded-xl border border-dashed border-border bg-surface">
         <app-icon name="folder" size="48" class="text-text-muted/20 mx-auto mb-4" />
-        <p class="text-sm text-text-muted">Aucune archive pour le moment</p>
-        <p class="text-xs text-text-muted mt-1">Archivez vos mois passés pour garder un historique</p>
+        <p class="text-sm text-text-muted">{{ 'budget.salaryArchive.empty' | transloco }}</p>
+        <p class="text-xs text-text-muted mt-1">{{ 'budget.salaryArchive.emptyHint' | transloco }}</p>
       </div>
     }
 
     <!-- Create modal -->
-    <app-modal-dialog #createModal title="Archiver un mois" (closed)="resetForm()">
+    <app-modal-dialog #createModal [title]="'budget.salaryArchive.modal.title' | transloco" (closed)="resetForm()">
       <form (ngSubmit)="createArchive()" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="arch-month" class="block text-sm font-medium text-text-muted mb-1">Mois <span aria-hidden="true">*</span></label>
+            <label for="arch-month" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.month' | transloco }} <span aria-hidden="true">*</span></label>
             <input id="arch-month" type="month" [ngModel]="formMonth()" (ngModelChange)="formMonth.set($event)" name="month"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
           </div>
           <div>
-            <label for="arch-salary" class="block text-sm font-medium text-text-muted mb-1">Salaire net <span aria-hidden="true">*</span></label>
+            <label for="arch-salary" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.salary' | transloco }} <span aria-hidden="true">*</span></label>
             <input id="arch-salary" type="number" step="0.01" [ngModel]="formSalary()" (ngModelChange)="formSalary.set($event)" name="salary"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" placeholder="0.00" />
           </div>
@@ -200,15 +199,15 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
 
         <div class="grid grid-cols-2 gap-4">
           <div>
-            <label for="arch-expenses" class="block text-sm font-medium text-text-muted mb-1">Charges fixes</label>
+            <label for="arch-expenses" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.fixedCharges' | transloco }}</label>
             <input id="arch-expenses" type="number" step="0.01" [ngModel]="formTotalExpenses()" (ngModelChange)="formTotalExpenses.set($event)" name="totalExpenses"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" placeholder="0.00" />
           </div>
           <div>
-            <label for="arch-account" class="block text-sm font-medium text-text-muted mb-1">Compte</label>
+            <label for="arch-account" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.account' | transloco }}</label>
             <select id="arch-account" [ngModel]="formAccountId()" (ngModelChange)="formAccountId.set($event)" name="accountId"
                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary">
-              <option [ngValue]="null">— Aucun —</option>
+              <option [ngValue]="null">{{ 'budget.salaryArchive.modal.accountNone' | transloco }}</option>
               @for (acc of accounts(); track acc.id) {
                 <option [ngValue]="acc.id">{{ acc.name }}</option>
               }
@@ -220,7 +219,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
           <label class="flex items-center gap-2 text-sm text-text-muted mb-2">
             <input type="checkbox" [ngModel]="useCurrentSpendings()" (ngModelChange)="useCurrentSpendings.set($event)" name="useCurrent"
                    class="rounded border-border" />
-            Importer les dépenses du mois depuis le compte
+            {{ 'budget.salaryArchive.modal.importSpendings' | transloco }}
           </label>
           @if (useCurrentSpendings() && importedSpendings().length > 0) {
             <div class="rounded-xl border border-border/50 bg-canvas overflow-hidden max-h-40 overflow-y-auto">
@@ -233,7 +232,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
                 }
               </div>
               <div class="px-3 py-2 border-t border-border/50 bg-canvas/50 flex justify-between text-xs font-medium">
-                <span class="text-[10px] uppercase tracking-wider text-text-muted">Total</span>
+                <span class="text-[10px] uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.modal.total' | transloco }}</span>
                 <span class="font-mono font-bold text-ib-yellow">{{ importedSpendingsTotal() | number:'1.2-2' }}&euro;</span>
               </div>
             </div>
@@ -241,7 +240,7 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
         </div>
 
         <div>
-          <label for="arch-payslip" class="block text-sm font-medium text-text-muted mb-1">Fiche de paie (PDF/image)</label>
+          <label for="arch-payslip" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.payslip' | transloco }}</label>
           <input id="arch-payslip" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" (change)="onFileSelected($event)"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary file:mr-3 file:rounded-md file:border-0 file:bg-ib-cyan/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-ib-cyan" />
         </div>
@@ -250,11 +249,11 @@ const MONTHS = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet'
           <button type="button"
                   class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
                   (click)="createModalRef().close()">
-            Annuler
+            {{ 'common.cancel' | transloco }}
           </button>
           <button type="submit" [disabled]="!formMonth() || !formSalary()"
                   class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
-            Archiver
+            {{ 'budget.salaryArchive.modal.submit' | transloco }}
           </button>
         </footer>
       </form>
@@ -270,6 +269,7 @@ export class SalaryArchives {
   private readonly gateway = inject(SalaryArchiveGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly createModalRef = viewChild.required<ModalDialog>('createModal');
 
@@ -324,7 +324,8 @@ export class SalaryArchives {
 
   protected monthLabel(month: string): string {
     const [y, m] = month.split('-');
-    return `${MONTHS[Number(m) - 1]} ${y}`;
+    const monthName = this._i18n.translate(`budget.salaryArchive.messages.monthFull.${Number(m)}`);
+    return `${monthName} ${y}`;
   }
 
   protected accountName(id: string | null): string | null {
@@ -372,22 +373,27 @@ export class SalaryArchives {
 
     try {
       await lastValueFrom(this.createArchiveUC.execute(fd));
-      this.toaster.success('Archive créée');
+      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.created'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la création de l\'archive');
+      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.createError'));
     }
   }
 
   protected async deleteArchive(archive: SalaryArchive) {
-    if (!await this.confirm.confirm({ title: 'Supprimer l\'archive', message: `Supprimer l'archive de ${this.monthLabel(archive.month)} ? Cette action est irréversible.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
+    if (!await this.confirm.confirm({
+      title: this._i18n.translate('budget.salaryArchive.messages.deleteConfirmTitle'),
+      message: this._i18n.translate('budget.salaryArchive.messages.deleteConfirmMessage', { month: this.monthLabel(archive.month) }),
+      confirmLabel: this._i18n.translate('budget.actions.delete'),
+      variant: 'danger',
+    })) return;
     try {
       await lastValueFrom(this.deleteArchiveUC.execute(archive.id));
-      this.toaster.success('Archive supprimée');
+      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.deleted'));
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.deleteError'));
     }
   }
 

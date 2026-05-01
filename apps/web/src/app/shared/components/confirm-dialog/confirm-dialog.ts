@@ -9,6 +9,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
+import { TranslocoService } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 
 // ── Types ──
@@ -56,6 +57,7 @@ const VARIANT_STYLES: Record<ConfirmVariant, { icon: string; iconBg: string; btn
 
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
+  private readonly _i18n = inject(TranslocoService);
   readonly _pending = signal<PendingConfirm | null>(null);
 
   confirm(options: ConfirmOptions): Promise<boolean> {
@@ -67,9 +69,9 @@ export class ConfirmService {
   /** Shorthand for delete confirmations */
   delete(entityName: string): Promise<boolean> {
     return this.confirm({
-      title: 'Confirmer la suppression',
-      message: `Supprimer ${entityName} ? Cette action est irréversible.`,
-      confirmLabel: 'Supprimer',
+      title: this._i18n.translate('shared.confirm.deleteTitle'),
+      message: this._i18n.translate('shared.confirm.deleteMessage', { entity: entityName }),
+      confirmLabel: this._i18n.translate('shared.confirm.deleteConfirm'),
       variant: 'danger',
     });
   }
@@ -112,7 +114,7 @@ export class ConfirmService {
             <button type="button"
                     class="rounded-lg px-4 py-2 text-sm font-medium text-text-muted hover:text-text-primary hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                     (click)="answer('cancel')">
-              {{ p.cancelLabel || 'Annuler' }}
+              {{ p.cancelLabel || cancelDefault }}
             </button>
             @if (p.alternativeLabel) {
               <button type="button"
@@ -125,7 +127,7 @@ export class ConfirmService {
                     class="rounded-lg px-4 py-2 text-sm font-medium text-canvas transition-colors focus-visible:outline-none focus-visible:ring-2"
                     [class]="style().btn"
                     (click)="answer('confirm')">
-              {{ p.confirmLabel || 'Confirmer' }}
+              {{ p.confirmLabel || confirmDefault }}
             </button>
           </div>
         </div>
@@ -177,9 +179,16 @@ export class ConfirmService {
 })
 export class ConfirmDialog {
   private readonly service = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   protected readonly pending = this.service._pending;
+  protected get cancelDefault(): string {
+    return this._i18n.translate('common.cancel');
+  }
+  protected get confirmDefault(): string {
+    return this._i18n.translate('common.confirm');
+  }
 
   constructor() {
     effect(() => {

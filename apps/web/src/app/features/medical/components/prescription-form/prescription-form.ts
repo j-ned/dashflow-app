@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, input, output, signal } fro
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Prescription } from '../../domain/models/prescription.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
@@ -24,45 +25,45 @@ export type PrescriptionSubmitData = {
 @Component({
   selector: 'app-prescription-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ initial() ? 'Modifier ordonnance' : 'Nouvelle ordonnance' }}</legend>
+        <legend class="sr-only">{{ (initial() ? 'medical.prescription.form.legendEdit' : 'medical.prescription.form.legendCreate') | transloco }}</legend>
 
         <div>
           <label for="presc-patient" class="form-label">
-            Patient <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.prescription.form.patient' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <select id="presc-patient" formControlName="patientId" aria-required="true"
                   class="form-select">
-            <option value="">-- Sélectionner un patient --</option>
+            <option value="">{{ 'medical.prescription.form.patientPlaceholder' | transloco }}</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
           @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">Le patient est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.prescription.form.patientRequired' | transloco }}</small>
           }
         </div>
 
         <div>
-          <label for="presc-practitioner" class="form-label">Médecin prescripteur</label>
+          <label for="presc-practitioner" class="form-label">{{ 'medical.prescription.form.practitioner' | transloco }}</label>
           <select id="presc-practitioner" formControlName="practitionerId"
                   class="form-select">
-            <option value="">-- Aucun --</option>
+            <option value="">{{ 'medical.prescription.form.practitionerPlaceholder' | transloco }}</option>
             @for (pr of practitioners(); track pr.id) {
-              <option [value]="pr.id">{{ pr.name }} ({{ pr.type }})</option>
+              <option [value]="pr.id">{{ pr.name }} ({{ ('medical.practitioner.types.' + pr.type) | transloco }})</option>
             }
           </select>
         </div>
 
         <div>
-          <label for="presc-appointment" class="form-label">Rendez-vous lié</label>
+          <label for="presc-appointment" class="form-label">{{ 'medical.prescription.form.appointment' | transloco }}</label>
           <select id="presc-appointment" formControlName="appointmentId"
                   class="form-select">
-            <option value="">-- Aucun --</option>
+            <option value="">{{ 'medical.prescription.form.appointmentPlaceholder' | transloco }}</option>
             @for (a of appointments(); track a.id) {
               <option [value]="a.id">{{ a.date }} {{ a.time }}</option>
             }
@@ -72,30 +73,30 @@ export type PrescriptionSubmitData = {
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="presc-issued" class="form-label">
-              Date d'émission <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.prescription.form.issued' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input id="presc-issued" type="date" formControlName="issuedDate" aria-required="true"
                    class="form-input" />
             @if (form.controls.issuedDate.touched && form.controls.issuedDate.errors?.['required']) {
-              <small class="error" role="alert">La date d'émission est obligatoire.</small>
+              <small class="error" role="alert">{{ 'medical.prescription.form.issuedRequired' | transloco }}</small>
             }
           </div>
           <div>
-            <label for="presc-valid" class="form-label">Date de validité</label>
+            <label for="presc-valid" class="form-label">{{ 'medical.prescription.form.validUntil' | transloco }}</label>
             <input id="presc-valid" type="date" formControlName="validUntil"
                    class="form-input" />
           </div>
         </div>
 
         <div>
-          <label for="presc-notes" class="form-label">Notes</label>
+          <label for="presc-notes" class="form-label">{{ 'medical.prescription.form.notes' | transloco }}</label>
           <textarea id="presc-notes" formControlName="notes" rows="3"
                     class="form-input"></textarea>
         </div>
 
         <!-- Drag & drop document -->
         <div>
-          <label class="form-label">Document (PDF, image)</label>
+          <label class="form-label">{{ 'medical.prescription.form.documentLabel' | transloco }}</label>
           <div class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
                [class.border-ib-purple]="isDragging()"
                [class.bg-ib-purple-5]="isDragging()"
@@ -106,29 +107,29 @@ export type PrescriptionSubmitData = {
             @if (selectedFile()) {
               <div class="flex items-center justify-center gap-2">
                 <span class="text-sm text-ib-purple font-medium">{{ selectedFile()!.name }}</span>
-                <span class="text-xs text-text-muted">({{ formatSize(selectedFile()!.size) }})</span>
-                <button type="button" class="text-xs text-ib-red hover:underline" (click)="removeFile()">Retirer</button>
+                <span class="text-xs text-text-muted">{{ 'medical.prescription.form.selectedFileSize' | transloco: { size: formatSize(selectedFile()!.size) } }}</span>
+                <button type="button" class="text-xs text-ib-red hover:underline" (click)="removeFile()">{{ 'medical.prescription.form.removeFile' | transloco }}</button>
               </div>
             } @else {
               <p class="text-sm text-text-muted">
-                Glissez-déposez un fichier ici ou
+                {{ 'medical.prescription.form.dropHere' | transloco }}
                 <label class="text-ib-purple cursor-pointer hover:underline">
-                  parcourir
+                  {{ 'medical.prescription.form.browse' | transloco }}
                   <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp"
                          (change)="onFileSelected($event)" />
                 </label>
               </p>
-              <p class="text-xs text-text-muted mt-1">PDF, JPG, PNG, WEBP — max 10 Mo</p>
+              <p class="text-xs text-text-muted mt-1">{{ 'medical.prescription.form.fileHint' | transloco }}</p>
             }
           </div>
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit bg-ib-purple">
-          {{ initial() ? 'Enregistrer' : 'Créer' }}
+          {{ (initial() ? 'medical.prescription.form.save' : 'medical.prescription.form.create') | transloco }}
         </button>
       </footer>
     </form>
@@ -212,9 +213,9 @@ export class PrescriptionForm {
   }
 
   protected formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} o`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected submitForm() {

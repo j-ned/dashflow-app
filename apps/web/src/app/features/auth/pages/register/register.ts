@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { passwordMatchValidator } from '@shared/validators/form-validators';
@@ -15,14 +16,14 @@ type RegisterFormShape = {
 @Component({
   selector: 'app-register',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [ReactiveFormsModule, RouterLink, Icon, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main class="w-full max-w-2xl">
     <article class="w-full rounded-xl border border-border bg-surface p-10 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
-        <p class="mt-2 text-sm text-text-muted">Créez votre compte</p>
+        <p class="mt-2 text-sm text-text-muted">{{ 'auth.register.subtitle' | transloco }}</p>
       </header>
 
       @if (error()) {
@@ -36,23 +37,23 @@ type RegisterFormShape = {
       @if (step() === 'register') {
         <form [formGroup]="registerForm" (ngSubmit)="submitRegister()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
-          <legend class="sr-only">Informations d'inscription</legend>
+          <legend class="sr-only">{{ 'auth.register.legend' | transloco }}</legend>
           <div>
             <label for="displayName" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Nom d'affichage
+              {{ 'auth.register.displayName' | transloco }}
             </label>
             <input
               type="text"
               id="displayName"
               formControlName="displayName"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="Jean Dupont"
+              [placeholder]="'auth.register.displayNamePlaceholder' | transloco"
             />
           </div>
 
           <div>
             <label for="email" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Email <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.register.email' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input
               type="email"
@@ -60,20 +61,20 @@ type RegisterFormShape = {
               formControlName="email"
               aria-required="true"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="vous@exemple.com"
+              [placeholder]="'auth.register.emailPlaceholder' | transloco"
             />
             @if (registerForm.controls.email.touched) {
               @if (registerForm.controls.email.errors?.['required']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email est obligatoire.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.register.emailRequired' | transloco }}</small>
               } @else if (registerForm.controls.email.errors?.['email']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email doit avoir un format valide.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.register.emailInvalid' | transloco }}</small>
               }
             }
           </div>
 
           <div>
             <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.register.password' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -82,26 +83,26 @@ type RegisterFormShape = {
                 formControlName="password"
                 aria-required="true"
                 class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                placeholder="••••••••"
+                [placeholder]="'auth.register.passwordPlaceholder' | transloco"
               />
               <button type="button" (click)="showPassword.set(!showPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (registerForm.controls.password.touched) {
               @if (registerForm.controls.password.errors?.['required']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.register.passwordRequired' | transloco }}</small>
               } @else if (registerForm.controls.password.errors?.['minlength']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au moins 12 caractères.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.register.passwordMinLength' | transloco }}</small>
               }
             }
           </div>
 
           <div>
             <label for="confirmPassword" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Confirmer le mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.register.confirmPassword' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -110,16 +111,16 @@ type RegisterFormShape = {
                 formControlName="confirmPassword"
                 aria-required="true"
                 class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                placeholder="••••••••"
+                [placeholder]="'auth.register.passwordPlaceholder' | transloco"
               />
               <button type="button" (click)="showConfirm.set(!showConfirm())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showConfirm() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showConfirm() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showConfirm() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (registerForm.controls.confirmPassword.touched && registerForm.errors?.['mismatch']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Les mots de passe ne correspondent pas.</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.register.passwordsMismatch' | transloco }}</small>
             }
           </div>
 
@@ -130,12 +131,12 @@ type RegisterFormShape = {
             [disabled]="registerForm.invalid || loading()"
             class="mt-4 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Inscription...' : "S'inscrire" }}
+            {{ (loading() ? 'auth.register.submitting' : 'auth.register.submit') | transloco }}
           </button>
 
           <div class="relative my-4">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-border"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">ou continuer avec</span></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">{{ 'auth.login.orContinueWith' | transloco }}</span></div>
           </div>
 
           <div class="flex flex-col gap-2">
@@ -152,8 +153,8 @@ type RegisterFormShape = {
           </div>
 
           <p class="mt-4 text-center text-sm text-text-muted">
-            Déjà un compte ?
-            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">Se connecter</a>
+            {{ 'auth.register.alreadyAccount' | transloco }}
+            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">{{ 'auth.register.signIn' | transloco }}</a>
           </p>
         </form>
       }
@@ -162,7 +163,7 @@ type RegisterFormShape = {
         <div class="flex flex-col gap-4">
           <div class="rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
             <p class="text-sm text-text-primary">
-              Un code de vérification a été envoyé à
+              {{ 'auth.register.verifySent' | transloco }}
             </p>
             <p class="mt-1 font-semibold text-text-primary">{{ pendingEmail() }}</p>
           </div>
@@ -170,7 +171,7 @@ type RegisterFormShape = {
           <form (submit)="$event.preventDefault(); submitVerify()" class="flex flex-col gap-4">
             <div>
               <label for="code" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
-                Code de vérification
+                {{ 'auth.register.verifyCodeLabel' | transloco }}
               </label>
               <input
                 #codeInput
@@ -190,7 +191,7 @@ type RegisterFormShape = {
               [disabled]="codeValue().length !== 6 || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Vérification...' : 'Vérifier' }}
+              {{ (loading() ? 'auth.register.verifying' : 'auth.register.verify') | transloco }}
             </button>
           </form>
 
@@ -201,14 +202,14 @@ type RegisterFormShape = {
               [disabled]="resending()"
               class="font-medium text-ib-blue hover:underline disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ resending() ? 'Envoi...' : 'Renvoyer le code' }}
+              {{ (resending() ? 'auth.register.resending' : 'auth.register.resend') | transloco }}
             </button>
             <button
               type="button"
               (click)="backToRegister()"
               class="text-text-muted hover:text-text-primary transition-colors"
             >
-              Modifier l'email
+              {{ 'auth.register.editEmail' | transloco }}
             </button>
           </div>
         </div>
@@ -221,6 +222,7 @@ export class Register {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly showPassword = signal(false);
   protected readonly showConfirm = signal(false);
@@ -270,7 +272,7 @@ export class Register {
       this.step.set('verify');
       this.success.set('');
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, "Erreur lors de l'inscription."));
+      this.error.set(this.extractError(err, this._i18n.translate('auth.register.errors.registerFailed')));
     } finally {
       this.loading.set(false);
     }
@@ -287,7 +289,7 @@ export class Register {
       await this.auth.verifyCode(this.pendingEmail(), code);
       this.router.navigate(['/budget']);
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, 'Code invalide ou expiré.'));
+      this.error.set(this.extractError(err, this._i18n.translate('auth.register.errors.codeInvalid')));
     } finally {
       this.loading.set(false);
     }
@@ -300,9 +302,9 @@ export class Register {
 
     try {
       await this.auth.resendCode(this.pendingEmail());
-      this.success.set('Un nouveau code a été envoyé.');
+      this.success.set(this._i18n.translate('auth.register.success.codeSent'));
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, "Erreur lors de l'envoi du code."));
+      this.error.set(this.extractError(err, this._i18n.translate('auth.register.errors.resendFailed')));
     } finally {
       this.resending.set(false);
     }

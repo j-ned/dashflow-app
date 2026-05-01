@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, effect, input, output } from '@angu
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Patient } from '../../domain/models/patient.model';
 
 type PatientFormShape = {
@@ -14,58 +15,58 @@ type PatientFormShape = {
 @Component({
   selector: 'app-patient-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ initial() ? 'Modifier patient' : 'Nouveau patient' }}</legend>
+        <legend class="sr-only">{{ (initial() ? 'medical.patient.form.legendEdit' : 'medical.patient.form.legendCreate') | transloco }}</legend>
 
         <div>
           <label for="patient-firstName" class="form-label">
-            Prénom <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.firstName' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="patient-firstName" type="text" formControlName="firstName" aria-required="true"
                  class="form-input" />
           @if (form.controls.firstName.touched && form.controls.firstName.errors?.['required']) {
-            <small class="error" role="alert">Le prénom est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.patient.form.firstNameRequired' | transloco }}</small>
           }
         </div>
 
         <div>
           <label for="patient-lastName" class="form-label">
-            Nom <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.lastName' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="patient-lastName" type="text" formControlName="lastName" aria-required="true"
                  class="form-input" />
           @if (form.controls.lastName.touched && form.controls.lastName.errors?.['required']) {
-            <small class="error" role="alert">Le nom est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.patient.form.lastNameRequired' | transloco }}</small>
           }
         </div>
 
         <div>
           <label for="patient-birthDate" class="form-label">
-            Date de naissance <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.birthDate' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="patient-birthDate" type="date" formControlName="birthDate" aria-required="true"
                  class="form-input" />
           @if (form.controls.birthDate.touched && form.controls.birthDate.errors?.['required']) {
-            <small class="error" role="alert">La date de naissance est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.patient.form.birthDateRequired' | transloco }}</small>
           }
         </div>
 
         <div>
-          <label for="patient-notes" class="form-label">Notes</label>
+          <label for="patient-notes" class="form-label">{{ 'medical.patient.form.notes' | transloco }}</label>
           <textarea id="patient-notes" formControlName="notes" rows="3"
                     class="form-input"></textarea>
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit bg-ib-purple">
-          {{ initial() ? 'Enregistrer' : 'Créer' }}
+          {{ (initial() ? 'medical.patient.form.save' : 'medical.patient.form.create') | transloco }}
         </button>
       </footer>
     </form>

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal, viewChild } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../../auth/domain/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Icon } from '@shared/components/icon/icon';
@@ -21,14 +22,14 @@ type PasswordFormShape = {
 @Component({
   selector: 'app-user-settings',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Icon, RecoveryKeyModal],
+  imports: [ReactiveFormsModule, Icon, RecoveryKeyModal, TranslocoPipe],
   host: { class: 'block w-full h-full overflow-y-auto' },
   template: `
     <div class="max-w-5xl mx-auto p-6 pb-12">
     <header class="mb-8 border-b border-border pb-6">
-      <h2 class="text-2xl font-bold text-text-primary tracking-tight">Paramètres du compte</h2>
+      <h2 class="text-2xl font-bold text-text-primary tracking-tight">{{ 'settings.title' | transloco }}</h2>
       <p class="mt-2 text-sm text-text-muted">
-        Gérez votre profil personnel et vos paramètres de sécurité
+        {{ 'settings.subtitle' | transloco }}
       </p>
     </header>
 
@@ -54,9 +55,9 @@ type PasswordFormShape = {
     >
       <div class="px-6 py-5 border-b border-border bg-surface/50">
         <h3 id="profile-heading" class="text-base font-semibold text-text-primary">
-          Profil personnel
+          {{ 'settings.profile.title' | transloco }}
         </h3>
-        <p class="text-sm text-text-muted mt-1">Mettez à jour vos informations publiques.</p>
+        <p class="text-sm text-text-muted mt-1">{{ 'settings.profile.subtitle' | transloco }}</p>
       </div>
       <div class="p-6">
         <div class="flex flex-col sm:flex-row items-start gap-8">
@@ -69,7 +70,7 @@ type PasswordFormShape = {
               @if (avatarPreview() || auth.avatarUrl()) {
                 <img
                   [src]="avatarPreview() || auth.avatarUrl()"
-                  alt="Avatar"
+                  [alt]="'settings.profile.avatarAlt' | transloco"
                   class="w-24 h-24 rounded-full object-cover border-4 border-surface shadow-sm"
                 />
               } @else {
@@ -100,10 +101,10 @@ type PasswordFormShape = {
             class="flex-1 w-full space-y-5"
           >
             <fieldset class="space-y-5">
-            <legend class="sr-only">Profil personnel</legend>
+            <legend class="sr-only">{{ 'settings.profile.legend' | transloco }}</legend>
             <div class="space-y-1.5">
               <label for="display-name" class="text-sm font-medium text-text-primary"
-                >Nom d'affichage</label
+                >{{ 'settings.profile.displayName' | transloco }}</label
               >
               <input
                 id="display-name"
@@ -114,7 +115,7 @@ type PasswordFormShape = {
             </div>
             <div class="space-y-1.5">
               <label for="user-email" class="text-sm font-medium text-text-primary"
-                >Adresse e-mail</label
+                >{{ 'settings.profile.email' | transloco }}</label
               >
               <input
                 id="user-email"
@@ -132,7 +133,7 @@ type PasswordFormShape = {
                 [disabled]="profileForm.pristine || profileSaving()"
                 class="inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
-                {{ profileSaving() ? 'Enregistrement...' : 'Enregistrer' }}
+                {{ (profileSaving() ? 'settings.profile.saving' : 'settings.profile.save') | transloco }}
               </button>
             </div>
           </form>
@@ -150,25 +151,25 @@ type PasswordFormShape = {
       >
         <div class="px-6 py-5 border-b border-border bg-surface/50">
           <h3 id="password-heading" class="text-base font-semibold text-text-primary">
-            Mot de passe
+            {{ 'settings.password.title' | transloco }}
           </h3>
           <p class="text-sm text-text-muted mt-1">
             @if (auth.hasPassword()) {
-              Mettez à jour votre mot de passe de connexion.
+              {{ 'settings.password.subtitleUpdate' | transloco }}
             } @else {
-              Définissez un mot de passe pour vous connecter sans Google.
+              {{ 'settings.password.subtitleSet' | transloco }}
             }
           </p>
         </div>
 
         <form [formGroup]="passwordForm" (ngSubmit)="changePassword()" class="p-6 space-y-5">
           <fieldset class="space-y-5">
-          <legend class="sr-only">{{ auth.hasPassword() ? 'Modifier le mot de passe' : 'Définir un mot de passe' }}</legend>
+          <legend class="sr-only">{{ (auth.hasPassword() ? 'settings.password.legendUpdate' : 'settings.password.legendSet') | transloco }}</legend>
 
           @if (auth.hasPassword()) {
           <div class="space-y-1.5">
             <label for="current-password" class="text-sm font-medium text-text-primary">
-              Mot de passe actuel <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'settings.password.current' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -180,13 +181,13 @@ type PasswordFormShape = {
               />
               <button type="button" (click)="showCurrentPassword.set(!showCurrentPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showCurrentPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showCurrentPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showCurrentPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (passwordForm.controls.currentPassword.touched && passwordForm.controls.currentPassword.errors?.['required']) {
               <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                Le mot de passe actuel est obligatoire.
+                {{ 'settings.password.currentRequired' | transloco }}
               </p>
             }
           </div>
@@ -194,7 +195,7 @@ type PasswordFormShape = {
 
           <div class="space-y-1.5">
             <label for="new-password" class="text-sm font-medium text-text-primary">
-              {{ auth.hasPassword() ? 'Nouveau mot de passe' : 'Mot de passe' }} <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ (auth.hasPassword() ? 'settings.password.new' : 'settings.password.label') | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -206,18 +207,18 @@ type PasswordFormShape = {
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showNewPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showNewPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showNewPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (passwordForm.controls.newPassword.touched) {
               @if (passwordForm.controls.newPassword.errors?.['required']) {
                 <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                  Le mot de passe est obligatoire.
+                  {{ 'settings.password.required' | transloco }}
                 </p>
               } @else if (passwordForm.controls.newPassword.errors?.['minlength']) {
                 <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                  Le mot de passe doit contenir au moins 12 caractères.
+                  {{ 'settings.password.minLength' | transloco }}
                 </p>
               }
             }
@@ -225,7 +226,7 @@ type PasswordFormShape = {
 
           <div class="space-y-1.5">
             <label for="confirm-password" class="text-sm font-medium text-text-primary">
-              Confirmer le mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'settings.password.confirm' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -237,7 +238,7 @@ type PasswordFormShape = {
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showConfirmPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showConfirmPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
@@ -246,7 +247,7 @@ type PasswordFormShape = {
               passwordForm.errors?.['mismatch']
             ) {
               <p class="text-xs text-ib-red font-medium mt-1" role="alert">
-                Les mots de passe ne correspondent pas.
+                {{ 'settings.password.mismatch' | transloco }}
               </p>
             }
           </div>
@@ -259,9 +260,9 @@ type PasswordFormShape = {
               class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
             >
               @if (passwordSaving()) {
-                {{ auth.hasPassword() ? 'Modification...' : 'Définition...' }}
+                {{ (auth.hasPassword() ? 'settings.password.submittingUpdate' : 'settings.password.submittingSet') | transloco }}
               } @else {
-                {{ auth.hasPassword() ? 'Mettre à jour' : 'Définir le mot de passe' }}
+                {{ (auth.hasPassword() ? 'settings.password.submitUpdate' : 'settings.password.submitSet') | transloco }}
               }
             </button>
           </div>
@@ -277,15 +278,15 @@ type PasswordFormShape = {
           <div class="flex items-center justify-between">
             <div>
               <h3 id="2fa-heading" class="text-base font-semibold text-text-primary">
-                Authentification à deux facteurs
+                {{ 'settings.twoFactor.title' | transloco }}
               </h3>
               <p class="text-sm text-text-muted mt-1">
-                Protégez votre compte avec une application TOTP.
+                {{ 'settings.twoFactor.subtitle' | transloco }}
               </p>
             </div>
             @if (auth.totpEnabled()) {
               <span class="inline-flex items-center gap-1.5 rounded-full bg-ib-green/10 px-3 py-1 text-xs font-semibold text-ib-green border border-ib-green/20">
-                Activé
+                {{ 'settings.twoFactor.enabled' | transloco }}
               </span>
             }
           </div>
@@ -296,11 +297,11 @@ type PasswordFormShape = {
             <!-- 2FA is enabled — show disable option -->
             <div class="space-y-4">
               <p class="text-sm text-text-primary">
-                La 2FA est activée sur votre compte. Pour la désactiver, entrez votre mot de passe.
+                {{ 'settings.twoFactor.enabledExplain' | transloco }}
               </p>
               <div class="space-y-1.5">
                 <label for="disable-2fa-password" class="text-sm font-medium text-text-primary">
-                  Mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+                  {{ 'settings.twoFactor.passwordLabel' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -312,7 +313,7 @@ type PasswordFormShape = {
                   />
                   <button type="button" (click)="showDisable2faPassword.set(!showDisable2faPassword())"
                     class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                    [attr.aria-label]="showDisable2faPassword() ? 'Masquer' : 'Afficher'">
+                    [attr.aria-label]="(showDisable2faPassword() ? 'auth.hide' : 'auth.show') | transloco">
                     <app-icon [name]="showDisable2faPassword() ? 'eye-off' : 'eye'" size="18" />
                   </button>
                 </div>
@@ -323,29 +324,28 @@ type PasswordFormShape = {
                 [disabled]="!disablePassword() || totpLoading()"
                 class="w-full inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ totpLoading() ? 'Désactivation...' : 'Désactiver la 2FA' }}
+                {{ (totpLoading() ? 'settings.twoFactor.disabling' : 'settings.twoFactor.disable') | transloco }}
               </button>
             </div>
           } @else if (totpSetup()) {
             <!-- Setup in progress — show QR + verify -->
             <div class="space-y-5">
               <p class="text-sm text-text-primary">
-                Scannez ce QR code avec votre application d'authentification
-                (Google Authenticator, Authy, etc.)
+                {{ 'settings.twoFactor.scanExplain' | transloco }}
               </p>
 
               <div class="flex justify-center">
                 <!-- bg-white intentional: QR scanners require white background regardless of theme -->
                 <img
                   [src]="totpSetup()!.qrCode"
-                  alt="QR code 2FA"
+                  [alt]="'settings.twoFactor.qrAlt' | transloco"
                   class="w-48 h-48 rounded-lg border border-border bg-white p-2"
                 />
               </div>
 
               <details class="text-sm">
                 <summary class="cursor-pointer text-text-muted hover:text-text-primary transition-colors">
-                  Cle manuelle
+                  {{ 'settings.twoFactor.manualKey' | transloco }}
                 </summary>
                 <code class="mt-2 block rounded-lg bg-canvas p-3 text-xs font-mono text-text-primary break-all select-all border border-border">
                   {{ totpSetup()!.secret }}
@@ -354,7 +354,7 @@ type PasswordFormShape = {
 
               <div class="space-y-1.5">
                 <label for="verify-totp" class="text-sm font-medium text-text-primary">
-                  Code de vérification <span aria-hidden="true" class="text-ib-red">*</span>
+                  {{ 'settings.twoFactor.verifyCode' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <input
                   #verifyTotpInput
@@ -376,7 +376,7 @@ type PasswordFormShape = {
                   (click)="totpSetup.set(null)"
                   class="flex-1 inline-flex items-center justify-center rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-muted transition-colors hover:bg-raised"
                 >
-                  Annuler
+                  {{ 'settings.twoFactor.cancel' | transloco }}
                 </button>
                 <button
                   type="button"
@@ -384,7 +384,7 @@ type PasswordFormShape = {
                   [disabled]="totpVerifyCode().length !== 6 || totpLoading()"
                   class="flex-1 inline-flex items-center justify-center rounded-lg px-4 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
                 >
-                  {{ totpLoading() ? 'Vérification...' : 'Activer' }}
+                  {{ (totpLoading() ? 'settings.twoFactor.activating' : 'settings.twoFactor.activate') | transloco }}
                 </button>
               </div>
             </div>
@@ -392,8 +392,7 @@ type PasswordFormShape = {
             <!-- 2FA not enabled — show setup button -->
             <div class="space-y-4">
               <p class="text-sm text-text-muted">
-                Ajoutez une couche de sécurité supplémentaire en activant l'authentification à deux facteurs.
-                Vous aurez besoin d'une application comme Google Authenticator ou Authy.
+                {{ 'settings.twoFactor.setupExplain' | transloco }}
               </p>
               <button
                 type="button"
@@ -401,7 +400,7 @@ type PasswordFormShape = {
                 [disabled]="totpLoading()"
                 class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
               >
-                {{ totpLoading() ? 'Configuration...' : 'Configurer la 2FA' }}
+                {{ (totpLoading() ? 'settings.twoFactor.settingUp' : 'settings.twoFactor.setup') | transloco }}
               </button>
             </div>
           }
@@ -418,19 +417,19 @@ type PasswordFormShape = {
         <div class="flex items-center justify-between">
           <div>
             <h3 id="encryption-heading" class="text-base font-semibold text-text-primary">
-              Chiffrement de bout en bout
+              {{ 'settings.encryption.title' | transloco }}
             </h3>
             <p class="text-sm text-text-muted mt-1">
-              Vos données sont chiffrées localement avant d'être envoyées au serveur.
+              {{ 'settings.encryption.subtitle' | transloco }}
             </p>
           </div>
           @if (auth.encryptionVersion() === 1) {
             <span class="inline-flex items-center gap-1.5 rounded-full bg-ib-green/10 px-3 py-1 text-xs font-semibold text-ib-green border border-ib-green/20">
-              Actif
+              {{ 'settings.encryption.active' | transloco }}
             </span>
           } @else {
             <span class="inline-flex items-center gap-1.5 rounded-full bg-ib-amber/10 px-3 py-1 text-xs font-semibold text-ib-amber border border-ib-amber/20">
-              Non configuré
+              {{ 'settings.encryption.notConfigured' | transloco }}
             </span>
           }
         </div>
@@ -439,14 +438,14 @@ type PasswordFormShape = {
       <div class="p-6 space-y-4">
         @if (auth.encryptionVersion() === 0) {
           <p class="text-sm text-text-muted">
-            Le chiffrement n'est pas encore activé. Activez-le pour protéger vos données.
+            {{ 'settings.encryption.notActiveExplain' | transloco }}
           </p>
           <button
             type="button"
             (click)="goToEncryptionSetup()"
             class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
           >
-            Activer le chiffrement
+            {{ 'settings.encryption.activate' | transloco }}
           </button>
         } @else {
           <div class="flex items-center gap-3 text-sm text-text-primary">
@@ -458,7 +457,7 @@ type PasswordFormShape = {
                 <path d="m9 12 2 2 4-4"/>
               </svg>
             </div>
-            Vos données sont protégées par un chiffrement AES-256-GCM.
+            {{ 'settings.encryption.protectedNote' | transloco }}
           </div>
 
           <button
@@ -467,7 +466,7 @@ type PasswordFormShape = {
             [disabled]="encryptionLoading()"
             class="w-full inline-flex items-center justify-center rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-raised disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ encryptionLoading() ? 'Génération...' : 'Régénérer la clé de récupération' }}
+            {{ (encryptionLoading() ? 'settings.encryption.regenerating' : 'settings.encryption.regenerate') | transloco }}
           </button>
         }
       </div>
@@ -488,15 +487,15 @@ type PasswordFormShape = {
           id="danger-heading"
           class="text-base font-semibold text-ib-red flex items-center gap-2"
         >
-          Zone de danger
+          {{ 'settings.danger.title' | transloco }}
         </h3>
       </div>
       <div class="p-6">
         <p class="text-sm text-text-primary font-medium mb-1">
-          Supprimer le compte de façon définitive
+          {{ 'settings.danger.deleteHeading' | transloco }}
         </p>
         <p class="text-sm text-text-muted mb-5">
-          Cette action est irréversible. Toutes vos données seront définitivement supprimées.
+          {{ 'settings.danger.deleteWarning' | transloco }}
         </p>
 
         <div class="flex flex-col sm:flex-row gap-3">
@@ -515,7 +514,7 @@ type PasswordFormShape = {
             [disabled]="deleteConfirmValue() !== auth.email() || deleting()"
             class="inline-flex shrink-0 items-center justify-center rounded-lg bg-ib-red px-6 py-2.5 text-sm font-medium text-canvas hover:bg-ib-red/90 transition disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red focus-visible:ring-offset-2"
           >
-            {{ deleting() ? 'Suppression...' : 'Supprimer' }}
+            {{ (deleting() ? 'settings.danger.deleting' : 'settings.danger.delete') | transloco }}
           </button>
         </div>
       </div>
@@ -528,6 +527,7 @@ export class UserSettings {
   private readonly crypto = inject(CryptoStore);
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   // Feedback
   protected readonly feedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
@@ -603,10 +603,10 @@ export class UserSettings {
     this.profileSaving.set(true);
     try {
       await this.auth.uploadAvatar(file);
-      this.showFeedback('success', 'Avatar mis à jour.');
+      this.showFeedback('success', this._i18n.translate('settings.profile.feedback.avatarUpdated'));
     } catch {
       this.avatarPreview.set(null);
-      this.showFeedback('error', "Erreur lors de l'upload de l'avatar.");
+      this.showFeedback('error', this._i18n.translate('settings.profile.feedback.avatarFailed'));
     } finally {
       this.profileSaving.set(false);
     }
@@ -617,10 +617,10 @@ export class UserSettings {
     this.profileSaving.set(true);
     try {
       await this.auth.updateProfile({ displayName: this.profileForm.getRawValue().displayName });
-      this.showFeedback('success', 'Profil mis à jour avec succès.');
+      this.showFeedback('success', this._i18n.translate('settings.profile.feedback.updated'));
       this.profileForm.markAsPristine();
     } catch {
-      this.showFeedback('error', 'Erreur lors de la mise à jour du profil.');
+      this.showFeedback('error', this._i18n.translate('settings.profile.feedback.updateFailed'));
     } finally {
       this.profileSaving.set(false);
     }
@@ -634,7 +634,7 @@ export class UserSettings {
 
       if (!this.auth.hasPassword()) {
         await this.auth.setPassword(newPassword);
-        this.showFeedback('success', 'Mot de passe défini avec succès. Vous pouvez maintenant vous connecter avec email + mot de passe.');
+        this.showFeedback('success', this._i18n.translate('settings.password.feedback.set'));
         this.passwordForm.controls.currentPassword.addValidators(Validators.required);
         this.passwordForm.controls.currentPassword.updateValueAndValidity();
       } else if (this.auth.encryptionVersion() === 1) {
@@ -644,21 +644,21 @@ export class UserSettings {
           try {
             await this.auth.unlockWithPassword(currentPassword);
           } catch {
-            this.showFeedback('error', 'Mot de passe actuel incorrect ou données désynchronisées. Déconnectez-vous, puis utilisez « Réparer » sur la page de déverrouillage.');
+            this.showFeedback('error', this._i18n.translate('settings.password.feedback.outOfSync'));
             return;
           }
         }
         await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
-        this.showFeedback('success', 'Mot de passe modifié avec succès.');
+        this.showFeedback('success', this._i18n.translate('settings.password.feedback.updated'));
       } else {
         await this.auth.updatePassword(currentPassword, newPassword);
-        this.showFeedback('success', 'Mot de passe modifié avec succès.');
+        this.showFeedback('success', this._i18n.translate('settings.password.feedback.updated'));
       }
       this.passwordForm.reset();
     } catch {
       this.showFeedback('error', this.auth.hasPassword()
-        ? 'Erreur lors de la modification du mot de passe.'
-        : 'Erreur lors de la définition du mot de passe.');
+        ? this._i18n.translate('settings.password.feedback.updateFailed')
+        : this._i18n.translate('settings.password.feedback.setFailed'));
     } finally {
       this.passwordSaving.set(false);
     }
@@ -672,7 +672,7 @@ export class UserSettings {
       const data = await this.auth.setup2FA();
       this.totpSetup.set(data);
     } catch {
-      this.showFeedback('error', 'Erreur lors de la configuration de la 2FA.');
+      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.setupFailed'));
     } finally {
       this.totpLoading.set(false);
     }
@@ -687,9 +687,9 @@ export class UserSettings {
       await this.auth.verify2FA(code);
       this.totpSetup.set(null);
       this.totpVerifyCode.set('');
-      this.showFeedback('success', 'Authentification à deux facteurs activée.');
+      this.showFeedback('success', this._i18n.translate('settings.twoFactor.feedback.activated'));
     } catch {
-      this.showFeedback('error', 'Code invalide. Réessayez.');
+      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.invalidCode'));
     } finally {
       this.totpLoading.set(false);
     }
@@ -703,9 +703,9 @@ export class UserSettings {
     try {
       await this.auth.disable2FA(password);
       this.disablePassword.set('');
-      this.showFeedback('success', 'Authentification à deux facteurs désactivée.');
+      this.showFeedback('success', this._i18n.translate('settings.twoFactor.feedback.deactivated'));
     } catch {
-      this.showFeedback('error', 'Mot de passe incorrect.');
+      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.wrongPassword'));
     } finally {
       this.totpLoading.set(false);
     }
@@ -717,10 +717,10 @@ export class UserSettings {
     if (this.deleteConfirmValue() !== this.auth.email()) return;
 
     const confirmed = await this.confirm.confirm({
-      title: 'Supprimer votre compte',
-      message: 'Cette action est définitive et irréversible. Toutes vos données, y compris vos données chiffrées, seront définitivement supprimées. Aucune récupération ne sera possible.',
-      confirmLabel: 'Supprimer mon compte',
-      cancelLabel: 'Annuler',
+      title: this._i18n.translate('settings.danger.confirmTitle'),
+      message: this._i18n.translate('settings.danger.confirmMessage'),
+      confirmLabel: this._i18n.translate('settings.danger.confirmDelete'),
+      cancelLabel: this._i18n.translate('common.cancel'),
       variant: 'danger',
     });
     if (!confirmed) return;
@@ -730,7 +730,7 @@ export class UserSettings {
       await this.auth.deleteAccount();
       this.router.navigate(['/auth/login']);
     } catch {
-      this.showFeedback('error', 'Erreur lors de la suppression du compte.');
+      this.showFeedback('error', this._i18n.translate('settings.danger.feedback.deleteFailed'));
       this.deleting.set(false);
     }
   }
@@ -746,7 +746,7 @@ export class UserSettings {
     try {
       const masterKey = this.crypto.getMasterKey();
       if (!masterKey) {
-        this.showFeedback('error', 'Vos données ne sont pas déverrouillées.');
+        this.showFeedback('error', this._i18n.translate('settings.encryption.feedback.locked'));
         return;
       }
 
@@ -757,14 +757,14 @@ export class UserSettings {
       this.settingsRecoveryKey.set(recoveryKey);
       this.recoveryModal()?.open();
     } catch {
-      this.showFeedback('error', 'Erreur lors de la régénération de la clé.');
+      this.showFeedback('error', this._i18n.translate('settings.encryption.feedback.regenFailed'));
     } finally {
       this.encryptionLoading.set(false);
     }
   }
 
   protected onRecoveryKeyRegenerated(): void {
-    this.showFeedback('success', 'Clé de récupération régénérée avec succès.');
+    this.showFeedback('success', this._i18n.translate('settings.encryption.feedback.regenerated'));
   }
 
   private showFeedback(type: 'success' | 'error', message: string) {

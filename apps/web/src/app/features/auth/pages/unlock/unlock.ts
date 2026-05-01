@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 
@@ -22,7 +23,7 @@ type Mode = 'password' | 'recovery' | 'repair';
 @Component({
   selector: 'app-unlock',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule, Icon, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
@@ -38,17 +39,17 @@ type Mode = 'password' | 'recovery' | 'repair';
         </div>
         <h1 class="text-xl font-bold text-text-primary">
           @switch (mode()) {
-            @case ('repair') { Réparer la synchronisation }
-            @default { Déverrouiller vos données }
+            @case ('repair') { {{ 'auth.unlock.repairTitle' | transloco }} }
+            @default { {{ 'auth.unlock.title' | transloco }} }
           }
         </h1>
         <p class="mt-2 text-sm text-text-muted">
           @switch (mode()) {
             @case ('repair') {
-              Votre clé de chiffrement est désynchronisée avec votre mot de passe. Saisissez votre clé de récupération et votre mot de passe actuel pour resynchroniser.
+              {{ 'auth.unlock.repairExplain' | transloco }}
             }
             @default {
-              Vos données sont chiffrées. Saisissez votre mot de passe pour y accéder.
+              {{ 'auth.unlock.explain' | transloco }}
             }
           }
         </p>
@@ -62,10 +63,10 @@ type Mode = 'password' | 'recovery' | 'repair';
         @case ('password') {
           <form [formGroup]="form" (ngSubmit)="unlock()" class="flex flex-col gap-4">
             <fieldset class="flex flex-col gap-4">
-              <legend class="sr-only">Déverrouillage</legend>
+              <legend class="sr-only">{{ 'auth.unlock.legend' | transloco }}</legend>
               <div>
                 <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-                  {{ auth.user()?.hasEncryptionPassphrase ? 'Phrase secrète' : 'Mot de passe' }}
+                  {{ (auth.user()?.hasEncryptionPassphrase ? 'auth.unlock.passphrase' : 'auth.unlock.password') | transloco }}
                   <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <div class="relative">
@@ -75,16 +76,16 @@ type Mode = 'password' | 'recovery' | 'repair';
                     formControlName="password"
                     aria-required="true"
                     class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                    [placeholder]="auth.user()?.hasEncryptionPassphrase ? 'Votre phrase secrète' : 'Votre mot de passe'"
+                    [placeholder]="(auth.user()?.hasEncryptionPassphrase ? 'auth.unlock.passphrasePlaceholder' : 'auth.unlock.passwordPlaceholder') | transloco"
                   />
                   <button type="button" (click)="showPassword.set(!showPassword())"
                     class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                    [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                    [attr.aria-label]="(showPassword() ? 'auth.hide' : 'auth.show') | transloco">
                     <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
                   </button>
                 </div>
                 @if (form.controls.password.touched && form.controls.password.errors?.['required']) {
-                  <small class="mt-1 block text-xs text-ib-red" role="alert">Ce champ est obligatoire.</small>
+                  <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.unlock.fieldRequired' | transloco }}</small>
                 }
               </div>
             </fieldset>
@@ -94,7 +95,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               [disabled]="form.invalid || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
+              {{ (loading() ? 'auth.unlock.submitting' : 'auth.unlock.submit') | transloco }}
             </button>
 
             @if (passwordFailed()) {
@@ -103,7 +104,7 @@ type Mode = 'password' | 'recovery' | 'repair';
                 (click)="setMode('repair')"
                 class="rounded-lg border border-ib-amber/30 bg-ib-amber/10 px-3 py-2 text-sm text-ib-amber hover:bg-ib-amber/15 transition-colors text-center"
               >
-                Réparer la synchronisation avec ma clé de récupération
+                {{ 'auth.unlock.repairCta' | transloco }}
               </button>
             }
 
@@ -112,7 +113,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="setMode('recovery')"
               class="text-sm text-ib-blue hover:underline transition-colors text-center"
             >
-              Utiliser la clé de récupération
+              {{ 'auth.unlock.useRecoveryKey' | transloco }}
             </button>
 
             <button
@@ -120,7 +121,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="logout()"
               class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
             >
-              Se déconnecter
+              {{ 'auth.unlock.logout' | transloco }}
             </button>
           </form>
         }
@@ -128,10 +129,10 @@ type Mode = 'password' | 'recovery' | 'repair';
         @case ('recovery') {
           <form [formGroup]="recoveryForm" (ngSubmit)="unlockWithRecovery()" class="flex flex-col gap-4">
             <fieldset class="flex flex-col gap-4">
-              <legend class="sr-only">Déverrouillage par clé de récupération</legend>
+              <legend class="sr-only">{{ 'auth.unlock.recoveryLegend' | transloco }}</legend>
               <div>
                 <label for="recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
-                  Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
+                  {{ 'auth.unlock.recoveryKey' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <textarea
                   id="recovery-key"
@@ -139,10 +140,10 @@ type Mode = 'password' | 'recovery' | 'repair';
                   aria-required="true"
                   rows="3"
                   class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                  placeholder="Collez votre clé de récupération (64 caractères hex)"
+                  [placeholder]="'auth.unlock.recoveryKeyPlaceholder' | transloco"
                 ></textarea>
                 @if (recoveryForm.controls.recoveryKey.touched && recoveryForm.controls.recoveryKey.errors?.['required']) {
-                  <small class="mt-1 block text-xs text-ib-red" role="alert">La clé de récupération est obligatoire.</small>
+                  <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.unlock.recoveryKeyRequired' | transloco }}</small>
                 }
               </div>
             </fieldset>
@@ -152,7 +153,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               [disabled]="recoveryForm.invalid || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Déverrouillage...' : 'Déverrouiller' }}
+              {{ (loading() ? 'auth.unlock.submitting' : 'auth.unlock.submit') | transloco }}
             </button>
 
             <button
@@ -160,7 +161,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="setMode('password')"
               class="text-sm text-ib-blue hover:underline transition-colors text-center"
             >
-              Retour au mot de passe
+              {{ 'auth.unlock.backToPassword' | transloco }}
             </button>
 
             <button
@@ -168,7 +169,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="logout()"
               class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
             >
-              Se déconnecter
+              {{ 'auth.unlock.logout' | transloco }}
             </button>
           </form>
         }
@@ -176,10 +177,10 @@ type Mode = 'password' | 'recovery' | 'repair';
         @case ('repair') {
           <form [formGroup]="repairForm" (ngSubmit)="repair()" class="flex flex-col gap-4">
             <fieldset class="flex flex-col gap-4">
-              <legend class="sr-only">Resynchronisation par clé de récupération</legend>
+              <legend class="sr-only">{{ 'auth.unlock.repairLegend' | transloco }}</legend>
               <div>
                 <label for="repair-recovery-key" class="mb-1.5 block text-sm font-medium text-text-primary">
-                  Clé de récupération <span aria-hidden="true" class="text-ib-red">*</span>
+                  {{ 'auth.unlock.recoveryKey' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <textarea
                   id="repair-recovery-key"
@@ -187,12 +188,12 @@ type Mode = 'password' | 'recovery' | 'repair';
                   aria-required="true"
                   rows="3"
                   class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary font-mono placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                  placeholder="Collez votre clé de récupération (64 caractères hex)"
+                  [placeholder]="'auth.unlock.recoveryKeyPlaceholder' | transloco"
                 ></textarea>
               </div>
               <div>
                 <label for="repair-password" class="mb-1.5 block text-sm font-medium text-text-primary">
-                  Mot de passe actuel <span aria-hidden="true" class="text-ib-red">*</span>
+                  {{ 'auth.unlock.currentPassword' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
                 </label>
                 <div class="relative">
                   <input
@@ -201,11 +202,11 @@ type Mode = 'password' | 'recovery' | 'repair';
                     formControlName="password"
                     aria-required="true"
                     class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                    placeholder="Le mot de passe avec lequel vous venez de vous connecter"
+                    [placeholder]="'auth.unlock.currentPasswordPlaceholder' | transloco"
                   />
                   <button type="button" (click)="showPassword.set(!showPassword())"
                     class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                    [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                    [attr.aria-label]="(showPassword() ? 'auth.hide' : 'auth.show') | transloco">
                     <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
                   </button>
                 </div>
@@ -217,7 +218,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               [disabled]="repairForm.invalid || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Réparation...' : 'Réparer' }}
+              {{ (loading() ? 'auth.unlock.repairing' : 'auth.unlock.repair') | transloco }}
             </button>
 
             <button
@@ -225,7 +226,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="setMode('password')"
               class="text-sm text-ib-blue hover:underline transition-colors text-center"
             >
-              Retour au mot de passe
+              {{ 'auth.unlock.backToPassword' | transloco }}
             </button>
 
             <button
@@ -233,7 +234,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               (click)="logout()"
               class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
             >
-              Se déconnecter
+              {{ 'auth.unlock.logout' | transloco }}
             </button>
           </form>
         }
@@ -245,6 +246,7 @@ type Mode = 'password' | 'recovery' | 'repair';
 export class Unlock {
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly showPassword = signal(false);
   protected readonly loading = signal(false);
@@ -294,7 +296,7 @@ export class Unlock {
       this.router.navigate(['/budget']);
     } catch {
       this.passwordFailed.set(true);
-      this.error.set('Mot de passe ou phrase secrète incorrect(e).');
+      this.error.set(this._i18n.translate('auth.unlock.errors.wrongPassword'));
     } finally {
       this.loading.set(false);
     }
@@ -311,7 +313,7 @@ export class Unlock {
       await this.auth.unlockWithRecovery(recoveryKey.replace(/\s/g, ''));
       this.router.navigate(['/budget']);
     } catch {
-      this.error.set('Clé de récupération invalide.');
+      this.error.set(this._i18n.translate('auth.unlock.errors.invalidRecoveryKey'));
     } finally {
       this.loading.set(false);
     }
@@ -328,7 +330,7 @@ export class Unlock {
       await this.auth.repairWithRecovery(recoveryKey.replace(/\s/g, ''), password);
       this.router.navigate(['/budget']);
     } catch {
-      this.error.set('Clé de récupération invalide ou erreur de resynchronisation.');
+      this.error.set(this._i18n.translate('auth.unlock.errors.repairFailed'));
     } finally {
       this.loading.set(false);
     }

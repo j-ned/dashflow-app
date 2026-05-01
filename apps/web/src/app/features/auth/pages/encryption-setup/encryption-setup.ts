@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { encryptEntity } from '@core/services/crypto/entity-crypto';
@@ -43,7 +44,7 @@ const API_PATHS: Record<string, string> = {
 @Component({
   selector: 'app-encryption-setup',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RecoveryKeyModal, EncryptionPassphraseModal],
+  imports: [RecoveryKeyModal, EncryptionPassphraseModal, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
@@ -56,9 +57,9 @@ const API_PATHS: Record<string, string> = {
             <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
           </svg>
         </div>
-        <h1 class="text-xl font-bold text-text-primary">Chiffrement de bout en bout</h1>
+        <h1 class="text-xl font-bold text-text-primary">{{ 'auth.encryptionSetup.title' | transloco }}</h1>
         <p class="mt-2 text-sm text-text-muted">
-          Vos données seront chiffrées localement. Seul vous pourrez y accéder.
+          {{ 'auth.encryptionSetup.subtitle' | transloco }}
         </p>
       </header>
 
@@ -70,10 +71,9 @@ const API_PATHS: Record<string, string> = {
         @switch (step()) {
           @case ('init') {
             <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
-              <p class="text-sm font-medium text-ib-amber">Attention</p>
+              <p class="text-sm font-medium text-ib-amber">{{ 'auth.encryptionSetup.warningTitle' | transloco }}</p>
               <p class="mt-1 text-sm text-text-primary">
-                Si vous perdez votre mot de passe ET votre clé de récupération,
-                vos données seront définitivement perdues. Il n'existe aucun moyen de les récupérer.
+                {{ 'auth.encryptionSetup.warningBody' | transloco }}
               </p>
             </div>
 
@@ -83,7 +83,7 @@ const API_PATHS: Record<string, string> = {
               [disabled]="loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Préparation...' : 'Activer le chiffrement' }}
+              {{ (loading() ? 'auth.encryptionSetup.preparing' : 'auth.encryptionSetup.activate') | transloco }}
             </button>
           }
 
@@ -107,13 +107,13 @@ const API_PATHS: Record<string, string> = {
                   <polyline points="20 6 9 17 4 12"/>
                 </svg>
               </div>
-              <p class="text-sm font-medium text-text-primary">Chiffrement activé avec succès !</p>
+              <p class="text-sm font-medium text-text-primary">{{ 'auth.encryptionSetup.doneTitle' | transloco }}</p>
               <button
                 type="button"
                 (click)="goToDashboard()"
                 class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90"
               >
-                Accéder au tableau de bord
+                {{ 'auth.encryptionSetup.goToDashboard' | transloco }}
               </button>
             </div>
           }
@@ -139,6 +139,7 @@ export class EncryptionSetup {
   private readonly cryptoStore = inject(CryptoStore);
   private readonly api = inject(ApiClient);
   private readonly router = inject(Router);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly recoveryModal = viewChild.required(RecoveryKeyModal);
   private readonly passphraseModal = viewChild.required(EncryptionPassphraseModal);
@@ -148,9 +149,13 @@ export class EncryptionSetup {
   protected readonly error = signal('');
   protected readonly recoveryKey = signal('');
   protected readonly progress = signal(0);
-  protected readonly progressMessage = signal('Préparation...');
+  protected readonly progressMessage = signal('');
 
   private _password = '';
+
+  constructor() {
+    this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.preparing'));
+  }
 
   protected async startSetup(): Promise<void> {
     const user = this.auth.user();
@@ -166,7 +171,7 @@ export class EncryptionSetup {
     this.error.set('');
 
     try {
-      const password = prompt('Confirmez votre mot de passe pour activer le chiffrement :');
+      const password = prompt(this._i18n.translate('auth.encryptionSetup.confirmPasswordPrompt'));
       if (!password) {
         this.loading.set(false);
         return;
@@ -179,7 +184,7 @@ export class EncryptionSetup {
       this.recoveryModal().open();
     } catch (e) {
       console.error('Encryption setup error:', e);
-      this.error.set('Erreur lors de la préparation du chiffrement.');
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.prepareFailed'));
       this.loading.set(false);
     }
   }
@@ -206,7 +211,7 @@ export class EncryptionSetup {
       this.recoveryModal().open();
     } catch (e) {
       console.error('Passphrase encryption setup error:', e);
-      this.error.set('Erreur lors de la configuration de la passphrase.');
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.passphraseFailed'));
       this.loading.set(false);
     }
   }
@@ -227,7 +232,7 @@ export class EncryptionSetup {
 
       const masterKey = this.cryptoStore.getMasterKey();
       if (!masterKey) {
-        this.error.set('Impossible de déverrouiller le chiffrement.');
+        this.error.set(this._i18n.translate('auth.encryptionSetup.errors.unlockFailed'));
         this.step.set('init');
         return;
       }
@@ -239,7 +244,7 @@ export class EncryptionSetup {
       const total = tableNames.length;
 
       for (const tableName of tableNames) {
-        this.progressMessage.set(`Chiffrement: ${tableName}...`);
+        this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.encryptingTable', { table: tableName }));
         this.progress.set(Math.round((completed / total) * 100));
 
         try {
@@ -260,7 +265,7 @@ export class EncryptionSetup {
         completed++;
       }
 
-      this.progressMessage.set('Envoi des données chiffrées...');
+      this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.sendingEncrypted'));
       this.progress.set(90);
 
       await this.auth.migrateEncryption(encryptedData);
@@ -270,7 +275,7 @@ export class EncryptionSetup {
     } catch (e) {
       console.error('Migration error:', e);
       this.step.set('init');
-      this.error.set('Erreur lors de la migration des données. Réessayez.');
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.migrationFailed'));
     }
   }
 

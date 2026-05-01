@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntryType } from '../../../domain/models/recurring-entry.model';
 
 export type BankTimelineEvent = {
@@ -16,14 +17,14 @@ export type BankTimelineEvent = {
 @Component({
   selector: 'app-bank-timeline',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, Icon],
+  imports: [DecimalPipe, Icon, TranslocoPipe],
   host: { class: 'block' },
   template: `
     @if (timelineEvents().length > 0) {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
           <app-icon name="calendar" size="16" class="text-ib-blue" />
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-blue">Timeline du mois</h3>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.bankAccount.timeline.title' | transloco }}</h3>
         </div>
         <div class="px-5 py-4">
           <div class="relative">
@@ -71,7 +72,7 @@ export type BankTimelineEvent = {
             <div class="relative flex items-center gap-3 py-1.5 pl-9 mt-1">
               <div class="absolute left-1.5 h-4 w-4 rounded-full bg-ib-cyan/20 border-2 border-ib-cyan"></div>
               <span class="text-[11px] font-mono font-bold w-5 text-ib-cyan shrink-0">{{ currentDay() }}</span>
-              <span class="text-[11px] font-semibold text-ib-cyan uppercase tracking-wider">Aujourd'hui</span>
+              <span class="text-[11px] font-semibold text-ib-cyan uppercase tracking-wider">{{ 'budget.bankAccount.timeline.today' | transloco }}</span>
               <span class="text-[13px] font-mono font-bold text-ib-cyan shrink-0">{{ currentBalance() | number:'1.2-2' }}&euro;</span>
             </div>
           </div>

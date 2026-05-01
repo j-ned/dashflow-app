@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { AuthStore } from '../../domain/auth.store';
@@ -21,14 +22,14 @@ type ResetFormShape = {
 @Component({
   selector: 'app-forgot-password',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [ReactiveFormsModule, RouterLink, Icon, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
     <article class="w-full max-w-sm rounded-xl border border-border bg-surface p-8 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
-        <p class="mt-2 text-sm text-text-muted">Réinitialisation du mot de passe</p>
+        <p class="mt-2 text-sm text-text-muted">{{ 'auth.forgot.subtitle' | transloco }}</p>
       </header>
 
       @if (error()) {
@@ -42,10 +43,10 @@ type ResetFormShape = {
       @if (step() === 'email') {
         <form [formGroup]="emailForm" (ngSubmit)="submitEmail()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
-          <legend class="sr-only">Adresse email</legend>
+          <legend class="sr-only">{{ 'auth.forgot.emailLegend' | transloco }}</legend>
           <div>
             <label for="email" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Email <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.forgot.email' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input
               type="email"
@@ -53,13 +54,13 @@ type ResetFormShape = {
               formControlName="email"
               aria-required="true"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="vous@exemple.com"
+              [placeholder]="'auth.forgot.emailPlaceholder' | transloco"
             />
             @if (emailForm.controls.email.touched) {
               @if (emailForm.controls.email.errors?.['required']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email est obligatoire.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.forgot.emailRequired' | transloco }}</small>
               } @else if (emailForm.controls.email.errors?.['email']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email doit avoir un format valide.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.forgot.emailInvalid' | transloco }}</small>
               }
             }
           </div>
@@ -71,11 +72,11 @@ type ResetFormShape = {
             [disabled]="emailForm.invalid || loading()"
             class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Envoi...' : 'Envoyer le code' }}
+            {{ (loading() ? 'auth.forgot.sending' : 'auth.forgot.sendCode') | transloco }}
           </button>
 
           <p class="mt-4 text-center text-sm text-text-muted">
-            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">Retour à la connexion</a>
+            <a routerLink="/auth/login" class="font-medium text-ib-blue hover:underline">{{ 'auth.forgot.backToLogin' | transloco }}</a>
           </p>
         </form>
       }
@@ -83,16 +84,16 @@ type ResetFormShape = {
       @if (step() === 'reset') {
         <div class="mb-4 rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
           <p class="text-sm text-text-primary">
-            Un code a été envoyé à <strong>{{ pendingEmail() }}</strong>
+            {{ 'auth.forgot.codeSentTo' | transloco }} <strong>{{ pendingEmail() }}</strong>
           </p>
         </div>
 
         <form [formGroup]="resetForm" (ngSubmit)="submitReset()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
-          <legend class="sr-only">Réinitialisation du mot de passe</legend>
+          <legend class="sr-only">{{ 'auth.forgot.resetLegend' | transloco }}</legend>
           <div>
             <label for="code" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
-              Code de réinitialisation
+              {{ 'auth.forgot.codeLabel' | transloco }}
             </label>
             <input
               id="code"
@@ -109,7 +110,7 @@ type ResetFormShape = {
 
           <div>
             <label for="newPassword" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Nouveau mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.forgot.newPassword' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -118,22 +119,22 @@ type ResetFormShape = {
                 formControlName="newPassword"
                 aria-required="true"
                 class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                placeholder="••••••••"
+                [placeholder]="'auth.forgot.passwordPlaceholder' | transloco"
               />
               <button type="button" (click)="showNewPassword.set(!showNewPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showNewPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showNewPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showNewPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (resetForm.controls.newPassword.touched && resetForm.controls.newPassword.errors?.['minlength']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 6 caractères.</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.forgot.passwordMinLength' | transloco }}</small>
             }
           </div>
 
           <div>
             <label for="confirmPassword" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Confirmer le mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.forgot.confirmPassword' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -142,11 +143,11 @@ type ResetFormShape = {
                 formControlName="confirmPassword"
                 aria-required="true"
                 class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                placeholder="••••••••"
+                [placeholder]="'auth.forgot.passwordPlaceholder' | transloco"
               />
               <button type="button" (click)="showConfirmPassword.set(!showConfirmPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showConfirmPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showConfirmPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showConfirmPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
@@ -154,7 +155,7 @@ type ResetFormShape = {
               (resetForm.controls.newPassword.touched || resetForm.controls.confirmPassword.touched) &&
               resetForm.errors?.['mismatch']
             ) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">Les mots de passe ne correspondent pas.</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.forgot.passwordsMismatch' | transloco }}</small>
             }
           </div>
           </fieldset>
@@ -164,7 +165,7 @@ type ResetFormShape = {
             [disabled]="resetForm.invalid || loading()"
             class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Réinitialisation...' : 'Réinitialiser le mot de passe' }}
+            {{ (loading() ? 'auth.forgot.submitting' : 'auth.forgot.submit') | transloco }}
           </button>
 
           <div class="mt-2 flex justify-between text-sm">
@@ -174,14 +175,14 @@ type ResetFormShape = {
               [disabled]="loading()"
               class="text-text-muted hover:text-text-primary transition-colors"
             >
-              Renvoyer le code
+              {{ 'auth.forgot.resend' | transloco }}
             </button>
             <button
               type="button"
               (click)="backToEmail()"
               class="text-text-muted hover:text-text-primary transition-colors"
             >
-              Modifier l'email
+              {{ 'auth.forgot.editEmail' | transloco }}
             </button>
           </div>
         </form>
@@ -190,21 +191,21 @@ type ResetFormShape = {
       @if (step() === 'recovery') {
         <div class="flex flex-col gap-4">
           <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
-            <p class="text-sm font-medium text-ib-amber">Données chiffrées détectées</p>
+            <p class="text-sm font-medium text-ib-amber">{{ 'auth.forgot.encryptedDetected' | transloco }}</p>
             <p class="mt-1 text-sm text-text-primary">
-              Vos données étaient chiffrées. Avez-vous votre clé de récupération ?
+              {{ 'auth.forgot.encryptedExplain' | transloco }}
             </p>
           </div>
 
           <div>
             <label for="recoveryKey" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Clé de récupération (64 caractères hex)
+              {{ 'auth.forgot.recoveryKeyLabel' | transloco }}
             </label>
             <textarea
               id="recoveryKey"
               rows="3"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm font-mono text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="Collez votre clé de récupération ici..."
+              [placeholder]="'auth.forgot.recoveryKeyPlaceholder' | transloco"
               (input)="onRecoveryKeyInput($event)"
             ></textarea>
           </div>
@@ -215,12 +216,12 @@ type ResetFormShape = {
             [disabled]="recoveryKeyValue().length !== 64 || loading()"
             class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Récupération...' : 'Récupérer mes données' }}
+            {{ (loading() ? 'auth.forgot.recovering' : 'auth.forgot.recover') | transloco }}
           </button>
 
           <div class="relative my-2">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-border"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">ou</span></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">{{ 'auth.forgot.or' | transloco }}</span></div>
           </div>
 
           <button
@@ -228,11 +229,11 @@ type ResetFormShape = {
             (click)="skipRecovery()"
             class="w-full rounded-lg border border-ib-red/30 bg-ib-red/5 px-4 py-2.5 text-sm font-medium text-ib-red hover:bg-ib-red/10 transition-colors"
           >
-            Continuer sans clé (données perdues)
+            {{ 'auth.forgot.skip' | transloco }}
           </button>
 
           <p class="text-xs text-text-muted text-center">
-            Sans clé de récupération, toutes vos données chiffrées seront définitivement perdues.
+            {{ 'auth.forgot.skipWarning' | transloco }}
           </p>
         </div>
       }
@@ -245,13 +246,13 @@ type ResetFormShape = {
             </svg>
           </div>
           <p class="text-center text-sm text-text-primary">
-            Votre mot de passe a été réinitialisé avec succès.
+            {{ 'auth.forgot.doneMessage' | transloco }}
           </p>
           <a
             routerLink="/auth/login"
             class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-center text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
           >
-            Se connecter
+            {{ 'auth.forgot.doneSignIn' | transloco }}
           </a>
         </div>
       }
@@ -263,6 +264,7 @@ export class ForgotPassword {
   private readonly auth = inject(AuthStore);
   private readonly cryptoStore = inject(CryptoStore);
   private readonly api = inject(ApiClient);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly showNewPassword = signal(false);
   protected readonly showConfirmPassword = signal(false);
@@ -316,7 +318,7 @@ export class ForgotPassword {
       this.pendingEmail.set(email);
       this.step.set('reset');
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, 'Une erreur est survenue. Veuillez réessayer.'));
+      this.error.set(this.extractError(err, this._i18n.translate('auth.forgot.errors.generic')));
     } finally {
       this.loading.set(false);
     }
@@ -348,7 +350,7 @@ export class ForgotPassword {
         this.step.set('done');
       }
     } catch {
-      this.error.set('Code invalide ou expiré. Veuillez réessayer.');
+      this.error.set(this._i18n.translate('auth.forgot.errors.codeInvalid'));
     } finally {
       this.loading.set(false);
     }
@@ -361,9 +363,9 @@ export class ForgotPassword {
 
     try {
       await this.auth.forgotPassword(this.pendingEmail());
-      this.success.set('Un nouveau code a été envoyé.');
+      this.success.set(this._i18n.translate('auth.forgot.success.codeResent'));
     } catch (err: unknown) {
-      this.error.set(this.extractError(err, 'Erreur lors du renvoi du code.'));
+      this.error.set(this.extractError(err, this._i18n.translate('auth.forgot.errors.resendFailed')));
     } finally {
       this.loading.set(false);
     }
@@ -386,7 +388,7 @@ export class ForgotPassword {
     try {
       const keyMaterial = this.auth.getKeyMaterial();
       if (!keyMaterial?.recoveryWrappedKey) {
-        this.error.set('Aucune clé de récupération trouvée sur le serveur.');
+        this.error.set(this._i18n.translate('auth.forgot.errors.noRecoveryKey'));
         return;
       }
 
@@ -413,14 +415,14 @@ export class ForgotPassword {
       await this.auth.logout();
       this.step.set('done');
     } catch {
-      this.error.set('Clé de récupération invalide.');
+      this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
     } finally {
       this.loading.set(false);
     }
   }
 
   protected async skipRecovery(): Promise<void> {
-    if (!confirm('Êtes-vous sûr ? Toutes vos données chiffrées seront définitivement perdues.')) return;
+    if (!confirm(this._i18n.translate('auth.forgot.skipConfirm'))) return;
 
     this.loading.set(true);
     this.error.set('');
@@ -430,7 +432,7 @@ export class ForgotPassword {
       await this.auth.logout();
       this.step.set('done');
     } catch {
-      this.error.set('Erreur lors de la suppression des données.');
+      this.error.set(this._i18n.translate('auth.forgot.errors.wipeFailed'));
     } finally {
       this.loading.set(false);
     }

@@ -1,11 +1,12 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-bank-kpi-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, Icon],
+  imports: [DecimalPipe, Icon, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <section class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
@@ -24,14 +25,14 @@ import { Icon } from '@shared/components/icon/icon';
                       [class.text-ib-cyan]="currentBalance() >= 0"
                       [class.text-ib-red]="currentBalance() < 0" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde actuel</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.balance' | transloco }}</p>
         </div>
         <p class="text-2xl font-mono font-bold tracking-tight"
            [class.text-ib-cyan]="currentBalance() >= 0"
            [class.text-ib-red]="currentBalance() < 0">
           {{ currentBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
         </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">au {{ today() }}</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ 'budget.bankAccount.kpi.balanceAt' | transloco: { date: today() } }}</p>
       </div>
 
       <!-- Revenus -->
@@ -40,7 +41,7 @@ import { Icon } from '@shared/components/icon/icon';
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-green/10">
             <app-icon name="trending-up" size="14" class="text-ib-green" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Revenus</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.income' | transloco }}</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-green tracking-tight">{{ totalIncome() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
         <p class="mt-1.5 text-[11px] text-text-muted truncate">{{ incomesLabel() }}</p>
@@ -52,7 +53,7 @@ import { Icon } from '@shared/components/icon/icon';
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-red/10">
             <app-icon name="receipt" size="14" class="text-ib-red" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Prélèvements</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.directDebits' | transloco }}</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-red tracking-tight">{{ totalMonthlyExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
         <p class="mt-1.5 text-[11px] text-text-muted">{{ monthlyExpensesLabel() }}</p>
@@ -64,10 +65,10 @@ import { Icon } from '@shared/components/icon/icon';
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10">
             <app-icon name="calendar" size="14" class="text-ib-orange" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Annuels</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.annual' | transloco }}</p>
         </div>
-        <p class="text-2xl font-mono font-bold text-ib-orange tracking-tight">{{ totalAnnualExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;/an</span></p>
-        <p class="mt-1.5 text-[11px] text-text-muted">soit ~{{ monthlyAnnualExpenses() | number:'1.2-2' }}&euro;/mois</p>
+        <p class="text-2xl font-mono font-bold text-ib-orange tracking-tight">{{ totalAnnualExpenses() | number:'1.2-2' }}<span class="text-base ml-0.5">{{ 'budget.bankAccount.expenses.annualSuffix' | transloco }}</span></p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ 'budget.bankAccount.kpi.annualMonthly' | transloco: { value: (monthlyAnnualExpenses() | number:'1.2-2') } }}</p>
       </div>
 
       <!-- Dépenses du mois -->
@@ -76,7 +77,7 @@ import { Icon } from '@shared/components/icon/icon';
           <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-yellow/10">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Dépenses</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.spending' | transloco }}</p>
         </div>
         <p class="text-2xl font-mono font-bold text-ib-yellow tracking-tight">{{ totalMonthSpendings() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span></p>
         <p class="mt-1.5 text-[11px] text-text-muted">{{ monthSpendingsLabel() }}</p>
@@ -97,14 +98,14 @@ import { Icon } from '@shared/components/icon/icon';
                       [class.text-ib-green]="endOfMonthBalance() >= 0"
                       [class.text-ib-red]="endOfMonthBalance() < 0" />
           </div>
-          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Solde fin de cycle</p>
+          <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.bankAccount.kpi.endOfCycle' | transloco }}</p>
         </div>
         <p class="text-2xl font-mono font-bold tracking-tight"
            [class.text-ib-green]="endOfMonthBalance() >= 0"
            [class.text-ib-red]="endOfMonthBalance() < 0">
           {{ endOfMonthBalance() | number:'1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
         </p>
-        <p class="mt-1.5 text-[11px] text-text-muted">après toutes charges du cycle</p>
+        <p class="mt-1.5 text-[11px] text-text-muted">{{ 'budget.bankAccount.kpi.endOfCycleSub' | transloco }}</p>
       </div>
     </section>
   `,

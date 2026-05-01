@@ -3,6 +3,7 @@ import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { lastValueFrom } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
 import { Prescription } from '../../domain/models/prescription.model';
@@ -31,16 +32,16 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
 @Component({
   selector: 'app-medical-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, RouterLink, MedicationStockBar, Icon],
+  imports: [DatePipe, RouterLink, MedicationStockBar, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header>
-      <h2 class="text-2xl font-bold text-text-primary">Vue globale</h2>
-      <p class="mt-1 text-sm text-text-muted">Suivi médical familial</p>
+      <h2 class="text-2xl font-bold text-text-primary">{{ 'medical.dashboard.title' | transloco }}</h2>
+      <p class="mt-1 text-sm text-text-muted">{{ 'medical.dashboard.subtitle' | transloco }}</p>
     </header>
 
     <section aria-labelledby="kpi-heading" class="space-y-4">
-      <h3 id="kpi-heading" class="sr-only">Indicateurs clés</h3>
+      <h3 id="kpi-heading" class="sr-only">{{ 'medical.dashboard.kpiHeading' | transloco }}</h3>
 
       <a routerLink="../medications"
          class="group flex items-center gap-5 rounded-xl border bg-surface px-5 py-4 transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
@@ -59,14 +60,18 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                     [class.text-ib-green]="totalLowStock() === 0" />
         </div>
         <div class="flex-1 min-w-0">
-          <p class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">Alertes stock</p>
+          <p class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">{{ 'medical.dashboard.stockAlertsLabel' | transloco }}</p>
           @if (totalLowStock() > 0) {
             <p class="mt-1 text-xl font-semibold tracking-tight text-ib-red">
-              {{ totalLowStock() }} médicament{{ totalLowStock() > 1 ? 's' : '' }} en stock bas
+              @if (totalLowStock() === 1) {
+                {{ 'medical.dashboard.lowStockSummaryOne' | transloco: { count: totalLowStock() } }}
+              } @else {
+                {{ 'medical.dashboard.lowStockSummaryMany' | transloco: { count: totalLowStock() } }}
+              }
             </p>
           } @else {
             <p class="mt-1 text-xl font-semibold tracking-tight text-ib-green">
-              Tous les stocks sont OK
+              {{ 'medical.dashboard.allStocksOk' | transloco }}
             </p>
           }
         </div>
@@ -74,12 +79,12 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                   class="shrink-0 text-text-muted opacity-60 transition group-hover:translate-x-0.5 group-hover:text-text-primary group-hover:opacity-100" />
       </a>
 
-      <nav class="grid grid-cols-3 gap-3" aria-label="Navigation rapide">
+      <nav class="grid grid-cols-3 gap-3" [attr.aria-label]="'medical.dashboard.quickNavLabel' | transloco">
         <a routerLink="../patients"
            class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-purple/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
           <app-icon name="users" [size]="16" class="shrink-0 text-ib-purple" />
           <div class="min-w-0">
-            <p class="text-xs text-text-muted">Patients</p>
+            <p class="text-xs text-text-muted">{{ 'medical.dashboard.patients' | transloco }}</p>
             <p class="font-mono text-lg font-semibold text-text-primary">{{ patients().length }}</p>
           </div>
         </a>
@@ -87,7 +92,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
            class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-blue/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
           <app-icon name="calendar" [size]="16" class="shrink-0 text-ib-blue" />
           <div class="min-w-0">
-            <p class="text-xs text-text-muted">Rendez-vous à venir</p>
+            <p class="text-xs text-text-muted">{{ 'medical.dashboard.upcomingAppointments' | transloco }}</p>
             <p class="font-mono text-lg font-semibold text-text-primary">{{ totalUpcomingAppointments() }}</p>
           </div>
         </a>
@@ -95,7 +100,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
            class="flex items-center gap-3 rounded-lg border border-border bg-surface px-4 py-3 transition hover:border-ib-cyan/30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-cyan focus-visible:ring-offset-2 focus-visible:ring-offset-canvas">
           <app-icon name="file-text" [size]="16" class="shrink-0 text-ib-cyan" />
           <div class="min-w-0">
-            <p class="text-xs text-text-muted">Ordonnances actives</p>
+            <p class="text-xs text-text-muted">{{ 'medical.dashboard.activePrescriptions' | transloco }}</p>
             <p class="font-mono text-lg font-semibold text-text-primary">{{ totalActivePrescriptions() }}</p>
           </div>
         </a>
@@ -105,7 +110,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
     <!-- Patient cards -->
     @if (patientSummaries().length > 0) {
       <section aria-labelledby="family-heading">
-        <h3 id="family-heading" class="text-lg font-semibold text-text-primary mb-3">Famille</h3>
+        <h3 id="family-heading" class="text-lg font-semibold text-text-primary mb-3">{{ 'medical.dashboard.familyHeading' | transloco }}</h3>
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
           @for (summary of patientSummaries(); track summary.patient.id) {
             <article class="group relative overflow-hidden rounded-xl border bg-surface transition"
@@ -121,11 +126,15 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                 </div>
                 <div class="flex-1 min-w-0">
                   <p class="font-semibold text-text-primary truncate">{{ summary.patient.firstName }} {{ summary.patient.lastName }}</p>
-                  <p class="text-[11px] text-text-muted">{{ summary.age }} ans — Né(e) le {{ summary.patient.birthDate | date:'d MMMM yyyy' }}</p>
+                  <p class="text-[11px] text-text-muted">{{ 'medical.dashboard.ageBornOn' | transloco: { age: summary.age, date: (summary.patient.birthDate | date:'d MMMM yyyy') } }}</p>
                 </div>
                 @if (summary.lowStockCount > 0) {
                   <span class="rounded-full px-2 py-0.5 text-[10px] font-medium bg-ib-red/10 text-ib-red shrink-0">
-                    {{ summary.lowStockCount }} alerte{{ summary.lowStockCount > 1 ? 's' : '' }}
+                    @if (summary.lowStockCount === 1) {
+                      {{ 'medical.dashboard.alertsBadgeOne' | transloco: { count: summary.lowStockCount } }}
+                    } @else {
+                      {{ 'medical.dashboard.alertsBadgeMany' | transloco: { count: summary.lowStockCount } }}
+                    }
                   </span>
                 }
               </a>
@@ -138,14 +147,14 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                 <!-- Prochains RDV -->
                 <div>
                   <a routerLink="../appointments" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2 hover:text-ib-blue transition-colors">
-                    <app-icon name="calendar" size="12" class="text-ib-blue" /> Prochains rendez-vous
+                    <app-icon name="calendar" size="12" class="text-ib-blue" /> {{ 'medical.dashboard.nextAppointments' | transloco }}
                   </a>
                   @if (summary.nextAppointments.length > 0) {
                     <div class="space-y-1.5">
                       @for (appt of summary.nextAppointments; track appt.id) {
                         <a routerLink="../appointments" class="flex items-center gap-2 rounded-lg bg-ib-blue/5 border border-ib-blue/15 px-3 py-1.5 hover:bg-ib-blue/10 transition-colors">
                           <time class="text-xs font-mono font-medium text-ib-blue" [attr.datetime]="appt.date">
-                            {{ appt.date | date:'d MMM' }} à {{ appt.time }}
+                            {{ appt.date | date:'d MMM' }} {{ 'medical.dashboard.appointmentTimeAt' | transloco: { time: appt.time } }}
                           </time>
                           <span class="text-xs text-text-muted">{{ getPractitionerName(appt.practitionerId) }}</span>
                           @if (appt.reason) {
@@ -155,14 +164,14 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                       }
                     </div>
                   } @else {
-                    <p class="text-xs text-text-muted">Aucun rendez-vous à venir</p>
+                    <p class="text-xs text-text-muted">{{ 'medical.dashboard.noUpcomingAppointments' | transloco }}</p>
                   }
                 </div>
 
                 <!-- Ordonnances actives -->
                 <div>
                   <a routerLink="../prescriptions" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2 hover:text-ib-cyan transition-colors">
-                    <app-icon name="file-text" size="12" class="text-ib-cyan" /> Ordonnances actives
+                    <app-icon name="file-text" size="12" class="text-ib-cyan" /> {{ 'medical.dashboard.activePrescriptions' | transloco }}
                   </a>
                   @if (summary.activePrescriptions.length > 0) {
                     <div class="space-y-1.5">
@@ -175,7 +184,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                             }
                             @if (presc.validUntil) {
                               <span class="text-xs text-text-muted ml-auto">
-                                exp. {{ presc.validUntil | date:'d MMM' }}
+                                {{ 'medical.dashboard.prescriptionExpiry' | transloco: { date: (presc.validUntil | date:'d MMM') } }}
                               </span>
                             }
                           </a>
@@ -183,21 +192,21 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                             <button type="button"
                                     class="shrink-0 rounded-md bg-ib-purple/10 px-2 py-0.5 text-[10px] font-medium text-ib-purple hover:bg-ib-purple/20 transition-colors"
                                     (click)="openDocument(presc.id); $event.preventDefault(); $event.stopPropagation()">
-                              Voir PDF
+                              {{ 'medical.dashboard.viewPdf' | transloco }}
                             </button>
                           }
                         </div>
                       }
                     </div>
                   } @else {
-                    <p class="text-xs text-text-muted">Aucune ordonnance active</p>
+                    <p class="text-xs text-text-muted">{{ 'medical.dashboard.noActivePrescriptions' | transloco }}</p>
                   }
                 </div>
 
                 <!-- Médicaments -->
                 <div>
                   <a routerLink="../medications" class="flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-wider text-text-muted mb-2 hover:text-ib-orange transition-colors">
-                    <app-icon name="pill" size="12" class="text-ib-orange" /> Médicaments
+                    <app-icon name="pill" size="12" class="text-ib-orange" /> {{ 'medical.dashboard.medications' | transloco }}
                   </a>
                   @if (summary.medications.length > 0) {
                     <div class="space-y-2">
@@ -214,12 +223,12 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                             <span class="text-[10px] font-mono font-medium"
                                   [class.text-ib-red]="med.isLow"
                                   [class.text-ib-green]="!med.isLow">
-                              {{ med.daysRemaining }}j
+                              {{ 'medical.dashboard.daysShort' | transloco: { days: med.daysRemaining } }}
                             </span>
                           </div>
                           <app-medication-stock-bar [daysRemaining]="med.daysRemaining" [alertDaysBefore]="med.alertDaysBefore" />
                           <div class="flex items-center justify-between mt-1">
-                            <span class="text-[10px] text-text-muted">{{ med.remainingQuantity }}/{{ med.quantity }} unités — épuisement {{ med.estimatedRunOut | date:'d MMMM yyyy' }}</span>
+                            <span class="text-[10px] text-text-muted">{{ 'medical.dashboard.stockSummary' | transloco: { remaining: med.remainingQuantity, total: med.quantity, date: (med.estimatedRunOut | date:'d MMMM yyyy') } }}</span>
                             @if (med.skipDays.length > 0) {
                               <div class="flex gap-px">
                                 @for (d of dayLabels; track d.idx) {
@@ -237,7 +246,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                       }
                     </div>
                   } @else {
-                    <p class="text-xs text-text-muted">Aucun médicament</p>
+                    <p class="text-xs text-text-muted">{{ 'medical.dashboard.noMedications' | transloco }}</p>
                   }
                 </div>
               </div>
@@ -255,6 +264,7 @@ export class MedicalDashboard {
   private readonly getAppointments = inject(GetAppointmentsUseCase);
   private readonly getPrescriptions = inject(GetPrescriptionsUseCase);
   private readonly getMedications = inject(GetMedicationsUseCase);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly patients = toSignal(this.getPatients.execute(), { initialValue: [] });
   protected readonly practitioners = toSignal(this.getPractitioners.execute(), { initialValue: [] });
@@ -324,7 +334,7 @@ export class MedicalDashboard {
   });
 
   protected getPractitionerName(id: string): string {
-    return this.practitionerMap().get(id) ?? 'Inconnu';
+    return this.practitionerMap().get(id) ?? this._i18n.translate('medical.dashboard.unknownPractitioner');
   }
 
   protected async openDocument(id: string) {

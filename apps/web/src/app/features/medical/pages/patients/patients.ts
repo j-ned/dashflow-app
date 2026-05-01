@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Patient } from '../../domain/models/patient.model';
 import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
 import { CreatePatientUseCase } from '../../domain/use-cases/create-patient.use-case';
@@ -16,22 +17,22 @@ import { Icon } from '@shared/components/icon/icon';
 @Component({
   selector: 'app-patients',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ModalDialog, PatientForm, Icon],
+  imports: [DatePipe, ModalDialog, PatientForm, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Patients</h2>
-        <p class="mt-1 text-sm text-text-muted">Gérez vos patients</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'medical.patient.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'medical.patient.subtitle' | transloco }}</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
-        <app-icon name="plus" size="14" /> Nouveau patient
+        <app-icon name="plus" size="14" /> {{ 'medical.patient.create' | transloco }}
       </button>
     </header>
 
-    <section aria-label="Liste des patients" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+    <section [attr.aria-label]="'medical.patient.listLabel' | transloco" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
       @for (patient of patients(); track patient.id) {
         <article class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-purple/30 hover:shadow-lg hover:shadow-ib-purple/5">
           <div class="p-5">
@@ -46,12 +47,12 @@ import { Icon } from '@shared/components/icon/icon';
 
             <dl class="grid grid-cols-1 gap-1 text-sm ml-10">
               <div>
-                <dt class="text-text-muted text-xs">Date de naissance</dt>
+                <dt class="text-text-muted text-xs">{{ 'medical.patient.birthDate' | transloco }}</dt>
                 <dd class="text-text-primary">{{ patient.birthDate | date:'d MMMM yyyy' }}</dd>
               </div>
               @if (patient.notes) {
                 <div class="mt-1">
-                  <dt class="text-text-muted text-xs">Notes</dt>
+                  <dt class="text-text-muted text-xs">{{ 'medical.patient.notes' | transloco }}</dt>
                   <dd class="text-text-primary text-xs line-clamp-2">{{ patient.notes }}</dd>
                 </div>
               }
@@ -61,12 +62,12 @@ import { Icon } from '@shared/components/icon/icon';
               <button type="button"
                       class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
                       (click)="openEditModal(patient)">
-                Modifier
+                {{ 'common.edit' | transloco }}
               </button>
               <button type="button"
                       class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                       (click)="deletePatient(patient.id)">
-                Supprimer
+                {{ 'common.delete' | transloco }}
               </button>
             </div>
           </div>
@@ -74,19 +75,19 @@ import { Icon } from '@shared/components/icon/icon';
       } @empty {
         <div class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface">
           <app-icon name="users" size="48" class="text-text-muted/20 mx-auto mb-3" />
-          <p class="text-sm text-text-muted">Aucun patient</p>
-          <p class="text-xs text-text-muted mt-1">Créez votre premier patient pour commencer</p>
+          <p class="text-sm text-text-muted">{{ 'medical.patient.empty' | transloco }}</p>
+          <p class="text-xs text-text-muted mt-1">{{ 'medical.patient.emptyHint' | transloco }}</p>
         </div>
       }
     </section>
 
-    <app-modal-dialog #createModal title="Nouveau patient" (closed)="onModalClosed()">
+    <app-modal-dialog #createModal [title]="'medical.patient.modalCreateTitle' | transloco" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
         <app-patient-form (submitted)="createPatient($event)" (cancelled)="createModal.close()" />
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal title="Modifier le patient" (closed)="onModalClosed()">
+    <app-modal-dialog #editModal [title]="'medical.patient.modalEditTitle' | transloco" (closed)="onModalClosed()">
       @if (editModal.isOpen()) {
         <app-patient-form [initial]="selectedPatient()" (submitted)="updatePatient($event)" (cancelled)="editModal.close()" />
       }
@@ -100,6 +101,7 @@ export class Patients {
   private readonly deletePatientUC = inject(DeletePatientUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -128,11 +130,11 @@ export class Patients {
   protected async createPatient(data: Omit<Patient, 'id'>) {
     try {
       await lastValueFrom(this.createPatientUC.execute(data));
-      this.toaster.success('Patient créé');
+      this.toaster.success(this._i18n.translate('medical.patient.feedback.created'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la création');
+      this.toaster.error(this._i18n.translate('medical.patient.feedback.createFailed'));
     }
   }
 
@@ -141,22 +143,22 @@ export class Patients {
     if (!id) return;
     try {
       await lastValueFrom(this.updatePatientUC.execute(id, data));
-      this.toaster.success('Patient modifié');
+      this.toaster.success(this._i18n.translate('medical.patient.feedback.updated'));
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la modification');
+      this.toaster.error(this._i18n.translate('medical.patient.feedback.updateFailed'));
     }
   }
 
   protected async deletePatient(id: string) {
-    if (!await this.confirm.delete('ce patient')) return;
+    if (!await this.confirm.delete(this._i18n.translate('medical.patient.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deletePatientUC.execute(id));
-      this.toaster.success('Patient supprimé');
+      this.toaster.success(this._i18n.translate('medical.patient.feedback.deleted'));
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('medical.patient.feedback.deleteFailed'));
     }
   }
 }

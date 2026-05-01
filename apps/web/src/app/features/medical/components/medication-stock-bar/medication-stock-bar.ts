@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-medication-stock-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslocoPipe],
   host: { class: 'block' },
   template: `
     @let days = daysRemaining();
@@ -16,12 +18,12 @@ import { ChangeDetectionStrategy, Component, input } from '@angular/core';
            [class.bg-ib-orange]="days > alert && days <= alert * 2"
            [class.bg-ib-red]="days <= alert">
         @if (pct > 15) {
-          <span class="text-[10px] font-mono font-medium text-canvas">{{ days }}j</span>
+          <span class="text-[10px] font-mono font-medium text-canvas">{{ 'medical.medication.daysShort' | transloco: { days: days } }}</span>
         }
       </div>
     </div>
     @if (pct <= 15) {
-      <span class="text-[10px] font-mono text-ib-red mt-0.5">{{ days }}j</span>
+      <span class="text-[10px] font-mono text-ib-red mt-0.5">{{ 'medical.medication.daysShort' | transloco: { days: days } }}</span>
     }
   `,
 })

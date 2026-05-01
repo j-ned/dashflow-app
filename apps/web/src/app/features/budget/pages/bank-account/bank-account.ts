@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount as BankAccountModel } from '../../domain/models/bank-account.model';
 import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
@@ -41,14 +42,14 @@ const PALETTE = [
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline],
+  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <!-- Header + compte selector -->
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Compte bancaire</h2>
-        <p class="mt-1 text-sm text-text-muted">Suivi progressif de votre solde</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.bankAccount.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'budget.bankAccount.subtitle' | transloco }}</p>
       </div>
       <nav class="flex items-center gap-2 flex-wrap">
         @for (account of accounts(); track account.id; let i = $index) {
@@ -67,7 +68,7 @@ const PALETTE = [
         <button type="button"
                 class="rounded-lg border border-dashed border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
                 (click)="accountModalRef().open()">
-          <app-icon name="settings" size="12" class="inline -mt-0.5" /> Gérer
+          <app-icon name="settings" size="12" class="inline -mt-0.5" /> {{ 'budget.bankAccount.manage' | transloco }}
         </button>
       </nav>
     </header>
@@ -152,13 +153,13 @@ const PALETTE = [
       [currentBalance]="currentBalance()" />
 
     <!-- ═══ Modals ═══ -->
-    <app-modal-dialog #accountModal title="Gestion des comptes" (closed)="resetAccountForm()">
+    <app-modal-dialog #accountModal [title]="'budget.bankAccount.accountModal.title' | transloco" (closed)="resetAccountForm()">
       @if (accountModal.isOpen()) {
         <div class="space-y-6">
           <!-- Liste des comptes existants -->
           @if (accounts().length > 0) {
             <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Comptes existants</p>
+              <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">{{ 'budget.bankAccount.accountModal.existing' | transloco }}</p>
               <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
                 @for (account of accounts(); track account.id; let i = $index) {
                   <div class="px-4 py-3 hover:bg-hover/30 transition-colors space-y-2">
@@ -172,14 +173,14 @@ const PALETTE = [
                       </div>
                       <button type="button"
                               class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                              [title]="'Supprimer — ' + account.name"
-                              [attr.aria-label]="'Supprimer le compte ' + account.name"
+                              [title]="'budget.bankAccount.accountModal.deleteTitle' | transloco: { name: account.name }"
+                              [attr.aria-label]="'budget.bankAccount.accountModal.deleteAria' | transloco: { name: account.name }"
                               (click)="deleteAccount(account)">
                         <app-icon name="trash" size="14" />
                       </button>
                     </div>
                     <div class="flex items-center gap-2 pl-10">
-                      <label class="text-[11px] text-text-muted whitespace-nowrap">Solde initial</label>
+                      <label class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.currentBalance' | transloco }}</label>
                       <input type="number" step="0.01"
                              class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
                              [value]="account.initialBalance"
@@ -194,34 +195,34 @@ const PALETTE = [
 
           <!-- Ajouter un nouveau compte -->
           <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">Ajouter un compte</p>
+            <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">{{ 'budget.bankAccount.accountModal.addAccount' | transloco }}</p>
             <form (ngSubmit)="createAccount()" class="space-y-3">
               <div>
-                <label for="acc-name" class="block text-sm font-medium text-text-muted mb-1">Nom <span aria-hidden="true">*</span></label>
+                <label for="acc-name" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.bankAccount.accountModal.name' | transloco }} <span aria-hidden="true">*</span></label>
                 <input id="acc-name" type="text" [ngModel]="newAccountName()" (ngModelChange)="newAccountName.set($event)" name="name"
                        class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                       placeholder="Ex: Compte courant, Compte joint..." />
+                       [placeholder]="'budget.bankAccount.accountModal.namePlaceholder' | transloco" />
               </div>
               <div>
-                <label for="acc-balance" class="block text-sm font-medium text-text-muted mb-1">Solde de départ</label>
+                <label for="acc-balance" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.bankAccount.accountModal.initialBalance' | transloco }}</label>
                 <div class="relative">
                   <input id="acc-balance" type="number" step="0.01" [ngModel]="newAccountBalance()" (ngModelChange)="newAccountBalance.set($event)" name="balance"
                          class="w-full rounded-lg border border-border bg-raised px-3 py-2 pr-8 text-sm font-mono text-text-primary"
                          placeholder="0.00" />
                   <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted">&euro;</span>
                 </div>
-                <p class="mt-1 text-xs text-text-muted">Solde actuel de votre compte en banque</p>
+                <p class="mt-1 text-xs text-text-muted">{{ 'budget.bankAccount.accountModal.balanceHint' | transloco }}</p>
               </div>
-              <p class="text-xs text-text-muted">Les couleurs sont attribuées automatiquement.</p>
+              <p class="text-xs text-text-muted">{{ 'budget.bankAccount.accountModal.colorsAuto' | transloco }}</p>
               <footer class="flex justify-end gap-3 pt-2">
                 <button type="button"
                         class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
                         (click)="accountModalRef().close()">
-                  Fermer
+                  {{ 'common.close' | transloco }}
                 </button>
                 <button type="submit" [disabled]="!newAccountName().trim()"
                         class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
-                  Ajouter
+                  {{ 'budget.actions.add' | transloco }}
                 </button>
               </footer>
             </form>
@@ -262,6 +263,7 @@ export class BankAccount {
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -348,23 +350,28 @@ export class BankAccount {
 
   protected readonly spendingMonthLabel = computed(() => {
     const [y, m] = this.spendingMonth().split('-');
-    const MONTHS = ['Janv.', 'Févr.', 'Mars', 'Avril', 'Mai', 'Juin', 'Juil.', 'Août', 'Sept.', 'Oct.', 'Nov.', 'Déc.'];
-    return `${MONTHS[Number(m) - 1]} ${y}`;
+    const monthKeys = ['janv', 'fevr', 'mars', 'avril', 'mai', 'juin', 'juil', 'aout', 'sept', 'oct', 'nov', 'dec'];
+    const monthLabel = this._i18n.translate(`budget.common.month.${monthKeys[Number(m) - 1]}`);
+    return `${monthLabel} ${y}`;
   });
 
   protected readonly incomesLabel = computed(() => {
     const list = this.incomes();
     if (list.length === 1) return list[0].label;
-    return `${list.length} sources`;
+    return this._i18n.translate('budget.bankAccount.kpi.incomeSources', { count: list.length });
   });
 
   protected readonly monthlyExpensesLabel = computed(() =>
-    `${this.passedExpenses().length}/${this.monthlyExpenses().length} passés`
+    this._i18n.translate('budget.bankAccount.kpi.directDebitsLabel', {
+      passed: this.passedExpenses().length,
+      total: this.monthlyExpenses().length,
+    }),
   );
 
   protected readonly monthSpendingsLabel = computed(() => {
     const count = this.monthSpendings().length;
-    return `${count} dépense${count > 1 ? 's' : ''} en ${this.spendingMonthLabel()}`;
+    const key = count > 1 ? 'budget.bankAccount.kpi.spendingCountPlural' : 'budget.bankAccount.kpi.spendingCount';
+    return this._i18n.translate(key, { count, month: this.spendingMonthLabel() });
   });
 
   protected readonly monthSpendings = computed(() => {
@@ -381,7 +388,7 @@ export class BankAccount {
     [...this.monthlyExpenses()].sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32))
   );
 
-  protected readonly today = new Date().toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' });
+  protected readonly today = new Date().toLocaleDateString(this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
   protected readonly currentDay = new Date().getDate();
 
   // Jour du salaire principal (premier revenu avec dayOfMonth, sinon 1)
@@ -519,11 +526,12 @@ export class BankAccount {
       const day = e.dayOfMonth ?? 1;
       events.push({ id: e.id, day, label: e.label, amount: Number(e.amount), sign: '-', type: 'expense', passed: this.isExpensePassed(e) });
     }
+    const fallback = this._i18n.translate('budget.bankAccount.timelineFallback');
     for (const e of this.outgoingTransfers()) {
-      events.push({ id: e.id, day: e.dayOfMonth ?? 1, label: `→ ${this.accountNameById(e.toAccountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '-', type: 'transfer', passed: this.isExpensePassed(e) });
+      events.push({ id: e.id, day: e.dayOfMonth ?? 1, label: `→ ${this.accountNameById(e.toAccountId) ?? fallback} — ${e.label}`, amount: Number(e.amount), sign: '-', type: 'transfer', passed: this.isExpensePassed(e) });
     }
     for (const e of this.incomingTransfers()) {
-      events.push({ id: e.id + '-in', day: e.dayOfMonth ?? 1, label: `← ${this.accountNameById(e.accountId) ?? 'Autre'} — ${e.label}`, amount: Number(e.amount), sign: '+', type: 'transfer', passed: this.isExpensePassed(e) });
+      events.push({ id: e.id + '-in', day: e.dayOfMonth ?? 1, label: `← ${this.accountNameById(e.accountId) ?? fallback} — ${e.label}`, amount: Number(e.amount), sign: '+', type: 'transfer', passed: this.isExpensePassed(e) });
     }
 
     // Tri dans l'ordre du cycle salaire (salaryDay en premier)
@@ -536,21 +544,21 @@ export class BankAccount {
 
   protected readonly createModalTitle = computed(() => {
     switch (this.createType()) {
-      case 'income': return 'Nouveau revenu';
-      case 'expense': return 'Nouveau prélèvement mensuel';
-      case 'annual_expense': return 'Nouveau prélèvement annuel';
-      case 'spending': return 'Nouvelle dépense';
-      case 'transfer': return this.createTransferMode() === 'one_time' ? 'Nouveau virement ponctuel' : 'Nouveau virement automatique';
+      case 'income': return this._i18n.translate('budget.bankAccount.createTitles.income');
+      case 'expense': return this._i18n.translate('budget.bankAccount.createTitles.expense');
+      case 'annual_expense': return this._i18n.translate('budget.bankAccount.createTitles.annualExpense');
+      case 'spending': return this._i18n.translate('budget.bankAccount.createTitles.spending');
+      case 'transfer': return this._i18n.translate(this.createTransferMode() === 'one_time' ? 'budget.bankAccount.createTitles.transferOneTime' : 'budget.bankAccount.createTitles.transferRecurring');
     }
   });
   protected readonly editModalTitle = computed(() => {
     switch (this.selectedEntry()?.type) {
-      case 'income': return 'Modifier le revenu';
-      case 'expense': return 'Modifier le prélèvement mensuel';
-      case 'annual_expense': return 'Modifier le prélèvement annuel';
-      case 'spending': return 'Modifier la dépense';
-      case 'transfer': return 'Modifier le virement';
-      default: return 'Modifier';
+      case 'income': return this._i18n.translate('budget.bankAccount.editTitles.income');
+      case 'expense': return this._i18n.translate('budget.bankAccount.editTitles.expense');
+      case 'annual_expense': return this._i18n.translate('budget.bankAccount.editTitles.annualExpense');
+      case 'spending': return this._i18n.translate('budget.bankAccount.editTitles.spending');
+      case 'transfer': return this._i18n.translate('budget.bankAccount.editTitles.transfer');
+      default: return this._i18n.translate('budget.bankAccount.editTitles.default');
     }
   });
 
@@ -614,11 +622,11 @@ export class BankAccount {
     if (!name) return;
     try {
       await lastValueFrom(this.createAccountUC.execute({ name, initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
-      this.toaster.success('Compte créé');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountCreated'));
       this.resetAccountForm();
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la création du compte');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.accountCreateError'));
     }
   }
 
@@ -626,25 +634,30 @@ export class BankAccount {
     const value = Number((event.target as HTMLInputElement).value);
     try {
       await lastValueFrom(this.updateAccountUC.execute(accountId, { initialBalance: value }));
-      this.toaster.success('Solde initial mis à jour');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.balanceUpdated'));
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la mise à jour');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.balanceUpdateError'));
     }
   }
 
   protected async deleteAccount(account: BankAccountModel) {
-    if (!await this.confirm.confirm({ title: 'Supprimer le compte', message: `Supprimer le compte "${account.name}" ? Les entrees seront conservees sans compte.`, confirmLabel: 'Supprimer', variant: 'danger' })) return;
+    if (!await this.confirm.confirm({
+      title: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmTitle'),
+      message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', { name: account.name }),
+      confirmLabel: this._i18n.translate('budget.actions.delete'),
+      variant: 'danger',
+    })) return;
     try {
       await lastValueFrom(this.deleteAccountUC.execute(account.id));
-      this.toaster.success('Compte supprimé');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountDeleted'));
       if (this.selectedAccountId() === account.id) {
         this.selectedAccountId.set(null);
       }
       this._refreshAccounts.update(v => v + 1);
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la suppression du compte');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.accountDeleteError'));
     }
   }
 
@@ -666,11 +679,11 @@ export class BankAccount {
       // Si c'est un revenu et qu'il en existe déjà, demander à l'utilisateur
       if (data.type === 'income' && this.incomes().length > 0) {
         const choice = await this.confirm.choose({
-          title: 'Ajouter un revenu',
-          message: 'Vous avez déjà des revenus enregistrés. Souhaitez-vous démarrer un nouveau cycle (archiver les anciens) ou simplement ajouter ce revenu au mois en cours ?',
-          confirmLabel: 'Nouveau cycle',
-          alternativeLabel: 'Ajouter au mois',
-          cancelLabel: 'Annuler',
+          title: this._i18n.translate('budget.bankAccount.messages.addIncomeTitle'),
+          message: this._i18n.translate('budget.bankAccount.messages.addIncomeMessage'),
+          confirmLabel: this._i18n.translate('budget.bankAccount.messages.newCycle'),
+          alternativeLabel: this._i18n.translate('budget.bankAccount.messages.addToMonth'),
+          cancelLabel: this._i18n.translate('common.cancel'),
           variant: 'info',
         });
 
@@ -681,16 +694,16 @@ export class BankAccount {
           for (const old of this.incomes()) {
             await lastValueFrom(this.deleteEntryUC.execute(old.id));
           }
-          this.toaster.success('Cycle archivé');
+          this.toaster.success(this._i18n.translate('budget.bankAccount.messages.cycleArchived'));
         }
       }
 
       await lastValueFrom(this.createEntryUC.execute(data));
-      this.toaster.success('Entrée créée');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryCreated'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la création');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryCreateError'));
     }
   }
 
@@ -725,13 +738,13 @@ export class BankAccount {
   }
 
   protected async deleteEntry(id: string) {
-    if (!await this.confirm.delete('cette entrée')) return;
+    if (!await this.confirm.delete(this._i18n.translate('budget.bankAccount.messages.deleteEntryTarget'))) return;
     try {
       await lastValueFrom(this.deleteEntryUC.execute(id));
-      this.toaster.success('Entrée supprimée');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryDeleted'));
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryDeleteError'));
     }
   }
 
@@ -753,19 +766,19 @@ export class BankAccount {
         this._pendingPayslipFile = null;
         try {
           await lastValueFrom(this.entryGateway.uploadPayslip(id, file));
-          this.toaster.success('Entrée modifiée');
+          this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryUpdated'));
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error('Erreur lors de l\'ajout de la fiche de paie');
+          this.toaster.error(this._i18n.translate('budget.bankAccount.messages.payslipUploadError'));
         }
       } else {
-        this.toaster.success('Entrée modifiée');
+        this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryUpdated'));
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error('Erreur lors de la modification');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryUpdateError'));
     }
   }
 
@@ -785,17 +798,17 @@ export class BankAccount {
   protected async deletePayslip() {
     const id = this.selectedEntry()?.id;
     if (!id) return;
-    if (!await this.confirm.delete('la fiche de paie')) return;
+    if (!await this.confirm.delete(this._i18n.translate('budget.bankAccount.messages.payslipDeleteTarget'))) return;
     try {
       await lastValueFrom(this.entryGateway.deletePayslip(id));
-      this.toaster.success('Fiche de paie supprimée');
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.payslipDeleted'));
       this._refresh.update(v => v + 1);
       const entry = this.selectedEntry();
       if (entry) {
         this.selectedEntry.set({ ...entry, payslipKey: null });
       }
     } catch {
-      this.toaster.error('Erreur lors de la suppression de la fiche de paie');
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.payslipDeleteError'));
     }
   }
 }

@@ -1,12 +1,13 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 
 @Component({
   selector: 'app-bank-expense-columns',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, Icon],
+  imports: [DecimalPipe, DatePipe, Icon, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
@@ -16,7 +17,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
         <div class="flex items-center justify-between px-4 py-3 bg-ib-red/5 border-b border-border/50">
           <div class="flex items-center gap-2">
             <app-icon name="receipt" size="14" class="text-ib-red" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Mensuels</h3>
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">{{ 'budget.bankAccount.expenses.monthlyTitle' | transloco }}</h3>
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-canvas hover:bg-ib-red/80 transition-colors shadow-sm"
@@ -46,13 +47,13 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                         <span class="text-[10px] text-text-muted">{{ mName }}</span>
                       }
                       @if (passed) {
-                        <span class="text-[10px] text-ib-green font-medium">Prélevé</span>
+                        <span class="text-[10px] text-ib-green font-medium">{{ 'budget.bankAccount.expenses.debited' | transloco }}</span>
                       } @else if (entry.dayOfMonth) {
-                        <span class="text-[10px] text-text-muted">le {{ entry.dayOfMonth }}</span>
+                        <span class="text-[10px] text-text-muted">{{ 'budget.bankAccount.expenses.onDay' | transloco: { day: entry.dayOfMonth } }}</span>
                       }
                       @if (entry.endDate) {
                         <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
-                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
+                          <app-icon name="calendar" size="9" /> {{ 'budget.bankAccount.expenses.until' | transloco: { date: (entry.endDate | date:'MM/yyyy') } }}
                         </span>
                       }
                     </div>
@@ -62,12 +63,14 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   <span class="text-[13px] font-mono font-bold" [class.text-ib-red]="!passed" [class.text-text-muted]="passed">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
                             (click)="edit.emit(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
                             (click)="delete.emit(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
@@ -77,12 +80,12 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
             }
           </div>
           <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
+            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">{{ 'budget.bankAccount.expenses.total' | transloco }}</span>
             <span class="text-sm font-mono font-bold text-ib-red">{{ totalMonthlyExpenses() | number:'1.2-2' }} &euro;</span>
           </div>
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Loyer, abonnements, assurances...</p>
+            <p class="text-xs text-text-muted text-center">{{ 'budget.bankAccount.expenses.monthlyEmpty' | transloco }}</p>
           </div>
         }
       </section>
@@ -92,7 +95,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
         <div class="flex items-center justify-between px-4 py-3 bg-ib-orange/5 border-b border-border/50">
           <div class="flex items-center gap-2">
             <app-icon name="calendar" size="14" class="text-ib-orange" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Annuels</h3>
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.bankAccount.expenses.annualTitle' | transloco }}</h3>
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-canvas hover:bg-ib-orange/80 transition-colors shadow-sm"
@@ -111,7 +114,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   <div class="min-w-0">
                     <p class="text-[13px] font-medium text-text-primary truncate">{{ entry.label }}</p>
                     <div class="flex items-center gap-1 flex-wrap">
-                      <span class="text-[10px] text-text-muted">~{{ entry.amount / 12 | number:'1.2-2' }}&euro;/mois</span>
+                      <span class="text-[10px] text-text-muted">{{ 'budget.bankAccount.expenses.monthlyApprox' | transloco: { value: (entry.amount / 12 | number:'1.2-2') } }}</span>
                       @if (entry.category) {
                         <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
                       }
@@ -120,7 +123,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                       }
                       @if (entry.endDate) {
                         <span class="inline-flex items-center gap-0.5 rounded-md bg-ib-orange/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-orange">
-                          <app-icon name="calendar" size="9" /> Jusqu'au {{ entry.endDate | date:'MM/yyyy' }}
+                          <app-icon name="calendar" size="9" /> {{ 'budget.bankAccount.expenses.until' | transloco: { date: (entry.endDate | date:'MM/yyyy') } }}
                         </span>
                       }
                     </div>
@@ -130,12 +133,14 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   <span class="text-[13px] font-mono font-bold text-ib-orange">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
                             (click)="edit.emit(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
                             (click)="delete.emit(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
@@ -145,15 +150,15 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
             }
           </div>
           <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
+            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">{{ 'budget.bankAccount.expenses.total' | transloco }}</span>
             <div class="text-right">
-              <span class="text-sm font-mono font-bold text-ib-orange">{{ totalAnnualExpenses() | number:'1.2-2' }} &euro;/an</span>
-              <span class="text-[10px] text-text-muted ml-1">(~{{ monthlyAnnualExpenses() | number:'1.2-2' }}&euro;/m)</span>
+              <span class="text-sm font-mono font-bold text-ib-orange">{{ totalAnnualExpenses() | number:'1.2-2' }} {{ 'budget.bankAccount.expenses.annualSuffix' | transloco }}</span>
+              <span class="text-[10px] text-text-muted ml-1">{{ 'budget.bankAccount.expenses.annualMonthlySuffix' | transloco: { value: (monthlyAnnualExpenses() | number:'1.2-2') } }}</span>
             </div>
           </div>
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Assurance auto, impôts fonciers...</p>
+            <p class="text-xs text-text-muted text-center">{{ 'budget.bankAccount.expenses.annualEmpty' | transloco }}</p>
           </div>
         }
       </section>
@@ -163,16 +168,18 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
         <div class="flex items-center justify-between px-4 py-3 bg-ib-yellow/5 border-b border-border/50">
           <div class="flex items-center gap-2">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
-            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</h3>
+            <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">{{ 'budget.bankAccount.expenses.spendingsTitle' | transloco }}</h3>
             <div class="flex items-center gap-0.5 ml-1">
               <button type="button"
                       class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
+                      [attr.aria-label]="'budget.bankAccount.expenses.prevMonth' | transloco"
                       (click)="prevMonth.emit()">
                 <app-icon name="chevron-right" size="12" class="rotate-180" />
               </button>
               <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ spendingMonthLabel() }}</span>
               <button type="button"
                       class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
+                      [attr.aria-label]="'budget.bankAccount.expenses.nextMonth' | transloco"
                       (click)="nextMonth.emit()">
                 <app-icon name="chevron-right" size="12" />
               </button>
@@ -211,12 +218,14 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   <span class="text-[13px] font-mono font-bold text-ib-yellow">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
                   <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'Modifier — ' + entry.label" [attr.aria-label]="'Modifier ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
                             (click)="edit.emit(entry)">
                       <app-icon name="pencil" size="11" />
                     </button>
                     <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'Supprimer — ' + entry.label" [attr.aria-label]="'Supprimer ' + entry.label"
+                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
+                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
                             (click)="delete.emit(entry.id)">
                       <app-icon name="trash" size="11" />
                     </button>
@@ -226,12 +235,12 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
             }
           </div>
           <div class="px-4 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
-            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">Total</span>
+            <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">{{ 'budget.bankAccount.expenses.total' | transloco }}</span>
             <span class="text-sm font-mono font-bold text-ib-yellow">{{ totalMonthSpendings() | number:'1.2-2' }} &euro;</span>
           </div>
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
-            <p class="text-xs text-text-muted text-center">Aucune dépense en {{ spendingMonthLabel() }}</p>
+            <p class="text-xs text-text-muted text-center">{{ 'budget.bankAccount.expenses.spendingsEmpty' | transloco: { month: spendingMonthLabel() } }}</p>
           </div>
         }
       </section>

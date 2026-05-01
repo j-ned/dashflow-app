@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { Router } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 
 // ── Types ──
@@ -16,18 +17,18 @@ type CommandCategory = 'navigation' | 'budget' | 'medical' | 'action';
 
 type Command = {
   readonly id: string;
-  readonly label: string;
+  readonly labelKey: string;
   readonly category: CommandCategory;
   readonly icon: IconName;
   readonly keywords: string;
   readonly action: () => void;
 };
 
-const CATEGORY_LABELS: Record<CommandCategory, string> = {
-  navigation: 'Navigation',
-  budget: 'Budget',
-  medical: 'Médical',
-  action: 'Actions rapides',
+const CATEGORY_LABEL_KEYS: Record<CommandCategory, string> = {
+  navigation: 'shared.commandPalette.categories.navigation',
+  budget: 'shared.commandPalette.categories.budget',
+  medical: 'shared.commandPalette.categories.medical',
+  action: 'shared.commandPalette.categories.action',
 };
 
 const CATEGORY_ORDER: CommandCategory[] = ['navigation', 'budget', 'medical', 'action'];
@@ -64,7 +65,7 @@ function fuzzyScore(query: string, target: string): number {
 @Component({
   selector: 'app-command-palette',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, TranslocoPipe],
   host: {
     class: 'contents',
     '(document:keydown)': 'onGlobalKey($event)',
@@ -81,14 +82,14 @@ function fuzzyScore(query: string, target: string): number {
           <input #searchInput
                  type="text"
                  class="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-                 placeholder="Rechercher une page, une action..."
+                 [placeholder]="'shared.commandPalette.placeholder' | transloco"
                  [value]="query()"
                  (input)="onInput($event)"
                  (keydown)="onKeydown($event)"
                  autocomplete="off"
                  spellcheck="false" />
           <kbd class="hidden sm:inline-flex items-center gap-0.5 rounded border border-border bg-raised px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
-            ESC
+            {{ 'shared.commandPalette.esc' | transloco }}
           </kbd>
         </div>
 
@@ -107,14 +108,14 @@ function fuzzyScore(query: string, target: string): number {
                           (mouseenter)="activeId.set(cmd.id)"
                           (click)="executeCommand(cmd)">
                     <app-icon [name]="cmd.icon" size="16" class="shrink-0" />
-                    <span class="truncate">{{ cmd.label }}</span>
+                    <span class="truncate">{{ cmd.labelKey | transloco }}</span>
                   </button>
                 }
               </div>
             }
           } @else {
             <div class="py-8 text-center text-sm text-text-muted">
-              Aucun résultat pour « {{ query() }} »
+              {{ 'shared.commandPalette.noResults' | transloco: { query: query() } }}
             </div>
           }
         </div>
@@ -122,14 +123,14 @@ function fuzzyScore(query: string, target: string): number {
         <div class="flex items-center justify-between gap-4 border-t border-border px-4 py-2 text-[10px] text-text-muted">
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1">
-              <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> naviguer
+              <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> {{ 'shared.commandPalette.navigate' | transloco }}
             </span>
             <span class="inline-flex items-center gap-1">
-              <kbd class="kbd">↵</kbd> ouvrir
+              <kbd class="kbd">↵</kbd> {{ 'shared.commandPalette.open' | transloco }}
             </span>
           </div>
           <span class="inline-flex items-center gap-1">
-            <kbd class="kbd">esc</kbd> fermer
+            <kbd class="kbd">esc</kbd> {{ 'shared.commandPalette.close' | transloco }}
           </span>
         </div>
       </div>
@@ -220,6 +221,7 @@ function fuzzyScore(query: string, target: string): number {
 })
 export class CommandPalette {
   private readonly router = inject(Router);
+  private readonly _i18n = inject(TranslocoService);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly searchInputRef = viewChild.required<ElementRef<HTMLInputElement>>('searchInput');
 
@@ -230,25 +232,25 @@ export class CommandPalette {
   // ── Commands registry ──
 
   private readonly commands: Command[] = [
-    { id: 'nav-budget',       label: 'Vue globale — Budget',     category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard budget vue globale tableau de bord',         action: () => this.go('/budget/dashboard') },
-    { id: 'nav-envelopes',    label: 'Enveloppes',               category: 'budget',     icon: 'mail',             keywords: 'enveloppes epargne savings',                         action: () => this.go('/budget/envelopes') },
-    { id: 'nav-loans',        label: 'Prêts & Dettes',           category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser',              action: () => this.go('/budget/loans') },
-    { id: 'nav-account',      label: 'Compte bancaire',          category: 'budget',     icon: 'wallet',           keywords: 'compte banque bank account solde',                   action: () => this.go('/budget/account') },
-    { id: 'nav-archives',     label: 'Archives salaires',        category: 'budget',     icon: 'folder',           keywords: 'archives salaires historique revenus fiches de paie', action: () => this.go('/budget/archives') },
-    { id: 'nav-analytics',    label: 'Statistiques & Prévisions', category: 'budget',    icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
+    { id: 'nav-budget',       labelKey: 'shared.commandPalette.commands.navBudget',         category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard budget vue globale tableau de bord overview',  action: () => this.go('/budget/dashboard') },
+    { id: 'nav-envelopes',    labelKey: 'shared.commandPalette.commands.navEnvelopes',      category: 'budget',     icon: 'mail',             keywords: 'enveloppes epargne savings envelopes',                   action: () => this.go('/budget/envelopes') },
+    { id: 'nav-loans',        labelKey: 'shared.commandPalette.commands.navLoans',          category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser debts',            action: () => this.go('/budget/loans') },
+    { id: 'nav-account',      labelKey: 'shared.commandPalette.commands.navAccount',        category: 'budget',     icon: 'wallet',           keywords: 'compte banque bank account solde',                       action: () => this.go('/budget/account') },
+    { id: 'nav-archives',     labelKey: 'shared.commandPalette.commands.navArchives',       category: 'budget',     icon: 'folder',           keywords: 'archives salaires historique revenus salary fiches paie', action: () => this.go('/budget/archives') },
+    { id: 'nav-analytics',    labelKey: 'shared.commandPalette.commands.navAnalytics',      category: 'budget',     icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
 
-    { id: 'nav-medical',      label: 'Vue globale — Médical',    category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante',                action: () => this.go('/medical/dashboard') },
-    { id: 'nav-patients',     label: 'Patients',                 category: 'medical',    icon: 'users',            keywords: 'patients famille membres enfants',                   action: () => this.go('/medical/patients') },
-    { id: 'nav-practitioners', label: 'Praticiens',              category: 'medical',    icon: 'stethoscope',      keywords: 'praticiens medecins docteur dentiste specialiste',    action: () => this.go('/medical/practitioners') },
-    { id: 'nav-appointments', label: 'Rendez-vous',              category: 'medical',    icon: 'calendar',         keywords: 'rendez-vous rdv consultation visite',                action: () => this.go('/medical/appointments') },
-    { id: 'nav-prescriptions', label: 'Ordonnances',             category: 'medical',    icon: 'file-text',        keywords: 'ordonnances prescriptions documents',                action: () => this.go('/medical/prescriptions') },
-    { id: 'nav-medications',  label: 'Médicaments',              category: 'medical',    icon: 'pill',             keywords: 'medicaments traitements stock pilules',              action: () => this.go('/medical/medications') },
-    { id: 'nav-documents',    label: 'Documents médicaux',       category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans',           action: () => this.go('/medical/documents') },
-    { id: 'nav-reminders',    label: 'Alertes & Rappels',        category: 'medical',    icon: 'bell',             keywords: 'alertes rappels notifications reminders',            action: () => this.go('/medical/reminders') },
+    { id: 'nav-medical',      labelKey: 'shared.commandPalette.commands.navMedical',        category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante health overview',    action: () => this.go('/medical/dashboard') },
+    { id: 'nav-patients',     labelKey: 'shared.commandPalette.commands.navPatients',       category: 'medical',    icon: 'users',            keywords: 'patients famille membres enfants family kids',           action: () => this.go('/medical/patients') },
+    { id: 'nav-practitioners', labelKey: 'shared.commandPalette.commands.navPractitioners', category: 'medical',    icon: 'stethoscope',      keywords: 'praticiens medecins docteur dentiste specialiste practitioner doctor', action: () => this.go('/medical/practitioners') },
+    { id: 'nav-appointments', labelKey: 'shared.commandPalette.commands.navAppointments',   category: 'medical',    icon: 'calendar',         keywords: 'rendez-vous rdv consultation visite appointment',         action: () => this.go('/medical/appointments') },
+    { id: 'nav-prescriptions', labelKey: 'shared.commandPalette.commands.navPrescriptions', category: 'medical',    icon: 'file-text',        keywords: 'ordonnances prescriptions documents',                    action: () => this.go('/medical/prescriptions') },
+    { id: 'nav-medications',  labelKey: 'shared.commandPalette.commands.navMedications',    category: 'medical',    icon: 'pill',             keywords: 'medicaments traitements stock pilules medication pills',  action: () => this.go('/medical/medications') },
+    { id: 'nav-documents',    labelKey: 'shared.commandPalette.commands.navDocuments',      category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans reports',        action: () => this.go('/medical/documents') },
+    { id: 'nav-reminders',    labelKey: 'shared.commandPalette.commands.navReminders',      category: 'medical',    icon: 'bell',             keywords: 'alertes rappels notifications reminders',                action: () => this.go('/medical/reminders') },
 
-    { id: 'nav-settings',     label: 'Paramètres',               category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',         action: () => this.go('/settings') },
+    { id: 'nav-settings',     labelKey: 'shared.commandPalette.commands.navSettings',       category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',             action: () => this.go('/settings') },
 
-    { id: 'act-logout',       label: 'Déconnexion',              category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir',                  action: () => this.go('/auth/login') },
+    { id: 'act-logout',       labelKey: 'shared.commandPalette.commands.actLogout',         category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir signout',              action: () => this.go('/auth/login') },
   ];
 
   // ── Filtered + grouped ──
@@ -258,7 +260,7 @@ export class CommandPalette {
     if (!q) return this.commands;
 
     return this.commands
-      .map(cmd => ({ cmd, score: fuzzyScore(q, `${cmd.label} ${cmd.keywords}`) }))
+      .map(cmd => ({ cmd, score: fuzzyScore(q, `${this._i18n.translate(cmd.labelKey)} ${cmd.keywords}`) }))
       .filter(r => r.score > 0)
       .sort((a, b) => b.score - a.score)
       .map(r => r.cmd);
@@ -278,7 +280,7 @@ export class CommandPalette {
       .filter(cat => map.has(cat))
       .map(cat => ({
         category: cat,
-        label: CATEGORY_LABELS[cat],
+        label: this._i18n.translate(CATEGORY_LABEL_KEYS[cat]),
         commands: map.get(cat)!,
       }));
   });

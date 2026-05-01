@@ -1,16 +1,17 @@
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
+import { TranslocoPipe } from '@jsverse/transloco';
 
 @Component({
   selector: 'app-budget-usage-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, TranslocoPipe],
   host: { class: 'block' },
   template: `
     @if (totalIncome() > 0 && totalAllExpenses() > 0) {
       <section class="rounded-xl border border-border bg-surface p-4">
         <div class="flex items-center justify-between mb-2.5">
-          <span class="text-xs font-medium text-text-muted">Budget utilisé</span>
+          <span class="text-xs font-medium text-text-muted">{{ 'budget.bankAccount.usage.label' | transloco }}</span>
           <span class="text-sm font-mono font-bold"
                 [class.text-ib-green]="usagePercent() <= 80"
                 [class.text-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
@@ -28,10 +29,10 @@ import { DecimalPipe } from '@angular/common';
         </div>
         <!-- Légende segmentée -->
         <div class="flex items-center gap-4 mt-2.5 text-[10px] text-text-muted">
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Passés {{ totalPassedExpenses() | number:'1.0-0' }}&euro;</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red/40"></span> A venir {{ totalUpcomingExpenses() | number:'1.0-0' }}&euro;</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ monthlyAnnualExpenses() | number:'1.0-0' }}&euro;/m</span>
-          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> {{ 'budget.bankAccount.usage.passed' | transloco }} {{ totalPassedExpenses() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red/40"></span> {{ 'budget.bankAccount.usage.upcoming' | transloco }} {{ totalUpcomingExpenses() | number:'1.0-0' }}&euro;</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> {{ 'budget.bankAccount.usage.annual' | transloco }} ~{{ monthlyAnnualExpenses() | number:'1.0-0' }}&euro;/m</span>
+          <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> {{ 'budget.bankAccount.usage.spendings' | transloco }} {{ totalMonthSpendings() | number:'1.0-0' }}&euro;</span>
         </div>
       </section>
     }

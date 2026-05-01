@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, ElementRef, input, output, signal, viewChild } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 
 export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
@@ -6,7 +7,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
 @Component({
   selector: 'app-modal-dialog',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, TranslocoPipe],
   host: { class: 'contents' },
   template: `
     <dialog #dialog
@@ -19,7 +20,7 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
             <h3 class="text-base font-semibold text-text-primary">{{ title() }}</h3>
             <button type="button"
                     class="rounded-md p-1 text-text-muted hover:text-text-primary hover:bg-hover transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                    aria-label="Fermer"
+                    [attr.aria-label]="'shared.modal.close' | transloco"
                     (click)="close()">
               <app-icon name="x" size="18" />
             </button>

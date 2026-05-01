@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild
 import { DatePipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Appointment, AppointmentStatus } from '../../domain/models/appointment.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
@@ -18,39 +19,32 @@ import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Icon } from '@shared/components/icon/icon';
 
-const STATUS_LABELS: Record<AppointmentStatus, string> = {
-  scheduled: 'Planifié',
-  completed: 'Terminé',
-  cancelled: 'Annulé',
-  no_show: 'Absent',
-};
-
 @Component({
   selector: 'app-appointments',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, ModalDialog, AppointmentForm, Icon],
+  imports: [DatePipe, ModalDialog, AppointmentForm, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Rendez-vous</h2>
-        <p class="mt-1 text-sm text-text-muted">Gérez vos rendez-vous médicaux</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'medical.appointment.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'medical.appointment.subtitle' | transloco }}</p>
       </div>
       <button type="button"
               class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
               (click)="openCreateModal()">
-        <app-icon name="plus" size="14" /> Nouveau rendez-vous
+        <app-icon name="plus" size="14" /> {{ 'medical.appointment.create' | transloco }}
       </button>
     </header>
 
-    <section aria-label="Liste des rendez-vous" class="rounded-xl border border-border bg-surface overflow-hidden">
+    <section [attr.aria-label]="'medical.appointment.listLabel' | transloco" class="rounded-xl border border-border bg-surface overflow-hidden">
       <!-- Section header -->
       <div class="flex items-center justify-between px-5 py-3 bg-ib-blue/5 border-b border-border/50">
         <div class="flex items-center gap-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-blue/10">
             <app-icon name="calendar" size="14" class="text-ib-blue" />
           </div>
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">Rendez-vous</span>
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'medical.appointment.groupLabel' | transloco }}</span>
         </div>
         <span class="text-[11px] font-mono font-semibold text-ib-blue">{{ appointments().length }}</span>
       </div>
@@ -58,13 +52,13 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
         <table class="w-full text-sm">
           <thead>
             <tr class="border-b border-border bg-hover/50">
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Date</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Heure</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Patient</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Praticien</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Statut</th>
-              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">Motif</th>
-              <th class="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">Actions</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.date' | transloco }}</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.time' | transloco }}</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.patient' | transloco }}</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.practitioner' | transloco }}</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.status' | transloco }}</th>
+              <th class="px-4 py-3 text-left text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.reason' | transloco }}</th>
+              <th class="px-4 py-3 text-right text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.appointment.actions' | transloco }}</th>
             </tr>
           </thead>
           <tbody>
@@ -84,7 +78,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
                         [class.text-text-muted]="appt.status === 'cancelled'"
                         [class.bg-ib-red-15]="appt.status === 'no_show'"
                         [class.text-ib-red]="appt.status === 'no_show'">
-                    {{ statusLabel(appt.status) }}
+                    {{ ('medical.appointment.statuses.' + appt.status) | transloco }}
                   </span>
                 </td>
                 <td class="px-4 py-3 text-text-muted text-xs max-w-48 truncate">{{ appt.reason ?? '-' }}</td>
@@ -94,23 +88,23 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
                       <button type="button"
                               class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-green hover:border-ib-green/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-green"
                               (click)="updateStatus(appt.id, 'completed')">
-                        Compléter
+                        {{ 'medical.appointment.complete' | transloco }}
                       </button>
                       <button type="button"
                               class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
                               (click)="updateStatus(appt.id, 'cancelled')">
-                        Annuler
+                        {{ 'medical.appointment.cancel' | transloco }}
                       </button>
                     }
                     <button type="button"
                             class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                             (click)="openEditModal(appt)">
-                      Modifier
+                      {{ 'medical.appointment.edit' | transloco }}
                     </button>
                     <button type="button"
                             class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
                             (click)="deleteAppointment(appt.id)">
-                      Supprimer
+                      {{ 'medical.appointment.delete' | transloco }}
                     </button>
                   </div>
                 </td>
@@ -119,8 +113,8 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
               <tr>
                 <td colspan="7" class="px-4 py-16 text-center">
                   <app-icon name="calendar" size="48" class="text-text-muted/20 mx-auto mb-3" />
-                  <p class="text-sm text-text-muted">Aucun rendez-vous</p>
-                  <p class="text-xs text-text-muted mt-1">Planifiez votre premier rendez-vous</p>
+                  <p class="text-sm text-text-muted">{{ 'medical.appointment.empty' | transloco }}</p>
+                  <p class="text-xs text-text-muted mt-1">{{ 'medical.appointment.emptyHint' | transloco }}</p>
                 </td>
               </tr>
             }
@@ -129,7 +123,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
       </div>
     </section>
 
-    <app-modal-dialog #createModal title="Nouveau rendez-vous" (closed)="onModalClosed()">
+    <app-modal-dialog #createModal [title]="'medical.appointment.modalCreateTitle' | transloco" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
         <app-appointment-form
           [patients]="patients()"
@@ -139,7 +133,7 @@ const STATUS_LABELS: Record<AppointmentStatus, string> = {
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal title="Modifier le rendez-vous" (closed)="onModalClosed()">
+    <app-modal-dialog #editModal [title]="'medical.appointment.modalEditTitle' | transloco" (closed)="onModalClosed()">
       @if (editModal.isOpen()) {
         <app-appointment-form
           [initial]="selectedAppointment()"
@@ -161,6 +155,7 @@ export class Appointments {
   private readonly getPractitionersUC = inject(GetPractitionersUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -211,10 +206,6 @@ export class Appointments {
     return pr ? pr.name : id;
   }
 
-  protected statusLabel(status: AppointmentStatus): string {
-    return STATUS_LABELS[status];
-  }
-
   protected openCreateModal() {
     this.createModalRef().open();
   }
@@ -231,11 +222,11 @@ export class Appointments {
   protected async createAppointment(data: Omit<Appointment, 'id'>) {
     try {
       await lastValueFrom(this.createAppointmentUC.execute(data));
-      this.toaster.success('Rendez-vous créé');
+      this.toaster.success(this._i18n.translate('medical.appointment.feedback.created'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la création');
+      this.toaster.error(this._i18n.translate('medical.appointment.feedback.createFailed'));
     }
   }
 
@@ -244,32 +235,32 @@ export class Appointments {
     if (!id) return;
     try {
       await lastValueFrom(this.updateAppointmentUC.execute(id, data));
-      this.toaster.success('Rendez-vous modifié');
+      this.toaster.success(this._i18n.translate('medical.appointment.feedback.updated'));
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la modification');
+      this.toaster.error(this._i18n.translate('medical.appointment.feedback.updateFailed'));
     }
   }
 
   protected async updateStatus(id: string, status: AppointmentStatus) {
     try {
       await lastValueFrom(this.updateAppointmentStatusUC.execute(id, status));
-      this.toaster.success('Statut du rendez-vous mis à jour');
+      this.toaster.success(this._i18n.translate('medical.appointment.feedback.statusUpdated'));
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors du changement de statut');
+      this.toaster.error(this._i18n.translate('medical.appointment.feedback.statusFailed'));
     }
   }
 
   protected async deleteAppointment(id: string) {
-    if (!await this.confirm.delete('ce rendez-vous')) return;
+    if (!await this.confirm.delete(this._i18n.translate('medical.appointment.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deleteAppointmentUC.execute(id));
-      this.toaster.success('Rendez-vous supprimé');
+      this.toaster.success(this._i18n.translate('medical.appointment.feedback.deleted'));
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('medical.appointment.feedback.deleteFailed'));
     }
   }
 }

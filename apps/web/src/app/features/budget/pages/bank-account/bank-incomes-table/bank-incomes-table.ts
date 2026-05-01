@@ -1,24 +1,25 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 
 @Component({
   selector: 'app-bank-incomes-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, Icon],
+  imports: [DecimalPipe, DatePipe, Icon, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center justify-between px-5 py-3 bg-ib-green/5 border-b border-border/50">
         <div class="flex items-center gap-2">
           <app-icon name="trending-up" size="16" class="text-ib-green" />
-          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-green">Revenus</h3>
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-green">{{ 'budget.bankAccount.incomes.title' | transloco }}</h3>
         </div>
         <button type="button"
                 class="inline-flex items-center gap-1 rounded-lg bg-ib-green min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
                 (click)="create.emit()">
-          <app-icon name="plus" size="12" /> Revenu
+          <app-icon name="plus" size="12" /> {{ 'budget.bankAccount.incomes.addButton' | transloco }}
         </button>
       </div>
       @if (incomes().length > 0) {
@@ -50,7 +51,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                       <button type="button"
                               class="inline-flex items-center gap-0.5 rounded-md bg-ib-green/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-green hover:bg-ib-green/20 transition-colors cursor-pointer"
                               (click)="openPayslip.emit(entry.id); $event.stopPropagation()">
-                        <app-icon name="file-text" size="10" /> Fiche de paie
+                        <app-icon name="file-text" size="10" /> {{ 'budget.bankAccount.incomes.payslip' | transloco }}
                       </button>
                     }
                   </div>
@@ -61,15 +62,15 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                 <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                          [title]="'Modifier — ' + entry.label"
-                          [attr.aria-label]="'Modifier ' + entry.label"
+                          [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
+                          [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
                           (click)="edit.emit(entry)">
                     <app-icon name="pencil" size="13" />
                   </button>
                   <button type="button"
                           class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          [title]="'Supprimer — ' + entry.label"
-                          [attr.aria-label]="'Supprimer ' + entry.label"
+                          [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
+                          [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
                           (click)="delete.emit(entry.id)">
                     <app-icon name="trash" size="13" />
                   </button>
@@ -81,7 +82,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
       } @else {
         <div class="px-5 py-8 text-center">
           <app-icon name="trending-up" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Ajoutez votre salaire ou autres revenus mensuels</p>
+          <p class="text-sm text-text-muted">{{ 'budget.bankAccount.incomes.empty' | transloco }}</p>
         </div>
       }
     </section>

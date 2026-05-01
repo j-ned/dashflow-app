@@ -5,6 +5,7 @@ import {
   Injectable,
   signal,
 } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 
 // ── Types ──
@@ -96,7 +97,7 @@ export class Toaster {
 @Component({
   selector: 'app-toast-container',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [Icon],
+  imports: [Icon, TranslocoPipe],
   host: { class: 'contents' },
   template: `
     <div class="fixed bottom-4 right-4 z-[9999] flex flex-col-reverse gap-2 pointer-events-none"
@@ -115,7 +116,7 @@ export class Toaster {
             <p class="flex-1 text-sm text-text-primary leading-snug">{{ toast.message }}</p>
             <button type="button"
                     class="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
-                    aria-label="Fermer"
+                    [attr.aria-label]="'shared.toast.dismiss' | transloco"
                     (click)="dismiss(toast.id)">
               <app-icon name="x" size="14" />
             </button>

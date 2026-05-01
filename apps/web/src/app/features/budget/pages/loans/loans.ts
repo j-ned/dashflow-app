@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, sig
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Loan } from '../../domain/models/loan.model';
 import { LoanTransaction } from '../../domain/models/loan-transaction.model';
 import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
@@ -36,7 +37,7 @@ const MEMBER_PALETTE = [
 @Component({
   selector: 'app-loans',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, Icon, FormsModule],
+  imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, Icon, FormsModule, TranslocoPipe],
   host: { class: 'block space-y-6' },
   styles: `
     .action-btn {
@@ -67,8 +68,8 @@ const MEMBER_PALETTE = [
   template: `
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">Prêts & Dettes</h2>
-        <p class="mt-1 text-sm text-text-muted">Suivez vos prêts familiaux et dettes</p>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.loan.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'budget.loan.subtitle' | transloco }}</p>
       </div>
       <div class="flex gap-2">
         <button
@@ -76,14 +77,14 @@ const MEMBER_PALETTE = [
           class="inline-flex items-center gap-1.5 rounded-lg bg-ib-blue px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-blue/90 transition-colors shadow-sm"
           (click)="openLentModal()"
         >
-          <app-icon name="arrow-up-right" size="14" /> Prêter
+          <app-icon name="arrow-up-right" size="14" /> {{ 'budget.loan.lendButton' | transloco }}
         </button>
         <button
           type="button"
           class="inline-flex items-center gap-1.5 rounded-lg bg-ib-orange px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-orange/90 transition-colors shadow-sm"
           (click)="openBorrowedModal()"
         >
-          <app-icon name="arrow-down-left" size="14" /> Emprunter
+          <app-icon name="arrow-down-left" size="14" /> {{ 'budget.loan.borrowButton' | transloco }}
         </button>
       </div>
     </header>
@@ -116,7 +117,7 @@ const MEMBER_PALETTE = [
       >
         <div class="flex items-center gap-2">
           <app-icon name="arrow-up-right" size="16" class="text-ib-blue" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Prêtés</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.loan.lentSection' | transloco }}</h3>
         </div>
       </div>
       @if (filteredLentLoans().length > 0) {
@@ -168,19 +169,19 @@ const MEMBER_PALETTE = [
 
               <div class="grid grid-cols-3 gap-2 text-xs mb-3">
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Montant</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.amount' | transloco }}</p>
                   <p class="font-mono font-medium text-text-primary">
                     {{ loan.amount | number: '1.2-2' }}&euro;
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Remboursé</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.repaid' | transloco }}</p>
                   <p class="font-mono font-medium text-ib-green">
                     {{ repaid | number: '1.2-2' }}&euro;
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Restant</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.remaining' | transloco }}</p>
                   <p class="font-mono font-medium text-ib-blue">
                     {{ loan.remaining | number: '1.2-2' }}&euro;
                   </p>
@@ -190,12 +191,12 @@ const MEMBER_PALETTE = [
               @if (loan.date || loan.dueDate) {
                 <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
-                    <p class="text-[10px] text-text-muted">Date du prêt</p>
+                    <p class="text-[10px] text-text-muted">{{ 'budget.loan.loanDate' | transloco }}</p>
                     <p class="text-text-primary">{{ loan.date }}</p>
                   </div>
                   @if (loan.dueDate) {
                     <div>
-                      <p class="text-[10px] text-text-muted">Échéance</p>
+                      <p class="text-[10px] text-text-muted">{{ 'budget.loan.dueDate' | transloco }}</p>
                       <p class="text-text-primary">{{ loan.dueDate }}</p>
                     </div>
                   }
@@ -203,7 +204,7 @@ const MEMBER_PALETTE = [
               }
 
               <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                <span>Remboursement</span>
+                <span>{{ 'budget.loan.repayment' | transloco }}</span>
                 <span class="font-mono font-semibold">{{ pct | number: '1.0-0' }}%</span>
               </div>
               <div class="h-2 rounded-full bg-hover overflow-hidden">
@@ -217,42 +218,42 @@ const MEMBER_PALETTE = [
                 <button
                   type="button"
                   class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
-                  [title]="'Remboursement — ' + loan.person"
-                  [attr.aria-label]="'Enregistrer un remboursement pour ' + loan.person"
+                  [title]="'budget.loan.actions.repayTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.repayAria' | transloco: { person: loan.person }"
                   (click)="openPaymentModal(loan)"
                 >
                   <app-icon name="banknote" size="13" />
-                  <span class="action-label">Rembourser</span>
+                  <span class="action-label">{{ 'budget.loan.actions.repay' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
-                  [title]="'Historique — ' + loan.person"
-                  [attr.aria-label]="'Historique de ' + loan.person"
+                  [title]="'budget.loan.actions.historyTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.historyAria' | transloco: { person: loan.person }"
                   (click)="openHistoryModal(loan)"
                 >
                   <app-icon name="clock" size="13" />
-                  <span class="action-label">Historique</span>
+                  <span class="action-label">{{ 'budget.loan.actions.history' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
-                  [title]="'Modifier — ' + loan.person"
-                  [attr.aria-label]="'Modifier le prêt de ' + loan.person"
+                  [title]="'budget.loan.actions.editLentTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.editLentAria' | transloco: { person: loan.person }"
                   (click)="openEditModal(loan)"
                 >
                   <app-icon name="pencil" size="13" />
-                  <span class="action-label">Modifier</span>
+                  <span class="action-label">{{ 'budget.loan.actions.edit' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-red hover:border-ib-red/30"
-                  [title]="'Supprimer — ' + loan.person"
-                  [attr.aria-label]="'Supprimer le prêt de ' + loan.person"
+                  [title]="'budget.loan.actions.deleteLentTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.deleteLentAria' | transloco: { person: loan.person }"
                   (click)="deleteLoan(loan.id)"
                 >
                   <app-icon name="trash" size="13" />
-                  <span class="action-label">Supprimer</span>
+                  <span class="action-label">{{ 'budget.loan.actions.delete' | transloco }}</span>
                 </button>
               </div>
             </article>
@@ -261,7 +262,7 @@ const MEMBER_PALETTE = [
       } @else {
         <div class="text-center py-12">
           <app-icon name="arrow-up-right" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Aucun prêt en cours</p>
+          <p class="text-sm text-text-muted">{{ 'budget.loan.noLent' | transloco }}</p>
         </div>
       }
     </section>
@@ -274,7 +275,7 @@ const MEMBER_PALETTE = [
         <div class="flex items-center gap-2">
           <app-icon name="arrow-down-left" size="16" class="text-ib-orange" />
           <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">
-            Empruntés
+            {{ 'budget.loan.borrowedSection' | transloco }}
           </h3>
         </div>
       </div>
@@ -327,19 +328,19 @@ const MEMBER_PALETTE = [
 
               <div class="grid grid-cols-3 gap-2 text-xs mb-3">
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Montant</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.amount' | transloco }}</p>
                   <p class="font-mono font-medium text-text-primary">
                     {{ loan.amount | number: '1.2-2' }}&euro;
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Remboursé</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.repaid' | transloco }}</p>
                   <p class="font-mono font-medium text-ib-green">
                     {{ repaid | number: '1.2-2' }}&euro;
                   </p>
                 </div>
                 <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">Restant</p>
+                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.remaining' | transloco }}</p>
                   <p class="font-mono font-medium text-ib-red">
                     {{ loan.remaining | number: '1.2-2' }}&euro;
                   </p>
@@ -349,12 +350,12 @@ const MEMBER_PALETTE = [
               @if (loan.date || loan.dueDate) {
                 <div class="grid grid-cols-2 gap-2 text-xs mb-3">
                   <div>
-                    <p class="text-[10px] text-text-muted">Date de l'emprunt</p>
+                    <p class="text-[10px] text-text-muted">{{ 'budget.loan.borrowDate' | transloco }}</p>
                     <p class="text-text-primary">{{ loan.date }}</p>
                   </div>
                   @if (loan.dueDate) {
                     <div>
-                      <p class="text-[10px] text-text-muted">Échéance</p>
+                      <p class="text-[10px] text-text-muted">{{ 'budget.loan.dueDate' | transloco }}</p>
                       <p class="text-text-primary">{{ loan.dueDate }}</p>
                     </div>
                   }
@@ -362,7 +363,7 @@ const MEMBER_PALETTE = [
               }
 
               <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                <span>Remboursement</span>
+                <span>{{ 'budget.loan.repayment' | transloco }}</span>
                 <span class="font-mono font-semibold">{{ pct | number: '1.0-0' }}%</span>
               </div>
               <div class="h-2 rounded-full bg-hover overflow-hidden">
@@ -376,42 +377,42 @@ const MEMBER_PALETTE = [
                 <button
                   type="button"
                   class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
-                  [title]="'Remboursement — ' + loan.person"
-                  [attr.aria-label]="'Enregistrer un remboursement pour ' + loan.person"
+                  [title]="'budget.loan.actions.repayTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.repayAria' | transloco: { person: loan.person }"
                   (click)="openPaymentModal(loan)"
                 >
                   <app-icon name="banknote" size="13" />
-                  <span class="action-label">Rembourser</span>
+                  <span class="action-label">{{ 'budget.loan.actions.repay' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
-                  [title]="'Historique — ' + loan.person"
-                  [attr.aria-label]="'Historique de ' + loan.person"
+                  [title]="'budget.loan.actions.historyTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.historyAria' | transloco: { person: loan.person }"
                   (click)="openHistoryModal(loan)"
                 >
                   <app-icon name="clock" size="13" />
-                  <span class="action-label">Historique</span>
+                  <span class="action-label">{{ 'budget.loan.actions.history' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
-                  [title]="'Modifier — ' + loan.person"
-                  [attr.aria-label]="'Modifier emprunt de ' + loan.person"
+                  [title]="'budget.loan.actions.editLentTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.editBorrowedAria' | transloco: { person: loan.person }"
                   (click)="openEditModal(loan)"
                 >
                   <app-icon name="pencil" size="13" />
-                  <span class="action-label">Modifier</span>
+                  <span class="action-label">{{ 'budget.loan.actions.edit' | transloco }}</span>
                 </button>
                 <button
                   type="button"
                   class="action-btn hover:text-ib-red hover:border-ib-red/30"
-                  [title]="'Supprimer — ' + loan.person"
-                  [attr.aria-label]="'Supprimer emprunt de ' + loan.person"
+                  [title]="'budget.loan.actions.deleteLentTitle' | transloco: { person: loan.person }"
+                  [attr.aria-label]="'budget.loan.actions.deleteBorrowedAria' | transloco: { person: loan.person }"
                   (click)="deleteLoan(loan.id)"
                 >
                   <app-icon name="trash" size="13" />
-                  <span class="action-label">Supprimer</span>
+                  <span class="action-label">{{ 'budget.loan.actions.delete' | transloco }}</span>
                 </button>
               </div>
             </article>
@@ -420,12 +421,12 @@ const MEMBER_PALETTE = [
       } @else {
         <div class="text-center py-12">
           <app-icon name="arrow-down-left" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">Aucune dette en cours</p>
+          <p class="text-sm text-text-muted">{{ 'budget.loan.noBorrowed' | transloco }}</p>
         </div>
       }
     </section>
 
-    <app-modal-dialog #lentModal title="Nouveau prêt" (closed)="onModalClosed()">
+    <app-modal-dialog #lentModal [title]="'budget.loan.modal.newLent' | transloco" (closed)="onModalClosed()">
       @if (lentModal.isOpen()) {
         <app-loan-form
           direction="lent"
@@ -436,7 +437,7 @@ const MEMBER_PALETTE = [
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #borrowedModal title="Nouvel emprunt" (closed)="onModalClosed()">
+    <app-modal-dialog #borrowedModal [title]="'budget.loan.modal.newBorrowed' | transloco" (closed)="onModalClosed()">
       @if (borrowedModal.isOpen()) {
         <app-loan-form
           direction="borrowed"
@@ -447,7 +448,7 @@ const MEMBER_PALETTE = [
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal title="Modifier" (closed)="onModalClosed()">
+    <app-modal-dialog #editModal [title]="'budget.loan.modal.edit' | transloco" (closed)="onModalClosed()">
       @if (editModal.isOpen()) {
         <app-loan-form
           [direction]="selectedLoan()?.direction ?? 'lent'"
@@ -459,7 +460,7 @@ const MEMBER_PALETTE = [
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #paymentModal title="Remboursement" (closed)="onModalClosed()">
+    <app-modal-dialog #paymentModal [title]="'budget.loan.modal.payment' | transloco" (closed)="onModalClosed()">
       @if (paymentModal.isOpen()) {
         <app-record-payment-form
           [accounts]="accounts()"
@@ -471,14 +472,14 @@ const MEMBER_PALETTE = [
 
     <app-modal-dialog
       #historyModal
-      [title]="'Historique — ' + (selectedLoan()?.person ?? '')"
+      [title]="'budget.loan.modal.history' | transloco: { person: selectedLoan()?.person ?? '' }"
       (closed)="onModalClosed()"
     >
       @if (historyModal.isOpen()) {
         <div class="space-y-4">
           <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
             <div class="flex-1">
-              <label for="tx-amount" class="text-xs text-text-muted">Montant</label>
+              <label for="tx-amount" class="text-xs text-text-muted">{{ 'budget.loan.modal.amount' | transloco }}</label>
               <input
                 id="tx-amount"
                 type="number"
@@ -490,7 +491,7 @@ const MEMBER_PALETTE = [
               />
             </div>
             <div class="flex-1">
-              <label for="tx-date" class="text-xs text-text-muted">Date</label>
+              <label for="tx-date" class="text-xs text-text-muted">{{ 'budget.loan.modal.date' | transloco }}</label>
               <input
                 id="tx-date"
                 type="date"
@@ -504,7 +505,7 @@ const MEMBER_PALETTE = [
               [disabled]="!manualTxAmount() || !manualTxDate()"
               class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
             >
-              Ajouter
+              {{ 'budget.loan.modal.submitAdd' | transloco }}
             </button>
           </form>
 
@@ -515,8 +516,8 @@ const MEMBER_PALETTE = [
                   <tr
                     class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
                   >
-                    <th class="px-4 py-2.5">Date</th>
-                    <th class="px-4 py-2.5 text-right">Montant</th>
+                    <th class="px-4 py-2.5">{{ 'budget.loan.modal.tableDate' | transloco }}</th>
+                    <th class="px-4 py-2.5 text-right">{{ 'budget.loan.modal.tableAmount' | transloco }}</th>
                   </tr>
                 </thead>
                 <tbody class="divide-y divide-border/30">
@@ -536,7 +537,7 @@ const MEMBER_PALETTE = [
           } @else {
             <div class="text-center py-8">
               <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-              <p class="text-sm text-text-muted">Aucun remboursement enregistré</p>
+              <p class="text-sm text-text-muted">{{ 'budget.loan.modal.noPayments' | transloco }}</p>
             </div>
           }
         </div>
@@ -557,6 +558,7 @@ export class Loans {
   private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
+  private readonly _i18n = inject(TranslocoService);
 
   private readonly lentModalRef = viewChild.required<ModalDialog>('lentModal');
   private readonly borrowedModalRef = viewChild.required<ModalDialog>('borrowedModal');
@@ -663,9 +665,9 @@ export class Loans {
       if (data.direction === 'lent') this.lentModalRef().close();
       else this.borrowedModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(data.direction === 'lent' ? 'Prêt créé' : 'Emprunt créé');
+      this.toaster.success(this._i18n.translate(data.direction === 'lent' ? 'budget.loan.messages.lentCreated' : 'budget.loan.messages.borrowedCreated'));
     } catch {
-      this.toaster.error('Erreur lors de la création');
+      this.toaster.error(this._i18n.translate('budget.loan.messages.createError'));
     }
   }
 
@@ -676,9 +678,9 @@ export class Loans {
       await lastValueFrom(this.updateLoanUC.execute(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Prêt modifié');
+      this.toaster.success(this._i18n.translate('budget.loan.messages.updated'));
     } catch {
-      this.toaster.error('Erreur lors de la modification');
+      this.toaster.error(this._i18n.translate('budget.loan.messages.updateError'));
     }
   }
 
@@ -689,13 +691,13 @@ export class Loans {
       await lastValueFrom(this.recordPaymentUC.execute(loan.id, event.amount, event.date));
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Remboursement enregistré');
+      this.toaster.success(this._i18n.translate('budget.loan.messages.paymentRecorded'));
 
       if (event.accountId) {
-        const direction = loan.direction === 'borrowed' ? 'Remb. dette' : 'Remb. prêt';
+        const labelKey = loan.direction === 'borrowed' ? 'budget.loan.messages.debtRepaymentLabel' : 'budget.loan.messages.loanRepaymentLabel';
         await lastValueFrom(
           this.createEntryUC.execute({
-            label: `${direction} — ${loan.person}`,
+            label: this._i18n.translate(labelKey, { person: loan.person }),
             amount: event.amount,
             type: 'spending',
             accountId: event.accountId,
@@ -704,24 +706,24 @@ export class Loans {
             date: event.date || null,
             endDate: null,
             toAccountId: null,
-            category: 'Remboursement',
+            category: this._i18n.translate('budget.loan.messages.repaymentCategory'),
             payslipKey: null,
           }),
         );
       }
     } catch {
-      this.toaster.error('Erreur lors du remboursement');
+      this.toaster.error(this._i18n.translate('budget.loan.messages.paymentError'));
     }
   }
 
   protected async deleteLoan(id: string) {
-    if (!(await this.confirm.delete('ce prêt'))) return;
+    if (!(await this.confirm.delete(this._i18n.translate('budget.loan.messages.deleteTarget')))) return;
     try {
       await lastValueFrom(this.deleteLoanUC.execute(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success('Prêt supprimé');
+      this.toaster.success(this._i18n.translate('budget.loan.messages.deleted'));
     } catch {
-      this.toaster.error('Erreur lors de la suppression');
+      this.toaster.error(this._i18n.translate('budget.loan.messages.deleteError'));
     }
   }
 

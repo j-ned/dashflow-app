@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 
@@ -12,14 +13,14 @@ type LoginFormShape = {
 @Component({
   selector: 'app-login',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, Icon],
+  imports: [ReactiveFormsModule, RouterLink, Icon, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main class="w-full max-w-2xl">
     <article class="w-full rounded-xl border border-border bg-surface p-10 shadow-lg">
       <header class="mb-8 text-center">
         <h1 class="text-2xl font-bold text-text-primary">DashFlow</h1>
-        <p class="mt-2 text-sm text-text-muted">Votre tableau de bord personnel</p>
+        <p class="mt-2 text-sm text-text-muted">{{ 'auth.appTagline' | transloco }}</p>
       </header>
 
       @if (error()) {
@@ -29,10 +30,10 @@ type LoginFormShape = {
       @if (step() === 'credentials') {
         <form [formGroup]="form" (ngSubmit)="submitLogin()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
-          <legend class="sr-only">Identifiants de connexion</legend>
+          <legend class="sr-only">{{ 'auth.login.credentialsLegend' | transloco }}</legend>
           <div>
             <label for="email" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Email <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.login.email' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input
               type="email"
@@ -40,20 +41,20 @@ type LoginFormShape = {
               formControlName="email"
               aria-required="true"
               class="w-full rounded-lg border border-border bg-canvas px-3 py-2 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-              placeholder="vous@exemple.com"
+              [placeholder]="'auth.login.emailPlaceholder' | transloco"
             />
             @if (form.controls.email.touched) {
               @if (form.controls.email.errors?.['required']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email est obligatoire.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.login.emailRequired' | transloco }}</small>
               } @else if (form.controls.email.errors?.['email']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">L'email doit avoir un format valide.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.login.emailInvalid' | transloco }}</small>
               }
             }
           </div>
 
           <div>
             <label for="password" class="mb-1.5 block text-sm font-medium text-text-primary">
-              Mot de passe <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'auth.login.password' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <div class="relative">
               <input
@@ -62,19 +63,19 @@ type LoginFormShape = {
                 formControlName="password"
                 aria-required="true"
                 class="w-full rounded-lg border border-border bg-canvas px-3 py-2 pr-12 text-sm text-text-primary placeholder:text-text-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-                placeholder="••••••••"
+                [placeholder]="'auth.login.passwordPlaceholder' | transloco"
               />
               <button type="button" (click)="showPassword.set(!showPassword())"
                 class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center w-11 h-11 text-text-muted hover:text-text-primary transition-colors"
-                [attr.aria-label]="showPassword() ? 'Masquer' : 'Afficher'">
+                [attr.aria-label]="(showPassword() ? 'auth.hide' : 'auth.show') | transloco">
                 <app-icon [name]="showPassword() ? 'eye-off' : 'eye'" size="18" />
               </button>
             </div>
             @if (form.controls.password.touched) {
               @if (form.controls.password.errors?.['required']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe est obligatoire.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.login.passwordRequired' | transloco }}</small>
               } @else if (form.controls.password.errors?.['minlength']) {
-                <small class="mt-1 block text-xs text-ib-red" role="alert">Le mot de passe doit faire au minimum 12 caractères.</small>
+                <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'auth.login.passwordMinLength' | transloco }}</small>
               }
             }
           </div>
@@ -86,16 +87,16 @@ type LoginFormShape = {
             [disabled]="form.invalid || loading()"
             class="mt-4 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{ loading() ? 'Connexion...' : 'Se connecter' }}
+            {{ (loading() ? 'auth.login.submitting' : 'auth.login.submit') | transloco }}
           </button>
 
           <p class="mt-2 text-center">
-            <a routerLink="/auth/forgot-password" class="text-sm text-text-muted hover:text-ib-blue transition-colors">Mot de passe oublié ?</a>
+            <a routerLink="/auth/forgot-password" class="text-sm text-text-muted hover:text-ib-blue transition-colors">{{ 'auth.login.forgotPassword' | transloco }}</a>
           </p>
 
           <div class="relative my-4">
             <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-border"></div></div>
-            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">ou continuer avec</span></div>
+            <div class="relative flex justify-center text-xs"><span class="bg-surface px-2 text-text-muted">{{ 'auth.login.orContinueWith' | transloco }}</span></div>
           </div>
 
           <div class="flex flex-col gap-2">
@@ -112,8 +113,8 @@ type LoginFormShape = {
           </div>
 
           <p class="mt-4 text-center text-sm text-text-muted">
-            Pas encore de compte ?
-            <a routerLink="/auth/register" class="font-medium text-ib-blue hover:underline">S'inscrire</a>
+            {{ 'auth.login.noAccount' | transloco }}
+            <a routerLink="/auth/register" class="font-medium text-ib-blue hover:underline">{{ 'auth.login.signUp' | transloco }}</a>
           </p>
         </form>
       }
@@ -122,14 +123,14 @@ type LoginFormShape = {
         <div class="flex flex-col gap-4">
           <div class="rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
             <p class="text-sm text-text-primary">
-              Entrez le code de votre application d'authentification
+              {{ 'auth.login.totpPrompt' | transloco }}
             </p>
           </div>
 
           <form (submit)="$event.preventDefault(); submitTotp()" class="flex flex-col gap-4">
             <div>
               <label for="totp" class="mb-1.5 block text-sm font-medium text-text-primary text-center">
-                Code 2FA
+                {{ 'auth.login.totpLabel' | transloco }}
               </label>
               <input
                 #totpInput
@@ -150,7 +151,7 @@ type LoginFormShape = {
               [disabled]="totpValue().length !== 6 || loading()"
               class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {{ loading() ? 'Vérification...' : 'Vérifier' }}
+              {{ (loading() ? 'auth.login.verifying' : 'auth.login.verify') | transloco }}
             </button>
           </form>
 
@@ -159,7 +160,7 @@ type LoginFormShape = {
             (click)="backToCredentials()"
             class="text-sm text-text-muted hover:text-text-primary transition-colors text-center"
           >
-            Retour
+            {{ 'auth.login.back' | transloco }}
           </button>
         </div>
       }
@@ -171,6 +172,7 @@ export class Login {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly showPassword = signal(false);
   protected readonly loading = signal(false);
@@ -187,11 +189,11 @@ export class Login {
 
     if (params['error']) {
       const messages: Record<string, string> = {
-        oauth_failed: 'Erreur lors de la connexion OAuth.',
-        oauth_expired: 'La session OAuth a expiré, réessayez.',
-        oauth_no_email: 'Aucun courriel récupéré du fournisseur.',
+        oauth_failed: this._i18n.translate('auth.login.errors.oauthFailed'),
+        oauth_expired: this._i18n.translate('auth.login.errors.oauthExpired'),
+        oauth_no_email: this._i18n.translate('auth.login.errors.oauthNoEmail'),
       };
-      this.error.set(messages[params['error']] ?? 'Erreur de connexion.');
+      this.error.set(messages[params['error']] ?? this._i18n.translate('auth.login.errors.oauthGeneric'));
       return;
     }
 
@@ -201,7 +203,7 @@ export class Login {
         await this.auth.loginWithToken(params['token']);
         this.redirectAfterLogin();
       } catch {
-        this.error.set('Erreur lors de la connexion.');
+        this.error.set(this._i18n.translate('auth.login.errors.tokenLoginFailed'));
       } finally {
         this.loading.set(false);
       }
@@ -239,7 +241,7 @@ export class Login {
         this.step.set('totp');
         this.error.set('');
       } else {
-        this.error.set('Email ou mot de passe incorrect.');
+        this.error.set(this._i18n.translate('auth.login.errors.invalidCredentials'));
       }
     } finally {
       this.loading.set(false);
@@ -258,7 +260,7 @@ export class Login {
       await this.auth.login(email, password, code);
       this.redirectAfterLogin();
     } catch {
-      this.error.set('Code 2FA invalide.');
+      this.error.set(this._i18n.translate('auth.login.errors.invalidTotp'));
     } finally {
       this.loading.set(false);
     }

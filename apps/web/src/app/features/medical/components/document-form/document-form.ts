@@ -2,7 +2,8 @@ import { ChangeDetectionStrategy, Component, effect, input, output, signal } fro
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
-import { MedicalDocument, DocumentType, DOCUMENT_TYPE_LABELS } from '../../domain/models/document.model';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { MedicalDocument, DocumentType } from '../../domain/models/document.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
 
@@ -20,39 +21,41 @@ export type DocumentSubmitData = {
   file: File | null;
 };
 
+const DOCUMENT_TYPES: DocumentType[] = ['compte_rendu', 'facture', 'bilan', 'certificat', 'courrier', 'autre'];
+
 @Component({
   selector: 'app-document-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ initial() ? 'Modifier document' : 'Nouveau document' }}</legend>
+        <legend class="sr-only">{{ (initial() ? 'medical.document.form.legendEdit' : 'medical.document.form.legendCreate') | transloco }}</legend>
 
         <div>
           <label for="doc-patient" class="form-label">
-            Patient <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.document.form.patient' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <select id="doc-patient" formControlName="patientId" aria-required="true"
                   class="form-select">
-            <option value="">-- Sélectionner un patient --</option>
+            <option value="">{{ 'medical.document.form.patientPlaceholder' | transloco }}</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
           @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">Le patient est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.document.form.patientRequired' | transloco }}</small>
           }
         </div>
 
         <div>
-          <label for="doc-practitioner" class="form-label">Praticien associé</label>
+          <label for="doc-practitioner" class="form-label">{{ 'medical.document.form.practitioner' | transloco }}</label>
           <select id="doc-practitioner" formControlName="practitionerId"
                   class="form-select">
-            <option value="">-- Aucun --</option>
+            <option value="">{{ 'medical.document.form.practitionerPlaceholder' | transloco }}</option>
             @for (pr of practitioners(); track pr.id) {
-              <option [value]="pr.id">{{ pr.name }} ({{ pr.type }})</option>
+              <option [value]="pr.id">{{ pr.name }} ({{ ('medical.practitioner.types.' + pr.type) | transloco }})</option>
             }
           </select>
         </div>
@@ -60,48 +63,48 @@ export type DocumentSubmitData = {
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="doc-type" class="form-label">
-              Type <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.document.form.type' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <select id="doc-type" formControlName="type" aria-required="true"
                     class="form-select">
-              @for (opt of typeOptions; track opt.value) {
-                <option [value]="opt.value">{{ opt.label }}</option>
+              @for (t of documentTypes; track t) {
+                <option [value]="t">{{ ('medical.document.types.' + t) | transloco }}</option>
               }
             </select>
           </div>
           <div>
             <label for="doc-date" class="form-label">
-              Date <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.document.form.date' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
             <input id="doc-date" type="date" formControlName="date" aria-required="true"
                    class="form-input" />
             @if (form.controls.date.touched && form.controls.date.errors?.['required']) {
-              <small class="error" role="alert">La date est obligatoire.</small>
+              <small class="error" role="alert">{{ 'medical.document.form.dateRequired' | transloco }}</small>
             }
           </div>
         </div>
 
         <div>
           <label for="doc-title" class="form-label">
-            Titre <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.document.form.titleLabel' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="doc-title" type="text" formControlName="title" aria-required="true"
-                 placeholder="Ex: Bilan orthophonique, Facture ergothérapeute..."
+                 [placeholder]="'medical.document.form.titlePlaceholder' | transloco"
                  class="form-input" />
           @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <small class="error" role="alert">Le titre est obligatoire.</small>
+            <small class="error" role="alert">{{ 'medical.document.form.titleRequired' | transloco }}</small>
           }
         </div>
 
         <div>
-          <label for="doc-notes" class="form-label">Notes</label>
+          <label for="doc-notes" class="form-label">{{ 'medical.document.form.notes' | transloco }}</label>
           <textarea id="doc-notes" formControlName="notes" rows="2"
                     class="form-input"></textarea>
         </div>
 
         <!-- Drag & drop file -->
         <div>
-          <label class="form-label">Fichier (PDF, image)</label>
+          <label class="form-label">{{ 'medical.document.form.fileLabel' | transloco }}</label>
           <div class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
                [class.border-ib-purple]="isDragging()"
                [class.bg-ib-purple-5]="isDragging()"
@@ -112,29 +115,29 @@ export type DocumentSubmitData = {
             @if (selectedFile()) {
               <div class="flex items-center justify-center gap-2">
                 <span class="text-sm text-ib-purple font-medium">{{ selectedFile()!.name }}</span>
-                <span class="text-xs text-text-muted">({{ formatSize(selectedFile()!.size) }})</span>
-                <button type="button" class="text-xs text-ib-red hover:underline" (click)="removeFile()">Retirer</button>
+                <span class="text-xs text-text-muted">{{ 'medical.document.form.selectedFileSize' | transloco: { size: formatSize(selectedFile()!.size) } }}</span>
+                <button type="button" class="text-xs text-ib-red hover:underline" (click)="removeFile()">{{ 'medical.document.form.removeFile' | transloco }}</button>
               </div>
             } @else {
               <p class="text-sm text-text-muted">
-                Glissez-déposez un fichier ici ou
+                {{ 'medical.document.form.dropHere' | transloco }}
                 <label class="text-ib-purple cursor-pointer hover:underline">
-                  parcourir
+                  {{ 'medical.document.form.browse' | transloco }}
                   <input type="file" class="hidden" accept=".pdf,.jpg,.jpeg,.png,.webp"
                          (change)="onFileSelected($event)" />
                 </label>
               </p>
-              <p class="text-xs text-text-muted mt-1">PDF, JPG, PNG, WEBP — max 10 Mo</p>
+              <p class="text-xs text-text-muted mt-1">{{ 'medical.document.form.fileHint' | transloco }}</p>
             }
           </div>
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit bg-ib-purple">
-          {{ initial() ? 'Enregistrer' : 'Créer' }}
+          {{ (initial() ? 'medical.document.form.save' : 'medical.document.form.create') | transloco }}
         </button>
       </footer>
     </form>
@@ -150,8 +153,7 @@ export class DocumentForm {
   protected readonly isDragging = signal(false);
   protected readonly selectedFile = signal<File | null>(null);
 
-  protected readonly typeOptions = (Object.entries(DOCUMENT_TYPE_LABELS) as [DocumentType, string][])
-    .map(([value, label]) => ({ value, label }));
+  protected readonly documentTypes = DOCUMENT_TYPES;
 
   protected readonly form = new FormGroup<DocumentFormShape>({
     patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -220,9 +222,9 @@ export class DocumentForm {
   }
 
   protected formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} o`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} Ko`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} Mo`;
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected submitForm() {

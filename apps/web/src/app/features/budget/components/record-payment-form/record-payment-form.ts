@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
 
 type PaymentFormShape = {
@@ -13,52 +14,52 @@ type PaymentFormShape = {
 @Component({
   selector: 'app-record-payment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">Remboursement</legend>
+        <legend class="sr-only">{{ 'budget.loan.paymentForm.legend' | transloco }}</legend>
 
         <div>
           <label for="payment-amount" class="form-label">
-            Montant du remboursement <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'budget.loan.paymentForm.amount' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
           <input id="payment-amount" type="number" formControlName="amount" step="0.01" min="0.01" aria-required="true"
                  class="form-input mono" />
           @if (form.controls.amount.touched) {
             @if (form.controls.amount.errors?.['required']) {
-              <small class="error" role="alert">Le montant est obligatoire.</small>
+              <small class="error" role="alert">{{ 'budget.errors.amountRequired' | transloco }}</small>
             } @else if (form.controls.amount.errors?.['min']) {
-              <small class="error" role="alert">Le montant doit être supérieur à 0.</small>
+              <small class="error" role="alert">{{ 'budget.errors.amountMin' | transloco }}</small>
             }
           }
         </div>
 
         <div>
-          <label for="payment-date" class="form-label">Date</label>
+          <label for="payment-date" class="form-label">{{ 'budget.loan.paymentForm.date' | transloco }}</label>
           <input id="payment-date" type="date" formControlName="date" class="form-input" />
         </div>
 
         @if (accounts().length > 0) {
           <div>
-            <label for="payment-account" class="form-label">Décompter du compte</label>
+            <label for="payment-account" class="form-label">{{ 'budget.loan.paymentForm.deductFromAccount' | transloco }}</label>
             <select id="payment-account" formControlName="accountId" class="form-input">
-              <option value="">Ne pas décompter</option>
+              <option value="">{{ 'budget.loan.paymentForm.noDeduction' | transloco }}</option>
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }}</option>
               }
             </select>
-            <p class="text-xs mt-1 text-text-muted">Créera une dépense sur le compte sélectionné</p>
+            <p class="text-xs mt-1 text-text-muted">{{ 'budget.loan.paymentForm.deductionHint' | transloco }}</p>
           </div>
         }
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">Annuler</button>
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
         <button type="submit" [disabled]="isInvalid()"
                 class="btn-submit bg-ib-blue">
-          Valider
+          {{ 'budget.actions.validate' | transloco }}
         </button>
       </footer>
     </form>

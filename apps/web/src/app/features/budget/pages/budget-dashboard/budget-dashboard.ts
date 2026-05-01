@@ -2,6 +2,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementR
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Envelope } from '../../domain/models/envelope.model';
 import { Loan } from '../../domain/models/loan.model';
@@ -37,12 +38,12 @@ type MemberSummary = {
 @Component({
   selector: 'app-budget-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, RouterLink, Icon],
+  imports: [DecimalPipe, RouterLink, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header>
-      <h2 class="text-2xl font-bold text-text-primary">Vue globale</h2>
-      <p class="mt-1 text-sm text-text-muted">Soldes et alertes de votre budget</p>
+      <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.dashboard.title' | transloco }}</h2>
+      <p class="mt-1 text-sm text-text-muted">{{ 'budget.dashboard.subtitle' | transloco }}</p>
     </header>
 
     <!-- Section par membre -->
@@ -56,10 +57,10 @@ type MemberSummary = {
           <div>
             <h3 class="text-lg font-semibold text-text-primary">{{ ms.label }}</h3>
             <p class="text-[11px] text-text-muted">
-              {{ ms.envelopes.length }} enveloppe{{ ms.envelopes.length > 1 ? 's' : '' }}
-              · {{ ms.lentLoans.length + ms.borrowedLoans.length }} prêt{{ (ms.lentLoans.length + ms.borrowedLoans.length) > 1 ? 's' : '' }}
+              {{ (ms.envelopes.length > 1 ? 'budget.dashboard.envelopesCountPlural' : 'budget.dashboard.envelopesCount') | transloco: { count: ms.envelopes.length } }}
+              · {{ ((ms.lentLoans.length + ms.borrowedLoans.length) > 1 ? 'budget.dashboard.loansCountPlural' : 'budget.dashboard.loansCount') | transloco: { count: ms.lentLoans.length + ms.borrowedLoans.length } }}
               @if (ms.incomes.length > 0) {
-                · {{ ms.incomes.length }} revenu{{ ms.incomes.length > 1 ? 's' : '' }}
+                · {{ (ms.incomes.length > 1 ? 'budget.dashboard.incomesCountPlural' : 'budget.dashboard.incomesCount') | transloco: { count: ms.incomes.length } }}
               }
             </p>
           </div>
@@ -74,7 +75,7 @@ type MemberSummary = {
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10">
                     <app-icon name="trending-up" size="12" class="text-ib-green" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Revenus</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.income' | transloco }}</p>
                 </div>
                 <p class="text-lg font-mono font-bold text-ib-green tracking-tight">{{ ms.totalIncome | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
               </div>
@@ -85,7 +86,7 @@ type MemberSummary = {
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange/10">
                     <app-icon name="receipt" size="12" class="text-ib-orange" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Charges / mois</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.monthlyCharges' | transloco }}</p>
                 </div>
                 <p class="text-lg font-mono font-bold text-ib-orange tracking-tight">{{ ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
               </div>
@@ -105,7 +106,7 @@ type MemberSummary = {
                               [class.text-ib-green]="ms.remaining >= 0"
                               [class.text-ib-red]="ms.remaining < 0" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">Reste</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.remaining' | transloco }}</p>
                 </div>
                 <p class="text-lg font-mono font-bold tracking-tight"
                    [class.text-ib-green]="ms.remaining >= 0"
@@ -122,7 +123,7 @@ type MemberSummary = {
             @let pctBudget = (allCharges / ms.totalIncome) * 100;
             <div class="rounded-xl border border-border bg-surface p-3">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-text-muted">Budget utilisé</span>
+                <span class="text-[11px] font-medium text-text-muted">{{ 'budget.dashboard.usage.label' | transloco }}</span>
                 <span class="text-sm font-mono font-bold"
                       [class.text-ib-green]="pctBudget <= 80"
                       [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
@@ -139,9 +140,9 @@ type MemberSummary = {
                 </div>
               </div>
               <div class="flex items-center gap-4 mt-2 text-[10px] text-text-muted">
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> Mensuels {{ ms.totalMonthlyExpenses | number:'1.0-0' }}&euro;</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> Annuels ~{{ ms.monthlyAnnualExpenses | number:'1.0-0' }}&euro;/m</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> Dépenses {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> {{ 'budget.dashboard.usage.monthly' | transloco }} {{ ms.totalMonthlyExpenses | number:'1.0-0' }}&euro;</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> {{ 'budget.dashboard.usage.annual' | transloco }} ~{{ ms.monthlyAnnualExpenses | number:'1.0-0' }}&euro;/m</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> {{ 'budget.dashboard.usage.spendings' | transloco }} {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
               </div>
             </div>
           }
@@ -155,7 +156,7 @@ type MemberSummary = {
                 <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition hover:shadow-lg hover:shadow-ib-red/5">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50">
                     <app-icon name="receipt" size="13" class="text-ib-red" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">Mensuels</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">{{ 'budget.dashboard.monthly' | transloco }}</span>
                     <span class="ml-auto text-sm font-mono font-bold text-ib-red">{{ ms.totalMonthlyExpenses | number:'1.2-2' }}&euro;</span>
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1">
@@ -182,8 +183,8 @@ type MemberSummary = {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0">
                     <app-icon name="calendar" size="13" class="text-ib-orange" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Annuels</span>
-                    <span class="ml-auto text-sm font-mono font-bold text-ib-orange">{{ ms.totalAnnualExpenses | number:'1.2-2' }}&euro;/an</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.dashboard.annual' | transloco }}</span>
+                    <span class="ml-auto text-sm font-mono font-bold text-ib-orange">{{ ms.totalAnnualExpenses | number:'1.2-2' }}{{ 'budget.bankAccount.expenses.annualSuffix' | transloco }}</span>
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1 overflow-y-auto flex-1">
                     @for (entry of ms.annualExpenses; track entry.id) {
@@ -204,7 +205,7 @@ type MemberSummary = {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0">
                     <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">Dépenses</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">{{ 'budget.dashboard.spendings' | transloco }}</span>
                     <span class="ml-auto text-sm font-mono font-bold text-ib-yellow">{{ ms.totalSpendings | number:'1.2-2' }}&euro;</span>
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1 overflow-y-auto flex-1">
@@ -231,7 +232,7 @@ type MemberSummary = {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-cyan/5 border-b border-border/50">
                 <app-icon name="wallet" size="14" class="text-ib-cyan" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">Enveloppes</h4>
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">{{ 'budget.dashboard.envelopes' | transloco }}</h4>
               </div>
               <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 divide-border/20">
                 @for (env of ms.envelopes; track env.id) {
@@ -270,7 +271,7 @@ type MemberSummary = {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-blue/5 border-b border-border/50">
                 <app-icon name="arrow-up-right" size="14" class="text-ib-blue" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">Prêts</h4>
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.dashboard.loans' | transloco }}</h4>
               </div>
               <div class="divide-y divide-border/20">
                 @for (loan of ms.lentLoans; track loan.id) {
@@ -299,7 +300,7 @@ type MemberSummary = {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50">
                 <app-icon name="arrow-down-left" size="14" class="text-ib-orange" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">Dettes</h4>
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.dashboard.debts' | transloco }}</h4>
               </div>
               <div class="divide-y divide-border/20">
                 @for (loan of ms.borrowedLoans; track loan.id) {
@@ -333,6 +334,7 @@ export class BudgetDashboard {
   private readonly getLoans = inject(GetLoansUseCase);
   private readonly getMembersUC = inject(GetMembersUseCase);
   private readonly getEntries = inject(GetRecurringEntriesUseCase);
+  private readonly _i18n = inject(TranslocoService);
 
   protected readonly dashRefCardHeight = signal<number | null>(null);
 
@@ -466,7 +468,7 @@ export class BudgetDashboard {
     }
 
     // Puis le global (seulement les entrées non réclamées)
-    const global = buildSummary(null, 'Global (famille)', 'GL', claimedEntryIds);
+    const global = buildSummary(null, this._i18n.translate('budget.dashboard.globalLabel'), this._i18n.translate('budget.dashboard.globalInitials'), claimedEntryIds);
     if (global.envelopes.length > 0 || global.lentLoans.length > 0 || global.borrowedLoans.length > 0
         || global.incomes.length > 0 || global.monthlyExpenses.length > 0
         || global.annualExpenses.length > 0 || global.spendings.length > 0) {
