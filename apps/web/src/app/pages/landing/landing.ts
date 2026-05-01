@@ -1,10 +1,9 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
-
-const DEMO_URL = 'https://dashflow.j-ned.dev/auth/register';
+import { AuthStore } from '@features/auth/domain/auth.store';
 const GITHUB_URL = 'https://github.com/j-ned/dash-flow';
 const PORTFOLIO_URL = 'https://j-ned.dev';
 
@@ -57,9 +56,9 @@ const CRYPTO_SNIPPET = `async function encryptPayload(data, kek) {
             <app-icon name="arrow-up-right" [size]="14" />
           </a>
           <a
-            [href]="demoUrl"
-            target="_blank"
-            rel="noopener noreferrer"
+            href="#"
+            (click)="onDemoClick($event)"
+            [attr.aria-busy]="demoLoading()"
             class="inline-flex min-h-11 items-center gap-1.5 rounded-md bg-ib-blue px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
           >
             <span>{{ 'landing.nav.viewDemo' | transloco }}</span>
@@ -87,9 +86,9 @@ const CRYPTO_SNIPPET = `async function encryptPayload(data, kek) {
 
             <div class="mt-10 flex flex-wrap items-center gap-4">
               <a
-                [href]="demoUrl"
-                target="_blank"
-                rel="noopener noreferrer"
+                href="#"
+                (click)="onDemoClick($event)"
+                [attr.aria-busy]="demoLoading()"
                 class="inline-flex min-h-12 items-center gap-2 rounded-md bg-ib-blue px-6 py-3 text-base font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
               >
                 <span>{{ 'landing.hero.viewLiveDemo' | transloco }}</span>
@@ -340,9 +339,9 @@ const CRYPTO_SNIPPET = `async function encryptPayload(data, kek) {
           </p>
           <div class="mt-10 flex flex-wrap items-center justify-center gap-4">
             <a
-              [href]="demoUrl"
-              target="_blank"
-              rel="noopener noreferrer"
+              href="#"
+              (click)="onDemoClick($event)"
+              [attr.aria-busy]="demoLoading()"
               class="inline-flex min-h-12 items-center gap-2 rounded-md bg-ib-blue px-7 py-3 text-base font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
             >
               <span>{{ 'landing.hero.viewLiveDemo' | transloco }}</span>
@@ -398,7 +397,23 @@ const CRYPTO_SNIPPET = `async function encryptPayload(data, kek) {
   `,
 })
 export class LandingComponent {
-  protected readonly demoUrl = DEMO_URL;
+  private readonly authStore = inject(AuthStore);
+  private readonly router = inject(Router);
+  protected readonly demoLoading = signal(false);
+
+  protected async onDemoClick(event: Event): Promise<void> {
+    event.preventDefault();
+    if (this.demoLoading()) return;
+    this.demoLoading.set(true);
+    try {
+      await this.authStore.demoLogin();
+      await this.router.navigate(['/budget']);
+    } catch (err) {
+      console.error('Demo login failed', err);
+      this.demoLoading.set(false);
+    }
+  }
+
   protected readonly githubUrl = GITHUB_URL;
   protected readonly portfolioUrl = PORTFOLIO_URL;
   protected readonly currentYear = new Date().getFullYear();
