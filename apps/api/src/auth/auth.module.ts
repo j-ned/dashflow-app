@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { TokenService } from './token.service';
+import { TwoFactorService } from './two-factor.service';
 import type { Env } from '../config/env.schema';
 
 @Module({
@@ -18,6 +19,6 @@ import type { Env } from '../config/env.schema';
     }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, AuthRepository, TokenService],
+  providers: [AuthService, AuthRepository, TokenService, TwoFactorService],
 })
 export class AuthModule {}

@@ -16,16 +16,18 @@ import { SESSION_COOKIE, CSRF_COOKIE, sessionCookieOptions, csrfCookieOptions } 
 import {
   registerSchema, verifySchema, resendSchema, loginSchema, forgotPasswordSchema,
   resetPasswordSchema, updateProfileSchema, updatePasswordSchema, setPasswordSchema,
+  totpVerifySchema, totpDisableSchema,
 } from './dto/auth.dto';
 import type {
   RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePasswordDto, SetPasswordDto,
+  TotpVerifyDto, TotpDisableDto,
 } from './dto/auth.dto';
 import type { Env } from '../config/env.schema';
 
 const STRICT = { default: { limit: 10, ttl: 900_000 } };
 
-function httpFrom(r: { status: number; error: string }): HttpException {
-  return new HttpException(r.error, r.status);
+function httpFrom(r: { status: number; error: string; code?: string }): HttpException {
+  return new HttpException(r.code ? { message: r.error, code: r.code } : r.error, r.status);
 }
 
 @Controller('auth')
@@ -117,6 +119,27 @@ export class AuthController {
     const r = await this.auth.setPassword(u.id, dto);
     if (!r.success) throw httpFrom(r);
     return { message: 'Mot de passe défini' };
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Post('me/2fa/setup') @HttpCode(200)
+  async totpSetup(@CurrentUser() u: AuthUser) {
+    const r = await this.auth.setupTotp(u.id);
+    if (!r.success) throw httpFrom(r);
+    return r.data;
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Post('me/2fa/verify') @HttpCode(200)
+  async totpVerify(@CurrentUser() u: AuthUser, @Body(new ZodValidationPipe(totpVerifySchema)) dto: TotpVerifyDto) {
+    const r = await this.auth.enableTotp(u.id, dto.code);
+    if (!r.success) throw httpFrom(r);
+    return { message: '2FA activée', totpEnabled: true };
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Post('me/2fa/disable') @HttpCode(200)
+  async totpDisable(@CurrentUser() u: AuthUser, @Body(new ZodValidationPipe(totpDisableSchema)) dto: TotpDisableDto) {
+    const r = await this.auth.disableTotp(u.id, dto.password);
+    if (!r.success) throw httpFrom(r);
+    return { message: '2FA désactivée', totpEnabled: false };
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard) @Post('logout') @HttpCode(200)

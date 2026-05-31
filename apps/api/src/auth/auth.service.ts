@@ -3,6 +3,7 @@ import argon2 from 'argon2';
 import { AuthRepository } from './auth.repository';
 import { MAILER, type Mailer } from '../mail/mailer';
 import { ok, fail, type Result } from './auth.result';
+import { TwoFactorService } from './two-factor.service';
 import type { users } from '../db/schema';
 import type { RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePasswordDto, SetPasswordDto } from './dto/auth.dto';
 
@@ -15,6 +16,7 @@ export class AuthService {
   constructor(
     private readonly repo: AuthRepository,
     @Inject(MAILER) private readonly mailer: Mailer,
+    private readonly twoFactor: TwoFactorService,
   ) {}
 
   async register(dto: RegisterDto): Promise<Result<User>> {
@@ -41,6 +43,10 @@ export class AuthService {
     if (!user || !user.password) return fail(401, 'Identifiants invalides');
     if (!user.emailVerified) return fail(403, 'Email non vérifié');
     if (!(await argon2.verify(user.password, dto.password))) return fail(401, 'Identifiants invalides');
+    if (user.totpEnabled && user.totpSecret) {
+      if (!dto.totpCode) return fail(403, 'Code 2FA requis', 'TOTP_REQUIRED');
+      if (!this.twoFactor.verify(user.totpSecret, dto.totpCode)) return fail(401, 'Code 2FA invalide');
+    }
     return ok(user);
   }
 
@@ -84,6 +90,31 @@ export class AuthService {
   async resendCode(email: string): Promise<Result<null>> {
     const user = await this.repo.findByEmail(email);
     if (user && !user.emailVerified) await this.sendCode(email, 'verification');
+    return ok(null);
+  }
+
+  async setupTotp(userId: string): Promise<Result<{ qrCode: string; secret: string; uri: string }>> {
+    const user = await this.repo.findById(userId);
+    if (!user) return fail(404, 'Compte introuvable');
+    const { secret, otpauthUri } = this.twoFactor.generateSecret(user.email);
+    await this.repo.updateUser(userId, { totpSecret: secret });
+    const qrCode = await this.twoFactor.buildQrDataUrl(otpauthUri);
+    return ok({ qrCode, secret, uri: otpauthUri });
+  }
+
+  async enableTotp(userId: string, code: string): Promise<Result<null>> {
+    const user = await this.repo.findById(userId);
+    if (!user || !user.totpSecret) return fail(400, 'Aucun secret 2FA en attente');
+    if (!this.twoFactor.verify(user.totpSecret, code)) return fail(400, 'Code 2FA invalide');
+    await this.repo.updateUser(userId, { totpEnabled: new Date() });
+    return ok(null);
+  }
+
+  async disableTotp(userId: string, password: string): Promise<Result<null>> {
+    const user = await this.repo.findById(userId);
+    if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
+    if (!(await argon2.verify(user.password, password))) return fail(401, 'Mot de passe incorrect');
+    await this.repo.updateUser(userId, { totpSecret: null, totpEnabled: null });
     return ok(null);
   }
 

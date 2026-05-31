@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import argon2 from 'argon2';
+import * as OTPAuth from 'otpauth';
 import { AuthService } from './auth.service';
+import { TwoFactorService } from './two-factor.service';
 
 const repo = () => ({
   findByEmail: vi.fn(), findById: vi.fn(), createUser: vi.fn(), updateUser: vi.fn(),
@@ -10,7 +12,7 @@ const mailer = () => ({ sendVerificationCode: vi.fn(), sendPasswordResetCode: vi
 
 describe('AuthService', () => {
   let r: ReturnType<typeof repo>; let m: ReturnType<typeof mailer>; let svc: AuthService;
-  beforeEach(() => { r = repo(); m = mailer(); svc = new AuthService(r as any, m as any); });
+  beforeEach(() => { r = repo(); m = mailer(); svc = new AuthService(r as any, m as any, new TwoFactorService()); });
 
   it('register : hash le mdp, crée le user, envoie un code', async () => {
     r.findByEmail.mockResolvedValue(undefined);
@@ -52,5 +54,36 @@ describe('AuthService', () => {
     const res = await svc.forgotPassword('inconnu@b.com');
     expect(res.success).toBe(true);
     expect(m.sendPasswordResetCode).not.toHaveBeenCalled();
+  });
+
+  it('enableTotp : code valide → totpEnabled set', async () => {
+    const tf = new TwoFactorService();
+    const { secret } = tf.generateSecret('a@b.com');
+    svc = new AuthService(r as any, m as any, tf);
+    r.findById.mockResolvedValue({ id: 'u1', totpSecret: secret, totpEnabled: null });
+    r.updateUser.mockResolvedValue({ id: 'u1' });
+    const totp = new OTPAuth.TOTP({ issuer: 'DashFlow', secret: OTPAuth.Secret.fromBase32(secret) });
+    const res = await svc.enableTotp('u1', totp.generate());
+    expect(res.success).toBe(true);
+    expect(r.updateUser).toHaveBeenCalledWith('u1', expect.objectContaining({ totpEnabled: expect.any(Date) }));
+  });
+
+  it('enableTotp : code invalide → fail', async () => {
+    const tf = new TwoFactorService();
+    const { secret } = tf.generateSecret('a@b.com');
+    svc = new AuthService(r as any, m as any, tf);
+    r.findById.mockResolvedValue({ id: 'u1', totpSecret: secret, totpEnabled: null });
+    expect((await svc.enableTotp('u1', '000000')).success).toBe(false);
+  });
+
+  it('login : compte 2FA sans code → fail 403 TOTP_REQUIRED', async () => {
+    r.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', password: await argon2.hash('bonmotdepasse'), emailVerified: new Date(), totpEnabled: new Date(), totpSecret: 'AAAA' });
+    const res = await svc.login({ email: 'a@b.com', password: 'bonmotdepasse' });
+    expect(res).toMatchObject({ success: false, status: 403, code: 'TOTP_REQUIRED' });
+  });
+
+  it('disableTotp : mauvais mot de passe → fail 401', async () => {
+    r.findById.mockResolvedValue({ id: 'u1', password: await argon2.hash('bon-mdp-long-1'), totpSecret: 'X', totpEnabled: new Date() });
+    expect(await svc.disableTotp('u1', 'mauvais')).toMatchObject({ success: false, status: 401 });
   });
 });
