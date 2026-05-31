@@ -1,12 +1,15 @@
 import {
-  Body, Controller, Get, HttpCode, HttpException, Patch, Post, Req, Res, UnauthorizedException, UseGuards,
+  BadRequestException, Body, Controller, Get, HttpCode, HttpException, NotFoundException, Param,
+  Patch, Post, Req, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
+import { FileInterceptor } from '@nestjs/platform-express';
 import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
+import { StorageService } from '../storage/storage.service';
 import { toPublicUser, toKeyMaterial } from './auth.response';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -36,6 +39,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly token: TokenService,
+    private readonly storage: StorageService,
     config: ConfigService<Env, true>,
   ) { this.isProd = config.get('NODE_ENV', { infer: true }) === 'production'; }
 
@@ -146,5 +150,29 @@ export class AuthController {
   logout(@Res({ passthrough: true }) res: Response) {
     res.clearCookie(SESSION_COOKIE, sessionCookieOptions(this.isProd));
     return { message: 'Déconnecté' };
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @Post('me/avatar')
+  @UseInterceptors(FileInterceptor('avatar', { limits: { fileSize: 2 * 1024 * 1024 } }))
+  async uploadAvatar(@CurrentUser() u: AuthUser, @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined) {
+    if (!file) throw new BadRequestException('Fichier requis');
+    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) {
+      throw new BadRequestException('Type image invalide');
+    }
+    const key = this.storage.avatarKey(u.id, file.mimetype);
+    await this.storage.upload(key, file.buffer, file.mimetype, 'public, max-age=31536000, immutable');
+    await this.auth.setAvatar(u.id, key);
+    return { avatarUrl: `/api/auth/avatar/${u.id}` };
+  }
+
+  @Get('avatar/:userId')
+  async getAvatar(@Param('userId') userId: string, @Res() res: Response): Promise<void> {
+    const user = await this.auth.getById(userId);
+    if (!user?.avatarUrl) throw new NotFoundException('Avatar introuvable');
+    const obj = await this.storage.getStream(user.avatarUrl);
+    if (!obj) throw new NotFoundException('Avatar introuvable');
+    res.setHeader('Content-Type', obj.contentType);
+    obj.stream.pipe(res);
   }
 }

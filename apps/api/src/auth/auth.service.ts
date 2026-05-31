@@ -120,6 +120,9 @@ export class AuthService {
     return this.repo.updateUser(userId, { displayName: displayName ?? null });
   }
   getById(userId: string): Promise<User | undefined> { return this.repo.findById(userId); }
+  setAvatar(userId: string, key: string): Promise<unknown> {
+    return this.repo.updateUser(userId, { avatarUrl: key });
+  }
 
   private checkRewrap(version: number, newSalt?: string, newWrappedMasterKey?: string):
     Result<{ encryptionSalt?: string; wrappedMasterKey?: string }> {
