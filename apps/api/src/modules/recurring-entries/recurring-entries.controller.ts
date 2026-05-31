@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,9 +9,15 @@ import {
   Param,
   Post,
   Put,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { RecurringEntriesService } from './recurring-entries.service';
+import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
@@ -23,7 +30,10 @@ import {
 @UseGuards(JwtAuthGuard)
 @Controller('recurring-entries')
 export class RecurringEntriesController {
-  constructor(private readonly svc: RecurringEntriesService) {}
+  constructor(
+    private readonly svc: RecurringEntriesService,
+    private readonly storage: StorageService,
+  ) {}
 
   @Get()
   list(@CurrentUser() u: AuthUser) { return this.svc.list(u.id); }
@@ -86,5 +96,43 @@ export class RecurringEntriesController {
   @UseGuards(CsrfGuard) @Delete(':id') @HttpCode(204)
   async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     await this.svc.remove(u.id, id);
+  }
+
+  // --- Payslip file sub-routes ---
+
+  @UseGuards(CsrfGuard)
+  @Post(':id/payslip')
+  @UseInterceptors(FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  async uploadPayslip(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
+  ) {
+    if (!file) throw new BadRequestException('Fichier requis');
+    const existing = await this.svc.getOne(u.id, id);
+    if (!existing) throw new NotFoundException('Non trouvé');
+    const key = this.storage.payslipKey(u.id, id, file.mimetype);
+    await this.storage.upload(key, file.buffer, file.mimetype);
+    return this.svc.update(u.id, id, { payslipKey: key });
+  }
+
+  @Get(':id/payslip')
+  async getPayslip(@CurrentUser() u: AuthUser, @Param('id') id: string, @Res() res: Response): Promise<void> {
+    const row = await this.svc.getOne(u.id, id);
+    if (!row?.payslipKey) throw new NotFoundException('Fiche de paie introuvable');
+    const obj = await this.storage.getStream(row.payslipKey);
+    if (!obj) throw new NotFoundException('Fiche de paie introuvable');
+    res.setHeader('Content-Type', obj.contentType);
+    obj.stream.pipe(res);
+  }
+
+  @UseGuards(CsrfGuard)
+  @Delete(':id/payslip')
+  @HttpCode(204)
+  async deletePayslip(@CurrentUser() u: AuthUser, @Param('id') id: string): Promise<void> {
+    const row = await this.svc.getOne(u.id, id);
+    if (!row) throw new NotFoundException('Non trouvé');
+    if (row.payslipKey) await this.storage.delete(row.payslipKey);
+    await this.svc.update(u.id, id, { payslipKey: null });
   }
 }
