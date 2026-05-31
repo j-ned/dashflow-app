@@ -102,13 +102,13 @@ export class AuthController {
   async me(@CurrentUser() u: AuthUser) {
     const user = await this.auth.getById(u.id);
     if (!user) throw new UnauthorizedException();
-    return { user: toPublicUser(user), keyMaterial: toKeyMaterial(user) };
+    return { ...toPublicUser(user), keyMaterial: toKeyMaterial(user) };
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard) @Patch('me')
   async updateProfile(@CurrentUser() u: AuthUser, @Body(new ZodValidationPipe(updateProfileSchema)) dto: { displayName?: string }) {
     const user = await this.auth.updateProfile(u.id, dto.displayName);
-    return { user: toPublicUser(user), keyMaterial: toKeyMaterial(user) };
+    return { ...toPublicUser(user), keyMaterial: toKeyMaterial(user) };
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard) @Patch('me/password') @HttpCode(200)
@@ -154,7 +154,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard)
   @Post('me/avatar')
-  @UseInterceptors(FileInterceptor('avatar', { limits: { fileSize: 2 * 1024 * 1024 } }))
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }))
   async uploadAvatar(@CurrentUser() u: AuthUser, @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined) {
     if (!file) throw new BadRequestException('Fichier requis');
     if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)) {
@@ -162,8 +162,8 @@ export class AuthController {
     }
     const key = this.storage.avatarKey(u.id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype, 'public, max-age=31536000, immutable');
-    await this.auth.setAvatar(u.id, key);
-    return { avatarUrl: `/api/auth/avatar/${u.id}` };
+    const updated = await this.auth.setAvatar(u.id, key);
+    return { ...toPublicUser(updated), keyMaterial: toKeyMaterial(updated) };
   }
 
   @Get('avatar/:userId')

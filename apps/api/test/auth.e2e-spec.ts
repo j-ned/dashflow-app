@@ -50,9 +50,9 @@ describe('Auth e2e', () => {
       .set('Cookie', cookieArr)
       .expect(200);
 
-    expect(me.body.user.email).toBe(email);
-    expect(me.body.user.hasPassword).toBe(true);
-    expect(me.body.user.password).toBeUndefined();
+    expect(me.body.email).toBe(email);
+    expect(me.body.hasPassword).toBe(true);
+    expect(me.body.password).toBeUndefined();
   });
 
   it('login mauvais mot de passe → 401', async () => {
@@ -98,7 +98,8 @@ describe('Auth e2e', () => {
     await request(server).post('/api/auth/me/2fa/verify')
       .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).send({ code: totp.generate() }).expect(200);
 
-    await request(server).post('/api/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(403);
+    const noCode = await request(server).post('/api/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(403);
+    expect(noCode.body.code).toBe('TOTP_REQUIRED');
     await request(server).post('/api/auth/login')
       .send({ email: email2, password: 'motdepasse-long-12', totpCode: totp.generate() }).expect(200);
   });
