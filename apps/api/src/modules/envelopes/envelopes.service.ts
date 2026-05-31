@@ -25,14 +25,14 @@ export class EnvelopesService extends OwnedCrudService<Envelope> {
       .orderBy(desc(envelopeTransactions.date), desc(envelopeTransactions.createdAt)).limit(100);
   }
 
-  async addTransaction(userId: string, id: string, values: { amount: string; date: string; encryptedData?: string }) {
+  async addTransaction(userId: string, id: string, values: { amount: string; date: string; note?: string | null; encryptedData?: string }) {
     const env = await this.getOne(userId, id);
     if (!env) return undefined;
     const rows = await this.db.insert(envelopeTransactions).values({ envelopeId: id, ...values }).returning();
     return rows[0];
   }
 
-  async credit(userId: string, id: string, opts: { encryptedData?: string; amount?: number; date?: string }) {
+  async credit(userId: string, id: string, opts: { encryptedData?: string; amount?: number; date?: string; note?: string | null }) {
     const env = await this.getOne(userId, id) as Envelope | undefined;
     if (!env) return undefined;
     return this.db.transaction(async (tx) => {
@@ -45,7 +45,7 @@ export class EnvelopesService extends OwnedCrudService<Envelope> {
       const newBalance = String(Number(env.balance) + (opts.amount ?? 0));
       const [u] = await tx.update(envelopes).set({ balance: newBalance })
         .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId))).returning();
-      await tx.insert(envelopeTransactions).values({ envelopeId: id, amount: String(opts.amount ?? 0), date: opts.date || today() });
+      await tx.insert(envelopeTransactions).values({ envelopeId: id, amount: String(opts.amount ?? 0), date: opts.date || today(), note: opts.note ?? null });
       return u;
     });
   }

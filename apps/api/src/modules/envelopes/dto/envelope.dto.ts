@@ -22,14 +22,18 @@ export const createEncryptedEnvelopeSchema = z.object({
   encryptedData: z.string().min(1),
 });
 
+const note = z.string().max(255).nullable().optional();
+
 export const envelopeTransactionSchema = z.object({
   amount: z.number(),
   date: dateStr,
+  note,
 });
 
 export const creditEnvelopeSchema = z.object({
   amount: z.number(),
   date: dateStr.optional(),
+  note,
 });
 
 export const creditEncryptedEnvelopeSchema = z.object({

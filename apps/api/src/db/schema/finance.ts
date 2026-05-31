@@ -44,6 +44,7 @@ export const envelopeTransactions = pgTable('envelope_transactions', {
   envelopeId: uuid('envelope_id').notNull().references(() => envelopes.id, { onDelete: 'cascade' }),
   amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
   date: date('date').notNull(),
+  note: varchar('note', { length: 255 }),
   encryptedData: text('encrypted_data'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

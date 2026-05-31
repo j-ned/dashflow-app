@@ -84,7 +84,7 @@ export class EnvelopesController {
       return row;
     }
     const d = parseBody(envelopeTransactionSchema, body);
-    const row = await this.svc.addTransaction(u.id, id, { amount: String(d.amount), date: d.date });
+    const row = await this.svc.addTransaction(u.id, id, { amount: String(d.amount), date: d.date, note: d.note ?? null });
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;
   }
@@ -102,7 +102,7 @@ export class EnvelopesController {
       return row;
     }
     const d = parseBody(creditEnvelopeSchema, body);
-    const row = await this.svc.credit(u.id, id, { amount: d.amount, date: d.date });
+    const row = await this.svc.credit(u.id, id, { amount: d.amount, date: d.date, note: d.note ?? null });
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;
   }
