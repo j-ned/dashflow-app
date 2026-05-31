@@ -15,6 +15,10 @@ export const routes: Routes = [
     loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES),
   },
   {
+    path: 'legal',
+    loadComponent: () => import('./pages/legal/legal').then(m => m.LegalComponent),
+  },
+  {
     path: '',
     component: AppShell,
     canMatch: [authGuard],

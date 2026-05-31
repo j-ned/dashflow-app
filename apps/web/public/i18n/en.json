@@ -1,4 +1,35 @@
 {
+  "legal": {
+    "navAriaLabel": "Legal notice navigation",
+    "home": "DashFlow home",
+    "back": "Home",
+    "title": "Legal notice",
+    "updated": "Last updated: May 2026",
+    "editor": {
+      "title": "Publisher",
+      "body": "The DashFlow site and service are published by Julien Nedellec, a private individual, reachable at contact@nedellec-julien.fr. [Postal address to be completed.]"
+    },
+    "hosting": {
+      "title": "Hosting",
+      "body": "The site is hosted by [host to be completed: name, address, phone]. The servers are located in France."
+    },
+    "ip": {
+      "title": "Intellectual property",
+      "body": "All elements of the site (text, visuals, source code, the DashFlow name and identity) are protected by intellectual property law. Any reproduction or reuse without prior written permission is prohibited."
+    },
+    "data": {
+      "title": "Personal data",
+      "body": "DashFlow encrypts your data end to end, on your device. The publisher only keeps encrypted data it cannot read, along with the information strictly necessary for your account (email address, subscription status). Under the GDPR, you have the right to access, rectify, port, and erase your data. To exercise it, write to contact@nedellec-julien.fr."
+    },
+    "cookies": {
+      "title": "Cookies",
+      "body": "DashFlow uses no advertising cookies and no third-party trackers. The only items stored are a session cookie strictly necessary for sign-in and preferences saved locally on your device (theme, language)."
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "For any question about the site or your data:"
+    }
+  },
   "common": {
     "search": "Search...",
     "settings": "Account settings",
@@ -354,87 +385,163 @@
     "skipToContent": "Skip to content",
     "nav": {
       "ariaLabel": "Main navigation",
-      "logoLabel": "DashFlow — home",
-      "viewDemo": "View demo"
+      "logoLabel": "DashFlow, home",
+      "login": "Sign in",
+      "cta": "Start for free"
     },
     "hero": {
-      "tagline": "Self-hosted · End-to-end encrypted · Open source",
-      "titleLine1": "Family budget.",
-      "titleLine2": "Medical tracking.",
-      "titleLine3": "On your server.",
-      "subtitle": "An app to manage accounts, envelopes, appointments and prescriptions for the whole family. Encrypted client-side. The server sees nothing.",
-      "viewLiveDemo": "View live demo",
-      "codeOnGithub": "Code on GitHub",
-      "orPrefix": "Or",
-      "selfHostLink": "self-host it yourself",
-      "screenshotAlt": "DashFlow screenshot: member dashboard view — budget, medication and appointment KPIs"
+      "eyebrow": "Family budget and health",
+      "titleLine1": "Your finances and your health.",
+      "titleLine2": "No one else can read them.",
+      "subtitle": "DashFlow manages your budget and your family's health records in a single app. Everything is encrypted on your device before it leaves: neither the server nor we ever see your data in the clear.",
+      "primaryCta": "Start for free",
+      "secondaryCta": "See pricing",
+      "reassurance": "Free account, no credit card. Encryption included.",
+      "screenshotAlt": "DashFlow budget overview: envelopes, monthly charges, income and money left to spend",
+      "screenshotCaption": "Budget overview"
     },
-    "proofBand": {
-      "ariaLabel": "Cryptographic guarantees",
-      "doubleEnvelope": "Double key envelope"
+    "problem": {
+      "eyebrow": "The problem",
+      "title": "Your money and health data are the most sensitive things you own.",
+      "lead": "Most apps that handle your budget or your health can read, analyze, and sometimes sell what you put in. This data should only be readable by you.",
+      "free": {
+        "title": "Free is never free",
+        "description": "When an app does not charge you, its business model often rests on what it learns about you: income, spending, treatments."
+      },
+      "profile": {
+        "title": "The most intimate profile",
+        "description": "Combined, your money and health data map out your entire life. No other combination is this revealing."
+      },
+      "readable": {
+        "title": "Readable means vulnerable",
+        "description": "As long as a service can decrypt your data, everything hinges on it: its diligence, its security, its future policies, an acquisition."
+      }
+    },
+    "how": {
+      "eyebrow": "How it works",
+      "title": "Encrypted on your device, never on the server.",
+      "subtitle": "DashFlow uses a double key envelope. The server only stores encrypted data it cannot open. Here is the principle, without the needless jargon.",
+      "step1": {
+        "title": "Your password derives a key",
+        "body": "When you sign in, your password runs through PBKDF2 to produce an encryption key. That key never leaves your device and is never sent to the server."
+      },
+      "step2": {
+        "title": "The key unlocks your master key",
+        "body": "This derived key unlocks your master key, unique to your account. That is the double envelope: changing your password only re-encrypts the master key, not all of your data."
+      },
+      "step3": {
+        "title": "Your data is encrypted with AES-256-GCM",
+        "body": "The master key encrypts each piece of data with AES-256-GCM before it is sent. The server only ever receives ciphertext: if it is compromised, the attacker leaves with unreadable bytes."
+      },
+      "envelope": "Double key envelope",
+      "zeroKnowledge": "Zero-knowledge server"
     },
     "budget": {
       "tag": "Budget",
-      "titleLine1": "Accounts, envelopes, loans.",
-      "titleLine2": "12 months of history.",
-      "subtitle": "Income, direct debits, annual bills, spending, disposable income. Multi-account, multi-member, projections, stats — without automatic bank connection.",
-      "screenshotAlt": "Bank account view with KPIs for income, bills, spending and remaining balance",
+      "title": "Your budget, under control.",
+      "subtitle": "Accounts, envelopes, recurring charges and loans. A clear view of what comes in, what goes out and what is left, month after month.",
+      "screenshotAlt": "DashFlow bank account view with income, direct debits, annual charges, expenses and remaining balance",
+      "accounts": {
+        "title": "Accounts",
+        "description": "Multiple accounts (current, savings, joint). End-of-month balance estimate and money left once all charges are deducted."
+      },
       "envelopes": {
         "title": "Envelopes",
-        "description": "Categorize savings, vacation, equipment and taxes. Track progress toward each goal."
-      },
-      "loans": {
-        "title": "Loans & debts",
-        "description": "Due dates, accumulated interest, remaining principal. Full history per household member."
+        "description": "Set money aside for holidays, a project or taxes. Track progress toward each savings goal."
       },
       "recurrences": {
-        "title": "Recurring",
-        "description": "Monthly bills, annual bills, one-time or recurring transfers. Automatic 12-month projection."
+        "title": "Recurring expenses",
+        "description": "Monthly and annual charges, direct debits, transfers. Automatic projection over twelve months."
+      },
+      "loans": {
+        "title": "Loans and debts",
+        "description": "Due dates, remaining principal and repayment progress, per household member."
       }
     },
     "medical": {
       "tag": "Medical",
-      "titleLine1": "Patients, practitioners,",
-      "titleLine2": "prescriptions, medications.",
-      "subtitle": "Each member's care journey in a single view. Encrypted documents, low-stock alerts, consultation calendar.",
-      "screenshotAlt": "Medical view: list of family patients with their alerts and appointments",
-      "medications": {
-        "title": "Medications",
-        "description": "Stock, dosage, estimated days remaining. Automatic alerts when a treatment runs low."
-      },
-      "documents": {
-        "title": "Documents",
-        "description": "Blood tests, certificates, prescriptions. S3 storage encrypted client-side before upload."
+      "title": "Health tracking for the whole family.",
+      "subtitle": "Members, practitioners, appointments, prescriptions, medications and documents. Everyone's full care journey in a single encrypted view.",
+      "screenshotAlt": "DashFlow medical appointments view with patient, practitioner, status and reason for visit",
+      "members": {
+        "title": "Members and practitioners",
+        "description": "One record per family member, linked to their practitioners. Visit history and reasons kept in one place."
       },
       "appointments": {
         "title": "Appointments",
-        "description": "Calendar by patient and practitioner. Consultation history, reasons, reports."
+        "description": "Schedule by patient and by practitioner, with planned or completed status. Shared calendar exportable as iCal."
+      },
+      "medications": {
+        "title": "Medications",
+        "description": "Stock, dosage and estimated days remaining. Alert when a treatment is running low."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Prescriptions, lab results, certificates. Attachments encrypted on your device before they are stored."
       }
     },
-    "stack": {
-      "tag": "Under the hood",
-      "titleLine1": "Not a SaaS product.",
-      "titleLine2": "A well-crafted project.",
-      "subtitle": "All cryptography runs in the browser. The backend sees opaque JSON. If the server is compromised, the attacker walks away with random bytes.",
-      "codeComment": "// E2EE encryption, client-side only",
-      "frontend": "Frontend",
-      "frontendDescription": "Angular 21 zoneless · Signals · Standalone components · Tailwind v4",
-      "backend": "Backend",
-      "backendDescription": "Hono · PostgreSQL 17 · Drizzle ORM · Argon2id · JWT rotation",
-      "charts": "Charts",
-      "chartsDescription": "Area, donut, bar — hand-written SVG, zero JS dependency.",
-      "architecture": "Architecture",
-      "architectureDescription": "Clean Architecture · Isolated domain · Vitest tests · GitHub Actions CI"
+    "pricing": {
+      "eyebrow": "Pricing",
+      "title": "Free to start, Premium for life.",
+      "subtitle": "End-to-end encryption is included in both plans. You only pay if you want to unlock everything, and only once.",
+      "free": {
+        "name": "Free",
+        "price": "0€",
+        "period": "forever",
+        "tagline": "The budget essentials, encrypted, with no time limit.",
+        "feature1": "Accounts and envelopes",
+        "feature2": "Recurring expenses and 12-month projection",
+        "feature3": "1 member",
+        "feature4": "End-to-end encryption included",
+        "cta": "Start for free"
+      },
+      "premium": {
+        "name": "Premium",
+        "badge": "For life",
+        "currency": "€",
+        "period": "one-time payment",
+        "tagline": "Everything in Free, plus full medical tracking and the whole family.",
+        "feature1": "Everything in Free",
+        "feature2": "Full medical tracking and multi-member",
+        "feature3": "Encrypted attachments",
+        "feature4": "Shared iCal calendar",
+        "feature5": "Two-factor authentication (2FA)",
+        "cta": "Go Premium"
+      }
     },
-    "cta": {
-      "ariaLabel": "Call to action",
-      "titleLine1": "Read the code, run the demo,",
-      "titleLine2": "host it yourself.",
-      "subtitle": "The demo is open, the code is public, install takes a few minutes with Docker.",
-      "registerPrefix": "Prefer creating an account on this instance?",
-      "registerLink": "Register"
+    "faq": {
+      "eyebrow": "Questions",
+      "title": "What you are probably wondering.",
+      "q1": {
+        "question": "What exactly is encrypted?",
+        "answer": "All sensitive content: amounts, transactions, envelopes, medical records, prescriptions and attachments. Encryption happens on your device before sending. The server only keeps encrypted data it cannot open."
+      },
+      "q2": {
+        "question": "What happens if I lose my password and my recovery key?",
+        "answer": "Since we cannot read your data, we cannot decrypt it for you either. Without your password and your recovery key, the data stays unreadable, permanently. That is the honest trade-off of zero-knowledge: keep your recovery key somewhere safe."
+      },
+      "q3": {
+        "question": "Is the Premium payment really one-time?",
+        "answer": "Yes. Premium is a one-time payment of 49€ that unlocks every feature for life. No subscription, no renewal, no hidden charge."
+      },
+      "q4": {
+        "question": "Can I export or delete my data?",
+        "answer": "Yes. You can export your data at any time and delete your account permanently. Deletion wipes your encrypted data from our servers."
+      },
+      "q5": {
+        "question": "Is the Free plan free forever?",
+        "answer": "Yes. The Free plan covers the budget essentials with end-to-end encryption included, with no time limit and no credit card."
+      }
+    },
+    "finalCta": {
+      "ariaLabel": "Create an account",
+      "title": "Keep your data to yourself.",
+      "subtitle": "Create your free account in seconds. Everything is encrypted from the start.",
+      "primaryCta": "Start for free",
+      "secondaryCta": "I already have an account"
     },
     "footer": {
+      "legal": "Legal notice",
       "login": "Sign in"
     }
   },

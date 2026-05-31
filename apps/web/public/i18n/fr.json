@@ -1,4 +1,35 @@
 {
+  "legal": {
+    "navAriaLabel": "Navigation mentions légales",
+    "home": "Accueil DashFlow",
+    "back": "Accueil",
+    "title": "Mentions légales",
+    "updated": "Dernière mise à jour : mai 2026",
+    "editor": {
+      "title": "Éditeur",
+      "body": "Le site et le service DashFlow sont édités par Julien Nedellec, personne physique, joignable à contact@nedellec-julien.fr. [Adresse postale à compléter.]"
+    },
+    "hosting": {
+      "title": "Hébergement",
+      "body": "Le site est hébergé par [hébergeur à compléter : nom, adresse, téléphone]. Les serveurs sont situés en France."
+    },
+    "ip": {
+      "title": "Propriété intellectuelle",
+      "body": "L'ensemble des éléments du site (textes, visuels, code source, nom et identité DashFlow) est protégé par le droit de la propriété intellectuelle. Toute reproduction ou réutilisation sans autorisation écrite préalable est interdite."
+    },
+    "data": {
+      "title": "Données personnelles",
+      "body": "DashFlow chiffre tes données de bout en bout, sur ton appareil. L'éditeur ne conserve que des données chiffrées qu'il ne peut pas lire, ainsi que les informations strictement nécessaires à ton compte (adresse e-mail, état de l'abonnement). Conformément au RGPD, tu disposes d'un droit d'accès, de rectification, de portabilité et de suppression. Pour l'exercer, écris à contact@nedellec-julien.fr."
+    },
+    "cookies": {
+      "title": "Cookies",
+      "body": "DashFlow n'utilise aucun cookie publicitaire ni traceur tiers. Seuls sont déposés un cookie de session strictement nécessaire à la connexion et des préférences enregistrées localement sur ton appareil (thème, langue)."
+    },
+    "contact": {
+      "title": "Contact",
+      "body": "Pour toute question relative au site ou à tes données :"
+    }
+  },
   "common": {
     "search": "Rechercher...",
     "settings": "Paramètres du compte",
@@ -354,87 +385,163 @@
     "skipToContent": "Aller au contenu",
     "nav": {
       "ariaLabel": "Navigation principale",
-      "logoLabel": "DashFlow — accueil",
-      "viewDemo": "Voir la démo"
+      "logoLabel": "DashFlow, accueil",
+      "login": "Se connecter",
+      "cta": "Commencer gratuitement"
     },
     "hero": {
-      "tagline": "Self-hosted · End-to-end encrypted · Open source",
-      "titleLine1": "Budget familial.",
-      "titleLine2": "Suivi médical.",
-      "titleLine3": "Sur ton serveur.",
-      "subtitle": "Une app pour gérer comptes, enveloppes, rendez-vous et ordonnances de toute la famille. Chiffrée côté client. Le serveur ne voit rien.",
-      "viewLiveDemo": "Voir la démo live",
-      "codeOnGithub": "Code sur GitHub",
-      "orPrefix": "Ou",
-      "selfHostLink": "auto-héberge-le toi-même",
-      "screenshotAlt": "Capture d'écran de DashFlow : vue dashboard d'un membre — KPIs budget, médicaments, rendez-vous"
+      "eyebrow": "Budget et santé de la famille",
+      "titleLine1": "Tes finances et ta santé.",
+      "titleLine2": "Personne d'autre ne peut les lire.",
+      "subtitle": "DashFlow gère ton budget et le suivi médical de ta famille dans une seule app. Tout est chiffré sur ton appareil avant d'être envoyé : ni le serveur, ni nous ne voyons tes données en clair.",
+      "primaryCta": "Commencer gratuitement",
+      "secondaryCta": "Voir les tarifs",
+      "reassurance": "Compte gratuit, sans carte bancaire. Chiffrement inclus.",
+      "screenshotAlt": "Vue d'ensemble du budget dans DashFlow : enveloppes, charges mensuelles, revenus et reste à vivre",
+      "screenshotCaption": "Vue d'ensemble du budget"
     },
-    "proofBand": {
-      "ariaLabel": "Garanties cryptographiques",
-      "doubleEnvelope": "Double enveloppe de clés"
+    "problem": {
+      "eyebrow": "Le problème",
+      "title": "Tes données d'argent et de santé sont les plus sensibles que tu possèdes.",
+      "lead": "La plupart des apps qui gèrent ton budget ou ta santé peuvent lire, analyser, parfois revendre ce que tu y mets. Ces données ne devraient être lisibles que par toi.",
+      "free": {
+        "title": "Gratuit n'est jamais gratuit",
+        "description": "Quand une app ne te fait pas payer, son modèle repose souvent sur ce qu'elle apprend de toi : revenus, dépenses, traitements."
+      },
+      "profile": {
+        "title": "Le profil le plus intime",
+        "description": "Croisées, tes données d'argent et de santé dessinent ta vie entière. Aucune autre combinaison n'est aussi révélatrice."
+      },
+      "readable": {
+        "title": "Lisible, donc vulnérable",
+        "description": "Tant qu'un service peut déchiffrer tes données, tout en dépend : son sérieux, sa sécurité, ses politiques futures, un rachat."
+      }
+    },
+    "how": {
+      "eyebrow": "Comment ça marche",
+      "title": "Chiffré sur ton appareil, jamais sur le serveur.",
+      "subtitle": "DashFlow utilise une double enveloppe de clés. Le serveur ne stocke que des données chiffrées qu'il ne peut pas ouvrir. Voici le principe, sans jargon inutile.",
+      "step1": {
+        "title": "Ton mot de passe dérive une clé",
+        "body": "À la connexion, ton mot de passe passe par PBKDF2 pour produire une clé de chiffrement. Cette clé ne quitte jamais ton appareil et n'est jamais envoyée au serveur."
+      },
+      "step2": {
+        "title": "La clé déverrouille ta clé maître",
+        "body": "Cette clé dérivée déverrouille ta clé maître, propre à ton compte. C'est la double enveloppe : changer de mot de passe ne réchiffre que la clé maître, pas toutes tes données."
+      },
+      "step3": {
+        "title": "Tes données sont chiffrées en AES-256-GCM",
+        "body": "La clé maître chiffre chaque donnée en AES-256-GCM avant l'envoi. Le serveur ne reçoit que du chiffré : si on le compromet, l'attaquant repart avec des octets illisibles."
+      },
+      "envelope": "Double enveloppe de clés",
+      "zeroKnowledge": "Serveur zero-knowledge"
     },
     "budget": {
       "tag": "Budget",
-      "titleLine1": "Comptes, enveloppes, prêts.",
-      "titleLine2": "12 mois d'historique.",
-      "subtitle": "Revenus, prélèvements, charges annuelles, dépenses, restes à vivre. Multi-comptes, multi-membres, projections, stats — sans connexion bancaire automatique.",
-      "screenshotAlt": "Vue compte bancaire avec KPIs revenus, charges, dépenses, et solde restant",
+      "title": "Ton budget, sous contrôle.",
+      "subtitle": "Comptes, enveloppes, charges récurrentes et prêts. Une vue claire de ce qui rentre, ce qui sort et ce qu'il te reste, mois après mois.",
+      "screenshotAlt": "Vue compte bancaire de DashFlow avec revenus, prélèvements, charges annuelles, dépenses et solde restant",
+      "accounts": {
+        "title": "Comptes",
+        "description": "Multi-comptes (courant, épargne, joint). Estimation du solde en fin de mois et reste à vivre une fois toutes les charges déduites."
+      },
       "envelopes": {
         "title": "Enveloppes",
-        "description": "Catégorise épargne, vacances, équipement et impôts. Suivi de progression vers chaque objectif."
-      },
-      "loans": {
-        "title": "Prêts & dettes",
-        "description": "Échéances, intérêts cumulés, capital restant dû. Historique complet par membre du foyer."
+        "description": "Mets de côté pour les vacances, un projet ou les impôts. Suivi de progression vers chaque objectif d'épargne."
       },
       "recurrences": {
-        "title": "Récurrences",
-        "description": "Charges mensuelles, annuelles, transferts ponctuels ou récurrents. Projection 12 mois automatique."
+        "title": "Dépenses récurrentes",
+        "description": "Charges mensuelles et annuelles, prélèvements, transferts. Projection automatique sur douze mois."
+      },
+      "loans": {
+        "title": "Prêts et dettes",
+        "description": "Échéances, capital restant dû et progression de remboursement, par membre du foyer."
       }
     },
     "medical": {
       "tag": "Médical",
-      "titleLine1": "Patients, praticiens,",
-      "titleLine2": "ordonnances, médicaments.",
-      "subtitle": "Le parcours de soin de chaque membre dans une seule vue. Documents chiffrés, alertes de stock bas, calendrier des consultations.",
-      "screenshotAlt": "Vue médicale : liste des patients de la famille avec leurs alertes et rendez-vous",
-      "medications": {
-        "title": "Médicaments",
-        "description": "Stocks, posologies, jours restants estimés. Alertes automatiques quand un traitement arrive en fin de boîte."
-      },
-      "documents": {
-        "title": "Documents",
-        "description": "Bilans sanguins, certificats, ordonnances. Stockage S3 chiffré côté client avant upload."
+      "title": "Le suivi santé de toute la famille.",
+      "subtitle": "Membres, praticiens, rendez-vous, ordonnances, médicaments et documents. Tout le parcours de soin de chacun dans une seule vue chiffrée.",
+      "screenshotAlt": "Vue des rendez-vous médicaux de DashFlow avec patient, praticien, statut et motif de consultation",
+      "members": {
+        "title": "Membres et praticiens",
+        "description": "Un dossier par membre de la famille, relié à ses praticiens. Historique des consultations et motifs conservés."
       },
       "appointments": {
         "title": "Rendez-vous",
-        "description": "Planning par patient et par praticien. Historique consultations, motifs, comptes rendus."
+        "description": "Planning par patient et par praticien, avec statut planifié ou terminé. Calendrier partagé exportable en iCal."
+      },
+      "medications": {
+        "title": "Médicaments",
+        "description": "Stocks, posologies et jours restants estimés. Alerte quand un traitement arrive en fin de boîte."
+      },
+      "documents": {
+        "title": "Documents",
+        "description": "Ordonnances, bilans, certificats. Pièces jointes chiffrées sur ton appareil avant d'être stockées."
       }
     },
-    "stack": {
-      "tag": "Sous le capot",
-      "titleLine1": "Pas un produit SaaS.",
-      "titleLine2": "Un projet bien fait.",
-      "subtitle": "Toute la cryptographie tourne dans le navigateur. Le backend voit du JSON opaque. Si le serveur est compromis, l'attaquant repart avec des octets aléatoires.",
-      "codeComment": "// Chiffrement E2EE, côté client uniquement",
-      "frontend": "Frontend",
-      "frontendDescription": "Angular 21 zoneless · Signals · Standalone components · Tailwind v4",
-      "backend": "Backend",
-      "backendDescription": "Hono · PostgreSQL 17 · Drizzle ORM · Argon2id · JWT rotation",
-      "charts": "Charts",
-      "chartsDescription": "Area, donut, bar — SVG écrits à la main, zéro dépendance JS.",
-      "architecture": "Architecture",
-      "architectureDescription": "Clean Architecture · Domain isolé · Tests Vitest · CI GitHub Actions"
+    "pricing": {
+      "eyebrow": "Tarifs",
+      "title": "Gratuit pour commencer, Premium à vie.",
+      "subtitle": "Le chiffrement de bout en bout est inclus dans les deux offres. Tu ne paies que si tu veux tout débloquer, et une seule fois.",
+      "free": {
+        "name": "Free",
+        "price": "0€",
+        "period": "pour toujours",
+        "tagline": "L'essentiel du budget, chiffré, sans limite de durée.",
+        "feature1": "Comptes et enveloppes",
+        "feature2": "Dépenses récurrentes et projection 12 mois",
+        "feature3": "1 membre",
+        "feature4": "Chiffrement de bout en bout inclus",
+        "cta": "Commencer gratuitement"
+      },
+      "premium": {
+        "name": "Premium",
+        "badge": "À vie",
+        "currency": "€",
+        "period": "paiement unique",
+        "tagline": "Tout le Free, plus le médical complet et la famille entière.",
+        "feature1": "Tout le plan Free",
+        "feature2": "Suivi médical complet et multi-membres",
+        "feature3": "Pièces jointes chiffrées",
+        "feature4": "Calendrier partagé iCal",
+        "feature5": "Double authentification (2FA)",
+        "cta": "Passer Premium"
+      }
     },
-    "cta": {
-      "ariaLabel": "Appel à l'action",
-      "titleLine1": "Lis le code, lance la démo,",
-      "titleLine2": "héberge-le toi-même.",
-      "subtitle": "La démo est ouverte, le code est public, l'install se fait en quelques minutes en Docker.",
-      "registerPrefix": "Tu préfères créer un compte sur cette instance ?",
-      "registerLink": "S'inscrire"
+    "faq": {
+      "eyebrow": "Questions",
+      "title": "Ce que tu te demandes sûrement.",
+      "q1": {
+        "question": "Qu'est-ce qui est chiffré, exactement ?",
+        "answer": "Tout le contenu sensible : montants, transactions, enveloppes, dossiers médicaux, ordonnances et pièces jointes. Le chiffrement se fait sur ton appareil avant l'envoi. Le serveur ne conserve que des données chiffrées qu'il ne peut pas ouvrir."
+      },
+      "q2": {
+        "question": "Que se passe-t-il si je perds mon mot de passe et ma clé de récupération ?",
+        "answer": "Comme nous ne pouvons pas lire tes données, nous ne pouvons pas non plus les déchiffrer à ta place. Sans ton mot de passe ni ta clé de récupération, les données restent illisibles, définitivement. C'est le revers honnête du zero-knowledge : garde ta clé de récupération en lieu sûr."
+      },
+      "q3": {
+        "question": "Le paiement Premium est-il vraiment unique ?",
+        "answer": "Oui. Premium est un paiement unique de 49€ qui débloque toutes les fonctionnalités à vie. Pas d'abonnement, pas de renouvellement, pas de prélèvement caché."
+      },
+      "q4": {
+        "question": "Puis-je exporter ou supprimer mes données ?",
+        "answer": "Oui. Tu peux exporter tes données à tout moment et supprimer ton compte définitivement. La suppression efface tes données chiffrées de nos serveurs."
+      },
+      "q5": {
+        "question": "Le plan Free est-il gratuit pour toujours ?",
+        "answer": "Oui. Le plan Free couvre l'essentiel du budget avec le chiffrement de bout en bout inclus, sans limite de durée et sans carte bancaire."
+      }
+    },
+    "finalCta": {
+      "ariaLabel": "Créer un compte",
+      "title": "Garde tes données pour toi.",
+      "subtitle": "Crée ton compte gratuit en quelques secondes. Tout est chiffré dès le départ.",
+      "primaryCta": "Commencer gratuitement",
+      "secondaryCta": "J'ai déjà un compte"
     },
     "footer": {
+      "legal": "Mentions légales",
       "login": "Se connecter"
     }
   },
