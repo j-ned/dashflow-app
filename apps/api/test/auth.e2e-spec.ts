@@ -3,6 +3,7 @@ import { Test } from '@nestjs/testing';
 import { INestApplication } from '@nestjs/common';
 import cookieParser from 'cookie-parser';
 import request from 'supertest';
+import * as OTPAuth from 'otpauth';
 import { AppModule } from '../src/app.module';
 import { MAILER, type Mailer } from '../src/mail/mailer';
 
@@ -73,5 +74,31 @@ describe('Auth e2e', () => {
       .post('/api/auth/logout')
       .set('Cookie', loginCookieArr)
       .expect(403);
+  });
+
+  it('2FA : setup → enable → login exige le code', async () => {
+    const email2 = `e2e2fa+${Date.now()}@dashflow.test`;
+    const server = app.getHttpServer();
+    await request(server).post('/api/auth/register').send({ email: email2, password: 'motdepasse-long-12' }).expect(201);
+    const verify = await request(server).post('/api/auth/verify').send({ email: email2, code: mailer.lastCode }).expect(200);
+    const cookie = verify.headers['set-cookie'] as string | string[];
+    const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
+
+    const csrf = await request(server).get('/api/auth/csrf').set('Cookie', cookieArr).expect(200);
+    const csrfCookie = csrf.headers['set-cookie'] as string | string[];
+    const allCookies = cookieArr.concat(Array.isArray(csrfCookie) ? csrfCookie : [csrfCookie]);
+    const csrfToken = csrf.body.csrfToken as string;
+
+    const setup = await request(server).post('/api/auth/me/2fa/setup')
+      .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).expect(200);
+    const secret = setup.body.secret as string;
+    const totp = new OTPAuth.TOTP({ issuer: 'DashFlow', secret: OTPAuth.Secret.fromBase32(secret) });
+
+    await request(server).post('/api/auth/me/2fa/verify')
+      .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).send({ code: totp.generate() }).expect(200);
+
+    await request(server).post('/api/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(403);
+    await request(server).post('/api/auth/login')
+      .send({ email: email2, password: 'motdepasse-long-12', totpCode: totp.generate() }).expect(200);
   });
 });
