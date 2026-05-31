@@ -757,6 +757,13 @@
       "empty": "No envelope",
       "emptyHint": "Create your first envelope",
       "totalAll": "Total all envelopes",
+      "recentActivity": "Recent activity",
+      "viewAll": "View all",
+      "noActivity": "No movement yet",
+      "balanceAfter": "Balance",
+      "dueDayLabel": "recurring deposit on the {{day}}",
+      "remainingShort": "{{amount}}€ left",
+      "reached": "goal reached",
       "modal": {
         "create": "New envelope",
         "edit": "Edit envelope",
@@ -766,6 +773,7 @@
         "amountHint": "Positive = credit, negative = debit",
         "date": "Date",
         "noTransactions": "No transaction recorded",
+        "historyHint": "Deposits and withdrawals will appear here.",
         "tableDate": "Date",
         "tableAmount": "Amount"
       },
@@ -795,6 +803,8 @@
         "amount": "Amount",
         "amountHint": "Positive to credit, negative to debit",
         "date": "Date",
+        "note": "Note (optional)",
+        "notePlaceholder": "e.g. salary, refund…",
         "deductFromAccount": "Deduct from account",
         "noDeduction": "Do not deduct",
         "deductionHint": "Will create an expense on the selected account"

@@ -55,12 +55,14 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     );
   }
 
-  updateBalance(id: string, amount: number, date: string, envelope: Envelope): Observable<Envelope> {
+  updateBalance(id: string, amount: number, date: string, note: string | null, envelope: Envelope): Observable<Envelope> {
     const key = this.crypto.getMasterKey();
 
-    if (!key) return this.api.patch(`/envelopes/${id}/balance`, { amount, date });
+    // Plaintext: the /balance endpoint updates the balance and records the transaction.
+    if (!key) return this.api.patch(`/envelopes/${id}/balance`, { amount, date, note });
 
-    // E2EE: recompute balance client-side, re-encrypt the full envelope, and use PUT
+    // E2EE: recompute balance client-side and re-encrypt the full envelope (PUT),
+    // then record the movement as its own encrypted transaction so history stays real.
     const updatedEnvelope: Record<string, unknown> = {
       memberId: envelope.memberId,
       name: envelope.name,
@@ -73,21 +75,35 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
 
     return from(encryptEntity(updatedEnvelope, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.put<ApiRow>(`/envelopes/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope])),
+      switchMap((row) => {
+        const envelope$ = row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope]);
+        return from(encryptEntity({ amount, date, note } as Record<string, unknown>, TX_CLEARTEXT_KEYS, key)).pipe(
+          switchMap((encryptedTx) => this.api.post(`/envelopes/${id}/transactions`, encryptedTx)),
+          switchMap(() => envelope$),
+        );
+      }),
     );
   }
 
   getTransactions(envelopeId: string): Observable<EnvelopeTransaction[]> {
-    return this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`).pipe(
+    return this.decryptTransactions(this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`));
+  }
+
+  getAllTransactions(): Observable<EnvelopeTransaction[]> {
+    return this.decryptTransactions(this.api.get<ApiRow[]>('/envelopes/transactions/all'));
+  }
+
+  private decryptTransactions(rows$: Observable<ApiRow[]>): Observable<EnvelopeTransaction[]> {
+    return rows$.pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as EnvelopeTransaction[]]);
+        if (!key || !rows.some((r) => r.encryptedData)) return from([rows as EnvelopeTransaction[]]);
         return from(decryptEntities<EnvelopeTransaction>(rows, key));
       }),
     );
   }
 
-  addTransaction(envelopeId: string, data: { amount: number; date: string }): Observable<EnvelopeTransaction> {
+  addTransaction(envelopeId: string, data: { amount: number; date: string; note: string | null }): Observable<EnvelopeTransaction> {
     const key = this.crypto.getMasterKey();
     if (!key) return this.api.post(`/envelopes/${envelopeId}/transactions`, data);
 

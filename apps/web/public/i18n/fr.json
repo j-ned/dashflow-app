@@ -757,6 +757,13 @@
       "empty": "Aucune enveloppe",
       "emptyHint": "Créez votre première enveloppe",
       "totalAll": "Total toutes enveloppes",
+      "recentActivity": "Activité récente",
+      "viewAll": "Voir tout",
+      "noActivity": "Aucun mouvement pour l'instant",
+      "balanceAfter": "Solde",
+      "dueDayLabel": "dépôt récurrent le {{day}}",
+      "remainingShort": "reste {{amount}}€",
+      "reached": "objectif atteint",
       "modal": {
         "create": "Nouvelle enveloppe",
         "edit": "Modifier l'enveloppe",
@@ -766,6 +773,7 @@
         "amountHint": "Positif = crédit, négatif = débit",
         "date": "Date",
         "noTransactions": "Aucune opération enregistrée",
+        "historyHint": "Les dépôts et retraits apparaîtront ici.",
         "tableDate": "Date",
         "tableAmount": "Montant"
       },
@@ -795,6 +803,8 @@
         "amount": "Montant",
         "amountHint": "Positif pour créditer, négatif pour débiter",
         "date": "Date",
+        "note": "Note (optionnel)",
+        "notePlaceholder": "ex : salaire, remboursement…",
         "deductFromAccount": "Décompter du compte",
         "noDeduction": "Ne pas décompter",
         "deductionHint": "Créera une dépense sur le compte sélectionné"

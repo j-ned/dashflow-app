@@ -3,4 +3,5 @@ export type EnvelopeTransaction = {
   readonly envelopeId: string;
   readonly amount: number;
   readonly date: string;
+  readonly note: string | null;
 };

@@ -8,6 +8,7 @@ import { BankAccount } from '../../domain/models/bank-account.model';
 type CreditFormShape = {
   amount: FormControl<number>;
   date: FormControl<string>;
+  note: FormControl<string>;
   accountId: FormControl<string>;
 };
 
@@ -38,6 +39,12 @@ type CreditFormShape = {
           <input id="credit-date" type="date" formControlName="date" class="form-input" />
         </div>
 
+        <div>
+          <label for="credit-note" class="form-label">{{ 'budget.envelope.creditForm.note' | transloco }}</label>
+          <input id="credit-note" type="text" formControlName="note" maxlength="255"
+                 [placeholder]="'budget.envelope.creditForm.notePlaceholder' | transloco" class="form-input" />
+        </div>
+
         @if (accounts().length > 0) {
           <div>
             <label for="credit-account" class="form-label">{{ 'budget.envelope.creditForm.deductFromAccount' | transloco }}</label>
@@ -64,12 +71,13 @@ type CreditFormShape = {
 })
 export class CreditEnvelopeForm {
   readonly accounts = input<BankAccount[]>([]);
-  readonly submitted = output<{ amount: number; date: string; accountId: string | null }>();
+  readonly submitted = output<{ amount: number; date: string; note: string | null; accountId: string | null }>();
   readonly cancelled = output<void>();
 
   protected readonly form = new FormGroup<CreditFormShape>({
     amount: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
     date: new FormControl(new Date().toISOString().slice(0, 10), { nonNullable: true }),
+    note: new FormControl('', { nonNullable: true }),
     accountId: new FormControl('', { nonNullable: true }),
   });
 
@@ -84,8 +92,9 @@ export class CreditEnvelopeForm {
     this.submitted.emit({
       amount: v.amount,
       date: v.date,
+      note: v.note.trim() || null,
       accountId: v.accountId || null,
     });
-    this.form.reset({ amount: 0, date: new Date().toISOString().slice(0, 10), accountId: '' });
+    this.form.reset({ amount: 0, date: new Date().toISOString().slice(0, 10), note: '', accountId: '' });
   }
 }

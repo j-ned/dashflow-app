@@ -10,8 +10,7 @@ import { CreateEnvelopeUseCase } from '../../domain/use-cases/create-envelope.us
 import { UpdateEnvelopeUseCase } from '../../domain/use-cases/update-envelope.use-case';
 import { CreditEnvelopeUseCase } from '../../domain/use-cases/credit-envelope.use-case';
 import { DeleteEnvelopeUseCase } from '../../domain/use-cases/delete-envelope.use-case';
-import { GetEnvelopeTransactionsUseCase } from '../../domain/use-cases/get-envelope-transactions.use-case';
-import { AddEnvelopeTransactionUseCase } from '../../domain/use-cases/add-envelope-transaction.use-case';
+import { GetAllEnvelopeTransactionsUseCase } from '../../domain/use-cases/get-all-envelope-transactions.use-case';
 import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
 import { CreateRecurringEntryUseCase } from '../../domain/use-cases/create-recurring-entry.use-case';
@@ -21,7 +20,8 @@ import { CreditEnvelopeForm } from '../../components/credit-envelope-form/credit
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
-import { FormsModule } from '@angular/forms';
+
+type HistoryEntry = { readonly tx: EnvelopeTransaction; readonly balanceAfter: number };
 
 const MEMBER_PALETTE = [
   'var(--color-ib-green)',
@@ -44,38 +44,11 @@ const MEMBER_PALETTE = [
     EnvelopeForm,
     CreditEnvelopeForm,
     Icon,
-    FormsModule,
     TranslocoPipe,
   ],
   host: { class: 'block space-y-6' },
-  styles: `
-    .action-btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.375rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border);
-      padding: 0.375rem 0.5rem;
-      font-size: 0.6875rem;
-      font-weight: 500;
-      color: var(--color-text-muted);
-      transition: all 0.15s;
-    }
-    .action-label {
-      max-width: 0;
-      overflow: hidden;
-      opacity: 0;
-      white-space: nowrap;
-      transition: max-width 0.25s ease, opacity 0.2s ease;
-    }
-    .action-btn:hover .action-label,
-    .action-btn:focus-visible .action-label {
-      max-width: 6rem;
-      opacity: 1;
-    }
-  `,
   template: `
-    <header class="flex items-center justify-between">
+    <header class="flex items-center justify-between gap-4">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.envelope.title' | transloco }}</h2>
         <p class="mt-1 text-sm text-text-muted">{{ 'budget.envelope.subtitle' | transloco }}</p>
@@ -112,142 +85,129 @@ const MEMBER_PALETTE = [
 
     <section
       [attr.aria-label]="'budget.envelope.listAria' | transloco"
-      class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
+      class="grid grid-cols-1 lg:grid-cols-2 gap-4"
     >
       @for (envelope of filteredEnvelopes(); track envelope.id) {
-        <article
-          class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-cyan/30 hover:shadow-lg hover:shadow-ib-cyan/5"
-        >
-          <div
-            class="absolute inset-y-0 left-0 w-1 rounded-l-xl"
-            [style.background-color]="envelope.color"
-          ></div>
+        @let entries = recentByEnvelope().get(envelope.id) ?? [];
+        <article class="flex flex-col rounded-lg border border-border bg-surface transition hover:border-border/80">
           <div class="p-5">
-            <div class="flex items-center justify-between mb-1">
-              <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-cyan/10">
-                  <app-icon name="wallet" size="16" class="text-ib-cyan" />
+            <div class="flex items-start justify-between gap-3">
+              <div class="flex items-center gap-3 min-w-0">
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg"
+                      [style.background-color]="envelope.color + '1a'">
+                  <app-icon name="wallet" size="18" [style.color]="envelope.color" />
+                </span>
+                <div class="min-w-0">
+                  <h3 class="truncate font-semibold text-text-primary">{{ envelope.name }}</h3>
+                  <p class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted">
+                    @if (memberMap().get(envelope.memberId ?? ''); as member) {
+                      <span class="inline-flex items-center gap-1">
+                        <span class="inline-block h-2 w-2 rounded-full" [style.background-color]="member.color"></span>
+                        {{ member.name }}
+                      </span>
+                    }
+                    @if (envelope.dueDay) {
+                      <span>{{ 'budget.envelope.dueDayLabel' | transloco: { day: envelope.dueDay } }}</span>
+                    }
+                  </p>
                 </div>
-                <h3 class="font-semibold text-text-primary">{{ envelope.name }}</h3>
               </div>
               <span
-                class="rounded-full px-2 py-0.5 text-[9px] font-semibold"
-                [style.background-color]="envelope.color + '20'"
+                class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+                [style.background-color]="envelope.color + '1a'"
                 [style.color]="envelope.color"
-              >
-                {{ envelope.type }}
-              </span>
+              >{{ envelope.type }}</span>
             </div>
 
-            <div class="flex items-center gap-2 text-[11px] text-text-muted mb-3 ml-10">
-              @if (memberMap().get(envelope.memberId ?? ''); as member) {
-                <span class="inline-flex items-center gap-1">
-                  <span
-                    class="inline-block h-2 w-2 rounded-full"
-                    [style.background-color]="member.color"
-                  ></span>
-                  {{ member.name }}
-                </span>
-              }
-              @if (envelope.dueDay) {
-                <span class="rounded-md bg-raised px-1.5 py-0.5 font-mono text-[10px]"
-                  >le {{ envelope.dueDay }}</span
-                >
-              }
-            </div>
-
-            <p class="text-2xl font-mono font-bold text-ib-cyan tracking-tight ml-10">
-              {{ envelope.balance | number: '1.2-2' }}<span class="text-base ml-0.5">&euro;</span>
+            <p class="mt-4 font-mono text-3xl font-bold tracking-tight text-text-primary">
+              {{ envelope.balance | number: '1.2-2' }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
             </p>
 
             @if (envelope.target) {
               @let pct = (envelope.balance / envelope.target) * 100;
               @let remaining = envelope.target - envelope.balance;
-              <div class="mt-3 ml-10">
-                <div class="grid grid-cols-2 gap-2 text-xs mb-2">
-                  <div>
-                    <p class="text-[10px] text-text-muted">{{ 'budget.envelope.objective' | transloco }}</p>
-                    <p class="font-mono font-medium text-text-primary">
-                      {{ envelope.target | number: '1.2-2' }}&euro;
-                    </p>
-                  </div>
-                  <div>
-                    <p class="text-[10px] text-text-muted">{{ 'budget.envelope.remainingAmount' | transloco }}</p>
-                    <p
-                      class="font-mono font-medium"
-                      [class.text-ib-green]="remaining <= 0"
-                      [class.text-ib-yellow]="remaining > 0"
-                    >
-                      {{ remaining > 0 ? (remaining | number: '1.2-2') : '0,00' }}&euro;
-                    </p>
-                  </div>
+              <div class="mt-3">
+                <div class="h-2 overflow-hidden rounded-full bg-hover">
+                  <div class="h-full rounded-full" [style.width.%]="pct > 100 ? 100 : pct" [style.background-color]="envelope.color"></div>
                 </div>
-                <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                  <span>{{ 'budget.envelope.progress' | transloco }}</span>
-                  <span class="font-mono font-semibold">{{ pct | number: '1.0-0' }}%</span>
-                </div>
-                <div class="h-2 rounded-full bg-hover overflow-hidden">
-                  <div
-                    class="h-full rounded-full transition duration-500 ease-out"
-                    [style.width.%]="pct > 100 ? 100 : pct"
-                    [style.background-color]="envelope.color"
-                  ></div>
+                <div class="mt-1.5 flex items-center justify-between text-xs">
+                  <span class="text-text-muted">
+                    {{ 'budget.envelope.objective' | transloco }}
+                    <span class="font-mono text-text-primary">{{ envelope.target | number: '1.0-0' }}&euro;</span>
+                  </span>
+                  <span class="font-mono font-semibold" [class.text-ib-green]="remaining <= 0" [class.text-text-muted]="remaining > 0">
+                    {{ remaining > 0 ? ('budget.envelope.remainingShort' | transloco: { amount: (remaining | number: '1.0-0') }) : ('budget.envelope.reached' | transloco) }} · {{ pct | number: '1.0-0' }}%
+                  </span>
                 </div>
               </div>
             } @else {
-              <p class="text-[11px] text-text-muted mt-2 ml-10">{{ 'budget.envelope.noObjective' | transloco }}</p>
+              <p class="mt-2 text-xs text-text-muted">{{ 'budget.envelope.noObjective' | transloco }}</p>
             }
+
+            <div class="mt-4 border-t border-border/60 pt-3">
+              <div class="mb-2 flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.envelope.recentActivity' | transloco }}</span>
+                @if (entries.length > 0) {
+                  <button type="button" class="text-[11px] font-medium text-ib-cyan hover:underline" (click)="openHistoryModal(envelope)">
+                    {{ 'budget.envelope.viewAll' | transloco }}
+                  </button>
+                }
+              </div>
+              @if (entries.length > 0) {
+                <ul class="space-y-1.5">
+                  @for (entry of entries.slice(0, 3); track entry.tx.id) {
+                    <li class="flex items-center justify-between gap-2 text-xs">
+                      <span class="flex min-w-0 items-center gap-1.5">
+                        <app-icon
+                          [name]="entry.tx.amount >= 0 ? 'arrow-up-right' : 'arrow-down-left'"
+                          size="12"
+                          [class.text-ib-green]="entry.tx.amount >= 0"
+                          [class.text-ib-red]="entry.tx.amount < 0"
+                        />
+                        <span class="truncate text-text-muted">{{ entry.tx.note || (entry.tx.date | date: 'dd/MM/yy') }}</span>
+                      </span>
+                      <span class="shrink-0 font-mono" [class.text-ib-green]="entry.tx.amount >= 0" [class.text-ib-red]="entry.tx.amount < 0">
+                        {{ entry.tx.amount >= 0 ? '+' : '' }}{{ entry.tx.amount | number: '1.2-2' }}&euro;
+                      </span>
+                    </li>
+                  }
+                </ul>
+              } @else {
+                <p class="text-xs text-text-muted">{{ 'budget.envelope.noActivity' | transloco }}</p>
+              }
+            </div>
           </div>
 
-          <div
-            class="flex items-center justify-end gap-1 px-4 py-2.5 border-t border-border/50 bg-canvas/50"
-          >
+          <div class="mt-auto flex items-center gap-2 border-t border-border/60 px-5 py-3">
             <button
               type="button"
-              class="action-btn hover:text-ib-blue hover:border-ib-blue/30"
-              [title]="'budget.envelope.creditTitle' | transloco: { name: envelope.name }"
-              [attr.aria-label]="'budget.envelope.creditAria' | transloco: { name: envelope.name }"
+              class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-ib-cyan/10 px-3 py-2 text-xs font-semibold text-ib-cyan transition-colors hover:bg-ib-cyan/20"
               (click)="openCreditModal(envelope)"
             >
-              <app-icon name="plus-circle" size="14" />
-              <span class="action-label">{{ 'budget.envelope.creditAction' | transloco }}</span>
+              <app-icon name="plus" size="14" /> {{ 'budget.envelope.creditAction' | transloco }}
             </button>
             <button
               type="button"
-              class="action-btn hover:text-ib-cyan hover:border-ib-cyan/30"
-              [title]="'budget.envelope.historyTitle' | transloco: { name: envelope.name }"
-              [attr.aria-label]="'budget.envelope.historyAria' | transloco: { name: envelope.name }"
-              (click)="openHistoryModal(envelope)"
-            >
-              <app-icon name="clock" size="14" />
-              <span class="action-label">{{ 'budget.actions.history' | transloco }}</span>
-            </button>
-            <button
-              type="button"
-              class="action-btn hover:text-ib-yellow hover:border-ib-yellow/30"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
               [title]="'budget.envelope.editTitle' | transloco: { name: envelope.name }"
               [attr.aria-label]="'budget.envelope.editAria' | transloco: { name: envelope.name }"
               (click)="openEditModal(envelope)"
             >
               <app-icon name="pencil" size="14" />
-              <span class="action-label">{{ 'budget.actions.edit' | transloco }}</span>
             </button>
             <button
               type="button"
-              class="action-btn hover:text-ib-red hover:border-ib-red/30"
+              class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-muted transition-colors hover:border-ib-red/40 hover:bg-ib-red/10 hover:text-ib-red"
               [title]="'budget.envelope.deleteTitle' | transloco: { name: envelope.name }"
               [attr.aria-label]="'budget.envelope.deleteAria' | transloco: { name: envelope.name }"
               (click)="deleteEnvelope(envelope.id)"
             >
               <app-icon name="trash" size="14" />
-              <span class="action-label">{{ 'budget.actions.delete' | transloco }}</span>
             </button>
           </div>
         </article>
       } @empty {
-        <div
-          class="col-span-full text-center py-16 rounded-xl border border-dashed border-border bg-surface"
-        >
+        <div class="col-span-full text-center py-16 rounded-lg border border-dashed border-border bg-surface">
           <app-icon name="wallet" size="48" class="text-text-muted/20 mx-auto mb-3" />
           <p class="text-sm text-text-muted">{{ 'budget.envelope.empty' | transloco }}</p>
           <p class="text-xs text-text-muted mt-1">{{ 'budget.envelope.emptyHint' | transloco }}</p>
@@ -255,7 +215,7 @@ const MEMBER_PALETTE = [
       }
     </section>
 
-    <footer class="rounded-xl border border-border bg-surface overflow-hidden">
+    <footer class="rounded-lg border border-border bg-surface overflow-hidden">
       <div class="flex items-center justify-between px-5 py-3 bg-ib-cyan/5">
         <div class="flex items-center gap-2">
           <app-icon name="wallet" size="16" class="text-ib-cyan" />
@@ -306,77 +266,50 @@ const MEMBER_PALETTE = [
       (closed)="onModalClosed()"
     >
       @if (historyModal.isOpen()) {
-      <div class="space-y-4">
-        <form class="flex gap-2 items-end" (ngSubmit)="addManualTransaction()">
-          <div class="flex-1">
-            <label for="env-tx-amount" class="text-xs text-text-muted">{{ 'budget.envelope.modal.amount' | transloco }}</label>
-            <input
-              id="env-tx-amount"
-              type="number"
-              step="0.01"
-              class="form-input mono"
-              [value]="manualTxAmount()"
-              (input)="manualTxAmount.set(+inputValue($event))"
-            />
-            <p class="text-[10px] mt-0.5 text-text-muted">
-              {{ 'budget.envelope.modal.amountHint' | transloco }}
-            </p>
-          </div>
-          <div class="flex-1">
-            <label for="env-tx-date" class="text-xs text-text-muted">{{ 'budget.envelope.modal.date' | transloco }}</label>
-            <input
-              id="env-tx-date"
-              type="date"
-              class="form-input"
-              [value]="manualTxDate()"
-              (input)="manualTxDate.set(inputValue($event))"
-            />
-          </div>
-          <button
-            type="submit"
-            [disabled]="!manualTxAmount() || !manualTxDate()"
-            class="rounded-lg bg-ib-cyan px-3 py-2 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
-          >
-            {{ 'budget.actions.add' | transloco }}
-          </button>
-        </form>
-
-        @if (transactions().length > 0) {
-          <div class="rounded-xl border border-border overflow-hidden">
-            <table class="w-full text-sm">
-              <thead>
-                <tr
-                  class="bg-raised/50 text-left text-[11px] font-semibold uppercase tracking-wider text-text-muted"
-                >
-                  <th class="px-4 py-2.5">{{ 'budget.envelope.modal.tableDate' | transloco }}</th>
-                  <th class="px-4 py-2.5 text-right">{{ 'budget.envelope.modal.tableAmount' | transloco }}</th>
-                </tr>
-              </thead>
-              <tbody class="divide-y divide-border/30">
-                @for (tx of transactions(); track tx.id) {
-                  <tr class="hover:bg-hover/30 transition-colors">
-                    <td class="px-4 py-2.5 text-text-primary">
-                      {{ tx.date | date: 'dd/MM/yyyy' }}
-                    </td>
-                    <td
-                      class="px-4 py-2.5 text-right font-mono font-medium"
-                      [class.text-ib-green]="tx.amount > 0"
-                      [class.text-ib-red]="tx.amount < 0"
-                    >
-                      {{ tx.amount > 0 ? '+' : '' }}{{ tx.amount | number: '1.2-2' }}&euro;
-                    </td>
-                  </tr>
-                }
-              </tbody>
-            </table>
-          </div>
+        @let history = selectedHistory();
+        @if (history.length > 0) {
+          <ul class="divide-y divide-border/40 rounded-lg border border-border overflow-hidden">
+            @for (entry of history; track entry.tx.id) {
+              <li class="flex items-center justify-between gap-3 px-4 py-3">
+                <div class="flex min-w-0 items-center gap-3">
+                  <span
+                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
+                    [class.bg-ib-green]="entry.tx.amount >= 0"
+                    [class.bg-ib-red]="entry.tx.amount < 0"
+                    [style.background-color]="entry.tx.amount >= 0 ? 'color-mix(in srgb, var(--color-ib-green) 12%, transparent)' : 'color-mix(in srgb, var(--color-ib-red) 12%, transparent)'"
+                  >
+                    <app-icon
+                      [name]="entry.tx.amount >= 0 ? 'arrow-up-right' : 'arrow-down-left'"
+                      size="14"
+                      [class.text-ib-green]="entry.tx.amount >= 0"
+                      [class.text-ib-red]="entry.tx.amount < 0"
+                    />
+                  </span>
+                  <div class="min-w-0">
+                    <p class="font-mono text-sm font-medium" [class.text-ib-green]="entry.tx.amount >= 0" [class.text-ib-red]="entry.tx.amount < 0">
+                      {{ entry.tx.amount >= 0 ? '+' : '' }}{{ entry.tx.amount | number: '1.2-2' }}&euro;
+                    </p>
+                    @if (entry.tx.note) {
+                      <p class="truncate text-xs text-text-muted">{{ entry.tx.note }}</p>
+                    }
+                  </div>
+                </div>
+                <div class="shrink-0 text-right">
+                  <p class="text-xs text-text-muted">{{ entry.tx.date | date: 'dd/MM/yyyy' }}</p>
+                  <p class="font-mono text-xs text-text-muted">
+                    {{ 'budget.envelope.balanceAfter' | transloco }} {{ entry.balanceAfter | number: '1.2-2' }}&euro;
+                  </p>
+                </div>
+              </li>
+            }
+          </ul>
         } @else {
           <div class="text-center py-8">
             <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
             <p class="text-sm text-text-muted">{{ 'budget.envelope.modal.noTransactions' | transloco }}</p>
+            <p class="text-xs text-text-muted mt-1">{{ 'budget.envelope.modal.historyHint' | transloco }}</p>
           </div>
         }
-      </div>
       }
     </app-modal-dialog>
   `,
@@ -387,8 +320,7 @@ export class Envelopes {
   private readonly updateEnvelopeUC = inject(UpdateEnvelopeUseCase);
   private readonly creditEnvelopeUC = inject(CreditEnvelopeUseCase);
   private readonly deleteEnvelopeUC = inject(DeleteEnvelopeUseCase);
-  private readonly getTransactionsUC = inject(GetEnvelopeTransactionsUseCase);
-  private readonly addTransactionUC = inject(AddEnvelopeTransactionUseCase);
+  private readonly getAllTransactionsUC = inject(GetAllEnvelopeTransactionsUseCase);
   private readonly getMembersUC = inject(GetMembersUseCase);
   private readonly getAccountsUC = inject(GetBankAccountsUseCase);
   private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
@@ -404,6 +336,11 @@ export class Envelopes {
   private readonly _refresh = signal(0);
   protected readonly envelopes = toSignal(
     toObservable(this._refresh).pipe(switchMap(() => this.getEnvelopes.execute())),
+    { initialValue: [] },
+  );
+
+  private readonly allTransactions = toSignal(
+    toObservable(this._refresh).pipe(switchMap(() => this.getAllTransactionsUC.execute())),
     { initialValue: [] },
   );
 
@@ -431,10 +368,35 @@ export class Envelopes {
     this.filteredEnvelopes().reduce((sum, e) => sum + e.balance, 0),
   );
 
+  // Real deposit history per envelope, with the running balance after each operation.
+  // Zero-amount rows (legacy E2EE balance snapshots) are filtered out.
+  protected readonly recentByEnvelope = computed(() => {
+    const byEnvelope = new Map<string, EnvelopeTransaction[]>();
+    for (const tx of this.allTransactions()) {
+      if (Number(tx.amount) === 0) continue;
+      const list = byEnvelope.get(tx.envelopeId);
+      if (list) list.push(tx);
+      else byEnvelope.set(tx.envelopeId, [tx]);
+    }
+    const result = new Map<string, HistoryEntry[]>();
+    for (const envelope of this.envelopes()) {
+      const txs = (byEnvelope.get(envelope.id) ?? []).slice().sort((a, b) => b.date.localeCompare(a.date));
+      let balance = Number(envelope.balance);
+      const entries: HistoryEntry[] = txs.map((tx) => {
+        const entry: HistoryEntry = { tx, balanceAfter: balance };
+        balance -= Number(tx.amount);
+        return entry;
+      });
+      result.set(envelope.id, entries);
+    }
+    return result;
+  });
+
   protected readonly selectedEnvelope = signal<Envelope | null>(null);
-  protected readonly transactions = signal<EnvelopeTransaction[]>([]);
-  protected readonly manualTxAmount = signal(0);
-  protected readonly manualTxDate = signal(new Date().toISOString().slice(0, 10));
+  protected readonly selectedHistory = computed<HistoryEntry[]>(() => {
+    const envelope = this.selectedEnvelope();
+    return envelope ? (this.recentByEnvelope().get(envelope.id) ?? []) : [];
+  });
 
   protected readonly memberMap = computed(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -460,29 +422,13 @@ export class Envelopes {
     this.creditModalRef().open();
   }
 
-  protected async openHistoryModal(envelope: Envelope) {
+  protected openHistoryModal(envelope: Envelope) {
     this.selectedEnvelope.set(envelope);
-    const txs = await lastValueFrom(this.getTransactionsUC.execute(envelope.id));
-    this.transactions.set(txs);
     this.historyModalRef().open();
-  }
-
-  protected async addManualTransaction() {
-    const envelope = this.selectedEnvelope();
-    const amount = this.manualTxAmount();
-    const date = this.manualTxDate();
-    if (!envelope || !amount || !date) return;
-    const tx = await lastValueFrom(this.addTransactionUC.execute(envelope.id, { amount, date }));
-    this.transactions.update((txs) => [tx, ...txs]);
-    this.manualTxAmount.set(0);
-    this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
   protected onModalClosed() {
     this.selectedEnvelope.set(null);
-    this.transactions.set([]);
-    this.manualTxAmount.set(0);
-    this.manualTxDate.set(new Date().toISOString().slice(0, 10));
   }
 
   protected async createEnvelope(data: Omit<Envelope, 'id'>) {
@@ -509,14 +455,14 @@ export class Envelopes {
     }
   }
 
-  protected async creditEnvelope(event: { amount: number; date: string; accountId: string | null }) {
+  protected async creditEnvelope(event: { amount: number; date: string; note: string | null; accountId: string | null }) {
     const envelope = this.selectedEnvelope();
     if (!envelope) return;
     try {
-      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date, envelope));
+      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date, event.note, envelope));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate(event.amount > 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited'));
+      this.toaster.success(this._i18n.translate(event.amount >= 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited'));
       if (event.accountId && event.amount > 0) {
         await lastValueFrom(
           this.createEntryUC.execute({
@@ -548,9 +494,5 @@ export class Envelopes {
     } catch {
       this.toaster.error(this._i18n.translate('budget.envelope.messages.deleteError'));
     }
-  }
-
-  protected inputValue(event: Event): string {
-    return (event.target as HTMLInputElement).value;
   }
 }
