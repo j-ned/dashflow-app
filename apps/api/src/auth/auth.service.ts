@@ -61,9 +61,7 @@ export class AuthService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
-    const rewrap = this.checkRewrap(user.encryptionVersion, dto.newSalt, dto.newWrappedMasterKey);
-    if (!rewrap.success) return rewrap;
-    await this.repo.updateUser(user.id, { password: await argon2.hash(dto.newPassword), ...rewrap.data });
+    await this.repo.updateUser(user.id, { password: await argon2.hash(dto.newPassword) });
     await this.repo.deleteCodes(dto.email);
     return ok(null);
   }

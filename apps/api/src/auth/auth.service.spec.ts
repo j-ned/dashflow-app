@@ -86,4 +86,12 @@ describe('AuthService', () => {
     r.findById.mockResolvedValue({ id: 'u1', password: await argon2.hash('bon-mdp-long-1'), totpSecret: 'X', totpEnabled: new Date() });
     expect(await svc.disableTotp('u1', 'mauvais')).toMatchObject({ success: false, status: 401 });
   });
+
+  it('resetPassword : compte chiffré (v=1) SANS clés → succès (pas de 400)', async () => {
+    r.findValidCode.mockResolvedValue({ id: 'c1' });
+    r.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', encryptionVersion: 1 });
+    r.updateUser.mockResolvedValue({ id: 'u1' });
+    const res = await svc.resetPassword({ email: 'a@b.com', code: '123456', newPassword: 'nouveau-long-123' });
+    expect(res.success).toBe(true);
+  });
 });
