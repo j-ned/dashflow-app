@@ -72,18 +72,13 @@ export class AuthStore {
 
   async checkSession(): Promise<void> {
     this._isLoading.set(true);
-    const token = this.api.getToken();
-    if (!token) {
-      this._user.set(null);
-      this._isAuthenticated.set(false);
-      this._isLoading.set(false);
-      return;
-    }
-
     try {
-      const res = await firstValueFrom(this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'));
+      await firstValueFrom(this.api.get('/auth/csrf'));
+      const res = await firstValueFrom(
+        this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'),
+      );
       const { keyMaterial, ...user } = res;
-      this._user.set(user);
+      this._user.set(user as AuthUser);
       this._isAuthenticated.set(true);
       this._keyMaterial = keyMaterial ?? null;
 
@@ -91,8 +86,6 @@ export class AuthStore {
         await this.crypto.restoreFromSession();
       }
     } catch {
-      this.api.clearToken();
-      this._user.set(null);
       this._isAuthenticated.set(false);
     } finally {
       this._isLoading.set(false);
@@ -111,7 +104,6 @@ export class AuthStore {
       const res = await firstValueFrom(
         this.api.post<{ token: string; user: AuthUser; keyMaterial: null }>('/auth/demo-login', {}),
       );
-      this.api.setToken(res.token);
       this._user.set(res.user);
       this._isAuthenticated.set(true);
       this._keyMaterial = null;
@@ -124,7 +116,6 @@ export class AuthStore {
     const res = await firstValueFrom(
       this.api.post<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }>('/auth/verify', { email, code }),
     );
-    this.api.setToken(res.token);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -140,7 +131,6 @@ export class AuthStore {
     const res = await firstValueFrom(
       this.api.post<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }>('/auth/login', { email, password, totpCode }),
     );
-    this.api.setToken(res.token);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -167,18 +157,19 @@ export class AuthStore {
     );
   }
 
-  async loginWithToken(token: string): Promise<void> {
-    this.api.setToken(token);
-    const res = await firstValueFrom(this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'));
+  async hydrateFromCookie(): Promise<void> {
+    const res = await firstValueFrom(
+      this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'),
+    );
     const { keyMaterial, ...user } = res;
-    this._user.set(user);
+    this._user.set(user as AuthUser);
     this._isAuthenticated.set(true);
     this._keyMaterial = keyMaterial ?? null;
   }
 
   async logout(): Promise<void> {
     this.crypto.lock();
-    this.api.clearToken();
+    try { await firstValueFrom(this.api.post('/auth/logout', {})); } catch { /* non-blocking */ }
     this._user.set(null);
     this._isAuthenticated.set(false);
     this._keyMaterial = null;

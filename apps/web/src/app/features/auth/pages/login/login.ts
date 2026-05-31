@@ -197,13 +197,13 @@ export class Login {
       return;
     }
 
-    if (params['token']) {
+    if (params['oauth'] === 'success') {
       this.loading.set(true);
       try {
-        await this.auth.loginWithToken(params['token']);
+        await this.auth.hydrateFromCookie();
         this.redirectAfterLogin();
       } catch {
-        this.error.set(this._i18n.translate('auth.login.errors.tokenLoginFailed'));
+        this.error.set(this._i18n.translate('auth.login.errors.oauthGeneric'));
       } finally {
         this.loading.set(false);
       }
