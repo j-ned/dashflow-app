@@ -12,6 +12,13 @@ import { EnvelopesModule } from './modules/envelopes/envelopes.module';
 import { LoansModule } from './modules/loans/loans.module';
 import { RecurringEntriesModule } from './modules/recurring-entries/recurring-entries.module';
 import { SalaryArchivesModule } from './modules/salary-archives/salary-archives.module';
+import { PatientsModule } from './modules/patients/patients.module';
+import { MembersModule } from './modules/members/members.module';
+import { PractitionersModule } from './modules/practitioners/practitioners.module';
+import { AppointmentsModule } from './modules/appointments/appointments.module';
+import { MedicationsModule } from './modules/medications/medications.module';
+import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
+import { DocumentsModule } from './modules/documents/documents.module';
 
 @Module({
   imports: [
@@ -27,6 +34,13 @@ import { SalaryArchivesModule } from './modules/salary-archives/salary-archives.
     LoansModule,
     RecurringEntriesModule,
     SalaryArchivesModule,
+    PatientsModule,
+    MembersModule,
+    PractitionersModule,
+    AppointmentsModule,
+    MedicationsModule,
+    PrescriptionsModule,
+    DocumentsModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
