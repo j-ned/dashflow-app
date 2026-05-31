@@ -9,6 +9,9 @@ type User = typeof users.$inferSelect;
 export class AuthRepository {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
+  findByGoogleId(googleId: string): Promise<User | undefined> {
+    return this.db.select().from(users).where(eq(users.googleId, googleId)).limit(1).then((r) => r[0]);
+  }
   findByEmail(email: string): Promise<User | undefined> {
     return this.db.select().from(users).where(eq(users.email, email)).limit(1).then((r) => r[0]);
   }

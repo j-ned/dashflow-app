@@ -7,6 +7,9 @@ export const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:4200'),
   JWT_SECRET: z.string().min(32, 'JWT_SECRET doit faire au moins 32 caractères'),
   MAILER: z.enum(['console', 'smtp']).default('console'),
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  APP_URL: z.string().url().default('http://localhost:3001'),
 });
 
 export type Env = z.infer<typeof envSchema>;
