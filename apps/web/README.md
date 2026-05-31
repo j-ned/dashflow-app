@@ -10,7 +10,7 @@
 
 [![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Hono](https://img.shields.io/badge/Hono-4.12-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev)
+[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
@@ -120,7 +120,7 @@ graph LR
 - ✅ **PBKDF2 100k itérations** (recommandation OWASP 2023)
 - ✅ **IV unique** par payload (jamais réutilisé)
 - ✅ **2FA TOTP** optionnel
-- ✅ **Rate limiting** sur toutes les routes sensibles (`hono-rate-limiter`)
+- ✅ **Rate limiting** sur toutes les routes sensibles
 - ✅ **Argon2id** pour les hashs de mot de passe côté serveur
 - ✅ **JWT refresh tokens** avec rotation
 
@@ -158,18 +158,9 @@ graph TD
   UC --> MD
 ```
 
-### Backend Hono + Drizzle
+### Backend — NestJS (repo séparé)
 
-```
-backend/
-├── src/
-│   ├── routes/          # endpoints Hono (auth, budget, medical, files)
-│   ├── middleware/      # auth JWT, rate-limit, CORS
-│   ├── db/              # schema Drizzle + migrations
-│   ├── services/        # logique métier (email, S3, OAuth)
-│   └── lib/             # crypto, JWT, validation zod
-└── drizzle/             # migrations SQL versionnées
-```
+Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expose une API REST consommée par le frontend via `/api` (cookie httpOnly). Voir le README du repo backend pour la structure détaillée.
 
 ---
 
@@ -184,17 +175,16 @@ backend/
 - **Tests** : Vitest (unit + component)
 - **Build** : @angular/build avec esbuild
 
-### Backend
+### Backend (repo `nest-dashflow-app`)
 
-- **Runtime** : Node.js + Hono
+- **Runtime** : Node.js + NestJS
 - **ORM** : Drizzle ORM + drizzle-kit migrations
 - **Database** : PostgreSQL 17
-- **Auth** : `jose` (JWT), `argon2` (hashing), `arctic` (OAuth)
-- **2FA** : `otpauth` + `qrcode`
-- **Storage** : AWS S3 (fiches de paie, documents)
-- **Email** : Nodemailer (rappels, notifications)
+- **Auth** : JWT (cookies httpOnly), Argon2id, Arctic (OAuth)
+- **2FA** : TOTP
+- **Storage** : Cloudflare R2
+- **Email** : Nodemailer
 - **Validation** : Zod
-- **Rate limiting** : `hono-rate-limiter`
 
 ### DevOps
 
@@ -254,44 +244,37 @@ backend/
 
 ## 🚀 Installation
 
-> Pré-requis : Node.js ≥ 20, pnpm, PostgreSQL 17, Docker (optionnel)
+> Pré-requis : Node.js ≥ 20, pnpm
+
+### Frontend (ce repo)
 
 ```bash
-# 1. Cloner
 git clone https://github.com/j-ned/dash-flow.git
 cd dash-flow
-
-# 2. Frontend
 pnpm install
 pnpm start
-# → http://localhost:4200
-
-# 3. Backend (autre terminal)
-cd backend
-pnpm install
-cp .env.example .env       # DATABASE_URL, JWT_SECRET, S3_*
-pnpm db:migrate
-pnpm dev
-# → http://localhost:3000
+# → http://localhost:4200 (proxy /api → NestJS :3001)
 ```
 
-### Variables d'environnement critiques
-
-```env
-DATABASE_URL=postgresql://user:pass@localhost:5432/dashflow
-JWT_ACCESS_SECRET=<openssl rand -hex 64>
-JWT_REFRESH_SECRET=<openssl rand -hex 64>
-S3_ENDPOINT=...
-S3_BUCKET=dashflow-docs
-SMTP_HOST=...
-```
-
-### Docker
+### Backend (repo séparé)
 
 ```bash
-docker build -t dashflow .
-docker run -p 80:80 --env-file .env dashflow
+# Voir nest-dashflow-app/README.md
+make db-up          # démarre PostgreSQL via Docker/Podman
+pnpm start:dev      # → http://localhost:3001
 ```
+
+Le frontend proxifie `/api` vers `:3001` via `proxy.conf.json` (Angular dev server). Aucune variable d'environnement n'est requise côté Angular.
+
+### Docker (image frontend uniquement)
+
+```bash
+docker build -t dashflow-front .
+docker run -p 80:80 dashflow-front
+```
+
+> Le déploiement prod complet (proxy `/api` → NestJS) sera configuré dans Dokploy avec 2 services séparés.
+
 
 ---
 
