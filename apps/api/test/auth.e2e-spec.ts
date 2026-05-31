@@ -11,6 +11,7 @@ class CapturingMailer implements Mailer {
   lastCode = '';
   async sendVerificationCode(_to: string, code: string) { this.lastCode = code; }
   async sendPasswordResetCode(_to: string, code: string) { this.lastCode = code; }
+  async sendCalendarInvitation(_to: string, _senderName: string, _calendarToken: string) { /* no-op */ }
 }
 
 describe('Auth e2e', () => {
