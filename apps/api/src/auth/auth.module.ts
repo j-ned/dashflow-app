@@ -8,6 +8,8 @@ import { TokenService } from './token.service';
 import { TwoFactorService } from './two-factor.service';
 import { EncryptionService } from './encryption.service';
 import { EncryptionController } from './encryption.controller';
+import { OAuthService } from './oauth.service';
+import { OAuthController } from './oauth.controller';
 import type { Env } from '../config/env.schema';
 
 @Module({
@@ -20,7 +22,7 @@ import type { Env } from '../config/env.schema';
       }),
     }),
   ],
-  controllers: [AuthController, EncryptionController],
-  providers: [AuthService, AuthRepository, TokenService, TwoFactorService, EncryptionService],
+  controllers: [AuthController, EncryptionController, OAuthController],
+  providers: [AuthService, AuthRepository, TokenService, TwoFactorService, EncryptionService, OAuthService],
 })
 export class AuthModule {}
