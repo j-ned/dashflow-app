@@ -10,6 +10,8 @@ import { EncryptionService } from './encryption.service';
 import { EncryptionController } from './encryption.controller';
 import { OAuthService } from './oauth.service';
 import { OAuthController } from './oauth.controller';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CsrfGuard } from '../common/guards/csrf.guard';
 import type { Env } from '../config/env.schema';
 
 @Module({
@@ -23,6 +25,7 @@ import type { Env } from '../config/env.schema';
     }),
   ],
   controllers: [AuthController, EncryptionController, OAuthController],
-  providers: [AuthService, AuthRepository, TokenService, TwoFactorService, EncryptionService, OAuthService],
+  providers: [AuthService, AuthRepository, TokenService, TwoFactorService, EncryptionService, OAuthService, JwtAuthGuard, CsrfGuard],
+  exports: [TokenService, JwtAuthGuard, CsrfGuard],
 })
 export class AuthModule {}
