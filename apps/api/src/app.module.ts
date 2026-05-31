@@ -22,6 +22,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
 import { SharedAccessModule } from './modules/shared-access/shared-access.module';
 import { MedicalCalendarModule } from './modules/medical-calendar/medical-calendar.module';
+import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
@@ -47,6 +48,7 @@ import { MedicalCalendarModule } from './modules/medical-calendar/medical-calend
     RemindersModule,
     SharedAccessModule,
     MedicalCalendarModule,
+    StorageModule,
   ],
   providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
 })
