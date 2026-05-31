@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Delete,
@@ -8,9 +9,15 @@ import {
   Param,
   Post,
   Put,
+  Res,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import type { Response } from 'express';
 import { PrescriptionsService } from './prescriptions.service';
+import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
@@ -20,7 +27,10 @@ import { createPrescriptionSchema, createEncryptedPrescriptionSchema } from './d
 @UseGuards(JwtAuthGuard)
 @Controller('prescriptions')
 export class PrescriptionsController {
-  constructor(private readonly svc: PrescriptionsService) {}
+  constructor(
+    private readonly svc: PrescriptionsService,
+    private readonly storage: StorageService,
+  ) {}
 
   @Get()
   list(@CurrentUser() u: AuthUser) { return this.svc.list(u.id); }
@@ -81,4 +91,42 @@ export class PrescriptionsController {
 
   @UseGuards(CsrfGuard) @Delete(':id') @HttpCode(204)
   async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) { await this.svc.remove(u.id, id); }
+
+  // --- Document file sub-routes ---
+
+  @UseGuards(CsrfGuard)
+  @Post(':id/document')
+  @UseInterceptors(FileInterceptor('document', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  async uploadDocument(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
+  ) {
+    if (!file) throw new BadRequestException('Fichier requis');
+    const existing = await this.svc.getOne(u.id, id);
+    if (!existing) throw new NotFoundException('Non trouvé');
+    const key = this.storage.prescriptionKey(u.id, id, file.mimetype);
+    await this.storage.upload(key, file.buffer, file.mimetype);
+    return this.svc.update(u.id, id, { documentUrl: key });
+  }
+
+  @Get(':id/document')
+  async getDocument(@CurrentUser() u: AuthUser, @Param('id') id: string, @Res() res: Response): Promise<void> {
+    const presc = await this.svc.getOne(u.id, id);
+    if (!presc?.documentUrl) throw new NotFoundException('Document introuvable');
+    const obj = await this.storage.getStream(presc.documentUrl);
+    if (!obj) throw new NotFoundException('Document introuvable');
+    res.setHeader('Content-Type', obj.contentType);
+    obj.stream.pipe(res);
+  }
+
+  @UseGuards(CsrfGuard)
+  @Delete(':id/document')
+  @HttpCode(204)
+  async deleteDocument(@CurrentUser() u: AuthUser, @Param('id') id: string): Promise<void> {
+    const presc = await this.svc.getOne(u.id, id);
+    if (!presc) throw new NotFoundException('Non trouvé');
+    if (presc.documentUrl) await this.storage.delete(presc.documentUrl);
+    await this.svc.update(u.id, id, { documentUrl: null });
+  }
 }
