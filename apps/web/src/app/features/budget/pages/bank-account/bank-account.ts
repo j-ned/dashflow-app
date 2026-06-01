@@ -32,6 +32,9 @@ const PALETTE = [
   'var(--color-ib-red)',
 ] as const;
 
+const sumAmount = (entries: readonly RecurringEntry[]): number =>
+  entries.reduce((s, e) => s + Number(e.amount), 0);
+
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -56,17 +59,17 @@ const PALETTE = [
             {{ 'budget.bankAccount.allAccounts' | transloco }}
           </button>
         }
-        @for (account of accounts(); track account.id; let i = $index) {
+        @for (da of decoratedAccounts(); track da.account.id) {
           <button type="button"
                   class="inline-flex items-center gap-2 rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"
-                  [style.border-color]="selectedAccountId() === account.id ? accountColor(i) : 'var(--border)'"
-                  [style.background-color]="selectedAccountId() === account.id ? accountColor(i) : 'transparent'"
-                  [class.text-canvas]="selectedAccountId() === account.id"
-                  [class.text-text-muted]="selectedAccountId() !== account.id"
-                  (click)="selectAccount(account.id)">
+                  [style.border-color]="selectedAccountId() === da.account.id ? da.color : 'var(--border)'"
+                  [style.background-color]="selectedAccountId() === da.account.id ? da.color : 'transparent'"
+                  [class.text-canvas]="selectedAccountId() === da.account.id"
+                  [class.text-text-muted]="selectedAccountId() !== da.account.id"
+                  (click)="selectAccount(da.account.id)">
             <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="accountDotColor(i)"></span>
-            {{ account.name }}
+                  [style.background-color]="da.dot"></span>
+            {{ da.account.name }}
           </button>
         }
         <button type="button"
@@ -105,7 +108,6 @@ const PALETTE = [
     <app-bank-incomes-table
       [incomes]="incomes()"
       [memberMap]="memberMap()"
-      [selectedAccountId]="selectedAccountId()"
       (create)="openCreateModal('income')"
       (edit)="openEditModal($event)"
       (delete)="deleteEntry($event)"
@@ -164,21 +166,21 @@ const PALETTE = [
             <div>
               <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">{{ 'budget.bankAccount.accountModal.existing' | transloco }}</p>
               <div class="rounded-xl border border-border overflow-hidden divide-y divide-border/30">
-                @for (account of accounts(); track account.id; let i = $index) {
+                @for (da of decoratedAccounts(); track da.account.id) {
                   <div class="px-4 py-3 hover:bg-hover/30 transition-colors space-y-2">
                     <div class="flex items-center justify-between">
                       <div class="flex items-center gap-3">
                         <span class="inline-flex items-center gap-2">
-                          <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="accountDotColor(i)"></span>
-                          <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="accountColor(i)"></span>
+                          <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="da.dot"></span>
+                          <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="da.color"></span>
                         </span>
-                        <span class="text-sm font-medium text-text-primary">{{ account.name }}</span>
+                        <span class="text-sm font-medium text-text-primary">{{ da.account.name }}</span>
                       </div>
                       <button type="button"
                               class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                              [title]="'budget.bankAccount.accountModal.deleteTitle' | transloco: { name: account.name }"
-                              [attr.aria-label]="'budget.bankAccount.accountModal.deleteAria' | transloco: { name: account.name }"
-                              (click)="deleteAccount(account)">
+                              [title]="'budget.bankAccount.accountModal.deleteTitle' | transloco: { name: da.account.name }"
+                              [attr.aria-label]="'budget.bankAccount.accountModal.deleteAria' | transloco: { name: da.account.name }"
+                              (click)="deleteAccount(da.account)">
                         <app-icon name="trash" size="14" />
                       </button>
                     </div>
@@ -186,8 +188,8 @@ const PALETTE = [
                       <label class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.currentBalance' | transloco }}</label>
                       <input type="number" step="0.01"
                              class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
-                             [value]="account.initialBalance"
-                             (change)="updateAccountBalance(account.id, $event)" />
+                             [value]="da.account.initialBalance"
+                             (change)="updateAccountBalance(da.account.id, $event)" />
                       <span class="text-[11px] text-text-muted">&euro;</span>
                     </div>
                   </div>
@@ -414,21 +416,11 @@ export class BankAccount {
     Number(this.selectedAccount()?.initialBalance ?? 0)
   );
 
-  protected readonly totalIncome = computed(() =>
-    this.incomes().reduce((s, e) => s + Number(e.amount), 0)
-  );
-  protected readonly totalMonthlyExpenses = computed(() =>
-    this.monthlyExpenses().reduce((s, e) => s + Number(e.amount), 0)
-  );
-  protected readonly totalAnnualExpenses = computed(() =>
-    this.annualExpenses().reduce((s, e) => s + Number(e.amount), 0)
-  );
-  protected readonly monthlyAnnualExpenses = computed(() =>
-    this.totalAnnualExpenses() / 12
-  );
-  protected readonly totalMonthSpendings = computed(() =>
-    this.monthSpendings().reduce((s, e) => s + Number(e.amount), 0)
-  );
+  protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
+  protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
+  protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
+  protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
+  protected readonly totalMonthSpendings = computed(() => sumAmount(this.monthSpendings()));
 
   // Prélèvements passés/à venir dans le cycle salaire
   protected readonly passedExpenses = computed(() =>
@@ -437,42 +429,28 @@ export class BankAccount {
   protected readonly upcomingExpenses = computed(() =>
     this.monthlyExpenses().filter(e => !this.isExpensePassed(e))
   );
-  protected readonly totalPassedExpenses = computed(() =>
-    this.passedExpenses().reduce((s, e) => s + Number(e.amount), 0)
-  );
-  protected readonly totalUpcomingExpenses = computed(() =>
-    this.upcomingExpenses().reduce((s, e) => s + Number(e.amount), 0)
-  );
+  protected readonly totalPassedExpenses = computed(() => sumAmount(this.passedExpenses()));
+  protected readonly totalUpcomingExpenses = computed(() => sumAmount(this.upcomingExpenses()));
 
   // Virements ponctuels sortants/entrants du mois (tous considérés comme passés)
-  protected readonly totalOneTimeOutgoing = computed(() => {
-    const accountId = this.selectedAccountId();
-    return this.monthOneTimeTransfers()
-      .filter(e => e.accountId === accountId)
-      .reduce((s, e) => s + Number(e.amount), 0);
-  });
-  protected readonly totalOneTimeIncoming = computed(() => {
-    const accountId = this.selectedAccountId();
-    return this.monthOneTimeTransfers()
-      .filter(e => e.toAccountId === accountId)
-      .reduce((s, e) => s + Number(e.amount), 0);
-  });
+  protected readonly totalOneTimeOutgoing = computed(() =>
+    sumAmount(this.monthOneTimeTransfers().filter(e => e.accountId === this.selectedAccountId()))
+  );
+  protected readonly totalOneTimeIncoming = computed(() =>
+    sumAmount(this.monthOneTimeTransfers().filter(e => e.toAccountId === this.selectedAccountId()))
+  );
 
   private readonly passedOutgoing = computed(() =>
-    this.outgoingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
-    + this.totalOneTimeOutgoing()
+    sumAmount(this.outgoingTransfers().filter(e => this.isExpensePassed(e))) + this.totalOneTimeOutgoing()
   );
   private readonly passedIncoming = computed(() =>
-    this.incomingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
-    + this.totalOneTimeIncoming()
+    sumAmount(this.incomingTransfers().filter(e => this.isExpensePassed(e))) + this.totalOneTimeIncoming()
   );
   private readonly totalOutgoing = computed(() =>
-    this.outgoingTransfers().reduce((s, e) => s + Number(e.amount), 0)
-    + this.totalOneTimeOutgoing()
+    sumAmount(this.outgoingTransfers()) + this.totalOneTimeOutgoing()
   );
   private readonly totalIncoming = computed(() =>
-    this.incomingTransfers().reduce((s, e) => s + Number(e.amount), 0)
-    + this.totalOneTimeIncoming()
+    sumAmount(this.incomingTransfers()) + this.totalOneTimeIncoming()
   );
 
   protected readonly totalAllExpenses = computed(() =>
@@ -562,6 +540,14 @@ export class BankAccount {
     return map;
   });
 
+  protected readonly decoratedAccounts = computed(() =>
+    this.accounts().map((account, i) => ({
+      account,
+      color: PALETTE[i % PALETTE.length],
+      dot: PALETTE[(i + 3) % PALETTE.length],
+    })),
+  );
+
   private readonly accountMap = computed(() => {
     const map = new Map<string, string>();
     for (const a of this.accounts()) {
@@ -579,24 +565,18 @@ export class BankAccount {
     this.selectedAccountId.set(id);
   }
 
-  protected accountColor(index: number): string {
-    return PALETTE[index % PALETTE.length];
-  }
-
-  protected accountDotColor(index: number): string {
-    return PALETTE[(index + 3) % PALETTE.length];
+  private shiftMonth(delta: number) {
+    const [y, m] = this.spendingMonth().split('-').map(Number);
+    const d = new Date(y, m - 1 + delta, 1);
+    this.spendingMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
   }
 
   protected prevMonth() {
-    const [y, m] = this.spendingMonth().split('-').map(Number);
-    const d = new Date(y, m - 2, 1);
-    this.spendingMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    this.shiftMonth(-1);
   }
 
   protected nextMonth() {
-    const [y, m] = this.spendingMonth().split('-').map(Number);
-    const d = new Date(y, m, 1);
-    this.spendingMonth.set(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`);
+    this.shiftMonth(1);
   }
 
   protected resetAccountForm() {

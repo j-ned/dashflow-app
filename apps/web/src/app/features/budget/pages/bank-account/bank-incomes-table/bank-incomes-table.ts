@@ -91,7 +91,6 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 export class BankIncomesTable {
   readonly incomes = input.required<RecurringEntry[]>();
   readonly memberMap = input.required<Map<string, { name: string; color: string }>>();
-  readonly selectedAccountId = input.required<string | null>();
 
   readonly create = output<void>();
   readonly edit = output<RecurringEntry>();

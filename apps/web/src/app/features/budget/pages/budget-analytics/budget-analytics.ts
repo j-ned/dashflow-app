@@ -7,6 +7,7 @@ import { Icon, type IconName } from '@shared/components/icon/icon';
 import { AreaChart, type AreaChartPoint } from '@shared/components/charts/area-chart';
 import { DonutChart, type DonutSlice } from '@shared/components/charts/donut-chart';
 import { BarChart, type BarGroup } from '@shared/components/charts/bar-chart';
+import { salaryArchiveRemaining } from '@features/budget/domain/salary-archive-remaining';
 import { SalaryArchiveGateway } from '@features/budget/domain/gateways/salary-archive.gateway';
 import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
@@ -321,7 +322,7 @@ export class BudgetAnalytics {
     const arch = this.archives().slice(-12);
     return arch.map(a => ({
       label: this.formatMonth(a.month),
-      value: Number(a.salary) - Number(a.totalExpenses) - Number(a.totalSpendings),
+      value: salaryArchiveRemaining(a),
     }));
   });
 

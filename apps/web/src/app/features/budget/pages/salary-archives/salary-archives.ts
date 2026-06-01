@@ -5,6 +5,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
+import { salaryArchiveRemaining } from '../../domain/salary-archive-remaining';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
@@ -62,6 +63,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
     @if (archives().length > 0) {
       <div class="space-y-4">
         @for (archive of filteredArchives(); track archive.id) {
+          @let r = remainingOf(archive);
           <article class="group rounded-xl border border-border bg-surface overflow-hidden transition hover:shadow-lg hover:shadow-ib-cyan/5">
             <button type="button"
                     class="w-full flex items-center justify-between px-5 py-4 hover:bg-hover/30 transition-colors"
@@ -124,22 +126,22 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                     <p class="text-lg font-mono font-bold text-ib-yellow tracking-tight">{{ archive.totalSpendings | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
                   </div>
                   <div class="relative overflow-hidden rounded-xl border bg-canvas p-4"
-                       [class.border-ib-green-30]="archiveRemaining(archive) >= 0"
-                       [class.border-ib-red-30]="archiveRemaining(archive) < 0">
+                       [class.border-ib-green-30]="r >= 0"
+                       [class.border-ib-red-30]="r < 0">
                     <div class="flex items-center gap-1.5 mb-2">
                       <div class="flex h-6 w-6 items-center justify-center rounded-lg"
-                           [class.bg-ib-green-10]="archiveRemaining(archive) >= 0"
-                           [class.bg-ib-red-10]="archiveRemaining(archive) < 0">
+                           [class.bg-ib-green-10]="r >= 0"
+                           [class.bg-ib-red-10]="r < 0">
                         <app-icon name="wallet" size="12"
-                                  [class.text-ib-green]="archiveRemaining(archive) >= 0"
-                                  [class.text-ib-red]="archiveRemaining(archive) < 0" />
+                                  [class.text-ib-green]="r >= 0"
+                                  [class.text-ib-red]="r < 0" />
                       </div>
                       <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.salaryArchive.kpi.remaining' | transloco }}</p>
                     </div>
                     <p class="text-lg font-mono font-bold tracking-tight"
-                       [class.text-ib-green]="archiveRemaining(archive) >= 0"
-                       [class.text-ib-red]="archiveRemaining(archive) < 0">
-                      {{ archiveRemaining(archive) >= 0 ? '+' : '' }}{{ archiveRemaining(archive) | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
+                       [class.text-ib-green]="r >= 0"
+                       [class.text-ib-red]="r < 0">
+                      {{ r >= 0 ? '+' : '' }}{{ r | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
                     </p>
                   </div>
                 </div>
@@ -354,6 +356,8 @@ export class SalaryArchives {
     this.expandedId.set(this.expandedId() === id ? null : id);
   }
 
+  protected readonly remainingOf = salaryArchiveRemaining;
+
   protected monthLabel(month: string): string {
     const [y, m] = month.split('-');
     const monthName = this._i18n.translate(`budget.salaryArchive.messages.monthFull.${Number(m)}`);
@@ -363,10 +367,6 @@ export class SalaryArchives {
   protected accountName(id: string | null): string | null {
     if (!id) return null;
     return this.accountMap().get(id) ?? null;
-  }
-
-  protected archiveRemaining(a: SalaryArchive): number {
-    return Number(a.salary) - Number(a.totalExpenses) - Number(a.totalSpendings);
   }
 
   protected async openPayslip(id: string) {

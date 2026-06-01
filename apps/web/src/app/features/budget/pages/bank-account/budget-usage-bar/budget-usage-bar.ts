@@ -33,10 +33,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
         </div>
         <div class="h-2.5 rounded-full bg-hover overflow-hidden">
           <div class="h-full rounded-full transition duration-500 ease-out"
-               [style.width.%]="usagePercent() > 100 ? 100 : usagePercent()"
-               [class.bg-ib-green]="usagePercent() <= 80"
-               [class.bg-ib-orange]="usagePercent() > 80 && usagePercent() <= 100"
-               [class.bg-ib-red]="usagePercent() > 100">
+               [style.width.%]="usageWidth()"
+               [class.bg-ib-green]="usageState() === 'ok'"
+               [class.bg-ib-orange]="usageState() === 'tight'"
+               [class.bg-ib-red]="usageState() === 'over'">
           </div>
         </div>
         <!-- Légende segmentée -->
@@ -63,4 +63,6 @@ export class BudgetUsageBar {
     const p = this.usagePercent();
     return p <= 80 ? 'ok' : p <= 100 ? 'tight' : 'over';
   });
+
+  protected readonly usageWidth = computed(() => Math.min(100, this.usagePercent()));
 }
