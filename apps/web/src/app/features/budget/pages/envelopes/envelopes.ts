@@ -5,15 +5,11 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Envelope } from '../../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../../domain/models/envelope-transaction.model';
-import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
-import { CreateEnvelopeUseCase } from '../../domain/use-cases/create-envelope.use-case';
-import { UpdateEnvelopeUseCase } from '../../domain/use-cases/update-envelope.use-case';
-import { CreditEnvelopeUseCase } from '../../domain/use-cases/credit-envelope.use-case';
-import { DeleteEnvelopeUseCase } from '../../domain/use-cases/delete-envelope.use-case';
-import { GetAllEnvelopeTransactionsUseCase } from '../../domain/use-cases/get-all-envelope-transactions.use-case';
-import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
-import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
-import { CreateRecurringEntryUseCase } from '../../domain/use-cases/create-recurring-entry.use-case';
+import { buildMemberMap } from '../../domain/member-map';
+import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
+import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
+import { BankAccountGateway } from '@features/budget/domain/gateways/bank-account.gateway';
+import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { EnvelopeForm } from '../../components/envelope-form/envelope-form';
 import { CreditEnvelopeForm } from '../../components/credit-envelope-form/credit-envelope-form';
@@ -22,17 +18,6 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { Toaster } from '@shared/components/toast/toast';
 
 type HistoryEntry = { readonly tx: EnvelopeTransaction; readonly balanceAfter: number };
-
-const MEMBER_PALETTE = [
-  'var(--color-ib-green)',
-  'var(--color-ib-blue)',
-  'var(--color-ib-purple)',
-  'var(--color-ib-orange)',
-  'var(--color-ib-pink)',
-  'var(--color-ib-cyan)',
-  'var(--color-ib-yellow)',
-  'var(--color-ib-red)',
-] as const;
 
 @Component({
   selector: 'app-envelopes',
@@ -62,7 +47,6 @@ const MEMBER_PALETTE = [
       </button>
     </header>
 
-    <!-- Member filter -->
     @if (activeMembers().length > 0) {
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-medium text-text-muted">{{ 'budget.envelope.filterLabel' | transloco }}</span>
@@ -326,15 +310,10 @@ const MEMBER_PALETTE = [
   `,
 })
 export class Envelopes {
-  private readonly getEnvelopes = inject(GetEnvelopesUseCase);
-  private readonly createEnvelopeUC = inject(CreateEnvelopeUseCase);
-  private readonly updateEnvelopeUC = inject(UpdateEnvelopeUseCase);
-  private readonly creditEnvelopeUC = inject(CreditEnvelopeUseCase);
-  private readonly deleteEnvelopeUC = inject(DeleteEnvelopeUseCase);
-  private readonly getAllTransactionsUC = inject(GetAllEnvelopeTransactionsUseCase);
-  private readonly getMembersUC = inject(GetMembersUseCase);
-  private readonly getAccountsUC = inject(GetBankAccountsUseCase);
-  private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
+  private readonly envelopeGateway = inject(EnvelopeGateway);
+  private readonly memberGateway = inject(MemberGateway);
+  private readonly bankAccountGateway = inject(BankAccountGateway);
+  private readonly recurringEntryGateway = inject(RecurringEntryGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -346,17 +325,17 @@ export class Envelopes {
 
   private readonly _refresh = signal(0);
   protected readonly envelopes = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getEnvelopes.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.envelopeGateway.getAll())),
     { initialValue: [] },
   );
 
   private readonly allTransactions = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getAllTransactionsUC.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.envelopeGateway.getAllTransactions())),
     { initialValue: [] },
   );
 
-  protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
-  protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
+  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
+  protected readonly accounts = toSignal(this.bankAccountGateway.getAll(), { initialValue: [] });
   protected readonly activeMembers = computed(() => {
     const envs = this.envelopes();
     const memberIds = new Set(envs.map((e) => e.memberId).filter(Boolean));
@@ -407,15 +386,7 @@ export class Envelopes {
     return envelope ? (this.recentByEnvelope().get(envelope.id) ?? []) : [];
   });
 
-  protected readonly memberMap = computed(() => {
-    const map = new Map<string, { name: string; color: string }>();
-    const mbrs = this.members();
-    for (let i = 0; i < mbrs.length; i++) {
-      const m = mbrs[i];
-      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: MEMBER_PALETTE[i % MEMBER_PALETTE.length] });
-    }
-    return map;
-  });
+  protected readonly memberMap = computed(() => buildMemberMap(this.members()));
 
   protected openCreateModal() {
     this.createModalRef().open();
@@ -442,7 +413,7 @@ export class Envelopes {
 
   protected async createEnvelope(data: Omit<Envelope, 'id'>) {
     try {
-      await lastValueFrom(this.createEnvelopeUC.execute(data));
+      await lastValueFrom(this.envelopeGateway.create(data));
       this.createModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.envelope.messages.created'));
@@ -455,7 +426,7 @@ export class Envelopes {
     const id = this.selectedEnvelope()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateEnvelopeUC.execute(id, data));
+      await lastValueFrom(this.envelopeGateway.update(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.envelope.messages.updated'));
@@ -468,13 +439,13 @@ export class Envelopes {
     const envelope = this.selectedEnvelope();
     if (!envelope) return;
     try {
-      await lastValueFrom(this.creditEnvelopeUC.execute(envelope.id, event.amount, event.date, event.note, envelope));
+      await lastValueFrom(this.envelopeGateway.updateBalance(envelope.id, event.amount, event.date, event.note, envelope));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate(event.amount >= 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited'));
       if (event.accountId && event.amount > 0) {
         await lastValueFrom(
-          this.createEntryUC.execute({
+          this.recurringEntryGateway.create({
             label: this._i18n.translate('budget.envelope.messages.envelopeCreditLabel', { name: envelope.name }),
             amount: event.amount,
             type: 'spending',
@@ -497,7 +468,7 @@ export class Envelopes {
   protected async deleteEnvelope(id: string) {
     if (!(await this.confirm.delete(this._i18n.translate('budget.envelope.messages.deleteTarget')))) return;
     try {
-      await lastValueFrom(this.deleteEnvelopeUC.execute(id));
+      await lastValueFrom(this.envelopeGateway.delete(id));
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.envelope.messages.deleted'));
     } catch {

@@ -7,10 +7,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Envelope } from '../../domain/models/envelope.model';
 import { Loan } from '../../domain/models/loan.model';
 import { RecurringEntry } from '../../domain/models/recurring-entry.model';
-import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
-import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
-import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
-import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
+import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
+import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
+import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
+import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 
 type MemberSummary = {
   id: string | null;
@@ -46,10 +46,8 @@ type MemberSummary = {
       <p class="mt-1 text-sm text-text-muted">{{ 'budget.dashboard.subtitle' | transloco }}</p>
     </header>
 
-    <!-- Section par membre -->
     @for (ms of memberSummaries(); track ms.id) {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
-        <!-- Member header -->
         <div class="flex items-center gap-3 px-5 py-4 border-b border-border/50 bg-raised/30">
           <div class="flex h-11 w-11 items-center justify-center rounded-full bg-ib-green/10 text-ib-green text-sm font-bold shrink-0 ring-2 ring-ib-green/20">
             {{ ms.initials }}
@@ -67,7 +65,6 @@ type MemberSummary = {
         </div>
 
         <div class="p-5 space-y-5">
-          <!-- Mini KPIs du membre -->
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             @if (ms.incomes.length > 0) {
               <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
@@ -117,7 +114,6 @@ type MemberSummary = {
             }
           </div>
 
-          <!-- Barre utilisation budget du membre -->
           @if (ms.totalIncome > 0 && (ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings) > 0) {
             @let allCharges = ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings;
             @let pctBudget = (allCharges / ms.totalIncome) * 100;
@@ -157,11 +153,9 @@ type MemberSummary = {
             </div>
           }
 
-          <!-- Compte : prélèvements mensuels / annuels / dépenses -->
           @if (ms.monthlyExpenses.length > 0 || ms.annualExpenses.length > 0 || ms.spendings.length > 0) {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
 
-              <!-- Prélèvements mensuels -->
               @if (ms.monthlyExpenses.length > 0) {
                 <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition hover:shadow-lg hover:shadow-ib-red/5">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50">
@@ -188,7 +182,6 @@ type MemberSummary = {
                 </a>
               }
 
-              <!-- Prélèvements annuels -->
               @if (ms.annualExpenses.length > 0) {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0">
@@ -210,7 +203,6 @@ type MemberSummary = {
                 </a>
               }
 
-              <!-- Dépenses -->
               @if (ms.spendings.length > 0) {
                 <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
                   <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0">
@@ -237,7 +229,6 @@ type MemberSummary = {
             </div>
           }
 
-          <!-- Enveloppes du membre -->
           @if (ms.envelopes.length > 0) {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-cyan/5 border-b border-border/50">
@@ -276,7 +267,6 @@ type MemberSummary = {
             </div>
           }
 
-          <!-- Prêts du membre -->
           @if (ms.lentLoans.length > 0) {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-blue/5 border-b border-border/50">
@@ -308,7 +298,6 @@ type MemberSummary = {
             </div>
           }
 
-          <!-- Dettes du membre -->
           @if (ms.borrowedLoans.length > 0) {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
               <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50">
@@ -346,10 +335,10 @@ type MemberSummary = {
 })
 export class BudgetDashboard {
   private readonly _el = inject(ElementRef);
-  private readonly getEnvelopes = inject(GetEnvelopesUseCase);
-  private readonly getLoans = inject(GetLoansUseCase);
-  private readonly getMembersUC = inject(GetMembersUseCase);
-  private readonly getEntries = inject(GetRecurringEntriesUseCase);
+  private readonly envelopeGateway = inject(EnvelopeGateway);
+  private readonly loanGateway = inject(LoanGateway);
+  private readonly memberGateway = inject(MemberGateway);
+  private readonly recurringEntryGateway = inject(RecurringEntryGateway);
   private readonly _i18n = inject(TranslocoService);
 
   protected readonly dashRefCardHeight = signal<number | null>(null);
@@ -371,10 +360,10 @@ export class BudgetDashboard {
     });
   }
 
-  protected readonly envelopes = toSignal(this.getEnvelopes.execute(), { initialValue: [] });
-  protected readonly loans = toSignal(this.getLoans.execute(), { initialValue: [] });
-  protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
-  protected readonly entries = toSignal(this.getEntries.execute(), { initialValue: [] });
+  protected readonly envelopes = toSignal(this.envelopeGateway.getAll(), { initialValue: [] });
+  protected readonly loans = toSignal(this.loanGateway.getAll(), { initialValue: [] });
+  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
+  protected readonly entries = toSignal(this.recurringEntryGateway.getAll(), { initialValue: [] });
 
   protected readonly memberSummaries = computed<MemberSummary[]>(() => {
     const envs = this.envelopes();
@@ -382,7 +371,6 @@ export class BudgetDashboard {
     const allEntries = this.entries();
     const mbrs = this.members();
 
-    // Collecter les accountIds liés à chaque membre (via ses revenus)
     const memberAccountIds = new Map<string, Set<string>>();
     for (const m of mbrs) {
       const accountIds = new Set<string>();

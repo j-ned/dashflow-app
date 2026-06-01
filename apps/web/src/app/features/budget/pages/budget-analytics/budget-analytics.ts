@@ -7,10 +7,10 @@ import { Icon, type IconName } from '@shared/components/icon/icon';
 import { AreaChart, type AreaChartPoint } from '@shared/components/charts/area-chart';
 import { DonutChart, type DonutSlice } from '@shared/components/charts/donut-chart';
 import { BarChart, type BarGroup } from '@shared/components/charts/bar-chart';
-import { GetSalaryArchivesUseCase } from '../../domain/use-cases/get-salary-archives.use-case';
-import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
-import { GetEnvelopesUseCase } from '../../domain/use-cases/get-envelopes.use-case';
-import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
+import { SalaryArchiveGateway } from '@features/budget/domain/gateways/salary-archive.gateway';
+import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
+import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
+import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 
 const CATEGORY_COLORS: Record<string, string> = {
   'Logement': 'var(--color-ib-blue)',
@@ -60,7 +60,6 @@ type Forecast = {
       <p class="mt-1 text-sm text-text-muted">{{ 'budget.analytics.subtitle' | transloco }}</p>
     </header>
 
-    <!-- KPI row -->
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" [attr.aria-label]="'budget.analytics.kpiAriaLabel' | transloco">
       @for (kpi of kpis(); track kpi.label) {
         <div class="rounded-xl border border-border bg-surface p-4">
@@ -80,10 +79,8 @@ type Forecast = {
       }
     </section>
 
-    <!-- Charts row -->
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-      <!-- Evolution budget 12 mois -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-green/5 border-b border-border/50">
           <app-icon name="trending-up" size="16" class="text-ib-green" />
@@ -100,7 +97,6 @@ type Forecast = {
         </div>
       </section>
 
-      <!-- Répartition dépenses par catégorie -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-red/5 border-b border-border/50">
           <app-icon name="receipt" size="16" class="text-ib-red" />
@@ -119,7 +115,6 @@ type Forecast = {
         </div>
       </section>
 
-      <!-- Revenus vs Dépenses -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
           <app-icon name="banknote" size="16" class="text-ib-blue" />
@@ -144,7 +139,6 @@ type Forecast = {
         </div>
       </section>
 
-      <!-- Projection enveloppes -->
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-2 px-5 py-3 bg-ib-cyan/5 border-b border-border/50">
           <app-icon name="trending-up" size="16" class="text-ib-cyan" />
@@ -162,7 +156,6 @@ type Forecast = {
       </section>
     </div>
 
-    <!-- Forecasts section -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center gap-2 px-5 py-3 bg-ib-purple/5 border-b border-border/50">
         <app-icon name="trending-up" size="16" class="text-ib-purple" />
@@ -195,10 +188,10 @@ type Forecast = {
   `,
 })
 export class BudgetAnalytics {
-  private readonly getArchives = inject(GetSalaryArchivesUseCase);
-  private readonly getEntries = inject(GetRecurringEntriesUseCase);
-  private readonly getEnvelopes = inject(GetEnvelopesUseCase);
-  private readonly getLoans = inject(GetLoansUseCase);
+  private readonly getArchives = inject(SalaryArchiveGateway);
+  private readonly getEntries = inject(RecurringEntryGateway);
+  private readonly getEnvelopes = inject(EnvelopeGateway);
+  private readonly getLoans = inject(LoanGateway);
   private readonly _i18n = inject(TranslocoService);
 
   private formatMonth(m: string): string {
@@ -218,10 +211,10 @@ export class BudgetAnalytics {
 
   private readonly allData = toSignal(
     forkJoin({
-      archives: this.getArchives.execute(),
-      entries: this.getEntries.execute(),
-      envelopes: this.getEnvelopes.execute(),
-      loans: this.getLoans.execute(),
+      archives: this.getArchives.getAll(),
+      entries: this.getEntries.getAll(),
+      envelopes: this.getEnvelopes.getAll(),
+      loans: this.getLoans.getAll(),
     }),
     { initialValue: { archives: [], entries: [], envelopes: [], loans: [] } },
   );
@@ -233,8 +226,6 @@ export class BudgetAnalytics {
   private readonly entries = computed(() => this.allData().entries);
   private readonly envelopes = computed(() => this.allData().envelopes);
   private readonly loans = computed(() => this.allData().loans);
-
-  // ── KPIs ──
 
   private readonly monthlyIncome = computed(() =>
     this.entries().filter(e => e.type === 'income').reduce((s, e) => s + Number(e.amount), 0),
@@ -326,8 +317,6 @@ export class BudgetAnalytics {
     ];
   });
 
-  // ── Balance history (area chart) ──
-
   protected readonly balanceHistory = computed<AreaChartPoint[]>(() => {
     const arch = this.archives().slice(-12);
     return arch.map(a => ({
@@ -335,8 +324,6 @@ export class BudgetAnalytics {
       value: Number(a.salary) - Number(a.totalExpenses) - Number(a.totalSpendings),
     }));
   });
-
-  // ── Expense by category (donut) ──
 
   protected readonly expenseByCategory = computed<DonutSlice[]>(() => {
     const expenses = this.entries().filter(e => e.type === 'expense' || e.type === 'annual_expense');
@@ -363,8 +350,6 @@ export class BudgetAnalytics {
     return total >= 1000 ? `${(total / 1000).toFixed(1)}k€` : `${total.toFixed(0)}€`;
   });
 
-  // ── Income vs Expenses (bar chart) ──
-
   protected readonly incomeVsExpenses = computed<BarGroup[]>(() => {
     const arch = this.archives().slice(-6);
     return arch.map(a => ({
@@ -375,8 +360,6 @@ export class BudgetAnalytics {
       ],
     }));
   });
-
-  // ── Envelope forecast chart ──
 
   protected readonly envelopeForecastChart = computed<AreaChartPoint[]>(() => {
     const envs = this.envelopes().filter(e => e.target && Number(e.target) > 0);
@@ -401,8 +384,6 @@ export class BudgetAnalytics {
 
     return points;
   });
-
-  // ── Forecasts ──
 
   protected readonly forecasts = computed<Forecast[]>(() => {
     const results: Forecast[] = [];

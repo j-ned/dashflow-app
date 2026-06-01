@@ -6,11 +6,8 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
-import { GetSalaryArchivesUseCase } from '../../domain/use-cases/get-salary-archives.use-case';
-import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
-import { DeleteSalaryArchiveUseCase } from '../../domain/use-cases/delete-salary-archive.use-case';
-import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
-import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
+import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
+import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
@@ -66,7 +63,6 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       <div class="space-y-4">
         @for (archive of filteredArchives(); track archive.id) {
           <article class="group rounded-xl border border-border bg-surface overflow-hidden transition hover:shadow-lg hover:shadow-ib-cyan/5">
-            <!-- Header -->
             <button type="button"
                     class="w-full flex items-center justify-between px-5 py-4 hover:bg-hover/30 transition-colors"
                     (click)="toggleExpand(archive.id)">
@@ -97,10 +93,8 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
               </div>
             </button>
 
-            <!-- Expandable detail -->
             @if (expandedId() === archive.id) {
               <div class="border-t border-border px-5 py-5 space-y-4">
-                <!-- KPI row -->
                 <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4">
                     <div class="flex items-center gap-1.5 mb-2">
@@ -150,7 +144,6 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                   </div>
                 </div>
 
-                <!-- Spendings detail -->
                 @if (archive.spendings.length > 0) {
                   <div class="rounded-xl border border-border overflow-hidden">
                     <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50">
@@ -176,7 +169,6 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                   </div>
                 }
 
-                <!-- Actions -->
                 <div class="flex items-center justify-between pt-2">
                   @if (archive.payslipKey) {
                     <button type="button"
@@ -213,7 +205,6 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       </div>
     }
 
-    <!-- Create modal -->
     <app-modal-dialog #createModal [title]="'budget.salaryArchive.modal.title' | transloco" (closed)="resetForm()">
       <form (ngSubmit)="createArchive()" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
@@ -293,12 +284,9 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
   `,
 })
 export class SalaryArchives {
-  private readonly getArchivesUC = inject(GetSalaryArchivesUseCase);
-  private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
-  private readonly deleteArchiveUC = inject(DeleteSalaryArchiveUseCase);
-  private readonly getEntriesUC = inject(GetRecurringEntriesUseCase);
-  private readonly getAccountsUC = inject(GetBankAccountsUseCase);
   private readonly gateway = inject(SalaryArchiveGateway);
+  private readonly recurringEntryGateway = inject(RecurringEntryGateway);
+  private readonly bankAccountGateway = inject(BankAccountGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -308,13 +296,13 @@ export class SalaryArchives {
   private readonly _refresh = signal(0);
 
   protected readonly archives = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getArchivesUC.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.gateway.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
+  protected readonly accounts = toSignal(this.bankAccountGateway.getAll(), { initialValue: [] });
 
-  private readonly allEntries = toSignal(this.getEntriesUC.execute(), { initialValue: [] });
+  private readonly allEntries = toSignal(this.recurringEntryGateway.getAll(), { initialValue: [] });
 
   protected readonly expandedId = signal<string | null>(null);
 
@@ -416,7 +404,7 @@ export class SalaryArchives {
     if (this._selectedFile) fd.append('payslip', this._selectedFile);
 
     try {
-      await lastValueFrom(this.createArchiveUC.execute(fd));
+      await lastValueFrom(this.gateway.create(fd));
       this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.created'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -433,7 +421,7 @@ export class SalaryArchives {
       variant: 'danger',
     })) return;
     try {
-      await lastValueFrom(this.deleteArchiveUC.execute(archive.id));
+      await lastValueFrom(this.gateway.delete(archive.id));
       this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.deleted'));
       this._refresh.update(v => v + 1);
     } catch {

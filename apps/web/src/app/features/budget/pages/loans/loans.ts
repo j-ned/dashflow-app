@@ -5,15 +5,11 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Loan } from '../../domain/models/loan.model';
 import { LoanTransaction } from '../../domain/models/loan-transaction.model';
-import { GetLoansUseCase } from '../../domain/use-cases/get-loans.use-case';
-import { CreateLoanUseCase } from '../../domain/use-cases/create-loan.use-case';
-import { UpdateLoanUseCase } from '../../domain/use-cases/update-loan.use-case';
-import { RecordLoanPaymentUseCase } from '../../domain/use-cases/record-loan-payment.use-case';
-import { DeleteLoanUseCase } from '../../domain/use-cases/delete-loan.use-case';
-import { GetAllLoanTransactionsUseCase } from '../../domain/use-cases/get-all-loan-transactions.use-case';
-import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
-import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
-import { CreateRecurringEntryUseCase } from '../../domain/use-cases/create-recurring-entry.use-case';
+import { buildMemberMap } from '../../domain/member-map';
+import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
+import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
+import { BankAccountGateway } from '@features/budget/domain/gateways/bank-account.gateway';
+import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { LoanForm } from '../../components/loan-form/loan-form';
 import { RecordPaymentForm } from '../../components/record-payment-form/record-payment-form';
@@ -30,17 +26,6 @@ type LoanVM = {
   readonly entries: readonly HistoryEntry[];
   readonly status: LoanStatus;
 };
-
-const MEMBER_PALETTE = [
-  'var(--color-ib-green)',
-  'var(--color-ib-blue)',
-  'var(--color-ib-purple)',
-  'var(--color-ib-orange)',
-  'var(--color-ib-pink)',
-  'var(--color-ib-cyan)',
-  'var(--color-ib-yellow)',
-  'var(--color-ib-red)',
-] as const;
 
 const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoing: 2, settled: 3 };
 
@@ -73,7 +58,6 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       </div>
     </header>
 
-    <!-- Member filter -->
     @if (activeMembers().length > 0) {
       <div class="flex flex-wrap items-center gap-2">
         <span class="text-xs font-medium text-text-muted">{{ 'budget.loan.filterLabel' | transloco }}</span>
@@ -107,7 +91,6 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       </div>
     }
 
-    <!-- Prêtés -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
         <div class="flex items-center gap-2">
@@ -294,7 +277,6 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       }
     </section>
 
-    <!-- Empruntés -->
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
       <div class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-orange/5 border-b border-border/50">
         <div class="flex items-center gap-2">
@@ -480,7 +462,6 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       }
     </section>
 
-    <!-- Solde net -->
     @if (lentVMs().length > 0 || borrowedVMs().length > 0) {
       <footer class="rounded-lg border border-border bg-surface overflow-hidden">
         <div class="grid grid-cols-1 divide-y divide-border/50 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
@@ -613,15 +594,10 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
   `,
 })
 export class Loans {
-  private readonly getLoans = inject(GetLoansUseCase);
-  private readonly createLoanUC = inject(CreateLoanUseCase);
-  private readonly updateLoanUC = inject(UpdateLoanUseCase);
-  private readonly recordPaymentUC = inject(RecordLoanPaymentUseCase);
-  private readonly deleteLoanUC = inject(DeleteLoanUseCase);
-  private readonly getAllTransactionsUC = inject(GetAllLoanTransactionsUseCase);
-  private readonly getMembersUC = inject(GetMembersUseCase);
-  private readonly getAccountsUC = inject(GetBankAccountsUseCase);
-  private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
+  private readonly loanGateway = inject(LoanGateway);
+  private readonly memberGateway = inject(MemberGateway);
+  private readonly bankAccountGateway = inject(BankAccountGateway);
+  private readonly recurringEntryGateway = inject(RecurringEntryGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -641,17 +617,17 @@ export class Loans {
 
   private readonly _refresh = signal(0);
   protected readonly loans = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getLoans.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.loanGateway.getAll())),
     { initialValue: [] },
   );
 
   private readonly allTransactions = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getAllTransactionsUC.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.loanGateway.getAllTransactions())),
     { initialValue: [] },
   );
 
-  protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
-  protected readonly accounts = toSignal(this.getAccountsUC.execute(), { initialValue: [] });
+  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
+  protected readonly accounts = toSignal(this.bankAccountGateway.getAll(), { initialValue: [] });
   protected readonly activeMembers = computed(() => {
     const allLoans = this.loans();
     const memberIds = new Set(allLoans.map((l) => l.memberId).filter(Boolean));
@@ -709,15 +685,7 @@ export class Loans {
     return loan ? (this.historyByLoan().get(loan.id) ?? []) : [];
   });
 
-  protected readonly memberMap = computed(() => {
-    const map = new Map<string, { name: string; color: string }>();
-    const members = this.members();
-    for (let i = 0; i < members.length; i++) {
-      const m = members[i];
-      map.set(m.id, { name: `${m.firstName} ${m.lastName}`, color: MEMBER_PALETTE[i % MEMBER_PALETTE.length] });
-    }
-    return map;
-  });
+  protected readonly memberMap = computed(() => buildMemberMap(this.members()));
 
   private buildVMs(direction: Loan['direction']): LoanVM[] {
     const fid = this.filterMemberId();
@@ -772,7 +740,7 @@ export class Loans {
 
   protected async createLoan(data: Omit<Loan, 'id'>) {
     try {
-      await lastValueFrom(this.createLoanUC.execute(data));
+      await lastValueFrom(this.loanGateway.create(data));
       if (data.direction === 'lent') this.lentModalRef().close();
       else this.borrowedModalRef().close();
       this._refresh.update((v) => v + 1);
@@ -786,7 +754,7 @@ export class Loans {
     const id = this.selectedLoan()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateLoanUC.execute(id, data));
+      await lastValueFrom(this.loanGateway.update(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.loan.messages.updated'));
@@ -799,7 +767,7 @@ export class Loans {
     const loan = this.selectedLoan();
     if (!loan) return;
     try {
-      await lastValueFrom(this.recordPaymentUC.execute(loan.id, event.amount, event.date));
+      await lastValueFrom(this.loanGateway.recordPayment(loan.id, event.amount, event.date));
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.loan.messages.paymentRecorded'));
@@ -809,7 +777,7 @@ export class Loans {
         // Repaying a debt you owe = money out (spending); being repaid on a loan
         // you granted = money in (income). Sign the bank entry accordingly.
         await lastValueFrom(
-          this.createEntryUC.execute({
+          this.recurringEntryGateway.create({
             label: this._i18n.translate(labelKey, { person: loan.person }),
             amount: event.amount,
             type: loan.direction === 'lent' ? 'income' : 'spending',
@@ -832,7 +800,7 @@ export class Loans {
   protected async deleteLoan(id: string) {
     if (!(await this.confirm.delete(this._i18n.translate('budget.loan.messages.deleteTarget')))) return;
     try {
-      await lastValueFrom(this.deleteLoanUC.execute(id));
+      await lastValueFrom(this.loanGateway.delete(id));
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.loan.messages.deleted'));
     } catch {

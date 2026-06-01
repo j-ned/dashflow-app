@@ -5,22 +5,15 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount as BankAccountModel } from '../../domain/models/bank-account.model';
-import { GetRecurringEntriesUseCase } from '../../domain/use-cases/get-recurring-entries.use-case';
-import { CreateRecurringEntryUseCase } from '../../domain/use-cases/create-recurring-entry.use-case';
-import { UpdateRecurringEntryUseCase } from '../../domain/use-cases/update-recurring-entry.use-case';
-import { DeleteRecurringEntryUseCase } from '../../domain/use-cases/delete-recurring-entry.use-case';
-import { GetBankAccountsUseCase } from '../../domain/use-cases/get-bank-accounts.use-case';
-import { CreateBankAccountUseCase } from '../../domain/use-cases/create-bank-account.use-case';
-import { DeleteBankAccountUseCase } from '../../domain/use-cases/delete-bank-account.use-case';
-import { UpdateBankAccountUseCase } from '../../domain/use-cases/update-bank-account.use-case';
-import { GetMembersUseCase } from '../../domain/use-cases/get-members.use-case';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
+import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
+import { MemberGateway } from '../../domain/gateways/member.gateway';
+import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
-import { CreateSalaryArchiveUseCase } from '../../domain/use-cases/create-salary-archive.use-case';
 import { BankKpiGrid } from './bank-kpi-grid/bank-kpi-grid';
 import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
 import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
@@ -45,7 +38,6 @@ const PALETTE = [
   imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
-    <!-- Header + compte selector -->
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.bankAccount.title' | transloco }}</h2>
@@ -168,7 +160,6 @@ const PALETTE = [
     <app-modal-dialog #accountModal [title]="'budget.bankAccount.accountModal.title' | transloco" (closed)="resetAccountForm()">
       @if (accountModal.isOpen()) {
         <div class="space-y-6">
-          <!-- Liste des comptes existants -->
           @if (accounts().length > 0) {
             <div>
               <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">{{ 'budget.bankAccount.accountModal.existing' | transloco }}</p>
@@ -205,7 +196,6 @@ const PALETTE = [
             </div>
           }
 
-          <!-- Ajouter un nouveau compte -->
           <div>
             <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">{{ 'budget.bankAccount.accountModal.addAccount' | transloco }}</p>
             <form (ngSubmit)="createAccount()" class="space-y-3">
@@ -262,19 +252,12 @@ const PALETTE = [
   `,
 })
 export class BankAccount {
-  private readonly getEntries = inject(GetRecurringEntriesUseCase);
-  private readonly createEntryUC = inject(CreateRecurringEntryUseCase);
-  private readonly updateEntryUC = inject(UpdateRecurringEntryUseCase);
-  private readonly deleteEntryUC = inject(DeleteRecurringEntryUseCase);
-  private readonly getMembersUC = inject(GetMembersUseCase);
-  private readonly getAccountsUC = inject(GetBankAccountsUseCase);
-  private readonly createAccountUC = inject(CreateBankAccountUseCase);
-  private readonly updateAccountUC = inject(UpdateBankAccountUseCase);
-  private readonly deleteAccountUC = inject(DeleteBankAccountUseCase);
   private readonly entryGateway = inject(RecurringEntryGateway);
+  private readonly accountGateway = inject(BankAccountGateway);
+  private readonly memberGateway = inject(MemberGateway);
+  private readonly archiveGateway = inject(SalaryArchiveGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
-  private readonly createArchiveUC = inject(CreateSalaryArchiveUseCase);
   private readonly _i18n = inject(TranslocoService);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
@@ -285,16 +268,16 @@ export class BankAccount {
   private readonly _refreshAccounts = signal(0);
 
   private readonly allEntries = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getEntries.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.entryGateway.getAll())),
     { initialValue: [] },
   );
 
   protected readonly accounts = toSignal(
-    toObservable(this._refreshAccounts).pipe(switchMap(() => this.getAccountsUC.execute())),
+    toObservable(this._refreshAccounts).pipe(switchMap(() => this.accountGateway.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly members = toSignal(this.getMembersUC.execute(), { initialValue: [] });
+  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
 
   protected readonly selectedAccountId = linkedSignal<string | null>(() => {
     const accs = this.accounts();
@@ -320,7 +303,6 @@ export class BankAccount {
   protected readonly annualExpenses = computed(() => this.filteredEntries().filter(e => e.type === 'annual_expense' && this.isActive(e)));
   protected readonly allSpendings = computed(() => this.filteredEntries().filter(e => e.type === 'spending'));
 
-  // Virements : ceux du compte sélectionné (source) + ceux qui arrivent sur ce compte (cible)
   protected readonly transfers = computed(() => {
     const accountId = this.selectedAccountId();
     const all = this.allEntries().filter(e => e.type === 'transfer' && this.isActive(e));
@@ -328,17 +310,14 @@ export class BankAccount {
     return all.filter(e => e.accountId === accountId || e.toAccountId === accountId);
   });
 
-  // Virements récurrents (avec dayOfMonth)
   protected readonly recurringTransfers = computed(() =>
     this.transfers().filter(e => e.dayOfMonth != null)
   );
 
-  // Virements ponctuels (avec date, sans dayOfMonth)
   protected readonly oneTimeTransfers = computed(() =>
     this.transfers().filter(e => !e.dayOfMonth && !!e.date)
   );
 
-  // Virements ponctuels du mois sélectionné
   protected readonly monthOneTimeTransfers = computed(() => {
     const ym = this.spendingMonth();
     return this.oneTimeTransfers()
@@ -346,13 +325,11 @@ export class BankAccount {
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
 
-  // Virements sortants du compte sélectionné (débit) — récurrents uniquement
   private readonly outgoingTransfers = computed(() => {
     const accountId = this.selectedAccountId();
     return this.recurringTransfers().filter(e => e.accountId === accountId);
   });
 
-  // Virements entrants sur le compte sélectionné (crédit) — récurrents uniquement
   private readonly incomingTransfers = computed(() => {
     const accountId = this.selectedAccountId();
     return this.recurringTransfers().filter(e => e.toAccountId === accountId);
@@ -403,7 +380,6 @@ export class BankAccount {
   protected readonly today = new Date().toLocaleDateString(this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR', { day: 'numeric', month: 'short' });
   protected readonly currentDay = new Date().getDate();
 
-  // Jour du salaire principal (premier revenu avec dayOfMonth, sinon 1)
   protected readonly salaryDay = computed(() => {
     const firstIncome = this.incomes().find(e => e.dayOfMonth);
     return firstIncome?.dayOfMonth ?? 1;
@@ -482,7 +458,6 @@ export class BankAccount {
       .reduce((s, e) => s + Number(e.amount), 0);
   });
 
-  // Virements passés/à venir (cycle salaire pour récurrents + ponctuels du mois)
   private readonly passedOutgoing = computed(() =>
     this.outgoingTransfers().filter(e => this.isExpensePassed(e)).reduce((s, e) => s + Number(e.amount), 0)
     + this.totalOneTimeOutgoing()
@@ -633,7 +608,7 @@ export class BankAccount {
     const name = this.newAccountName().trim();
     if (!name) return;
     try {
-      await lastValueFrom(this.createAccountUC.execute({ name, initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
+      await lastValueFrom(this.accountGateway.create({ name, initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountCreated'));
       this.resetAccountForm();
       this._refreshAccounts.update(v => v + 1);
@@ -645,7 +620,7 @@ export class BankAccount {
   protected async updateAccountBalance(accountId: string, event: Event) {
     const value = Number((event.target as HTMLInputElement).value);
     try {
-      await lastValueFrom(this.updateAccountUC.execute(accountId, { initialBalance: value }));
+      await lastValueFrom(this.accountGateway.update(accountId, { initialBalance: value }));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.balanceUpdated'));
       this._refreshAccounts.update(v => v + 1);
     } catch {
@@ -661,7 +636,7 @@ export class BankAccount {
       variant: 'danger',
     })) return;
     try {
-      await lastValueFrom(this.deleteAccountUC.execute(account.id));
+      await lastValueFrom(this.accountGateway.delete(account.id));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountDeleted'));
       if (this.selectedAccountId() === account.id) {
         this.selectedAccountId.set(null);
@@ -704,13 +679,13 @@ export class BankAccount {
         if (choice === 'confirm') {
           await this.archiveCurrentCycle();
           for (const old of this.incomes()) {
-            await lastValueFrom(this.deleteEntryUC.execute(old.id));
+            await lastValueFrom(this.entryGateway.delete(old.id));
           }
           this.toaster.success(this._i18n.translate('budget.bankAccount.messages.cycleArchived'));
         }
       }
 
-      await lastValueFrom(this.createEntryUC.execute(data));
+      await lastValueFrom(this.entryGateway.create(data));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryCreated'));
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -743,7 +718,7 @@ export class BankAccount {
     if (accountId) fd.append('accountId', accountId);
 
     try {
-      await lastValueFrom(this.createArchiveUC.execute(fd));
+      await lastValueFrom(this.archiveGateway.create(fd));
     } catch {
       // L'archivage silencieux échoue — on continue quand même
     }
@@ -752,7 +727,7 @@ export class BankAccount {
   protected async deleteEntry(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('budget.bankAccount.messages.deleteEntryTarget'))) return;
     try {
-      await lastValueFrom(this.deleteEntryUC.execute(id));
+      await lastValueFrom(this.entryGateway.delete(id));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryDeleted'));
       this._refresh.update(v => v + 1);
     } catch {
@@ -772,7 +747,7 @@ export class BankAccount {
     const id = this.selectedEntry()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateEntryUC.execute(id, data));
+      await lastValueFrom(this.entryGateway.update(id, data));
       const file = this._pendingPayslipFile;
       if (file) {
         this._pendingPayslipFile = null;
