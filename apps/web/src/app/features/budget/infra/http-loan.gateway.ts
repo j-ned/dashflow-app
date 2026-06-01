@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { from, map, Observable, switchMap } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { Loan } from '../domain/models/loan.model';
 import { LoanTransaction } from '../domain/models/loan-transaction.model';
 import { LoanGateway } from '../domain/gateways/loan.gateway';
@@ -28,49 +29,26 @@ export class HttpLoanGateway implements LoanGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Loan[]> {
-    return this.api.get<ApiRow[]>('/loans').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows.map(coerceLoan)]);
-        return from(decryptEntities<Loan>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/loans'), this.crypto.getMasterKey(), coerceLoan);
   }
 
   getById(id: string): Observable<Loan> {
-    return this.api.get<ApiRow>(`/loans/${id}`).pipe(
-      switchMap((row) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !row.encryptedData) return from([coerceLoan(row)]);
-        return from(decryptEntity<Loan>(row, key));
-      }),
-    );
+    return decryptOne(this.api.get<ApiRow>(`/loans/${id}`), this.crypto.getMasterKey(), coerceLoan);
   }
 
   create(data: Omit<Loan, 'id'>): Observable<Loan> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/loans', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/loans', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Loan>(row, key)) : from([row as Loan])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/loans', body));
   }
 
   update(id: string, data: Partial<Omit<Loan, 'id'>>): Observable<Loan> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/loans/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/loans/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Loan>(row, key)) : from([row as Loan])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/loans/${id}`, body));
   }
 
   recordPayment(id: string, amount: number, date: string): Observable<Loan> {
     const key = this.crypto.getMasterKey();
-    const payload = { amount, date };
-    if (!key) return this.api.patch(`/loans/${id}/payment`, payload);
+    if (!key) return this.api.patch(`/loans/${id}/payment`, { amount, date });
 
     // With E2EE, backend can't read remaining/amount from encryptedData.
     // Compute new remaining client-side, then update full loan + add transaction.
@@ -79,40 +57,23 @@ export class HttpLoanGateway implements LoanGateway {
         const newRemaining = Math.max(0, loan.remaining - amount);
         const { id: _, ...loanData } = loan;
         return this.update(id, { ...loanData, remaining: newRemaining }).pipe(
-          switchMap((updated) =>
-            this.addTransaction(id, { amount, date }).pipe(map(() => updated)),
-          ),
+          switchMap((updated) => this.addTransaction(id, { amount, date }).pipe(map(() => updated))),
         );
       }),
     );
   }
 
   getTransactions(loanId: string): Observable<LoanTransaction[]> {
-    return this.decryptTransactions(this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`));
+    return decryptList(this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`), this.crypto.getMasterKey());
   }
 
   getAllTransactions(): Observable<LoanTransaction[]> {
-    return this.decryptTransactions(this.api.get<ApiRow[]>('/loans/transactions/all'));
-  }
-
-  private decryptTransactions(rows$: Observable<ApiRow[]>): Observable<LoanTransaction[]> {
-    return rows$.pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows.some((r) => r.encryptedData)) return from([rows as LoanTransaction[]]);
-        return from(decryptEntities<LoanTransaction>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/loans/transactions/all'), this.crypto.getMasterKey());
   }
 
   addTransaction(loanId: string, data: { amount: number; date: string }): Observable<LoanTransaction> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post(`/loans/${loanId}/transactions`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<LoanTransaction>(row, key)) : from([row as LoanTransaction])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, body));
   }
 
   delete(id: string): Observable<void> {

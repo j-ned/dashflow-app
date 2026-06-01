@@ -2,6 +2,7 @@ import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementR
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
+import { MemberLoanList } from '../../components/member-loan-list/member-loan-list';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Envelope } from '../../domain/models/envelope.model';
@@ -38,7 +39,7 @@ type MemberSummary = {
 @Component({
   selector: 'app-budget-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, RouterLink, Icon, TranslocoPipe],
+  imports: [DecimalPipe, RouterLink, Icon, MemberLoanList, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header>
@@ -268,65 +269,11 @@ type MemberSummary = {
           }
 
           @if (ms.lentLoans.length > 0) {
-            <div class="rounded-xl border border-border bg-surface overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-blue/5 border-b border-border/50">
-                <app-icon name="arrow-up-right" size="14" class="text-ib-blue" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.dashboard.loans' | transloco }}</h4>
-              </div>
-              <div class="divide-y divide-border/20">
-                @for (loan of ms.lentLoans; track loan.id) {
-                  @let pct = loan.amount > 0 ? ((loan.amount - loan.remaining) / loan.amount) * 100 : 0;
-                  <a routerLink="/budget/loans" class="flex items-center justify-between px-4 py-3 hover:bg-ib-blue/3 transition-colors">
-                    <div class="flex items-center gap-3 min-w-0">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-blue/10 text-ib-blue text-xs font-bold shrink-0">
-                        {{ pct | number:'1.0-0' }}%
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-sm font-medium text-text-primary truncate">{{ loan.person }}</p>
-                        <div class="h-1 w-24 rounded-full bg-hover mt-1 overflow-hidden">
-                          <div class="h-full rounded-full bg-ib-blue transition" [style.width.%]="pct > 100 ? 100 : pct"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <span class="shrink-0 text-right">
-                      <span class="block text-sm font-mono font-bold text-ib-blue">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
-                      <span class="block text-[9px] uppercase tracking-wide text-text-muted">{{ 'budget.dashboard.toReceive' | transloco }}</span>
-                    </span>
-                  </a>
-                }
-              </div>
-            </div>
+            <app-member-loan-list [loans]="ms.lentLoans" direction="lent" />
           }
 
           @if (ms.borrowedLoans.length > 0) {
-            <div class="rounded-xl border border-border bg-surface overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50">
-                <app-icon name="arrow-down-left" size="14" class="text-ib-orange" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.dashboard.debts' | transloco }}</h4>
-              </div>
-              <div class="divide-y divide-border/20">
-                @for (loan of ms.borrowedLoans; track loan.id) {
-                  @let pct = loan.amount > 0 ? ((loan.amount - loan.remaining) / loan.amount) * 100 : 0;
-                  <a routerLink="/budget/loans" class="flex items-center justify-between px-4 py-3 hover:bg-ib-orange/3 transition-colors">
-                    <div class="flex items-center gap-3 min-w-0">
-                      <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-orange/10 text-ib-orange text-xs font-bold shrink-0">
-                        {{ pct | number:'1.0-0' }}%
-                      </div>
-                      <div class="min-w-0">
-                        <p class="text-sm font-medium text-text-primary truncate">{{ loan.person }}</p>
-                        <div class="h-1 w-24 rounded-full bg-hover mt-1 overflow-hidden">
-                          <div class="h-full rounded-full bg-ib-orange transition" [style.width.%]="pct > 100 ? 100 : pct"></div>
-                        </div>
-                      </div>
-                    </div>
-                    <span class="shrink-0 text-right">
-                      <span class="block text-sm font-mono font-bold text-ib-red">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
-                      <span class="block text-[9px] uppercase tracking-wide text-text-muted">{{ 'budget.dashboard.toRepay' | transloco }}</span>
-                    </span>
-                  </a>
-                }
-              </div>
-            </div>
+            <app-member-loan-list [loans]="ms.borrowedLoans" direction="borrowed" />
           }
         </div>
       </section>

@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { EntryRowActions } from '../../../components/entry-row-actions/entry-row-actions';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 
 @Component({
   selector: 'app-bank-incomes-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, Icon, TranslocoPipe],
+  imports: [DecimalPipe, DatePipe, Icon, EntryRowActions, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
@@ -59,22 +60,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-lg font-mono font-bold text-ib-green">+{{ entry.amount | number:'1.2-2' }}<span class="text-sm">&euro;</span></span>
-                <div class="flex gap-1 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                  <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors"
-                          [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
-                          [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
-                          (click)="edit.emit(entry)">
-                    <app-icon name="pencil" size="13" />
-                  </button>
-                  <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
-                          [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
-                          (click)="delete.emit(entry.id)">
-                    <app-icon name="trash" size="13" />
-                  </button>
-                </div>
+                <app-entry-row-actions [label]="entry.label" (edit)="edit.emit(entry)" (delete)="delete.emit(entry.id)" />
               </div>
             </div>
           }

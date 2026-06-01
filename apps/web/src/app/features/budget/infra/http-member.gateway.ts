@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { Member } from '../domain/models/member.model';
 import { MemberGateway } from '../domain/gateways/member.gateway';
 
@@ -14,23 +15,11 @@ export class HttpMemberGateway implements MemberGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Member[]> {
-    return this.api.get<ApiRow[]>('/members').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as Member[]]);
-        return from(decryptEntities<Member>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/members'), this.crypto.getMasterKey());
   }
 
   updateColor(id: string, color: string | null): Observable<Member> {
-    const key = this.crypto.getMasterKey();
-    const payload = { color };
-    if (!key) return this.api.patch(`/members/${id}/color`, payload);
-
-    return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.patch<ApiRow>(`/members/${id}/color`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Member>(row, key)) : from([row as Member])),
-    );
+    return mutateEncrypted({ color }, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.patch<ApiRow>(`/members/${id}/color`, body));
   }
 }

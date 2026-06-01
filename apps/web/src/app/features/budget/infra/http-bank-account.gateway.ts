@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { Observable } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { BankAccount } from '../domain/models/bank-account.model';
 import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
 
@@ -14,33 +15,17 @@ export class HttpBankAccountGateway implements BankAccountGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<BankAccount[]> {
-    return this.api.get<ApiRow[]>('/bank-accounts').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as BankAccount[]]);
-        return from(decryptEntities<BankAccount>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/bank-accounts'), this.crypto.getMasterKey());
   }
 
   create(data: Omit<BankAccount, 'id'>): Observable<BankAccount> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/bank-accounts', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/bank-accounts', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<BankAccount>(row, key)) : from([row as BankAccount])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/bank-accounts', body));
   }
 
   update(id: string, data: Partial<Omit<BankAccount, 'id'>>): Observable<BankAccount> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/bank-accounts/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/bank-accounts/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<BankAccount>(row, key)) : from([row as BankAccount])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/bank-accounts/${id}`, body));
   }
 
   delete(id: string): Observable<void> {

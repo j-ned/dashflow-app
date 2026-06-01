@@ -2,8 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
-import { encryptFile, decryptFile } from '@core/services/crypto/file-crypto';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptBlob, decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { encryptFile } from '@core/services/crypto/file-crypto';
 import { RecurringEntry } from '../domain/models/recurring-entry.model';
 import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gateway';
 
@@ -15,33 +16,17 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<RecurringEntry[]> {
-    return this.api.get<ApiRow[]>('/recurring-entries').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as RecurringEntry[]]);
-        return from(decryptEntities<RecurringEntry>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/recurring-entries'), this.crypto.getMasterKey());
   }
 
   create(data: Omit<RecurringEntry, 'id'>): Observable<RecurringEntry> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/recurring-entries', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/recurring-entries', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/recurring-entries', body));
   }
 
   update(id: string, data: Partial<Omit<RecurringEntry, 'id'>>): Observable<RecurringEntry> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/recurring-entries/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/recurring-entries/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/recurring-entries/${id}`, body));
   }
 
   delete(id: string): Observable<void> {
@@ -62,23 +47,13 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
         fd.append('file', new File([encryptedBlob], file.name, { type: 'application/octet-stream' }));
         fd.append('originalMimeType', file.type);
         fd.append('encrypted', 'true');
-        return this.api.postForm<ApiRow>(`/recurring-entries/${id}/payslip`, fd);
+        return decryptOne<RecurringEntry>(this.api.postForm<ApiRow>(`/recurring-entries/${id}/payslip`, fd), key);
       }),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<RecurringEntry>(row, key)) : from([row as RecurringEntry])),
     );
   }
 
   downloadPayslip(id: string): Observable<Blob> {
-    return this.api.getBlob(`/recurring-entries/${id}/payslip`).pipe(
-      switchMap((blob) => {
-        const key = this.crypto.getMasterKey();
-        if (!key) return from([blob]);
-        if (blob.type === 'application/octet-stream') {
-          return from(decryptFile(blob, key, 'application/pdf'));
-        }
-        return from([blob]);
-      }),
-    );
+    return decryptBlob(this.api.getBlob(`/recurring-entries/${id}/payslip`), this.crypto.getMasterKey(), 'application/pdf');
   }
 
   deletePayslip(id: string): Observable<void> {

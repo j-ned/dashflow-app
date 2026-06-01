@@ -1,8 +1,9 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { Envelope } from '../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../domain/models/envelope-transaction.model';
 import { EnvelopeGateway } from '../domain/gateways/envelope.gateway';
@@ -28,43 +29,21 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Envelope[]> {
-    return this.api.get<ApiRow[]>('/envelopes').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows.map(coerceEnvelope)]);
-        return from(decryptEntities<Envelope>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/envelopes'), this.crypto.getMasterKey(), coerceEnvelope);
   }
 
   getById(id: string): Observable<Envelope> {
-    return this.api.get<ApiRow>(`/envelopes/${id}`).pipe(
-      switchMap((row) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !row.encryptedData) return from([coerceEnvelope(row)]);
-        return from(decryptEntity<Envelope>(row, key));
-      }),
-    );
+    return decryptOne(this.api.get<ApiRow>(`/envelopes/${id}`), this.crypto.getMasterKey(), coerceEnvelope);
   }
 
   create(data: Omit<Envelope, 'id'>): Observable<Envelope> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/envelopes', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/envelopes', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/envelopes', body));
   }
 
   update(id: string, data: Partial<Omit<Envelope, 'id'>>): Observable<Envelope> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/envelopes/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/envelopes/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/envelopes/${id}`, body));
   }
 
   updateBalance(id: string, amount: number, date: string, note: string | null, envelope: Envelope): Observable<Envelope> {
@@ -75,7 +54,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
 
     // E2EE: recompute balance client-side and re-encrypt the full envelope (PUT),
     // then record the movement as its own encrypted transaction so history stays real.
-    const updatedEnvelope: Record<string, unknown> = {
+    const updatedEnvelope: Partial<Omit<Envelope, 'id'>> = {
       memberId: envelope.memberId,
       name: envelope.name,
       type: envelope.type,
@@ -85,44 +64,22 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       dueDay: envelope.dueDay,
     };
 
-    return from(encryptEntity(updatedEnvelope, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/envelopes/${id}`, encrypted)),
-      switchMap((row) => {
-        const envelope$ = row.encryptedData ? from(decryptEntity<Envelope>(row, key)) : from([row as Envelope]);
-        return from(encryptEntity({ amount, date, note } as Record<string, unknown>, TX_CLEARTEXT_KEYS, key)).pipe(
-          switchMap((encryptedTx) => this.api.post(`/envelopes/${id}/transactions`, encryptedTx)),
-          switchMap(() => envelope$),
-        );
-      }),
+    return this.update(id, updatedEnvelope).pipe(
+      switchMap((updated) => this.addTransaction(id, { amount, date, note }).pipe(map(() => updated))),
     );
   }
 
   getTransactions(envelopeId: string): Observable<EnvelopeTransaction[]> {
-    return this.decryptTransactions(this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`));
+    return decryptList(this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`), this.crypto.getMasterKey());
   }
 
   getAllTransactions(): Observable<EnvelopeTransaction[]> {
-    return this.decryptTransactions(this.api.get<ApiRow[]>('/envelopes/transactions/all'));
-  }
-
-  private decryptTransactions(rows$: Observable<ApiRow[]>): Observable<EnvelopeTransaction[]> {
-    return rows$.pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows.some((r) => r.encryptedData)) return from([rows as EnvelopeTransaction[]]);
-        return from(decryptEntities<EnvelopeTransaction>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/envelopes/transactions/all'), this.crypto.getMasterKey());
   }
 
   addTransaction(envelopeId: string, data: { amount: number; date: string; note: string | null }): Observable<EnvelopeTransaction> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post(`/envelopes/${envelopeId}/transactions`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>(`/envelopes/${envelopeId}/transactions`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<EnvelopeTransaction>(row, key)) : from([row as EnvelopeTransaction])),
-    );
+    return mutateEncrypted(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>(`/envelopes/${envelopeId}/transactions`, body));
   }
 
   delete(id: string): Observable<void> {

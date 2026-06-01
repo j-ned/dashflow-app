@@ -2,8 +2,9 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
-import { encryptFile, decryptFile } from '@core/services/crypto/file-crypto';
+import { ApiRow, encryptEntity } from '@core/services/crypto/entity-crypto';
+import { decryptBlob, decryptList, decryptOne } from '@core/services/crypto/crypto-transport';
+import { encryptFile } from '@core/services/crypto/file-crypto';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
 import { SalaryArchiveGateway } from '../domain/gateways/salary-archive.gateway';
 
@@ -15,13 +16,7 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<SalaryArchive[]> {
-    return this.api.get<ApiRow[]>('/salary-archives').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as SalaryArchive[]]);
-        return from(decryptEntities<SalaryArchive>(rows, key));
-      }),
-    );
+    return decryptList(this.api.get<ApiRow[]>('/salary-archives'), this.crypto.getMasterKey());
   }
 
   create(data: FormData): Observable<SalaryArchive> {
@@ -34,7 +29,7 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
       if (field !== 'file') jsonFields[field] = value;
     });
 
-    return from(encryptEntity(jsonFields, CLEARTEXT_KEYS, key)).pipe(
+    const response$ = from(encryptEntity(jsonFields, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => {
         const fd = new FormData();
         if (file) {
@@ -56,8 +51,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
         Object.entries(encrypted).forEach(([k, v]) => fd.append(k, String(v)));
         return this.api.postForm<ApiRow>('/salary-archives', fd);
       }),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<SalaryArchive>(row, key)) : from([row as SalaryArchive])),
     );
+
+    return decryptOne<SalaryArchive>(response$, key);
   }
 
   delete(id: string): Observable<void> {
@@ -65,15 +61,6 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   }
 
   downloadPayslip(id: string): Observable<Blob> {
-    return this.api.getBlob(`/salary-archives/${id}/payslip`).pipe(
-      switchMap((blob) => {
-        const key = this.crypto.getMasterKey();
-        if (!key) return from([blob]);
-        if (blob.type === 'application/octet-stream') {
-          return from(decryptFile(blob, key, 'application/pdf'));
-        }
-        return from([blob]);
-      }),
-    );
+    return decryptBlob(this.api.getBlob(`/salary-archives/${id}/payslip`), this.crypto.getMasterKey(), 'application/pdf');
   }
 }

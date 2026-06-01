@@ -1,13 +1,15 @@
 import { afterNextRender, ChangeDetectionStrategy, Component, ElementRef, input, output, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { Icon } from '@shared/components/icon/icon';
+import { EntryRowActions } from '../../../components/entry-row-actions/entry-row-actions';
+import { MonthNav } from '../../../components/month-nav/month-nav';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 
 @Component({
   selector: 'app-bank-expense-columns',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, Icon, TranslocoPipe],
+  imports: [DecimalPipe, DatePipe, Icon, MonthNav, EntryRowActions, TranslocoPipe],
   host: { class: 'block' },
   template: `
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4 items-start">
@@ -63,20 +65,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold" [class.text-ib-red]="!passed" [class.text-text-muted]="passed">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
-                            (click)="edit.emit(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
-                            (click)="delete.emit(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
+                  <app-entry-row-actions [label]="entry.label" variant="compact" (edit)="edit.emit(entry)" (delete)="delete.emit(entry.id)" />
                 </div>
               </div>
             }
@@ -136,20 +125,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-orange">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
-                            (click)="edit.emit(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
-                            (click)="delete.emit(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
+                  <app-entry-row-actions [label]="entry.label" variant="compact" (edit)="edit.emit(entry)" (delete)="delete.emit(entry.id)" />
                 </div>
               </div>
             }
@@ -174,21 +150,12 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           <div class="flex items-center gap-2">
             <app-icon name="banknote" size="14" class="text-ib-yellow" />
             <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">{{ 'budget.bankAccount.expenses.spendingsTitle' | transloco }}</h3>
-            <div class="flex items-center gap-0.5 ml-1">
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
-                      [attr.aria-label]="'budget.bankAccount.expenses.prevMonth' | transloco"
-                      (click)="prevMonth.emit()">
-                <app-icon name="chevron-right" size="12" class="rotate-180" />
-              </button>
-              <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ spendingMonthLabel() }}</span>
-              <button type="button"
-                      class="rounded p-0.5 text-text-muted hover:text-ib-yellow hover:bg-ib-yellow/10 transition-colors"
-                      [attr.aria-label]="'budget.bankAccount.expenses.nextMonth' | transloco"
-                      (click)="nextMonth.emit()">
-                <app-icon name="chevron-right" size="12" />
-              </button>
-            </div>
+            <app-month-nav
+              [label]="spendingMonthLabel()"
+              accentHover="hover:text-ib-yellow hover:bg-ib-yellow/10"
+              (prev)="prevMonth.emit()"
+              (next)="nextMonth.emit()"
+            />
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-canvas hover:bg-ib-yellow/80 transition-colors shadow-sm"
@@ -223,20 +190,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                 </div>
                 <div class="flex items-center gap-1.5 shrink-0">
                   <span class="text-[13px] font-mono font-bold text-ib-yellow">-{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                  <div class="flex gap-0.5 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-yellow transition-colors"
-                            [title]="'budget.bankAccount.incomes.editTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.editAria' | transloco: { label: entry.label }"
-                            (click)="edit.emit(entry)">
-                      <app-icon name="pencil" size="11" />
-                    </button>
-                    <button type="button" class="rounded p-1 text-text-muted hover:text-ib-red transition-colors"
-                            [title]="'budget.bankAccount.incomes.deleteTitle' | transloco: { label: entry.label }"
-                            [attr.aria-label]="'budget.bankAccount.incomes.deleteAria' | transloco: { label: entry.label }"
-                            (click)="delete.emit(entry.id)">
-                      <app-icon name="trash" size="11" />
-                    </button>
-                  </div>
+                  <app-entry-row-actions [label]="entry.label" variant="compact" (edit)="edit.emit(entry)" (delete)="delete.emit(entry.id)" />
                 </div>
               </div>
             }
