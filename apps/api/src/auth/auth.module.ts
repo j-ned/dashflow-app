@@ -12,10 +12,12 @@ import { OAuthService } from './oauth.service';
 import { OAuthController } from './oauth.controller';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
+import { DemoModule } from '../modules/demo/demo.module';
 import type { Env } from '../config/env.schema';
 
 @Module({
   imports: [
+    DemoModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (c: ConfigService<Env, true>) => ({

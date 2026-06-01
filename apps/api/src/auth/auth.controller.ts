@@ -9,6 +9,7 @@ import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
+import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { toPublicUser, toKeyMaterial } from './auth.response';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -36,12 +37,17 @@ function httpFrom(r: { status: number; error: string; code?: string }): HttpExce
 @Controller('auth')
 export class AuthController {
   private readonly isProd: boolean;
+  private readonly demoEnabled: boolean;
   constructor(
     private readonly auth: AuthService,
     private readonly token: TokenService,
+    private readonly demo: DemoService,
     private readonly storage: StorageService,
     config: ConfigService<Env, true>,
-  ) { this.isProd = config.get('NODE_ENV', { infer: true }) === 'production'; }
+  ) {
+    this.isProd = config.get('NODE_ENV', { infer: true }) === 'production';
+    this.demoEnabled = config.get('DEMO_ENABLED', { infer: true });
+  }
 
   private async setSession(res: Response, user: { id: string; email: string }): Promise<void> {
     const jwt = await this.token.sign({ sub: user.id, email: user.email });
@@ -75,6 +81,23 @@ export class AuthController {
     if (!r.success) throw httpFrom(r);
     await this.setSession(res, r.data);
     return { user: toPublicUser(r.data), keyMaterial: toKeyMaterial(r.data) };
+  }
+
+  // Public demo session, gated by DEMO_ENABLED.
+  @Throttle(STRICT) @Post('demo-login') @HttpCode(200)
+  async demoLogin(@Res({ passthrough: true }) res: Response) {
+    if (!this.demoEnabled) throw new NotFoundException();
+    const r = await this.auth.demoLogin();
+    if (!r.success) throw httpFrom(r);
+    await this.setSession(res, r.data);
+    return { user: toPublicUser(r.data), keyMaterial: null };
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Throttle(STRICT) @Post('demo-reset') @HttpCode(200)
+  async demoReset(@CurrentUser() u: AuthUser) {
+    if (!this.demoEnabled) throw new NotFoundException();
+    await this.demo.reset(u.id);
+    return { message: 'Démo réinitialisée' };
   }
 
   @Throttle(STRICT) @Post('forgot-password') @HttpCode(200)

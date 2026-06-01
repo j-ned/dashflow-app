@@ -18,6 +18,9 @@ export class AuthRepository {
   findById(id: string): Promise<User | undefined> {
     return this.db.select().from(users).where(eq(users.id, id)).limit(1).then((r) => r[0]);
   }
+  findDemoAccount(): Promise<User | undefined> {
+    return this.db.select().from(users).where(eq(users.isDemoAccount, true)).limit(1).then((r) => r[0]);
+  }
   async createUser(data: { email: string; password: string | null; displayName?: string | null }): Promise<User> {
     const [u] = await this.db.insert(users).values({ email: data.email, password: data.password, displayName: data.displayName ?? null }).returning();
     return u;

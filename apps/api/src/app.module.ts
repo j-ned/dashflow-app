@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from './config/config.module';
 import { DrizzleModule } from './db/drizzle.module';
 import { HealthModule } from './health/health.module';
@@ -28,6 +29,7 @@ import { StorageModule } from './storage/storage.module';
   imports: [
     ConfigModule,
     DrizzleModule,
+    ScheduleModule.forRoot(),
     ThrottlerModule.forRoot([{ ttl: 900_000, limit: 100 }]),
     MailModule,
     AuthModule,

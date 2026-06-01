@@ -10,6 +10,8 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APP_URL: z.string().url().default('http://localhost:3001'),
+  // Active le compte démo public (login sans mot de passe + reset). À couper en prod si non souhaité.
+  DEMO_ENABLED: z.string().default('false').transform((v) => v === 'true'),
   // chaîne vide tolérée (= non configuré) pour laisser la clé présente mais vide dans .env
   S3_ENDPOINT: z.preprocess((v) => (v === '' ? undefined : v), z.string().url().optional()),
   S3_REGION: z.string().default('auto'),

@@ -50,6 +50,13 @@ export class AuthService {
     return ok(user);
   }
 
+  // Connexion au compte démo public, sans mot de passe (gatée par DEMO_ENABLED côté controller).
+  async demoLogin(): Promise<Result<User>> {
+    const user = await this.repo.findDemoAccount();
+    if (!user) return fail(404, 'Compte démo indisponible');
+    return ok(user);
+  }
+
   async forgotPassword(email: string): Promise<Result<null>> {
     const user = await this.repo.findByEmail(email);
     if (user && user.emailVerified) await this.sendCode(email, 'reset');
