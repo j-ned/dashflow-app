@@ -4,10 +4,10 @@ import { LoanTransaction } from '../models/loan-transaction.model';
 import { LoanGateway } from '../gateways/loan.gateway';
 
 @Injectable({ providedIn: 'root' })
-export class GetLoanTransactionsUseCase {
+export class GetAllLoanTransactionsUseCase {
   private readonly gateway = inject(LoanGateway);
 
-  execute(loanId: string): Observable<LoanTransaction[]> {
-    return this.gateway.getTransactions(loanId);
+  execute(): Observable<LoanTransaction[]> {
+    return this.gateway.getAllTransactions();
   }
 }

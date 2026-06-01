@@ -10,6 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
+import { AuthStore } from '@features/auth/domain/auth.store';
 
 // ── Types ──
 
@@ -222,6 +223,7 @@ function fuzzyScore(query: string, target: string): number {
 export class CommandPalette {
   private readonly router = inject(Router);
   private readonly _i18n = inject(TranslocoService);
+  private readonly auth = inject(AuthStore);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly searchInputRef = viewChild.required<ElementRef<HTMLInputElement>>('searchInput');
 
@@ -250,7 +252,7 @@ export class CommandPalette {
 
     { id: 'nav-settings',     labelKey: 'shared.commandPalette.commands.navSettings',       category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',             action: () => this.go('/settings') },
 
-    { id: 'act-logout',       labelKey: 'shared.commandPalette.commands.actLogout',         category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir signout',              action: () => this.go('/auth/login') },
+    { id: 'act-logout',       labelKey: 'shared.commandPalette.commands.actLogout',         category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir signout',              action: () => { void this.logout(); } },
   ];
 
   // ── Filtered + grouped ──
@@ -376,6 +378,11 @@ export class CommandPalette {
 
   private go(path: string) {
     this.router.navigateByUrl(path);
+  }
+
+  private async logout(): Promise<void> {
+    await this.auth.logout();
+    await this.router.navigate(['/']);
   }
 
   private scrollToActive(id: string) {

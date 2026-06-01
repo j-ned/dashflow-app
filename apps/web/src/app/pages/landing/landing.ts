@@ -1,9 +1,11 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
-import { TranslocoPipe } from '@jsverse/transloco';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 import { LocaleThemeToggle } from '@shared/components/locale-theme-toggle/locale-theme-toggle';
+import { AuthStore } from '@features/auth/domain/auth.store';
+import { Toaster } from '@shared/components/toast/toast';
 
 const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
 
@@ -76,6 +78,16 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
               class="inline-flex min-h-12 items-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             >{{ 'landing.hero.secondaryCta' | transloco }}</a>
           </div>
+
+          <button
+            type="button"
+            (click)="startDemo()"
+            [disabled]="demoLoading()"
+            class="mt-5 inline-flex items-center gap-1.5 rounded-sm text-sm font-medium text-ib-blue transition-colors hover:underline disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
+          >
+            {{ (demoLoading() ? 'landing.hero.demoLoading' : 'landing.hero.demoCta') | transloco }}
+            <app-icon name="arrow-right" [size]="14" />
+          </button>
 
           <p class="mt-6 flex items-center justify-center gap-2 text-sm text-text-muted">
             <app-icon name="lock" [size]="14" class="text-ib-blue" />
@@ -470,7 +482,26 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
   `,
 })
 export class LandingComponent {
+  private readonly auth = inject(AuthStore);
+  private readonly router = inject(Router);
+  private readonly toaster = inject(Toaster);
+  private readonly _i18n = inject(TranslocoService);
+
   protected readonly premiumPrice = 49;
   protected readonly contactEmail = CONTACT_EMAIL;
   protected readonly currentYear = new Date().getFullYear();
+  protected readonly demoLoading = signal(false);
+
+  protected async startDemo(): Promise<void> {
+    if (this.demoLoading()) return;
+    this.demoLoading.set(true);
+    try {
+      await this.auth.demoLogin();
+      await this.router.navigate(['/budget'], { replaceUrl: true });
+    } catch {
+      this.toaster.error(this._i18n.translate('landing.hero.demoError'));
+    } finally {
+      this.demoLoading.set(false);
+    }
+  }
 }

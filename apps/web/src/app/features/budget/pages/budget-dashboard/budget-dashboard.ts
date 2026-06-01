@@ -124,11 +124,21 @@ type MemberSummary = {
             <div class="rounded-xl border border-border bg-surface p-3">
               <div class="flex items-center justify-between mb-2">
                 <span class="text-[11px] font-medium text-text-muted">{{ 'budget.dashboard.usage.label' | transloco }}</span>
-                <span class="text-sm font-mono font-bold"
-                      [class.text-ib-green]="pctBudget <= 80"
-                      [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
-                      [class.text-ib-red]="pctBudget > 100">
-                  {{ pctBudget | number:'1.0-0' }}%
+                <span class="inline-flex items-center gap-2">
+                  <span class="rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                        [class.bg-ib-green-10]="pctBudget <= 80" [class.text-ib-green]="pctBudget <= 80"
+                        [class.bg-ib-orange-10]="pctBudget > 80 && pctBudget <= 100" [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                        [class.bg-ib-red-10]="pctBudget > 100" [class.text-ib-red]="pctBudget > 100">
+                    @if (pctBudget <= 80) { {{ 'budget.dashboard.usage.stateOk' | transloco }} }
+                    @else if (pctBudget <= 100) { {{ 'budget.dashboard.usage.stateTight' | transloco }} }
+                    @else { {{ 'budget.dashboard.usage.stateOver' | transloco }} }
+                  </span>
+                  <span class="text-sm font-mono font-bold"
+                        [class.text-ib-green]="pctBudget <= 80"
+                        [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                        [class.text-ib-red]="pctBudget > 100">
+                    {{ pctBudget | number:'1.0-0' }}%
+                  </span>
                 </span>
               </div>
               <div class="h-2.5 rounded-full bg-hover overflow-hidden">
@@ -141,7 +151,7 @@ type MemberSummary = {
               </div>
               <div class="flex items-center gap-4 mt-2 text-[10px] text-text-muted">
                 <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> {{ 'budget.dashboard.usage.monthly' | transloco }} {{ ms.totalMonthlyExpenses | number:'1.0-0' }}&euro;</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> {{ 'budget.dashboard.usage.annual' | transloco }} ~{{ ms.monthlyAnnualExpenses | number:'1.0-0' }}&euro;/m</span>
+                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> {{ 'budget.dashboard.usage.annual' | transloco }} {{ 'budget.dashboard.annualMonthlyApprox' | transloco: { value: (ms.monthlyAnnualExpenses | number:'1.0-0') } }}</span>
                 <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> {{ 'budget.dashboard.usage.spendings' | transloco }} {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
               </div>
             </div>
@@ -192,7 +202,7 @@ type MemberSummary = {
                         <span class="text-[13px] text-text-primary truncate">{{ entry.label }}</span>
                         <div class="flex items-center gap-1 shrink-0 ml-2">
                           <span class="text-[13px] font-mono font-medium text-text-muted">{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                          <span class="text-[10px] text-text-muted">(~{{ entry.amount / 12 | number:'1.0-0' }}/m)</span>
+                          <span class="text-[10px] text-text-muted">{{ 'budget.dashboard.annualMonthlyApprox' | transloco: { value: (entry.amount / 12 | number:'1.0-0') } }}</span>
                         </div>
                       </div>
                     }
@@ -288,7 +298,10 @@ type MemberSummary = {
                         </div>
                       </div>
                     </div>
-                    <span class="text-sm font-mono font-bold text-ib-blue shrink-0">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
+                    <span class="shrink-0 text-right">
+                      <span class="block text-sm font-mono font-bold text-ib-blue">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
+                      <span class="block text-[9px] uppercase tracking-wide text-text-muted">{{ 'budget.dashboard.toReceive' | transloco }}</span>
+                    </span>
                   </a>
                 }
               </div>
@@ -317,7 +330,10 @@ type MemberSummary = {
                         </div>
                       </div>
                     </div>
-                    <span class="text-sm font-mono font-bold text-ib-red shrink-0">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
+                    <span class="shrink-0 text-right">
+                      <span class="block text-sm font-mono font-bold text-ib-red">{{ loan.remaining | number:'1.2-2' }}<span class="text-xs">&euro;</span></span>
+                      <span class="block text-[9px] uppercase tracking-wide text-text-muted">{{ 'budget.dashboard.toRepay' | transloco }}</span>
+                    </span>
                   </a>
                 }
               </div>

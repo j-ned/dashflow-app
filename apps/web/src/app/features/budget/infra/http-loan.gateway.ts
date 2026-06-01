@@ -10,6 +10,18 @@ import { LoanGateway } from '../domain/gateways/loan.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'direction'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'loanId', 'createdAt'] as const;
 
+// Données en clair (compte démo / non-E2EE) : postgres renvoie les numériques en string.
+// On les coerce comme la voie déchiffrée, sinon les additions (totaux) concatènent.
+function coerceLoan(row: ApiRow): Loan {
+  const l = row as unknown as Loan;
+  return {
+    ...l,
+    amount: Number(l.amount),
+    remaining: Number(l.remaining),
+    dueDay: l.dueDay == null ? null : Number(l.dueDay),
+  };
+}
+
 @Injectable()
 export class HttpLoanGateway implements LoanGateway {
   private readonly api = inject(ApiClient);
@@ -19,7 +31,7 @@ export class HttpLoanGateway implements LoanGateway {
     return this.api.get<ApiRow[]>('/loans').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as Loan[]]);
+        if (!key || !rows[0]?.encryptedData) return from([rows.map(coerceLoan)]);
         return from(decryptEntities<Loan>(rows, key));
       }),
     );
@@ -29,7 +41,7 @@ export class HttpLoanGateway implements LoanGateway {
     return this.api.get<ApiRow>(`/loans/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !row.encryptedData) return from([row as Loan]);
+        if (!key || !row.encryptedData) return from([coerceLoan(row)]);
         return from(decryptEntity<Loan>(row, key));
       }),
     );
@@ -76,10 +88,18 @@ export class HttpLoanGateway implements LoanGateway {
   }
 
   getTransactions(loanId: string): Observable<LoanTransaction[]> {
-    return this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`).pipe(
+    return this.decryptTransactions(this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`));
+  }
+
+  getAllTransactions(): Observable<LoanTransaction[]> {
+    return this.decryptTransactions(this.api.get<ApiRow[]>('/loans/transactions/all'));
+  }
+
+  private decryptTransactions(rows$: Observable<ApiRow[]>): Observable<LoanTransaction[]> {
+    return rows$.pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as LoanTransaction[]]);
+        if (!key || !rows.some((r) => r.encryptedData)) return from([rows as LoanTransaction[]]);
         return from(decryptEntities<LoanTransaction>(rows, key));
       }),
     );

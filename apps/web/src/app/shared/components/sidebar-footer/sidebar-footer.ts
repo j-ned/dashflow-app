@@ -76,6 +76,6 @@ export class SidebarFooter {
 
   protected async onLogout() {
     await this.auth.logout();
-    this.router.navigate(['/auth/login']);
+    this.router.navigate(['/']);
   }
 }

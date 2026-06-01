@@ -34,9 +34,37 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       </button>
     </header>
 
+    @if (availableYears().length > 1) {
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium text-text-muted">{{ 'budget.salaryArchive.filterYear' | transloco }}</span>
+        <button type="button"
+                class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                [class.border-ib-cyan]="filterYear() === null"
+                [class.bg-ib-cyan]="filterYear() === null"
+                [class.text-canvas]="filterYear() === null"
+                [class.border-border]="filterYear() !== null"
+                [class.text-text-muted]="filterYear() !== null"
+                (click)="filterYear.set(null)">
+          {{ 'budget.salaryArchive.allYears' | transloco }}
+        </button>
+        @for (year of availableYears(); track year) {
+          <button type="button"
+                  class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+                  [class.border-ib-cyan]="filterYear() === year"
+                  [class.bg-ib-cyan]="filterYear() === year"
+                  [class.text-canvas]="filterYear() === year"
+                  [class.border-border]="filterYear() !== year"
+                  [class.text-text-muted]="filterYear() !== year"
+                  (click)="filterYear.set(year)">
+            {{ year }}
+          </button>
+        }
+      </div>
+    }
+
     @if (archives().length > 0) {
       <div class="space-y-4">
-        @for (archive of archives(); track archive.id) {
+        @for (archive of filteredArchives(); track archive.id) {
           <article class="group rounded-xl border border-border bg-surface overflow-hidden transition hover:shadow-lg hover:shadow-ib-cyan/5">
             <!-- Header -->
             <button type="button"
@@ -117,7 +145,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                     <p class="text-lg font-mono font-bold tracking-tight"
                        [class.text-ib-green]="archiveRemaining(archive) >= 0"
                        [class.text-ib-red]="archiveRemaining(archive) < 0">
-                      {{ archiveRemaining(archive) | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
+                      {{ archiveRemaining(archive) >= 0 ? '+' : '' }}{{ archiveRemaining(archive) | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
                     </p>
                   </div>
                 </div>
@@ -161,11 +189,10 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                     <span class="text-[11px] text-text-muted">{{ 'budget.salaryArchive.noPayslip' | transloco }}</span>
                   }
                   <button type="button"
-                          class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          [title]="'budget.salaryArchive.deleteTitle' | transloco: { month: monthLabel(archive.month) }"
+                          class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
                           [attr.aria-label]="'budget.salaryArchive.deleteAria' | transloco: { month: monthLabel(archive.month) }"
                           (click)="deleteArchive(archive)">
-                    <app-icon name="trash" size="14" />
+                    <app-icon name="trash" size="14" /> {{ 'budget.actions.delete' | transloco }}
                   </button>
                 </div>
               </div>
@@ -177,7 +204,12 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       <div class="text-center py-16 rounded-xl border border-dashed border-border bg-surface">
         <app-icon name="folder" size="48" class="text-text-muted/20 mx-auto mb-4" />
         <p class="text-sm text-text-muted">{{ 'budget.salaryArchive.empty' | transloco }}</p>
-        <p class="text-xs text-text-muted mt-1">{{ 'budget.salaryArchive.emptyHint' | transloco }}</p>
+        <p class="text-xs text-text-muted mt-1 mb-4">{{ 'budget.salaryArchive.emptyHint' | transloco }}</p>
+        <button type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors"
+                (click)="openCreateModal()">
+          <app-icon name="plus" size="14" /> {{ 'budget.salaryArchive.archiveMonth' | transloco }}
+        </button>
       </div>
     }
 
@@ -187,12 +219,12 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="arch-month" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.month' | transloco }} <span aria-hidden="true">*</span></label>
-            <input id="arch-month" type="month" [ngModel]="formMonth()" (ngModelChange)="formMonth.set($event)" name="month"
+            <input id="arch-month" type="month" [ngModel]="formMonth()" (ngModelChange)="formMonth.set($event)" name="month" aria-required="true"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
           </div>
           <div>
             <label for="arch-salary" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.salary' | transloco }} <span aria-hidden="true">*</span></label>
-            <input id="arch-salary" type="number" step="0.01" [ngModel]="formSalary()" (ngModelChange)="formSalary.set($event)" name="salary"
+            <input id="arch-salary" type="number" step="0.01" [ngModel]="formSalary()" (ngModelChange)="formSalary.set($event)" name="salary" aria-required="true"
                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" placeholder="0.00" />
           </div>
         </div>
@@ -285,6 +317,18 @@ export class SalaryArchives {
   private readonly allEntries = toSignal(this.getEntriesUC.execute(), { initialValue: [] });
 
   protected readonly expandedId = signal<string | null>(null);
+
+  // Year filter. Defaults to "Toutes" (null) so nothing is hidden.
+  protected readonly filterYear = signal<string | null>(null);
+  protected readonly availableYears = computed(() => {
+    const years = new Set(this.archives().map((a) => a.month.slice(0, 4)));
+    return [...years].sort((a, b) => b.localeCompare(a));
+  });
+  protected readonly filteredArchives = computed(() => {
+    const y = this.filterYear();
+    const all = this.archives();
+    return y ? all.filter((a) => a.month.startsWith(y)) : all;
+  });
 
   protected readonly formMonth = signal(this.previousMonth());
   protected readonly formSalary = signal<number | null>(null);

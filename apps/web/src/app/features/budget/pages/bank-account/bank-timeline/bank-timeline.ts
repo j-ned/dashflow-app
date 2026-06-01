@@ -48,6 +48,14 @@ export type BankTimelineEvent = {
                         [class.text-text-muted]="event.day !== currentDay()">
                     {{ event.day }}
                   </span>
+                  <!-- Type (forme distincte par type, redondance non-colorée) -->
+                  @switch (event.type) {
+                    @case ('income') { <app-icon name="trending-up" size="13" class="text-ib-green shrink-0" /> }
+                    @case ('expense') { <app-icon name="receipt" size="13" class="text-ib-red shrink-0" /> }
+                    @case ('annual_expense') { <app-icon name="calendar" size="13" class="text-ib-orange shrink-0" /> }
+                    @case ('transfer') { <app-icon name="arrow-left-right" size="13" class="text-ib-purple shrink-0" /> }
+                    @case ('spending') { <app-icon name="banknote" size="13" class="text-ib-yellow shrink-0" /> }
+                  }
                   <!-- Label -->
                   <span class="text-[13px] truncate flex-1"
                         [class.text-text-muted]="event.passed"

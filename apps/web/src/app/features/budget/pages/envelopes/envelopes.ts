@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
@@ -64,7 +64,20 @@ const MEMBER_PALETTE = [
 
     <!-- Member filter -->
     @if (activeMembers().length > 0) {
-      <div class="flex gap-2 flex-wrap items-center">
+      <div class="flex flex-wrap items-center gap-2">
+        <span class="text-xs font-medium text-text-muted">{{ 'budget.envelope.filterLabel' | transloco }}</span>
+        <button
+          type="button"
+          class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
+          [class.border-ib-blue]="filterMemberId() === null"
+          [class.bg-ib-blue]="filterMemberId() === null"
+          [class.text-canvas]="filterMemberId() === null"
+          [class.border-border]="filterMemberId() !== null"
+          [class.text-text-muted]="filterMemberId() !== null"
+          (click)="filterMemberId.set(null)"
+        >
+          {{ 'budget.envelope.filterAll' | transloco }}
+        </button>
         @for (m of activeMembers(); track m.id) {
           <button
             type="button"
@@ -76,7 +89,7 @@ const MEMBER_PALETTE = [
             (click)="filterMemberId.set(m.id)"
           >
             <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="memberMap().get(m.id)?.color"></span>
+                  [style.background-color]="filterMemberId() === m.id ? 'var(--color-canvas)' : memberMap().get(m.id)?.color"></span>
             {{ m.firstName }}
           </button>
         }
@@ -178,7 +191,7 @@ const MEMBER_PALETTE = [
             </div>
           </div>
 
-          <div class="mt-auto flex items-center gap-2 border-t border-border/60 px-5 py-3">
+          <div class="mt-auto flex flex-wrap items-center gap-2 border-t border-border/60 px-5 py-3">
             <button
               type="button"
               class="inline-flex flex-1 items-center justify-center gap-1.5 rounded-md bg-ib-cyan/10 px-3 py-2 text-xs font-semibold text-ib-cyan transition-colors hover:bg-ib-cyan/20"
@@ -188,21 +201,19 @@ const MEMBER_PALETTE = [
             </button>
             <button
               type="button"
-              class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
-              [title]="'budget.envelope.editTitle' | transloco: { name: envelope.name }"
+              class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
               [attr.aria-label]="'budget.envelope.editAria' | transloco: { name: envelope.name }"
               (click)="openEditModal(envelope)"
             >
-              <app-icon name="pencil" size="14" />
+              <app-icon name="pencil" size="14" /> {{ 'budget.envelope.editAction' | transloco }}
             </button>
             <button
               type="button"
-              class="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-text-muted transition-colors hover:border-ib-red/40 hover:bg-ib-red/10 hover:text-ib-red"
-              [title]="'budget.envelope.deleteTitle' | transloco: { name: envelope.name }"
+              class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-2 text-xs font-medium text-text-muted transition-colors hover:border-ib-red/40 hover:bg-ib-red/10 hover:text-ib-red"
               [attr.aria-label]="'budget.envelope.deleteAria' | transloco: { name: envelope.name }"
               (click)="deleteEnvelope(envelope.id)"
             >
-              <app-icon name="trash" size="14" />
+              <app-icon name="trash" size="14" /> {{ 'budget.envelope.deleteAction' | transloco }}
             </button>
           </div>
         </article>
@@ -352,10 +363,8 @@ export class Envelopes {
     return this.members().filter((m) => memberIds.has(m.id));
   });
 
-  protected readonly filterMemberId = linkedSignal<string | null>(() => {
-    const active = this.activeMembers();
-    return active.length > 0 ? active[0].id : null;
-  });
+  // Defaults to "Tous" (null) so nothing is hidden on first view.
+  protected readonly filterMemberId = signal<string | null>(null);
 
   protected readonly filteredEnvelopes = computed(() => {
     const all = this.envelopes();

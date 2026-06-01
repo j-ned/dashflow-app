@@ -165,12 +165,18 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           </div>
           <div class="px-5 py-2.5 border-t border-border/50 bg-canvas/50 flex justify-between items-center">
             <span class="text-[10px] font-medium text-text-muted uppercase tracking-wider">{{ 'budget.bankAccount.transfers.monthTotal' | transloco }}</span>
-            <div class="flex items-center gap-3 text-[11px] font-mono">
+            <div class="flex items-center gap-3 text-[11px]">
               @if (totalOneTimeOutgoing() > 0) {
-                <span class="text-ib-red">-{{ totalOneTimeOutgoing() | number:'1.2-2' }}&euro;</span>
+                <span class="flex items-center gap-1">
+                  <span class="text-text-muted">{{ 'budget.bankAccount.transfers.outgoing' | transloco }}</span>
+                  <span class="font-mono text-ib-red">-{{ totalOneTimeOutgoing() | number:'1.2-2' }}&euro;</span>
+                </span>
               }
               @if (totalOneTimeIncoming() > 0) {
-                <span class="text-ib-green">+{{ totalOneTimeIncoming() | number:'1.2-2' }}&euro;</span>
+                <span class="flex items-center gap-1">
+                  <span class="text-text-muted">{{ 'budget.bankAccount.transfers.incoming' | transloco }}</span>
+                  <span class="font-mono text-ib-green">+{{ totalOneTimeIncoming() | number:'1.2-2' }}&euro;</span>
+                </span>
               }
             </div>
           </div>

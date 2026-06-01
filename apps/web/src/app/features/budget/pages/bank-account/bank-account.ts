@@ -51,7 +51,19 @@ const PALETTE = [
         <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.bankAccount.title' | transloco }}</h2>
         <p class="mt-1 text-sm text-text-muted">{{ 'budget.bankAccount.subtitle' | transloco }}</p>
       </div>
-      <nav class="flex items-center gap-2 flex-wrap">
+      <nav class="flex items-center gap-2 flex-wrap" [attr.aria-label]="'budget.bankAccount.accountNavAria' | transloco">
+        @if (accounts().length > 1) {
+          <button type="button"
+                  class="inline-flex items-center rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition-colors"
+                  [class.border-ib-blue]="selectedAccountId() === null"
+                  [class.bg-ib-blue]="selectedAccountId() === null"
+                  [class.text-canvas]="selectedAccountId() === null"
+                  [class.border-border]="selectedAccountId() !== null"
+                  [class.text-text-muted]="selectedAccountId() !== null"
+                  (click)="selectAccount(null)">
+            {{ 'budget.bankAccount.allAccounts' | transloco }}
+          </button>
+        }
         @for (account of accounts(); track account.id; let i = $index) {
           <button type="button"
                   class="inline-flex items-center gap-2 rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"

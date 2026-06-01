@@ -21,6 +21,8 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-canvas hover:bg-ib-red/80 transition-colors shadow-sm"
+                  [title]="'budget.bankAccount.expenses.addMonthly' | transloco"
+                  [attr.aria-label]="'budget.bankAccount.expenses.addMonthly' | transloco"
                   (click)="createMonthly.emit()">
             <app-icon name="plus" size="12" />
           </button>
@@ -99,6 +101,8 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-canvas hover:bg-ib-orange/80 transition-colors shadow-sm"
+                  [title]="'budget.bankAccount.expenses.addAnnual' | transloco"
+                  [attr.aria-label]="'budget.bankAccount.expenses.addAnnual' | transloco"
                   (click)="createAnnual.emit()">
             <app-icon name="plus" size="12" />
           </button>
@@ -108,8 +112,9 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
             @for (entry of annualExpenses(); track entry.id) {
               <div class="group flex items-center justify-between py-2 hover:bg-ib-orange/3 rounded-lg px-1.5 -mx-1.5 transition-colors">
                 <div class="flex items-center gap-2 min-w-0">
-                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10 text-ib-orange text-[10px] font-bold shrink-0">
-                    @if (entry.date) { {{ entry.date | date:'MMM' }} } @else { AN }
+                  <div class="flex h-7 w-7 items-center justify-center rounded-lg bg-ib-orange/10 text-ib-orange text-[10px] font-bold shrink-0"
+                       [title]="entry.date ? '' : ('budget.bankAccount.expenses.annualNoDate' | transloco)">
+                    @if (entry.date) { {{ entry.date | date:'MMM' }} } @else { <app-icon name="calendar" size="12" /> }
                   </div>
                   <div class="min-w-0">
                     <p class="text-[13px] font-medium text-text-primary truncate">{{ entry.label }}</p>
@@ -187,6 +192,8 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           </div>
           <button type="button"
                   class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-canvas hover:bg-ib-yellow/80 transition-colors shadow-sm"
+                  [title]="'budget.bankAccount.expenses.addSpending' | transloco"
+                  [attr.aria-label]="'budget.bankAccount.expenses.addSpending' | transloco"
                   (click)="createSpending.emit()">
             <app-icon name="plus" size="12" />
           </button>

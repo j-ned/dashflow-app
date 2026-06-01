@@ -396,6 +396,9 @@
       "subtitle": "DashFlow gère ton budget et le suivi médical de ta famille dans une seule app. Tout est chiffré sur ton appareil avant d'être envoyé : ni le serveur, ni nous ne voyons tes données en clair.",
       "primaryCta": "Commencer gratuitement",
       "secondaryCta": "Voir les tarifs",
+      "demoCta": "Tester la démo, sans inscription",
+      "demoLoading": "Ouverture de la démo…",
+      "demoError": "Démo indisponible pour le moment",
       "reassurance": "Compte gratuit, sans carte bancaire. Chiffrement inclus.",
       "screenshotAlt": "Vue d'ensemble du budget dans DashFlow : enveloppes, charges mensuelles, revenus et reste à vivre",
       "screenshotCaption": "Vue d'ensemble du budget"
@@ -588,6 +591,8 @@
       "title": "Compte bancaire",
       "subtitle": "Suivi progressif de votre solde",
       "manage": "Gérer",
+      "allAccounts": "Tous les comptes",
+      "accountNavAria": "Sélection du compte",
       "kpi": {
         "balance": "Solde actuel",
         "balanceAt": "au {{date}}",
@@ -608,7 +613,10 @@
         "passed": "Passés",
         "upcoming": "A venir",
         "annual": "Annuels",
-        "spendings": "Dépenses"
+        "spendings": "Dépenses",
+        "stateOk": "Sain",
+        "stateTight": "Tendu",
+        "stateOver": "Dépassé"
       },
       "incomes": {
         "title": "Revenus",
@@ -635,7 +643,11 @@
         "annualSuffix": "€/an",
         "annualMonthlySuffix": "(~{{value}}€/m)",
         "prevMonth": "Mois précédent",
-        "nextMonth": "Mois suivant"
+        "nextMonth": "Mois suivant",
+        "addMonthly": "Ajouter un prélèvement mensuel",
+        "addAnnual": "Ajouter un prélèvement annuel",
+        "addSpending": "Ajouter une dépense",
+        "annualNoDate": "Prélèvement annuel (sans date fixe)"
       },
       "transfers": {
         "automaticTitle": "Virements automatiques",
@@ -644,7 +656,9 @@
         "oneTimeTitle": "Virements ponctuels",
         "addOneTime": "Virement ponctuel",
         "oneTimeEmpty": "Aucun virement ponctuel en {{month}}",
-        "monthTotal": "Total du mois"
+        "monthTotal": "Total du mois",
+        "outgoing": "Sortant",
+        "incoming": "Entrant"
       },
       "timeline": {
         "title": "Timeline du mois",
@@ -710,6 +724,9 @@
     "dashboard": {
       "title": "Vue globale",
       "subtitle": "Soldes et alertes de votre budget",
+      "toReceive": "à recevoir",
+      "toRepay": "à rembourser",
+      "annualMonthlyApprox": "~{{value}}€/mois",
       "globalLabel": "Global (famille)",
       "globalInitials": "GL",
       "envelopesCount": "{{count}} enveloppe",
@@ -727,7 +744,10 @@
         "label": "Budget utilisé",
         "monthly": "Mensuels",
         "annual": "Annuels",
-        "spendings": "Dépenses"
+        "spendings": "Dépenses",
+        "stateOk": "Sain",
+        "stateTight": "Tendu",
+        "stateOver": "Dépassé"
       },
       "monthly": "Mensuels",
       "annual": "Annuels",
@@ -740,6 +760,8 @@
       "title": "Enveloppes",
       "subtitle": "Gérez vos enveloppes virtuelles",
       "newEnvelope": "Nouvelle enveloppe",
+      "filterLabel": "Filtrer par membre",
+      "filterAll": "Tous",
       "listAria": "Liste des enveloppes",
       "objective": "Objectif",
       "remainingAmount": "Restant",
@@ -752,8 +774,10 @@
       "historyAria": "Historique de {{name}}",
       "editTitle": "Modifier — {{name}}",
       "editAria": "Modifier {{name}}",
+      "editAction": "Modifier",
       "deleteTitle": "Supprimer — {{name}}",
       "deleteAria": "Supprimer {{name}}",
+      "deleteAction": "Supprimer",
       "empty": "Aucune enveloppe",
       "emptyHint": "Créez votre première enveloppe",
       "totalAll": "Total toutes enveloppes",
@@ -840,6 +864,29 @@
       "repayment": "Remboursement",
       "noLent": "Aucun prêt en cours",
       "noBorrowed": "Aucune dette en cours",
+      "recentActivity": "Activité récente",
+      "viewAll": "Voir tout",
+      "noActivity": "Aucun remboursement pour l'instant",
+      "remainingAfter": "Restant",
+      "remainingLabel": "restant dû",
+      "filterLabel": "Filtrer par membre",
+      "filterAll": "Tous",
+      "toCollect": "À récupérer",
+      "toRepay": "À rembourser",
+      "dueDayLabel": "le {{day}} du mois",
+      "status": {
+        "overdue": "En retard",
+        "dueSoon": "Échéance proche",
+        "settled": "Soldé"
+      },
+      "summary": {
+        "toCollect": "À récupérer",
+        "toRepay": "À rembourser",
+        "net": "Solde net",
+        "netPositive": "en votre faveur",
+        "netNegative": "à votre charge",
+        "netEven": "équilibré"
+      },
       "actions": {
         "repay": "Rembourser",
         "repayTitle": "Remboursement — {{person}}",
@@ -862,12 +909,10 @@
         "edit": "Modifier",
         "payment": "Remboursement",
         "history": "Historique — {{person}}",
-        "amount": "Montant",
-        "date": "Date",
-        "submitAdd": "Ajouter",
+        "initialAmount": "Montant initial",
+        "progress": "{{pct}}% remboursé",
         "noPayments": "Aucun remboursement enregistré",
-        "tableDate": "Date",
-        "tableAmount": "Montant"
+        "historyHint": "Les remboursements apparaîtront ici."
       },
       "form": {
         "createLegendLent": "Nouveau prêt",
@@ -915,6 +960,8 @@
       "title": "Archives salaires",
       "subtitle": "Historique mensuel de vos salaires et dépenses",
       "archiveMonth": "Archiver un mois",
+      "filterYear": "Filtrer par année",
+      "allYears": "Toutes",
       "expensesLabel": "Dépenses : {{value}}€",
       "kpi": {
         "salary": "Salaire",

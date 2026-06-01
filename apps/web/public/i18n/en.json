@@ -396,6 +396,9 @@
       "subtitle": "DashFlow manages your budget and your family's health records in a single app. Everything is encrypted on your device before it leaves: neither the server nor we ever see your data in the clear.",
       "primaryCta": "Start for free",
       "secondaryCta": "See pricing",
+      "demoCta": "Try the demo, no signup",
+      "demoLoading": "Opening the demo…",
+      "demoError": "Demo unavailable right now",
       "reassurance": "Free account, no credit card. Encryption included.",
       "screenshotAlt": "DashFlow budget overview: envelopes, monthly charges, income and money left to spend",
       "screenshotCaption": "Budget overview"
@@ -588,6 +591,8 @@
       "title": "Bank account",
       "subtitle": "Track your balance progressively",
       "manage": "Manage",
+      "allAccounts": "All accounts",
+      "accountNavAria": "Account selection",
       "kpi": {
         "balance": "Current balance",
         "balanceAt": "as of {{date}}",
@@ -608,7 +613,10 @@
         "passed": "Processed",
         "upcoming": "Upcoming",
         "annual": "Annual",
-        "spendings": "Spending"
+        "spendings": "Spending",
+        "stateOk": "Healthy",
+        "stateTight": "Tight",
+        "stateOver": "Over budget"
       },
       "incomes": {
         "title": "Income",
@@ -635,7 +643,11 @@
         "annualSuffix": "€/year",
         "annualMonthlySuffix": "(~{{value}}€/m)",
         "prevMonth": "Previous month",
-        "nextMonth": "Next month"
+        "nextMonth": "Next month",
+        "addMonthly": "Add a monthly charge",
+        "addAnnual": "Add an annual charge",
+        "addSpending": "Add an expense",
+        "annualNoDate": "Annual charge (no fixed date)"
       },
       "transfers": {
         "automaticTitle": "Automatic transfers",
@@ -644,7 +656,9 @@
         "oneTimeTitle": "One-time transfers",
         "addOneTime": "One-time transfer",
         "oneTimeEmpty": "No one-time transfer in {{month}}",
-        "monthTotal": "Month total"
+        "monthTotal": "Month total",
+        "outgoing": "Out",
+        "incoming": "In"
       },
       "timeline": {
         "title": "Month timeline",
@@ -710,6 +724,9 @@
     "dashboard": {
       "title": "Overview",
       "subtitle": "Balances and alerts for your budget",
+      "toReceive": "to receive",
+      "toRepay": "to repay",
+      "annualMonthlyApprox": "~{{value}}€/mo",
       "globalLabel": "Global (family)",
       "globalInitials": "GL",
       "envelopesCount": "{{count}} envelope",
@@ -727,7 +744,10 @@
         "label": "Budget used",
         "monthly": "Monthly",
         "annual": "Annual",
-        "spendings": "Spending"
+        "spendings": "Spending",
+        "stateOk": "Healthy",
+        "stateTight": "Tight",
+        "stateOver": "Over budget"
       },
       "monthly": "Monthly",
       "annual": "Annual",
@@ -740,6 +760,8 @@
       "title": "Envelopes",
       "subtitle": "Manage your virtual envelopes",
       "newEnvelope": "New envelope",
+      "filterLabel": "Filter by member",
+      "filterAll": "All",
       "listAria": "Envelope list",
       "objective": "Goal",
       "remainingAmount": "Remaining",
@@ -752,8 +774,10 @@
       "historyAria": "History of {{name}}",
       "editTitle": "Edit — {{name}}",
       "editAria": "Edit {{name}}",
+      "editAction": "Edit",
       "deleteTitle": "Delete — {{name}}",
       "deleteAria": "Delete {{name}}",
+      "deleteAction": "Delete",
       "empty": "No envelope",
       "emptyHint": "Create your first envelope",
       "totalAll": "Total all envelopes",
@@ -840,6 +864,29 @@
       "repayment": "Repayment",
       "noLent": "No active loan",
       "noBorrowed": "No active debt",
+      "recentActivity": "Recent activity",
+      "viewAll": "View all",
+      "noActivity": "No repayment yet",
+      "remainingAfter": "Remaining",
+      "remainingLabel": "still owed",
+      "filterLabel": "Filter by member",
+      "filterAll": "All",
+      "toCollect": "To collect",
+      "toRepay": "To repay",
+      "dueDayLabel": "on the {{day}}",
+      "status": {
+        "overdue": "Overdue",
+        "dueSoon": "Due soon",
+        "settled": "Settled"
+      },
+      "summary": {
+        "toCollect": "To collect",
+        "toRepay": "To repay",
+        "net": "Net balance",
+        "netPositive": "in your favour",
+        "netNegative": "owed by you",
+        "netEven": "balanced"
+      },
       "actions": {
         "repay": "Repay",
         "repayTitle": "Repayment — {{person}}",
@@ -862,12 +909,10 @@
         "edit": "Edit",
         "payment": "Repayment",
         "history": "History — {{person}}",
-        "amount": "Amount",
-        "date": "Date",
-        "submitAdd": "Add",
+        "initialAmount": "Initial amount",
+        "progress": "{{pct}}% repaid",
         "noPayments": "No repayment recorded",
-        "tableDate": "Date",
-        "tableAmount": "Amount"
+        "historyHint": "Repayments will appear here."
       },
       "form": {
         "createLegendLent": "New loan",
@@ -915,6 +960,8 @@
       "title": "Salary archives",
       "subtitle": "Monthly history of your salaries and spending",
       "archiveMonth": "Archive a month",
+      "filterYear": "Filter by year",
+      "allYears": "All",
       "expensesLabel": "Expenses: {{value}}€",
       "kpi": {
         "salary": "Salary",

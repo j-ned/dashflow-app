@@ -10,6 +10,18 @@ import { EnvelopeGateway } from '../domain/gateways/envelope.gateway';
 const CLEARTEXT_KEYS = ['id', 'userId', 'memberId'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'envelopeId', 'createdAt'] as const;
 
+// Données en clair (compte démo / non-E2EE) : postgres renvoie les numériques en string.
+// On les coerce comme le fait la voie déchiffrée, sinon les additions concatènent.
+function coerceEnvelope(row: ApiRow): Envelope {
+  const e = row as unknown as Envelope;
+  return {
+    ...e,
+    balance: Number(e.balance),
+    target: e.target == null ? null : Number(e.target),
+    dueDay: e.dueDay == null ? null : Number(e.dueDay),
+  };
+}
+
 @Injectable()
 export class HttpEnvelopeGateway implements EnvelopeGateway {
   private readonly api = inject(ApiClient);
@@ -19,7 +31,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     return this.api.get<ApiRow[]>('/envelopes').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as Envelope[]]);
+        if (!key || !rows[0]?.encryptedData) return from([rows.map(coerceEnvelope)]);
         return from(decryptEntities<Envelope>(rows, key));
       }),
     );
@@ -29,7 +41,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     return this.api.get<ApiRow>(`/envelopes/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !row.encryptedData) return from([row as Envelope]);
+        if (!key || !row.encryptedData) return from([coerceEnvelope(row)]);
         return from(decryptEntity<Envelope>(row, key));
       }),
     );

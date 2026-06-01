@@ -273,8 +273,9 @@ export class Login {
   }
 
   private redirectAfterLogin(): void {
-    const user = this.auth.user();
-    if (user && user.encryptionVersion === 0) {
+    // Use the store computeds (which exempt demo accounts) rather than a raw
+    // encryptionVersion check, so the demo account lands on /budget like the guard expects.
+    if (this.auth.needsEncryptionSetup()) {
       this.router.navigate(['/auth/encryption-setup'], { replaceUrl: true });
     } else if (this.auth.needsUnlock()) {
       this.router.navigate(['/auth/unlock'], { replaceUrl: true });
