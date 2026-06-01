@@ -13,6 +13,7 @@ import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurrin
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { EnvelopeForm } from '../../components/envelope-form/envelope-form';
 import { CreditEnvelopeForm } from '../../components/credit-envelope-form/credit-envelope-form';
+import { MemberFilter } from '../../components/member-filter/member-filter';
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
@@ -28,6 +29,7 @@ type HistoryEntry = { readonly tx: EnvelopeTransaction; readonly balanceAfter: n
     ModalDialog,
     EnvelopeForm,
     CreditEnvelopeForm,
+    MemberFilter,
     Icon,
     TranslocoPipe,
   ],
@@ -48,36 +50,13 @@ type HistoryEntry = { readonly tx: EnvelopeTransaction; readonly balanceAfter: n
     </header>
 
     @if (activeMembers().length > 0) {
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-medium text-text-muted">{{ 'budget.envelope.filterLabel' | transloco }}</span>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-          [class.border-ib-blue]="filterMemberId() === null"
-          [class.bg-ib-blue]="filterMemberId() === null"
-          [class.text-canvas]="filterMemberId() === null"
-          [class.border-border]="filterMemberId() !== null"
-          [class.text-text-muted]="filterMemberId() !== null"
-          (click)="filterMemberId.set(null)"
-        >
-          {{ 'budget.envelope.filterAll' | transloco }}
-        </button>
-        @for (m of activeMembers(); track m.id) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
-            [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
-            [class.text-canvas]="filterMemberId() === m.id"
-            [class.text-text-muted]="filterMemberId() !== m.id"
-            (click)="filterMemberId.set(m.id)"
-          >
-            <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="filterMemberId() === m.id ? 'var(--color-canvas)' : memberMap().get(m.id)?.color"></span>
-            {{ m.firstName }}
-          </button>
-        }
-      </div>
+      <app-member-filter
+        [members]="activeMembers()"
+        [memberMap]="memberMap()"
+        labelKey="budget.envelope.filterLabel"
+        allKey="budget.envelope.filterAll"
+        [(selected)]="filterMemberId"
+      />
     }
 
     <section

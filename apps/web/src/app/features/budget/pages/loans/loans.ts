@@ -5,6 +5,7 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Loan } from '../../domain/models/loan.model';
 import { LoanTransaction } from '../../domain/models/loan-transaction.model';
+import { HistoryEntry, LoanStatus, LoanVM } from '../../domain/loan-vm';
 import { buildMemberMap } from '../../domain/member-map';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
@@ -13,26 +14,18 @@ import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurrin
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { LoanForm } from '../../components/loan-form/loan-form';
 import { RecordPaymentForm } from '../../components/record-payment-form/record-payment-form';
+import { MemberFilter } from '../../components/member-filter/member-filter';
+import { LoanCard } from '../../components/loan-card/loan-card';
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
-
-type HistoryEntry = { readonly tx: LoanTransaction; readonly balanceAfter: number };
-type LoanStatus = 'overdue' | 'dueSoon' | 'settled' | 'ongoing';
-type LoanVM = {
-  readonly loan: Loan;
-  readonly repaid: number;
-  readonly pct: number;
-  readonly entries: readonly HistoryEntry[];
-  readonly status: LoanStatus;
-};
 
 const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoing: 2, settled: 3 };
 
 @Component({
   selector: 'app-loans',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, Icon, TranslocoPipe],
+  imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, MemberFilter, LoanCard, Icon, TranslocoPipe],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3">
@@ -59,36 +52,13 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
     </header>
 
     @if (activeMembers().length > 0) {
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-medium text-text-muted">{{ 'budget.loan.filterLabel' | transloco }}</span>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-          [class.border-ib-blue]="filterMemberId() === null"
-          [class.bg-ib-blue]="filterMemberId() === null"
-          [class.text-canvas]="filterMemberId() === null"
-          [class.border-border]="filterMemberId() !== null"
-          [class.text-text-muted]="filterMemberId() !== null"
-          (click)="filterMemberId.set(null)"
-        >
-          {{ 'budget.loan.filterAll' | transloco }}
-        </button>
-        @for (m of activeMembers(); track m.id) {
-          <button
-            type="button"
-            class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            [style.border-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
-            [style.background-color]="filterMemberId() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
-            [class.text-canvas]="filterMemberId() === m.id"
-            [class.text-text-muted]="filterMemberId() !== m.id"
-            (click)="filterMemberId.set(m.id)"
-          >
-            <span class="inline-block h-2.5 w-2.5 rounded-full"
-                  [style.background-color]="filterMemberId() === m.id ? 'var(--color-canvas)' : memberMap().get(m.id)?.color"></span>
-            {{ m.firstName }}
-          </button>
-        }
-      </div>
+      <app-member-filter
+        [members]="activeMembers()"
+        [memberMap]="memberMap()"
+        labelKey="budget.loan.filterLabel"
+        allKey="budget.loan.filterAll"
+        [(selected)]="filterMemberId"
+      />
     }
 
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
@@ -107,159 +77,14 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       @if (lentVMs().length > 0) {
         <div class="grid grid-cols-1 md:grid-cols-2">
           @for (vm of lentVMs(); track vm.loan.id) {
-            <article class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition hover:bg-ib-blue/3">
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-ib-blue/10 text-ib-blue text-xs font-bold shrink-0">
-                    {{ vm.pct | number: '1.0-0' }}%
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-text-primary">{{ vm.loan.person }}</p>
-                    <div class="flex flex-wrap items-center gap-2 mt-0.5">
-                      @if (memberMap().get(vm.loan.memberId ?? ''); as mInfo) {
-                        <span class="inline-flex items-center gap-1 text-[10px] text-text-muted">
-                          <span class="inline-block h-2 w-2 rounded-full" [style.background-color]="mInfo.color"></span>
-                          {{ mInfo.name }}
-                        </span>
-                      }
-                      @if (vm.loan.dueDay) {
-                        <span class="rounded-md bg-raised px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
-                          {{ 'budget.loan.dueDayLabel' | transloco: { day: vm.loan.dueDay } }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="block text-lg font-mono font-bold text-ib-blue">{{ vm.loan.remaining | number: '1.2-2' }}<span class="text-sm ml-0.5">&euro;</span></span>
-                  <span class="text-[10px] text-text-muted">{{ 'budget.loan.remainingLabel' | transloco }}</span>
-                </div>
-              </div>
-
-              @if (vm.loan.description) {
-                <p class="text-[11px] text-text-muted mb-3">{{ vm.loan.description }}</p>
-              }
-
-              <!-- Status badge: text + icon, never colour alone -->
-              @switch (vm.status) {
-                @case ('overdue') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-red/10 px-2 py-0.5 text-[11px] font-semibold text-ib-red">
-                    <app-icon name="alert-triangle" size="12" /> {{ 'budget.loan.status.overdue' | transloco }}
-                  </span>
-                }
-                @case ('dueSoon') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-yellow/10 px-2 py-0.5 text-[11px] font-semibold text-ib-yellow">
-                    <app-icon name="clock" size="12" /> {{ 'budget.loan.status.dueSoon' | transloco }}
-                  </span>
-                }
-                @case ('settled') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-green/10 px-2 py-0.5 text-[11px] font-semibold text-ib-green">
-                    <app-icon name="check" size="12" /> {{ 'budget.loan.status.settled' | transloco }}
-                  </span>
-                }
-              }
-
-              <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.amount' | transloco }}</p>
-                  <p class="font-mono font-medium text-text-primary">{{ vm.loan.amount | number: '1.2-2' }}&euro;</p>
-                </div>
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.repaid' | transloco }}</p>
-                  <p class="font-mono font-medium text-ib-green">{{ vm.repaid | number: '1.2-2' }}&euro;</p>
-                </div>
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.remaining' | transloco }}</p>
-                  <p class="font-mono font-medium text-ib-blue">{{ vm.loan.remaining | number: '1.2-2' }}&euro;</p>
-                </div>
-              </div>
-
-              @if (vm.loan.date || vm.loan.dueDate) {
-                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                  <div>
-                    <p class="text-[10px] text-text-muted">{{ 'budget.loan.loanDate' | transloco }}</p>
-                    <p class="text-text-primary">{{ vm.loan.date | date: 'dd/MM/yyyy' }}</p>
-                  </div>
-                  @if (vm.loan.dueDate) {
-                    <div>
-                      <p class="text-[10px] text-text-muted">{{ 'budget.loan.dueDate' | transloco }}</p>
-                      <p class="text-text-primary">{{ vm.loan.dueDate | date: 'dd/MM/yyyy' }}</p>
-                    </div>
-                  }
-                </div>
-              }
-
-              <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                <span>{{ 'budget.loan.repayment' | transloco }}</span>
-                <span class="font-mono font-semibold">{{ vm.pct | number: '1.0-0' }}%</span>
-              </div>
-              <div class="h-2 rounded-full bg-hover overflow-hidden">
-                <div class="h-full rounded-full bg-ib-blue transition duration-500 ease-out" [style.width.%]="vm.pct > 100 ? 100 : vm.pct"></div>
-              </div>
-
-              <div class="mt-3 pt-3 border-t border-border/30">
-                <div class="mb-2 flex items-center justify-between">
-                  <span class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.loan.recentActivity' | transloco }}</span>
-                  @if (vm.entries.length > 0) {
-                    <button type="button" class="text-[10px] font-medium text-ib-cyan hover:underline" (click)="openHistoryModal(vm.loan)">
-                      {{ 'budget.loan.viewAll' | transloco }}
-                    </button>
-                  }
-                </div>
-                @if (vm.entries.length > 0) {
-                  <ul class="space-y-1">
-                    @for (entry of vm.entries.slice(0, 3); track entry.tx.id) {
-                      <li class="flex items-center justify-between gap-2 text-xs">
-                        <span class="flex min-w-0 items-center gap-1.5 text-text-muted">
-                          <app-icon name="banknote" size="12" class="text-ib-green" />
-                          {{ entry.tx.date | date: 'dd/MM/yy' }}
-                        </span>
-                        <span class="shrink-0 font-mono text-ib-green">+{{ entry.tx.amount | number: '1.2-2' }}&euro;</span>
-                      </li>
-                    }
-                  </ul>
-                } @else {
-                  <p class="text-xs text-text-muted">{{ 'budget.loan.noActivity' | transloco }}</p>
-                }
-              </div>
-
-              <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-border/30">
-                @if (vm.status !== 'settled') {
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-md bg-ib-blue/10 px-3 py-1.5 text-xs font-semibold text-ib-blue transition-colors hover:bg-ib-blue/20"
-                    [attr.aria-label]="'budget.loan.actions.repayAria' | transloco: { person: vm.loan.person }"
-                    (click)="openPaymentModal(vm.loan)"
-                  >
-                    <app-icon name="banknote" size="14" /> {{ 'budget.loan.actions.repay' | transloco }}
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-hover hover:text-ib-cyan"
-                  [attr.aria-label]="'budget.loan.actions.historyAria' | transloco: { person: vm.loan.person }"
-                  (click)="openHistoryModal(vm.loan)"
-                >
-                  <app-icon name="clock" size="14" /> {{ 'budget.loan.actions.history' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
-                  [attr.aria-label]="'budget.loan.actions.editLentAria' | transloco: { person: vm.loan.person }"
-                  (click)="openEditModal(vm.loan)"
-                >
-                  <app-icon name="pencil" size="14" /> {{ 'budget.loan.actions.edit' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-ib-red/10 hover:text-ib-red hover:border-ib-red/30"
-                  [attr.aria-label]="'budget.loan.actions.deleteLentAria' | transloco: { person: vm.loan.person }"
-                  (click)="deleteLoan(vm.loan.id)"
-                >
-                  <app-icon name="trash" size="14" /> {{ 'budget.loan.actions.delete' | transloco }}
-                </button>
-              </div>
-            </article>
+            <app-loan-card
+              [vm]="vm"
+              [member]="memberMap().get(vm.loan.memberId ?? '') ?? null"
+              (repay)="openPaymentModal($event)"
+              (history)="openHistoryModal($event)"
+              (edit)="openEditModal($event)"
+              (remove)="deleteLoan($event.id)"
+            />
           }
         </div>
       } @else {
@@ -293,158 +118,14 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       @if (borrowedVMs().length > 0) {
         <div class="grid grid-cols-1 md:grid-cols-2">
           @for (vm of borrowedVMs(); track vm.loan.id) {
-            <article class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition hover:bg-ib-orange/3">
-              <div class="flex items-start justify-between mb-3">
-                <div class="flex items-center gap-3">
-                  <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-ib-orange/10 text-ib-orange text-xs font-bold shrink-0">
-                    {{ vm.pct | number: '1.0-0' }}%
-                  </div>
-                  <div>
-                    <p class="text-sm font-semibold text-text-primary">{{ vm.loan.person }}</p>
-                    <div class="flex flex-wrap items-center gap-2 mt-0.5">
-                      @if (memberMap().get(vm.loan.memberId ?? ''); as mInfo) {
-                        <span class="inline-flex items-center gap-1 text-[10px] text-text-muted">
-                          <span class="inline-block h-2 w-2 rounded-full" [style.background-color]="mInfo.color"></span>
-                          {{ mInfo.name }}
-                        </span>
-                      }
-                      @if (vm.loan.dueDay) {
-                        <span class="rounded-md bg-raised px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
-                          {{ 'budget.loan.dueDayLabel' | transloco: { day: vm.loan.dueDay } }}
-                        </span>
-                      }
-                    </div>
-                  </div>
-                </div>
-                <div class="text-right">
-                  <span class="block text-lg font-mono font-bold text-ib-red">{{ vm.loan.remaining | number: '1.2-2' }}<span class="text-sm ml-0.5">&euro;</span></span>
-                  <span class="text-[10px] text-text-muted">{{ 'budget.loan.remainingLabel' | transloco }}</span>
-                </div>
-              </div>
-
-              @if (vm.loan.description) {
-                <p class="text-[11px] text-text-muted mb-3">{{ vm.loan.description }}</p>
-              }
-
-              @switch (vm.status) {
-                @case ('overdue') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-red/10 px-2 py-0.5 text-[11px] font-semibold text-ib-red">
-                    <app-icon name="alert-triangle" size="12" /> {{ 'budget.loan.status.overdue' | transloco }}
-                  </span>
-                }
-                @case ('dueSoon') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-yellow/10 px-2 py-0.5 text-[11px] font-semibold text-ib-yellow">
-                    <app-icon name="clock" size="12" /> {{ 'budget.loan.status.dueSoon' | transloco }}
-                  </span>
-                }
-                @case ('settled') {
-                  <span class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-green/10 px-2 py-0.5 text-[11px] font-semibold text-ib-green">
-                    <app-icon name="check" size="12" /> {{ 'budget.loan.status.settled' | transloco }}
-                  </span>
-                }
-              }
-
-              <div class="grid grid-cols-3 gap-2 text-xs mb-3">
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.amount' | transloco }}</p>
-                  <p class="font-mono font-medium text-text-primary">{{ vm.loan.amount | number: '1.2-2' }}&euro;</p>
-                </div>
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.repaid' | transloco }}</p>
-                  <p class="font-mono font-medium text-ib-green">{{ vm.repaid | number: '1.2-2' }}&euro;</p>
-                </div>
-                <div class="rounded-lg bg-canvas p-2 border border-border/30">
-                  <p class="text-[10px] text-text-muted">{{ 'budget.loan.remaining' | transloco }}</p>
-                  <p class="font-mono font-medium text-ib-red">{{ vm.loan.remaining | number: '1.2-2' }}&euro;</p>
-                </div>
-              </div>
-
-              @if (vm.loan.date || vm.loan.dueDate) {
-                <div class="grid grid-cols-2 gap-2 text-xs mb-3">
-                  <div>
-                    <p class="text-[10px] text-text-muted">{{ 'budget.loan.borrowDate' | transloco }}</p>
-                    <p class="text-text-primary">{{ vm.loan.date | date: 'dd/MM/yyyy' }}</p>
-                  </div>
-                  @if (vm.loan.dueDate) {
-                    <div>
-                      <p class="text-[10px] text-text-muted">{{ 'budget.loan.dueDate' | transloco }}</p>
-                      <p class="text-text-primary">{{ vm.loan.dueDate | date: 'dd/MM/yyyy' }}</p>
-                    </div>
-                  }
-                </div>
-              }
-
-              <div class="flex justify-between text-[10px] text-text-muted mb-1">
-                <span>{{ 'budget.loan.repayment' | transloco }}</span>
-                <span class="font-mono font-semibold">{{ vm.pct | number: '1.0-0' }}%</span>
-              </div>
-              <div class="h-2 rounded-full bg-hover overflow-hidden">
-                <div class="h-full rounded-full bg-ib-orange transition duration-500 ease-out" [style.width.%]="vm.pct > 100 ? 100 : vm.pct"></div>
-              </div>
-
-              <div class="mt-3 pt-3 border-t border-border/30">
-                <div class="mb-2 flex items-center justify-between">
-                  <span class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.loan.recentActivity' | transloco }}</span>
-                  @if (vm.entries.length > 0) {
-                    <button type="button" class="text-[10px] font-medium text-ib-cyan hover:underline" (click)="openHistoryModal(vm.loan)">
-                      {{ 'budget.loan.viewAll' | transloco }}
-                    </button>
-                  }
-                </div>
-                @if (vm.entries.length > 0) {
-                  <ul class="space-y-1">
-                    @for (entry of vm.entries.slice(0, 3); track entry.tx.id) {
-                      <li class="flex items-center justify-between gap-2 text-xs">
-                        <span class="flex min-w-0 items-center gap-1.5 text-text-muted">
-                          <app-icon name="banknote" size="12" class="text-ib-green" />
-                          {{ entry.tx.date | date: 'dd/MM/yy' }}
-                        </span>
-                        <span class="shrink-0 font-mono text-ib-green">+{{ entry.tx.amount | number: '1.2-2' }}&euro;</span>
-                      </li>
-                    }
-                  </ul>
-                } @else {
-                  <p class="text-xs text-text-muted">{{ 'budget.loan.noActivity' | transloco }}</p>
-                }
-              </div>
-
-              <div class="flex flex-wrap items-center justify-end gap-2 mt-3 pt-3 border-t border-border/30">
-                @if (vm.status !== 'settled') {
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-md bg-ib-orange/10 px-3 py-1.5 text-xs font-semibold text-ib-orange transition-colors hover:bg-ib-orange/20"
-                    [attr.aria-label]="'budget.loan.actions.repayAria' | transloco: { person: vm.loan.person }"
-                    (click)="openPaymentModal(vm.loan)"
-                  >
-                    <app-icon name="banknote" size="14" /> {{ 'budget.loan.actions.repay' | transloco }}
-                  </button>
-                }
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-hover hover:text-ib-cyan"
-                  [attr.aria-label]="'budget.loan.actions.historyAria' | transloco: { person: vm.loan.person }"
-                  (click)="openHistoryModal(vm.loan)"
-                >
-                  <app-icon name="clock" size="14" /> {{ 'budget.loan.actions.history' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
-                  [attr.aria-label]="'budget.loan.actions.editBorrowedAria' | transloco: { person: vm.loan.person }"
-                  (click)="openEditModal(vm.loan)"
-                >
-                  <app-icon name="pencil" size="14" /> {{ 'budget.loan.actions.edit' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-xs font-medium text-text-muted transition-colors hover:bg-ib-red/10 hover:text-ib-red hover:border-ib-red/30"
-                  [attr.aria-label]="'budget.loan.actions.deleteBorrowedAria' | transloco: { person: vm.loan.person }"
-                  (click)="deleteLoan(vm.loan.id)"
-                >
-                  <app-icon name="trash" size="14" /> {{ 'budget.loan.actions.delete' | transloco }}
-                </button>
-              </div>
-            </article>
+            <app-loan-card
+              [vm]="vm"
+              [member]="memberMap().get(vm.loan.memberId ?? '') ?? null"
+              (repay)="openPaymentModal($event)"
+              (history)="openHistoryModal($event)"
+              (edit)="openEditModal($event)"
+              (remove)="deleteLoan($event.id)"
+            />
           }
         </div>
       } @else {
