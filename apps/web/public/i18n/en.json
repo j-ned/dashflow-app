@@ -83,6 +83,7 @@
       "verify": "Verify",
       "verifying": "Verifying...",
       "back": "Back",
+      "success": "Signed in successfully",
       "errors": {
         "oauthFailed": "OAuth sign-in error.",
         "oauthExpired": "OAuth session expired, please try again.",
@@ -92,6 +93,9 @@
         "invalidCredentials": "Invalid email or password.",
         "invalidTotp": "Invalid 2FA code."
       }
+    },
+    "logout": {
+      "success": "Signed out successfully"
     },
     "register": {
       "subtitle": "Create your account",

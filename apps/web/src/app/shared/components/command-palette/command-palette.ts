@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 import { AuthStore } from '@features/auth/domain/auth.store';
+import { Toaster } from '@shared/components/toast/toast';
 
 // ── Types ──
 
@@ -224,6 +225,7 @@ export class CommandPalette {
   private readonly router = inject(Router);
   private readonly _i18n = inject(TranslocoService);
   private readonly auth = inject(AuthStore);
+  private readonly toaster = inject(Toaster);
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
   private readonly searchInputRef = viewChild.required<ElementRef<HTMLInputElement>>('searchInput');
 
@@ -382,6 +384,7 @@ export class CommandPalette {
 
   private async logout(): Promise<void> {
     await this.auth.logout();
+    this.toaster.success(this._i18n.translate('auth.logout.success'));
     await this.router.navigate(['/']);
   }
 

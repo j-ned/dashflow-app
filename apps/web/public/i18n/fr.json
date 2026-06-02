@@ -83,6 +83,7 @@
       "verify": "Vérifier",
       "verifying": "Vérification...",
       "back": "Retour",
+      "success": "Connexion réussie",
       "errors": {
         "oauthFailed": "Erreur lors de la connexion OAuth.",
         "oauthExpired": "La session OAuth a expiré, réessayez.",
@@ -92,6 +93,9 @@
         "invalidCredentials": "Email ou mot de passe incorrect.",
         "invalidTotp": "Code 2FA invalide."
       }
+    },
+    "logout": {
+      "success": "Déconnexion réussie"
     },
     "register": {
       "subtitle": "Créez votre compte",

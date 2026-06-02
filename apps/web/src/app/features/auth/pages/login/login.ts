@@ -5,6 +5,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { environment } from '@env/environment';
+import { Toaster } from '@shared/components/toast/toast';
 
 type LoginFormShape = {
   email: FormControl<string>;
@@ -174,6 +175,7 @@ export class Login {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly _i18n = inject(TranslocoService);
+  private readonly toaster = inject(Toaster);
 
   protected readonly googleOAuthUrl = `${environment.apiUrl}/auth/oauth/google`;
   protected readonly showPassword = signal(false);
@@ -275,6 +277,7 @@ export class Login {
   }
 
   private redirectAfterLogin(): void {
+    this.toaster.success(this._i18n.translate('auth.login.success'));
     // Use the store computeds (which exempt demo accounts) rather than a raw
     // encryptionVersion check, so the demo account lands on /budget like the guard expects.
     if (this.auth.needsEncryptionSetup()) {
