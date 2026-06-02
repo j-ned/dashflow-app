@@ -7,6 +7,7 @@ import { decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/
 import { Loan } from '../domain/models/loan.model';
 import { LoanTransaction } from '../domain/models/loan-transaction.model';
 import { LoanGateway } from '../domain/gateways/loan.gateway';
+import { addMoney } from '../domain/money';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'memberId', 'direction'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'loanId', 'createdAt'] as const;
@@ -54,7 +55,7 @@ export class HttpLoanGateway implements LoanGateway {
     // Compute new remaining client-side, then update full loan + add transaction.
     return this.getById(id).pipe(
       switchMap((loan) => {
-        const newRemaining = Math.max(0, loan.remaining - amount);
+        const newRemaining = Math.max(0, addMoney(loan.remaining, -amount));
         const { id: _, ...loanData } = loan;
         return this.update(id, { ...loanData, remaining: newRemaining }).pipe(
           switchMap((updated) => this.addTransaction(id, { amount, date }).pipe(map(() => updated))),

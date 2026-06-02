@@ -174,7 +174,11 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
                           <span class="inline-block h-3 w-3 rounded-full" [style.background-color]="da.dot"></span>
                           <span class="inline-block h-4 w-4 rounded-md" [style.background-color]="da.color"></span>
                         </span>
-                        <span class="text-sm font-medium text-text-primary">{{ da.account.name }}</span>
+                        <input type="text"
+                               class="w-44 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-text-primary hover:border-border focus:border-border focus:bg-raised focus-visible:outline-none"
+                               [value]="da.account.name"
+                               [attr.aria-label]="'budget.bankAccount.accountModal.renameAria' | transloco: { name: da.account.name }"
+                               (change)="updateAccountName(da.account.id, $event)" />
                       </div>
                       <button type="button"
                               class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
@@ -605,6 +609,22 @@ export class BankAccount {
       this._refreshAccounts.update(v => v + 1);
     } catch {
       this.toaster.error(this._i18n.translate('budget.bankAccount.messages.balanceUpdateError'));
+    }
+  }
+
+  protected async updateAccountName(accountId: string, event: Event) {
+    const input = event.target as HTMLInputElement;
+    const name = input.value.trim();
+    if (!name) {
+      this._refreshAccounts.update(v => v + 1); // annule la saisie vide
+      return;
+    }
+    try {
+      await lastValueFrom(this.accountGateway.update(accountId, { name }));
+      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.nameUpdated'));
+      this._refreshAccounts.update(v => v + 1);
+    } catch {
+      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.nameUpdateError'));
     }
   }
 

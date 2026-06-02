@@ -183,6 +183,12 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                     <span class="text-[11px] text-text-muted">{{ 'budget.salaryArchive.noPayslip' | transloco }}</span>
                   }
                   <button type="button"
+                          class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary hover:border-ib-cyan/30 transition-colors"
+                          [attr.aria-label]="'budget.salaryArchive.editAria' | transloco: { month: monthLabel(archive.month) }"
+                          (click)="openEditModal(archive)">
+                    <app-icon name="pencil" size="14" /> {{ 'budget.actions.edit' | transloco }}
+                  </button>
+                  <button type="button"
                           class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
                           [attr.aria-label]="'budget.salaryArchive.deleteAria' | transloco: { month: monthLabel(archive.month) }"
                           (click)="deleteArchive(archive)">
@@ -207,8 +213,8 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       </div>
     }
 
-    <app-modal-dialog #createModal [title]="'budget.salaryArchive.modal.title' | transloco" (closed)="resetForm()">
-      <form (ngSubmit)="createArchive()" class="space-y-4">
+    <app-modal-dialog #createModal [title]="(editingId() ? 'budget.salaryArchive.modal.editTitle' : 'budget.salaryArchive.modal.title') | transloco" (closed)="resetForm()">
+      <form (ngSubmit)="saveArchive()" class="space-y-4">
         <div class="grid grid-cols-2 gap-4">
           <div>
             <label for="arch-month" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.salaryArchive.modal.month' | transloco }} <span aria-hidden="true">*</span></label>
@@ -240,6 +246,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
           </div>
         </div>
 
+        @if (!editingId()) {
         <div>
           <label class="flex items-center gap-2 text-sm text-text-muted mb-2">
             <input type="checkbox" [ngModel]="useCurrentSpendings()" (ngModelChange)="useCurrentSpendings.set($event)" name="useCurrent"
@@ -269,6 +276,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
           <input id="arch-payslip" type="file" accept=".pdf,.jpg,.jpeg,.png,.webp" (change)="onFileSelected($event)"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary file:mr-3 file:rounded-md file:border-0 file:bg-ib-cyan/10 file:px-3 file:py-1 file:text-xs file:font-medium file:text-ib-cyan" />
         </div>
+        }
 
         <footer class="flex justify-end gap-3 pt-2">
           <button type="button"
@@ -278,7 +286,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
           </button>
           <button type="submit" [disabled]="!formMonth() || !formSalary()"
                   class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50">
-            {{ 'budget.salaryArchive.modal.submit' | transloco }}
+            {{ (editingId() ? 'budget.salaryArchive.modal.editSubmit' : 'budget.salaryArchive.modal.submit') | transloco }}
           </button>
         </footer>
       </form>
@@ -325,6 +333,8 @@ export class SalaryArchives {
   protected readonly formTotalExpenses = signal<number | null>(null);
   protected readonly formAccountId = signal<string | null>(null);
   protected readonly useCurrentSpendings = signal(true);
+  protected readonly editingId = signal<string | null>(null);
+  private _editingArchive: SalaryArchive | null = null;
   private _selectedFile: File | null = null;
 
   protected readonly importedSpendings = computed(() => {
@@ -386,6 +396,46 @@ export class SalaryArchives {
     this.createModalRef().open();
   }
 
+  protected openEditModal(archive: SalaryArchive) {
+    this.editingId.set(archive.id);
+    this._editingArchive = archive;
+    this.formMonth.set(archive.month);
+    this.formSalary.set(archive.salary);
+    this.formTotalExpenses.set(archive.totalExpenses);
+    this.formAccountId.set(archive.accountId);
+    this.useCurrentSpendings.set(false);
+    this.createModalRef().open();
+  }
+
+  protected saveArchive() {
+    return this.editingId() ? this.updateArchive() : this.createArchive();
+  }
+
+  private async updateArchive() {
+    const id = this.editingId();
+    const original = this._editingArchive;
+    const month = this.formMonth();
+    const salary = this.formSalary();
+    if (!id || !original || !month || !salary) return;
+
+    // Conserve dépenses + fiche de paie, n'édite que mois / salaire / charges / compte.
+    const updated: SalaryArchive = {
+      ...original,
+      month,
+      salary,
+      totalExpenses: this.formTotalExpenses() ?? 0,
+      accountId: this.formAccountId(),
+    };
+    try {
+      await lastValueFrom(this.gateway.update(id, updated));
+      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.updated'));
+      this.createModalRef().close();
+      this._refresh.update(v => v + 1);
+    } catch {
+      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.updateError'));
+    }
+  }
+
   protected async createArchive() {
     const month = this.formMonth();
     const salary = this.formSalary();
@@ -434,6 +484,8 @@ export class SalaryArchives {
     this.formTotalExpenses.set(null);
     this.formAccountId.set(null);
     this.useCurrentSpendings.set(true);
+    this.editingId.set(null);
+    this._editingArchive = null;
     this._selectedFile = null;
   }
 

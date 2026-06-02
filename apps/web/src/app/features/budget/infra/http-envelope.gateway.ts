@@ -7,6 +7,7 @@ import { decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/
 import { Envelope } from '../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../domain/models/envelope-transaction.model';
 import { EnvelopeGateway } from '../domain/gateways/envelope.gateway';
+import { addMoney } from '../domain/money';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'memberId'] as const;
 const TX_CLEARTEXT_KEYS = ['id', 'envelopeId', 'createdAt'] as const;
@@ -58,7 +59,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       memberId: envelope.memberId,
       name: envelope.name,
       type: envelope.type,
-      balance: Number(envelope.balance) + amount,
+      balance: addMoney(Number(envelope.balance), amount),
       target: envelope.target,
       color: envelope.color,
       dueDay: envelope.dueDay,

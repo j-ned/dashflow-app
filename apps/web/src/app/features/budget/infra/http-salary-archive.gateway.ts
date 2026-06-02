@@ -56,6 +56,27 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
     return decryptOne<SalaryArchive>(response$, key);
   }
 
+  update(id: string, archive: SalaryArchive): Observable<SalaryArchive> {
+    const key = this.crypto.getMasterKey();
+    // On renvoie l'intégralité des champs JSON : en E2EE le PUT remplace tout encryptedData,
+    // donc dépenses + clé de fiche de paie doivent être ré-incluses pour être conservées.
+    const fields: Record<string, unknown> = {
+      month: archive.month,
+      salary: String(archive.salary),
+      totalExpenses: String(archive.totalExpenses),
+      totalSpendings: String(archive.totalSpendings),
+      spendings: archive.spendings,
+      accountId: archive.accountId,
+      payslipKey: archive.payslipKey,
+    };
+    if (!key) return this.api.put(`/salary-archives/${id}`, fields);
+
+    const response$ = from(encryptEntity(fields, CLEARTEXT_KEYS, key)).pipe(
+      switchMap((encrypted) => this.api.put<ApiRow>(`/salary-archives/${id}`, encrypted)),
+    );
+    return decryptOne<SalaryArchive>(response$, key);
+  }
+
   delete(id: string): Observable<void> {
     return this.api.delete(`/salary-archives/${id}`);
   }

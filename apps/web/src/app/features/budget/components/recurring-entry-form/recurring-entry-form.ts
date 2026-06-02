@@ -7,6 +7,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount } from '../../domain/models/bank-account.model';
 import { Member } from '../../domain/models/member.model';
+import { BUDGET_CATEGORIES } from '../../domain/categories';
 import { Icon } from '@shared/components/icon/icon';
 
 type RecurringEntryFormShape = {
@@ -186,9 +187,14 @@ type RecurringEntryFormShape = {
 
         <div>
           <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.category' | transloco }}</label>
-          <input id="re-category" type="text" formControlName="category"
+          <input id="re-category" type="text" formControlName="category" list="re-category-options"
                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                  [placeholder]="'budget.recurringForm.categoryPlaceholder' | transloco" />
+          <datalist id="re-category-options">
+            @for (cat of categorySuggestions; track cat.key) {
+              <option [value]="cat.label"></option>
+            }
+          </datalist>
         </div>
 
         @if (members().length > 0) {
@@ -312,6 +318,11 @@ export class RecurringEntryForm {
   });
 
   protected readonly hasExistingPayslip = computed(() => !!this.initial()?.payslipKey);
+
+  // Suggestions de catégories connues (hors catégories internes auto : enveloppe/remboursement/autre).
+  protected readonly categorySuggestions = BUDGET_CATEGORIES.filter(
+    (c) => c.key !== 'other' && c.key !== 'envelope' && c.key !== 'repayment',
+  );
 
   private readonly _i18n = inject(TranslocoService);
   protected readonly labelPlaceholder = computed(() => {

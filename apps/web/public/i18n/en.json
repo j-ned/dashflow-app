@@ -679,6 +679,7 @@
         "balanceHint": "Current balance of your bank account",
         "colorsAuto": "Colors are assigned automatically.",
         "deleteAria": "Delete account {{name}}",
+        "renameAria": "Rename account {{name}}",
         "deleteTitle": "Delete — {{name}}"
       },
       "createTitles": {
@@ -702,6 +703,8 @@
         "accountCreateError": "Error creating account",
         "balanceUpdated": "Initial balance updated",
         "balanceUpdateError": "Error updating",
+        "nameUpdated": "Account renamed",
+        "nameUpdateError": "Error renaming account",
         "accountDeleted": "Account deleted",
         "accountDeleteError": "Error deleting account",
         "accountDeleteConfirmTitle": "Delete account",
@@ -978,10 +981,12 @@
       "noPayslip": "No payslip",
       "deleteTitle": "Delete — {{month}}",
       "deleteAria": "Delete archive {{month}}",
+      "editAria": "Edit archive {{month}}",
       "empty": "No archive yet",
       "emptyHint": "Archive your past months to keep a history",
       "modal": {
         "title": "Archive a month",
+        "editTitle": "Edit archive",
         "month": "Month",
         "salary": "Net salary",
         "fixedCharges": "Fixed charges",
@@ -990,11 +995,14 @@
         "importSpendings": "Import the month's spending from the account",
         "total": "Total",
         "payslip": "Payslip (PDF/image)",
-        "submit": "Archive"
+        "submit": "Archive",
+        "editSubmit": "Save"
       },
       "messages": {
         "created": "Archive created",
         "createError": "Error creating archive",
+        "updated": "Archive updated",
+        "updateError": "Error updating archive",
         "deleted": "Archive deleted",
         "deleteError": "Error deleting archive",
         "deleteConfirmTitle": "Delete archive",

@@ -12,34 +12,7 @@ import { SalaryArchiveGateway } from '@features/budget/domain/gateways/salary-ar
 import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
-
-const CATEGORY_COLORS: Record<string, string> = {
-  'Logement': 'var(--color-ib-blue)',
-  'Transport': 'var(--color-ib-cyan)',
-  'Alimentation': 'var(--color-ib-green)',
-  'Santé': 'var(--color-ib-red)',
-  'Loisirs': 'var(--color-ib-purple)',
-  'Abonnement': 'var(--color-ib-orange)',
-  'Assurance': 'var(--color-ib-yellow)',
-  'Enveloppe': 'var(--color-ib-cyan)',
-  'Remboursement': 'var(--color-ib-pink)',
-};
-
-const KNOWN_CATEGORY_KEYS: Record<string, string> = {
-  'Logement': 'budget.analytics.category.housing',
-  'Transport': 'budget.analytics.category.transport',
-  'Alimentation': 'budget.analytics.category.food',
-  'Santé': 'budget.analytics.category.health',
-  'Loisirs': 'budget.analytics.category.leisure',
-  'Abonnement': 'budget.analytics.category.subscription',
-  'Assurance': 'budget.analytics.category.insurance',
-  'Enveloppe': 'budget.analytics.category.envelope',
-  'Remboursement': 'budget.analytics.category.repayment',
-};
-
-function categoryColor(cat: string): string {
-  return CATEGORY_COLORS[cat] ?? 'var(--color-text-muted)';
-}
+import { normalizeCategory } from '@features/budget/domain/categories';
 
 type Forecast = {
   readonly label: string;
@@ -201,15 +174,6 @@ export class BudgetAnalytics {
     return `${monthName} ${y.slice(2)}`;
   }
 
-  private categoryLabel(cat: string): string {
-    const key = KNOWN_CATEGORY_KEYS[cat];
-    return key ? this._i18n.translate(key) : cat;
-  }
-
-  private otherCategoryLabel(): string {
-    return this._i18n.translate('budget.analytics.category.other');
-  }
-
   private readonly allData = toSignal(
     forkJoin({
       archives: this.getArchives.getAll(),
@@ -246,13 +210,13 @@ export class BudgetAnalytics {
 
   private readonly monthlyEnvelopeCredits = computed(() =>
     this.entries()
-      .filter(e => e.type === 'spending' && e.category === 'Enveloppe')
+      .filter(e => e.type === 'spending' && normalizeCategory(e.category).key === 'envelope')
       .reduce((s, e) => s + Number(e.amount), 0),
   );
 
   private readonly monthlyLoanPayments = computed(() =>
     this.entries()
-      .filter(e => e.type === 'spending' && e.category === 'Remboursement')
+      .filter(e => e.type === 'spending' && normalizeCategory(e.category).key === 'repayment')
       .reduce((s, e) => s + Number(e.amount), 0),
   );
 
@@ -328,22 +292,21 @@ export class BudgetAnalytics {
 
   protected readonly expenseByCategory = computed<DonutSlice[]>(() => {
     const expenses = this.entries().filter(e => e.type === 'expense' || e.type === 'annual_expense');
-    const catMap = new Map<string, number>();
+    // Regroupe par catégorie NORMALISÉE (clé) : « Alimentation » et « alimentation » fusionnent.
+    const byKey = new Map<string, { i18nKey: string; color: string; value: number }>();
 
     for (const e of expenses) {
-      const cat = e.category || 'Autre';
+      const category = normalizeCategory(e.category);
       const amount = e.type === 'annual_expense' ? Number(e.amount) / 12 : Number(e.amount);
-      catMap.set(cat, (catMap.get(cat) ?? 0) + amount);
+      const acc = byKey.get(category.key);
+      if (acc) acc.value += amount;
+      else byKey.set(category.key, { i18nKey: category.i18nKey, color: category.color, value: amount });
     }
 
-    return [...catMap.entries()]
-      .sort((a, b) => b[1] - a[1])
+    return [...byKey.values()]
+      .sort((a, b) => b.value - a.value)
       .slice(0, 8)
-      .map(([rawLabel, value]) => ({
-        label: rawLabel === 'Autre' ? this.otherCategoryLabel() : this.categoryLabel(rawLabel),
-        value,
-        color: categoryColor(rawLabel),
-      }));
+      .map(({ i18nKey, color, value }) => ({ label: this._i18n.translate(i18nKey), value, color }));
   });
 
   protected readonly totalExpensesLabel = computed(() => {

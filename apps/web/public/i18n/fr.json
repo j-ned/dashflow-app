@@ -679,7 +679,8 @@
         "balanceHint": "Solde actuel de votre compte en banque",
         "colorsAuto": "Les couleurs sont attribuées automatiquement.",
         "deleteAria": "Supprimer le compte {{name}}",
-        "deleteTitle": "Supprimer — {{name}}"
+        "deleteTitle": "Supprimer — {{name}}",
+        "renameAria": "Renommer le compte {{name}}"
       },
       "createTitles": {
         "income": "Nouveau revenu",
@@ -702,6 +703,8 @@
         "accountCreateError": "Erreur lors de la création du compte",
         "balanceUpdated": "Solde initial mis à jour",
         "balanceUpdateError": "Erreur lors de la mise à jour",
+        "nameUpdated": "Compte renommé",
+        "nameUpdateError": "Erreur lors du renommage",
         "accountDeleted": "Compte supprimé",
         "accountDeleteError": "Erreur lors de la suppression du compte",
         "accountDeleteConfirmTitle": "Supprimer le compte",
@@ -978,10 +981,12 @@
       "noPayslip": "Pas de fiche de paie",
       "deleteTitle": "Supprimer — {{month}}",
       "deleteAria": "Supprimer archive {{month}}",
+      "editAria": "Modifier archive {{month}}",
       "empty": "Aucune archive pour le moment",
       "emptyHint": "Archivez vos mois passés pour garder un historique",
       "modal": {
         "title": "Archiver un mois",
+        "editTitle": "Modifier l'archive",
         "month": "Mois",
         "salary": "Salaire net",
         "fixedCharges": "Charges fixes",
@@ -990,11 +995,14 @@
         "importSpendings": "Importer les dépenses du mois depuis le compte",
         "total": "Total",
         "payslip": "Fiche de paie (PDF/image)",
-        "submit": "Archiver"
+        "submit": "Archiver",
+        "editSubmit": "Enregistrer"
       },
       "messages": {
         "created": "Archive créée",
         "createError": "Erreur lors de la création de l'archive",
+        "updated": "Archive mise à jour",
+        "updateError": "Erreur lors de la mise à jour de l'archive",
         "deleted": "Archive supprimée",
         "deleteError": "Erreur lors de la suppression",
         "deleteConfirmTitle": "Supprimer l'archive",
