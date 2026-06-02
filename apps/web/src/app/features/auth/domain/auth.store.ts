@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { firstValueFrom } from 'rxjs';
+import { environment } from '@env/environment';
 
 export type KeyMaterial = {
   salt: string;
@@ -44,7 +45,7 @@ export class AuthStore {
   readonly avatarUrl = computed(() => {
     const url = this._user()?.avatarUrl;
     if (!url) return null;
-    return url;
+    return `${environment.apiUrl}${url}`;
   });
   readonly totpEnabled = computed(() => this._user()?.totpEnabled ?? false);
   readonly userInitial = computed(() => {

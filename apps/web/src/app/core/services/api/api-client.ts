@@ -2,11 +2,12 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { Observable, throwError } from 'rxjs';
 import { catchError } from 'rxjs/operators';
+import { environment } from '@env/environment';
 
 @Injectable({ providedIn: 'root' })
 export class ApiClient {
   private readonly http = inject(HttpClient);
-  private readonly baseUrl = '/api';
+  private readonly baseUrl = environment.apiUrl;
 
   get<T>(path: string): Observable<T> {
     return this.http.get<T>(`${this.baseUrl}${path}`).pipe(catchError((e) => this.handleError(e)));

@@ -4,6 +4,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
+import { environment } from '@env/environment';
 
 type LoginFormShape = {
   email: FormControl<string>;
@@ -100,7 +101,7 @@ type LoginFormShape = {
           </div>
 
           <div class="flex flex-col gap-2">
-            <a href="/api/auth/oauth/google"
+            <a [href]="googleOAuthUrl"
                class="flex w-full items-center justify-center gap-2 rounded-lg border border-border bg-canvas px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
               <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
                 <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/>
@@ -174,6 +175,7 @@ export class Login {
   private readonly route = inject(ActivatedRoute);
   private readonly _i18n = inject(TranslocoService);
 
+  protected readonly googleOAuthUrl = `${environment.apiUrl}/auth/oauth/google`;
   protected readonly showPassword = signal(false);
   protected readonly loading = signal(false);
   protected readonly error = signal('');

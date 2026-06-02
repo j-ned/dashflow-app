@@ -43,7 +43,13 @@
                   "maximumError": "8kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "fileReplacements": [
+                {
+                  "replace": "src/environments/environment.ts",
+                  "with": "src/environments/environment.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
@@ -60,8 +66,7 @@
               "buildTarget": "dash-flow:build:production"
             },
             "development": {
-              "buildTarget": "dash-flow:build:development",
-              "proxyConfig": "proxy.conf.json"
+              "buildTarget": "dash-flow:build:development"
             }
           },
           "defaultConfiguration": "development"
