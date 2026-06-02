@@ -28,7 +28,9 @@ export const patients = pgTable('patients', {
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   firstName: varchar('first_name', { length: 255 }).notNull(),
   lastName: varchar('last_name', { length: 255 }).notNull(),
-  birthDate: date('birth_date').notNull(),
+  // Nullable : un membre du foyer créé côté budget (core) n'a pas de date de naissance ;
+  // seul un patient médical (Premium) la renseigne.
+  birthDate: date('birth_date'),
   color: varchar('color', { length: 7 }),
   notes: text('notes'),
   encryptedData: text('encrypted_data'),
