@@ -3,4 +3,5 @@ export type LoanTransaction = {
   readonly loanId: string;
   readonly amount: number;
   readonly date: string;
+  readonly note: string | null;
 };

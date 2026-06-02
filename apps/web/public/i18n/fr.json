@@ -943,6 +943,8 @@
         "legend": "Remboursement",
         "amount": "Montant du remboursement",
         "date": "Date",
+        "note": "Note",
+        "notePlaceholder": "Optionnel (ex. virement, espèces…)",
         "deductFromAccount": "Décompter du compte",
         "noDeduction": "Ne pas décompter",
         "deductionHint": "Créera une dépense sur le compte sélectionné"

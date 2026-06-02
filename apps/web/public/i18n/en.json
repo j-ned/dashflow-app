@@ -943,6 +943,8 @@
         "legend": "Repayment",
         "amount": "Repayment amount",
         "date": "Date",
+        "note": "Note",
+        "notePlaceholder": "Optional (e.g. transfer, cash…)",
         "deductFromAccount": "Deduct from account",
         "noDeduction": "Do not deduct",
         "deductionHint": "Will create an expense on the selected account"

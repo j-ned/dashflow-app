@@ -47,9 +47,9 @@ export class HttpLoanGateway implements LoanGateway {
       (body) => this.api.put<ApiRow>(`/loans/${id}`, body));
   }
 
-  recordPayment(id: string, amount: number, date: string): Observable<Loan> {
+  recordPayment(id: string, amount: number, date: string, note: string | null): Observable<Loan> {
     const key = this.crypto.getMasterKey();
-    if (!key) return this.api.patch(`/loans/${id}/payment`, { amount, date });
+    if (!key) return this.api.patch(`/loans/${id}/payment`, { amount, date, note });
 
     // With E2EE, backend can't read remaining/amount from encryptedData.
     // Compute new remaining client-side, then update full loan + add transaction.
@@ -58,7 +58,7 @@ export class HttpLoanGateway implements LoanGateway {
         const newRemaining = Math.max(0, addMoney(loan.remaining, -amount));
         const { id: _, ...loanData } = loan;
         return this.update(id, { ...loanData, remaining: newRemaining }).pipe(
-          switchMap((updated) => this.addTransaction(id, { amount, date }).pipe(map(() => updated))),
+          switchMap((updated) => this.addTransaction(id, { amount, date, note }).pipe(map(() => updated))),
         );
       }),
     );
@@ -72,7 +72,7 @@ export class HttpLoanGateway implements LoanGateway {
     return decryptList(this.api.get<ApiRow[]>('/loans/transactions/all'), this.crypto.getMasterKey());
   }
 
-  addTransaction(loanId: string, data: { amount: number; date: string }): Observable<LoanTransaction> {
+  addTransaction(loanId: string, data: { amount: number; date: string; note: string | null }): Observable<LoanTransaction> {
     return mutateEncrypted(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, this.crypto.getMasterKey(),
       (body) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, body));
   }

@@ -252,7 +252,12 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
                   >
                     <app-icon name="banknote" size="14" class="text-ib-green" />
                   </span>
-                  <p class="font-mono text-sm font-medium text-ib-green">+{{ entry.tx.amount | number: '1.2-2' }}&euro;</p>
+                  <div class="min-w-0">
+                    <p class="font-mono text-sm font-medium text-ib-green">+{{ entry.tx.amount | number: '1.2-2' }}&euro;</p>
+                    @if (entry.tx.note) {
+                      <p class="truncate text-xs text-text-muted">{{ entry.tx.note }}</p>
+                    }
+                  </div>
                 </div>
                 <div class="shrink-0 text-right">
                   <p class="text-xs text-text-muted">{{ entry.tx.date | date: 'dd/MM/yyyy' }}</p>
@@ -444,11 +449,11 @@ export class Loans {
     }
   }
 
-  protected async recordPayment(event: { amount: number; date: string; accountId: string | null }) {
+  protected async recordPayment(event: { amount: number; date: string; accountId: string | null; note: string | null }) {
     const loan = this.selectedLoan();
     if (!loan) return;
     try {
-      await lastValueFrom(this.loanGateway.recordPayment(loan.id, event.amount, event.date));
+      await lastValueFrom(this.loanGateway.recordPayment(loan.id, event.amount, event.date, event.note));
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success(this._i18n.translate('budget.loan.messages.paymentRecorded'));
