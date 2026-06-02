@@ -19,7 +19,7 @@ export class OAuthService {
     const clientId = this.config.get('GOOGLE_CLIENT_ID', { infer: true });
     const clientSecret = this.config.get('GOOGLE_CLIENT_SECRET', { infer: true });
     if (!clientId || !clientSecret) throw new InternalServerErrorException('Google OAuth non configuré');
-    const redirectUri = `${this.config.get('APP_URL', { infer: true })}/api/auth/oauth/google/callback`;
+    const redirectUri = `${this.config.get('APP_URL', { infer: true })}/auth/oauth/google/callback`;
     return new Google(clientId, clientSecret, redirectUri);
   }
 

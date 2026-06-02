@@ -22,7 +22,6 @@ describe('Medical e2e', () => {
       .overrideProvider(MAILER).useValue(mailer).compile();
     app = m.createNestApplication();
     app.use(cookieParser());
-    app.setGlobalPrefix('api');
     await app.init();
   });
   afterAll(async () => { await app.close(); });
@@ -30,10 +29,10 @@ describe('Medical e2e', () => {
   async function authedClient() {
     const s = app.getHttpServer();
     const email = `med+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`;
-    await request(s).post('/api/auth/register').send({ email, password: 'motdepasse-long-12' }).expect(201);
-    const v = await request(s).post('/api/auth/verify').send({ email, code: mailer.lastCode }).expect(200);
+    await request(s).post('/auth/register').send({ email, password: 'motdepasse-long-12' }).expect(201);
+    const v = await request(s).post('/auth/verify').send({ email, code: mailer.lastCode }).expect(200);
     const sessionCookie = v.headers['set-cookie'] as unknown as string[];
-    const csrf = await request(s).get('/api/auth/csrf').set('Cookie', sessionCookie).expect(200);
+    const csrf = await request(s).get('/auth/csrf').set('Cookie', sessionCookie).expect(200);
     const cookies = sessionCookie.concat(csrf.headers['set-cookie'] as unknown as string[]);
     return { s, cookies, csrf: csrf.body.csrfToken as string };
   }
@@ -42,7 +41,7 @@ describe('Medical e2e', () => {
     const a = await authedClient();
 
     // A creates a patient
-    const created = await request(a.s).post('/api/patients')
+    const created = await request(a.s).post('/patients')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ firstName: 'Jean', lastName: 'Dupont', birthDate: '1990-01-01' })
       .expect(201);
@@ -50,20 +49,20 @@ describe('Medical e2e', () => {
     expect(id).toBeTruthy();
 
     // A can list their own patient
-    const list = await request(a.s).get('/api/patients').set('Cookie', a.cookies).expect(200);
+    const list = await request(a.s).get('/patients').set('Cookie', a.cookies).expect(200);
     expect(list.body.some((x: unknown) => (x as { id: string }).id === id)).toBe(true);
 
     // B cannot see A's patient nor update it
     const b = await authedClient();
-    const otherList = await request(a.s).get('/api/patients').set('Cookie', b.cookies).expect(200);
+    const otherList = await request(a.s).get('/patients').set('Cookie', b.cookies).expect(200);
     expect(otherList.body.some((x: unknown) => (x as { id: string }).id === id)).toBe(false);
-    await request(a.s).put(`/api/patients/${id}`)
+    await request(a.s).put(`/patients/${id}`)
       .set('Cookie', b.cookies).set('X-CSRF-Token', b.csrf)
       .send({ firstName: 'Hack', lastName: 'Hack', birthDate: '1990-01-01' })
       .expect(404);
 
     // A deletes their patient
-    await request(a.s).delete(`/api/patients/${id}`)
+    await request(a.s).delete(`/patients/${id}`)
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .expect(204);
   });
@@ -72,7 +71,7 @@ describe('Medical e2e', () => {
     const a = await authedClient();
 
     // Create a patient
-    const patient = await request(a.s).post('/api/patients')
+    const patient = await request(a.s).post('/patients')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ firstName: 'Marie', lastName: 'Curie', birthDate: '1867-11-07' })
       .expect(201);
@@ -80,7 +79,7 @@ describe('Medical e2e', () => {
     expect(patientId).toBeTruthy();
 
     // Create a practitioner
-    const practitioner = await request(a.s).post('/api/practitioners')
+    const practitioner = await request(a.s).post('/practitioners')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ name: 'Dr X', type: 'generaliste' })
       .expect(201);
@@ -88,7 +87,7 @@ describe('Medical e2e', () => {
     expect(practitionerId).toBeTruthy();
 
     // Create an appointment
-    const appt = await request(a.s).post('/api/appointments')
+    const appt = await request(a.s).post('/appointments')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ patientId, practitionerId, date: '2026-06-01', time: '10:00' })
       .expect(201);
@@ -97,7 +96,7 @@ describe('Medical e2e', () => {
     expect(appt.body.status).toBe('scheduled');
 
     // Transition status to completed
-    const updated = await request(a.s).patch(`/api/appointments/${apptId}/status`)
+    const updated = await request(a.s).patch(`/appointments/${apptId}/status`)
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ status: 'completed' })
       .expect(200);
@@ -106,7 +105,7 @@ describe('Medical e2e', () => {
 
   it('mutation sans X-CSRF-Token → 403', async () => {
     const a = await authedClient();
-    await request(a.s).post('/api/patients')
+    await request(a.s).post('/patients')
       .set('Cookie', a.cookies)
       .send({ firstName: 'NoCsrf', lastName: 'Test', birthDate: '2000-01-01' })
       .expect(403);

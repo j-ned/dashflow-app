@@ -20,7 +20,7 @@ export class ConsoleMailer implements Mailer {
   }
 
   async sendCalendarInvitation(to: string, senderName: string, calendarToken: string): Promise<void> {
-    const url = `${this.config.get('APP_URL', { infer: true })}/api/medical/calendar/${calendarToken}`;
+    const url = `${this.config.get('APP_URL', { infer: true })}/medical/calendar/${calendarToken}`;
     this.logger.log(`[calendar-invite] ${to} (de ${senderName}) → ${url}`);
     console.log(`[calendar-invite] ${to} → ${url}`);
   }

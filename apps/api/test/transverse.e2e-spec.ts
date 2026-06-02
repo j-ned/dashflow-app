@@ -22,7 +22,6 @@ describe('Transverse e2e', () => {
       .overrideProvider(MAILER).useValue(mailer).compile();
     app = m.createNestApplication();
     app.use(cookieParser());
-    app.setGlobalPrefix('api');
     await app.init();
   });
   afterAll(async () => { await app.close(); });
@@ -30,10 +29,10 @@ describe('Transverse e2e', () => {
   async function authedClient() {
     const s = app.getHttpServer();
     const email = `trans+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`;
-    await request(s).post('/api/auth/register').send({ email, password: 'motdepasse-long-12' }).expect(201);
-    const v = await request(s).post('/api/auth/verify').send({ email, code: mailer.lastCode }).expect(200);
+    await request(s).post('/auth/register').send({ email, password: 'motdepasse-long-12' }).expect(201);
+    const v = await request(s).post('/auth/verify').send({ email, code: mailer.lastCode }).expect(200);
     const sessionCookie = v.headers['set-cookie'] as unknown as string[];
-    const csrf = await request(s).get('/api/auth/csrf').set('Cookie', sessionCookie).expect(200);
+    const csrf = await request(s).get('/auth/csrf').set('Cookie', sessionCookie).expect(200);
     const cookies = sessionCookie.concat(csrf.headers['set-cookie'] as unknown as string[]);
     return { s, cookies, csrf: csrf.body.csrfToken as string };
   }
@@ -42,7 +41,7 @@ describe('Transverse e2e', () => {
     const a = await authedClient();
 
     // Create a reminder
-    const created = await request(a.s).post('/api/reminders')
+    const created = await request(a.s).post('/reminders')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ type: 'email', target: 'appointment', recipientEmail: 'x@y.com' })
       .expect(201);
@@ -51,17 +50,17 @@ describe('Transverse e2e', () => {
     expect(created.body.enabled).toBe(true);
 
     // Toggle disables the reminder
-    const toggled = await request(a.s).patch(`/api/reminders/${id}/toggle`)
+    const toggled = await request(a.s).patch(`/reminders/${id}/toggle`)
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .expect(200);
     expect(toggled.body.enabled).toBe(false);
 
     // GET list contains the id
-    const list = await request(a.s).get('/api/reminders').set('Cookie', a.cookies).expect(200);
+    const list = await request(a.s).get('/reminders').set('Cookie', a.cookies).expect(200);
     expect(list.body.some((x: unknown) => (x as { id: string }).id === id)).toBe(true);
 
     // DELETE the reminder
-    await request(a.s).delete(`/api/reminders/${id}`)
+    await request(a.s).delete(`/reminders/${id}`)
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .expect(204);
   });
@@ -70,7 +69,7 @@ describe('Transverse e2e', () => {
     const a = await authedClient();
 
     // Create shared access — returns the inserted row including calendarToken
-    const created = await request(a.s).post('/api/shared-access')
+    const created = await request(a.s).post('/shared-access')
       .set('Cookie', a.cookies).set('X-CSRF-Token', a.csrf)
       .send({ invitedEmail: 'a@b.com' })
       .expect(201);
@@ -79,7 +78,7 @@ describe('Transverse e2e', () => {
 
     // Public GET — no cookie, proves no auth required
     const cal = await request(a.s)
-      .get(`/api/medical/calendar/${calendarToken}`)
+      .get(`/medical/calendar/${calendarToken}`)
       .expect(200);
     expect(cal.headers['content-type']).toContain('text/calendar');
     expect(cal.text).toContain('BEGIN:VCALENDAR');
@@ -87,6 +86,6 @@ describe('Transverse e2e', () => {
 
   it('calendar unknown token → 404', async () => {
     const s = app.getHttpServer();
-    await request(s).get('/api/medical/calendar/nope').expect(404);
+    await request(s).get('/medical/calendar/nope').expect(404);
   });
 });

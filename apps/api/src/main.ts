@@ -12,7 +12,6 @@ async function bootstrap(): Promise<void> {
 
   app.use(helmet());
   app.use(cookieParser());
-  app.setGlobalPrefix('api');
   app.enableCors({
     origin: config.get('CORS_ORIGIN', { infer: true }).split(','),
     credentials: true,
