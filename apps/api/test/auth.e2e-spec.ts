@@ -97,8 +97,8 @@ describe('Auth e2e', () => {
     await request(server).post('/auth/me/2fa/verify')
       .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).send({ code: totp.generate() }).expect(200);
 
-    const noCode = await request(server).post('/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(403);
-    expect(noCode.body.code).toBe('TOTP_REQUIRED');
+    const noCode = await request(server).post('/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(200);
+    expect(noCode.body.mfaRequired).toBe(true);
     await request(server).post('/auth/login')
       .send({ email: email2, password: 'motdepasse-long-12', totpCode: totp.generate() }).expect(200);
   });

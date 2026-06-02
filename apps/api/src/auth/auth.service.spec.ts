@@ -76,10 +76,10 @@ describe('AuthService', () => {
     expect((await svc.enableTotp('u1', '000000')).success).toBe(false);
   });
 
-  it('login : compte 2FA sans code → fail 403 TOTP_REQUIRED', async () => {
+  it('login : compte 2FA sans code → succès mfa_required (200, pas une erreur)', async () => {
     r.findByEmail.mockResolvedValue({ id: 'u1', email: 'a@b.com', password: await argon2.hash('bonmotdepasse'), emailVerified: new Date(), totpEnabled: new Date(), totpSecret: 'AAAA' });
     const res = await svc.login({ email: 'a@b.com', password: 'bonmotdepasse' });
-    expect(res).toMatchObject({ success: false, status: 403, code: 'TOTP_REQUIRED' });
+    expect(res).toMatchObject({ success: true, data: { kind: 'mfa_required' } });
   });
 
   it('disableTotp : mauvais mot de passe → fail 401', async () => {

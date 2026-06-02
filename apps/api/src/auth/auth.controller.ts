@@ -79,8 +79,9 @@ export class AuthController {
   async login(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const r = await this.auth.login(dto);
     if (!r.success) throw httpFrom(r);
-    await this.setSession(res, r.data);
-    return { user: toPublicUser(r.data), keyMaterial: toKeyMaterial(r.data) };
+    if (r.data.kind === 'mfa_required') return { mfaRequired: true };
+    await this.setSession(res, r.data.user);
+    return { user: toPublicUser(r.data.user), keyMaterial: toKeyMaterial(r.data.user) };
   }
 
   // Public demo session, gated by DEMO_ENABLED.

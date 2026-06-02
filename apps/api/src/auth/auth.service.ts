@@ -8,6 +8,7 @@ import type { users } from '../db/schema';
 import type { RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePasswordDto, SetPasswordDto } from './dto/auth.dto';
 
 type User = typeof users.$inferSelect;
+export type LoginOutcome = { kind: 'authenticated'; user: User } | { kind: 'mfa_required' };
 const CODE_TTL_MS = 10 * 60 * 1000;
 const genCode = (): string => String(Math.floor(100000 + Math.random() * 900000));
 
@@ -38,16 +39,18 @@ export class AuthService {
     return ok(updated);
   }
 
-  async login(dto: LoginDto): Promise<Result<User>> {
+  async login(dto: LoginDto): Promise<Result<LoginOutcome>> {
     const user = await this.repo.findByEmail(dto.email);
     if (!user || !user.password) return fail(401, 'Identifiants invalides');
     if (!user.emailVerified) return fail(403, 'Email non vérifié');
     if (!(await argon2.verify(user.password, dto.password))) return fail(401, 'Identifiants invalides');
     if (user.totpEnabled && user.totpSecret) {
-      if (!dto.totpCode) return fail(403, 'Code 2FA requis', 'TOTP_REQUIRED');
+      // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
+      // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
+      if (!dto.totpCode) return ok({ kind: 'mfa_required' });
       if (!this.twoFactor.verify(user.totpSecret, dto.totpCode)) return fail(401, 'Code 2FA invalide');
     }
-    return ok(user);
+    return ok({ kind: 'authenticated', user });
   }
 
   // Connexion au compte démo public, sans mot de passe (gatée par DEMO_ENABLED côté controller).
