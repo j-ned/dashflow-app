@@ -591,6 +591,24 @@
       "add": "Ajouter",
       "history": "Historique"
     },
+    "members": {
+      "manage": "Gérer les membres",
+      "title": "Membres du foyer",
+      "addTitle": "Ajouter un membre",
+      "editTitle": "Modifier le membre",
+      "firstName": "Prénom",
+      "lastName": "Nom",
+      "add": "Ajouter",
+      "empty": "Aucun membre pour le moment",
+      "editAria": "Modifier {{name}}",
+      "deleteAria": "Supprimer {{name}}",
+      "created": "Membre ajouté",
+      "updated": "Membre mis à jour",
+      "deleted": "Membre supprimé",
+      "error": "Une erreur est survenue",
+      "deleteConfirmTitle": "Supprimer le membre",
+      "deleteConfirmMessage": "Supprimer {{name}} ? Cette personne sera retirée de tout le foyer (budget et, le cas échéant, médical)."
+    },
     "bankAccount": {
       "title": "Compte bancaire",
       "subtitle": "Suivi progressif de votre solde",

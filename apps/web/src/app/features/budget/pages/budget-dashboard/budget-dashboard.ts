@@ -1,10 +1,12 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal } from '@angular/core';
+import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
 import { MemberLoanList } from '../../components/member-loan-list/member-loan-list';
+import { MemberManager } from '../../components/member-manager/member-manager';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { switchMap } from 'rxjs';
 import { Envelope } from '../../domain/models/envelope.model';
 import { Loan } from '../../domain/models/loan.model';
 import { RecurringEntry } from '../../domain/models/recurring-entry.model';
@@ -39,13 +41,21 @@ type MemberSummary = {
 @Component({
   selector: 'app-budget-dashboard',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, RouterLink, Icon, MemberLoanList, TranslocoPipe],
+  imports: [DecimalPipe, RouterLink, Icon, MemberLoanList, TranslocoPipe, MemberManager],
   host: { class: 'block space-y-6' },
   template: `
-    <header>
-      <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.dashboard.title' | transloco }}</h2>
-      <p class="mt-1 text-sm text-text-muted">{{ 'budget.dashboard.subtitle' | transloco }}</p>
+    <header class="flex items-start justify-between gap-4">
+      <div>
+        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.dashboard.title' | transloco }}</h2>
+        <p class="mt-1 text-sm text-text-muted">{{ 'budget.dashboard.subtitle' | transloco }}</p>
+      </div>
+      <button type="button"
+              class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
+              (click)="memberManager().open()">
+        <app-icon name="users" size="16" /> {{ 'budget.members.manage' | transloco }}
+      </button>
     </header>
+    <app-member-manager #mm (changed)="reloadMembers()" />
 
     @for (ms of memberSummaries(); track ms.id) {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
@@ -307,9 +317,16 @@ export class BudgetDashboard {
     });
   }
 
+  protected readonly memberManager = viewChild.required<MemberManager>('mm');
+  private readonly _membersRefresh = signal(0);
+  protected reloadMembers(): void { this._membersRefresh.update(v => v + 1); }
+
   protected readonly envelopes = toSignal(this.envelopeGateway.getAll(), { initialValue: [] });
   protected readonly loans = toSignal(this.loanGateway.getAll(), { initialValue: [] });
-  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
+  protected readonly members = toSignal(
+    toObservable(this._membersRefresh).pipe(switchMap(() => this.memberGateway.getAll())),
+    { initialValue: [] },
+  );
   protected readonly entries = toSignal(this.recurringEntryGateway.getAll(), { initialValue: [] });
 
   protected readonly memberSummaries = computed<MemberSummary[]>(() => {

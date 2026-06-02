@@ -591,6 +591,24 @@
       "add": "Add",
       "history": "History"
     },
+    "members": {
+      "manage": "Manage members",
+      "title": "Household members",
+      "addTitle": "Add a member",
+      "editTitle": "Edit member",
+      "firstName": "First name",
+      "lastName": "Last name",
+      "add": "Add",
+      "empty": "No members yet",
+      "editAria": "Edit {{name}}",
+      "deleteAria": "Delete {{name}}",
+      "created": "Member added",
+      "updated": "Member updated",
+      "deleted": "Member deleted",
+      "error": "Something went wrong",
+      "deleteConfirmTitle": "Delete member",
+      "deleteConfirmMessage": "Delete {{name}}? This person will be removed from the whole household (budget and, if any, medical)."
+    },
     "bankAccount": {
       "title": "Bank account",
       "subtitle": "Track your balance progressively",
