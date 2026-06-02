@@ -6,6 +6,8 @@ export const envelopeTypeEnum = pgEnum('envelope_type', ['épargne', 'impôts', 
 
 export const loanDirectionEnum = pgEnum('loan_direction', ['lent', 'borrowed']);
 
+export const bankAccountTypeEnum = pgEnum('bank_account_type', ['courant', 'épargne', 'carte', 'espèces']);
+
 export const recurringEntryTypeEnum = pgEnum('recurring_entry_type', ['income', 'expense', 'annual_expense', 'spending', 'transfer']);
 
 export const consumableCategoryEnum = pgEnum('consumable_category', [
@@ -19,6 +21,7 @@ export const bankAccounts = pgTable('bank_accounts', {
   id: uuid('id').primaryKey().defaultRandom(),
   userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
   name: varchar('name', { length: 255 }).notNull(),
+  type: bankAccountTypeEnum('type').notNull().default('courant'),
   initialBalance: numeric('initial_balance', { precision: 12, scale: 2 }).notNull().default('0'),
   color: varchar('color', { length: 7 }),
   dotColor: varchar('dot_color', { length: 7 }),

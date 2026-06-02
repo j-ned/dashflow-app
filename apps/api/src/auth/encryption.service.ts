@@ -24,7 +24,7 @@ const MIGRATE_TABLES: Record<string, { table: any; hasUserId: boolean }> = {
 };
 
 const CLEAR_COLUMNS: Record<string, Record<string, unknown>> = {
-  bankAccounts: { name: '[chiffré]', color: null, dotColor: null },
+  bankAccounts: { name: '[chiffré]', type: 'courant', color: null, dotColor: null },
   envelopes: { name: '[chiffré]', type: 'épargne', balance: '0', target: null, color: null, dueDay: null },
   envelopeTransactions: { amount: '0', date: '1970-01-01' },
   loans: { person: '[chiffré]', direction: 'lent', amount: '0', remaining: '0', description: null, date: '1970-01-01', dueDate: null, dueDay: null },

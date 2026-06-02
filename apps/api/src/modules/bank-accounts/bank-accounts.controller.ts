@@ -21,7 +21,7 @@ export class BankAccountsController {
       return this.svc.create(u.id, { name: '', encryptedData });
     }
     const d = parseBody(createBankAccountSchema, body);
-    return this.svc.create(u.id, { name: d.name, initialBalance: String(d.initialBalance ?? 0), color: d.color ?? null, dotColor: d.dotColor ?? null });
+    return this.svc.create(u.id, { name: d.name, type: d.type ?? 'courant', initialBalance: String(d.initialBalance ?? 0), color: d.color ?? null, dotColor: d.dotColor ?? null });
   }
 
   @UseGuards(CsrfGuard) @Put(':id')
