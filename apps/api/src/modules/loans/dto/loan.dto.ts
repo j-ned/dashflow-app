@@ -32,6 +32,7 @@ export const loanTransactionSchema = z.object({
 export const loanPaymentSchema = z.object({
   amount: z.number().positive('Le montant doit etre positif'),
   date: dateStr.optional(),
+  note: z.string().max(255).nullable().optional(),
 });
 
 export type CreateLoanDto = z.infer<typeof createLoanSchema>;

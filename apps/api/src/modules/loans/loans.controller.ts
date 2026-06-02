@@ -105,7 +105,7 @@ export class LoansController {
     @Body() body: Record<string, unknown>,
   ) {
     const d = parseBody(loanPaymentSchema, body);
-    const row = await this.svc.recordPayment(u.id, id, { amount: d.amount, date: d.date });
+    const row = await this.svc.recordPayment(u.id, id, { amount: d.amount, date: d.date, note: d.note ?? null });
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;
   }

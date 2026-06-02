@@ -5,6 +5,7 @@
 //
 // Dev  : pnpm db:migrate                 (charge .env si présent)
 // Prod : DATABASE_URL=... node scripts/db/migrate.mjs   (env injecté par Dokploy)
+import { fileURLToPath } from 'node:url';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import { migrate } from 'drizzle-orm/postgres-js/migrator';
@@ -15,11 +16,14 @@ if (!url) {
   process.exit(1);
 }
 
+// Résolu relativement au script (pas au CWD) → marche depuis le repo comme depuis /app en prod.
+const migrationsFolder = fileURLToPath(new URL('../../src/db/migrations', import.meta.url));
+
 const sql = postgres(url, { max: 1 });
 const db = drizzle(sql);
 try {
   await migrate(db, {
-    migrationsFolder: 'src/db/migrations',
+    migrationsFolder,
     migrationsTable: '__drizzle_migrations_nest',
     migrationsSchema: 'drizzle',
   });

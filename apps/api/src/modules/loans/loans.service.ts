@@ -33,7 +33,7 @@ export class LoansService extends OwnedCrudService<Loan> {
     return rows[0];
   }
 
-  async recordPayment(userId: string, id: string, opts: { amount: number; date?: string }) {
+  async recordPayment(userId: string, id: string, opts: { amount: number; date?: string; note?: string | null }) {
     const current = await this.getOne(userId, id) as Loan | undefined;
     if (!current) return undefined;
     const txDate = opts.date || today();
@@ -41,7 +41,7 @@ export class LoansService extends OwnedCrudService<Loan> {
     return this.db.transaction(async (tx) => {
       const [updated] = await tx.update(loans).set({ remaining: newRemaining })
         .where(and(eq(loans.id, id), eq(loans.userId, userId))).returning();
-      await tx.insert(loanTransactions).values({ loanId: id, amount: String(opts.amount), date: txDate });
+      await tx.insert(loanTransactions).values({ loanId: id, amount: String(opts.amount), date: txDate, note: opts.note ?? null });
       return updated;
     });
   }

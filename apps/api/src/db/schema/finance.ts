@@ -69,6 +69,7 @@ export const loanTransactions = pgTable('loan_transactions', {
   loanId: uuid('loan_id').notNull().references(() => loans.id, { onDelete: 'cascade' }),
   amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
   date: date('date').notNull(),
+  note: varchar('note', { length: 255 }),
   encryptedData: text('encrypted_data'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });

@@ -3,6 +3,7 @@
 //
 // Dev  : pnpm db:baseline                (charge .env si présent)
 // Prod : DATABASE_URL=... node scripts/db/baseline.mjs   (env injecté par Dokploy)
+import { fileURLToPath } from 'node:url';
 import { readMigrationFiles } from 'drizzle-orm/migrator';
 import postgres from 'postgres';
 
@@ -12,7 +13,8 @@ if (!url) {
   process.exit(1);
 }
 
-const MIGRATIONS_FOLDER = 'src/db/migrations';
+// Résolu relativement au script (pas au CWD) → marche depuis le repo comme depuis /app en prod.
+const MIGRATIONS_FOLDER = fileURLToPath(new URL('../../src/db/migrations', import.meta.url));
 const SCHEMA = 'drizzle';
 const TABLE = '__drizzle_migrations_nest';
 

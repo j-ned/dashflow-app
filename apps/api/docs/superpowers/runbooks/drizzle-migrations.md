@@ -17,20 +17,33 @@ L'image Docker embarque `scripts/db/*.mjs` + `src/db/migrations/` et utilise le 
 - Marquer une baseline : `node scripts/db/baseline.mjs`
 Le **boot ne migre jamais** (`CMD = node dist/main`).
 
-## Déploiement (étape séparée — JAMAIS au boot)
-1. Migrations commitées et présentes dans l'image (build).
-2. **Avant** de basculer le trafic, lancer la migration dans le conteneur (étape release/pre-deploy Dokploy), p. ex. :
-   `docker exec <conteneur-backend> node scripts/db/migrate.mjs`
-   (ou en CI/local : `DATABASE_URL="<url-prod>" pnpm db:migrate`)
-3. La migration doit finir en exit 0. **Si elle échoue : NE PAS basculer** (sinon 502).
-4. Déployer/redémarrer le backend.
+## Déploiement (automatique au démarrage du conteneur)
+Dokploy (type Application) n'a pas de champ « pre-deploy command ». La migration est donc
+intégrée au **`CMD` de l'image** :
+```
+sh -c "node /app/scripts/db/migrate.mjs && exec node dist/main"
+```
+- Au démarrage, le conteneur **migre puis lance l'app** (`DATABASE_URL` injecté par Dokploy).
+- Fail-fast : si la migration échoue, le `&&` stoppe → crash-loop → erreur visible dans les logs (pas de 502 silencieux). Sûr car **1 réplica** (pas de course Swarm).
+- Chemin des migrations résolu relativement au script → indépendant du CWD.
 
-## Première adoption en PROD (une seule fois)
-La base de prod contient déjà le schéma (dump) → marquer `0000` comme appliquée sans la rejouer :
-- Depuis le conteneur backend : `node scripts/db/baseline.mjs`
-- OU directement en SQL sur la base (si le conteneur n'est pas encore déployé) :
-  `INSERT INTO drizzle.__drizzle_migrations_nest (hash, created_at)` avec le hash de `0000` (cf. `pnpm db:baseline` sur dev pour relire le hash) `WHERE NOT EXISTS (...)`.
-- Ensuite, les `migrate` suivants n'appliquent que les diffs.
+Repli manuel : `docker exec <conteneur-backend> node /app/scripts/db/migrate.mjs`
+(ou local/CI : `DATABASE_URL="<url-prod>" pnpm db:migrate`).
+
+## Première adoption en PROD (une seule fois, AVANT le 1er déploiement de l'image entrypoint)
+La base de prod contient déjà le schéma (dump). Comme le `CMD` migre au démarrage, si `0000`
+n'est pas marquée, le conteneur tentera de recréer les tables → crash-loop. Il faut donc marquer
+`0000` **en SQL directement** (l'ancienne image n'a pas encore `scripts/`), via `ssh homeserver`
+puis psql dans le conteneur Postgres de prod :
+```sql
+CREATE SCHEMA IF NOT EXISTS drizzle;
+CREATE TABLE IF NOT EXISTS drizzle.__drizzle_migrations_nest (id SERIAL PRIMARY KEY, hash text NOT NULL, created_at bigint);
+INSERT INTO drizzle.__drizzle_migrations_nest (hash, created_at)
+SELECT 'dbfd033cb02fe5d8226863251017435e685c51755d17485b3547809f1335468a', 1780426484929
+WHERE NOT EXISTS (SELECT 1 FROM drizzle.__drizzle_migrations_nest WHERE hash = 'dbfd033cb02fe5d8226863251017435e685c51755d17485b3547809f1335468a');
+```
+Ensuite, au déploiement, l'entrypoint saute `0000` et applique seulement les diffs (`0001`+).
+Le hash ci-dessus = celui du `0000` actuel ; s'il est régénéré, relire via `pnpm db:baseline` sur dev.
 
 ## Pièges
 - `DROP ... IF EXISTS` / `ADD COLUMN IF NOT EXISTS` dans les migrations sensibles.

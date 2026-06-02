@@ -1,0 +1,1 @@
+ALTER TABLE "loan_transactions" ADD COLUMN "note" varchar(255);
