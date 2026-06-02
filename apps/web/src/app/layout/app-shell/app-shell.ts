@@ -4,7 +4,6 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { CommandPalette } from '@shared/components/command-palette/command-palette';
-import { ToastContainer } from '@shared/components/toast/toast';
 import { ConfirmDialog } from '@shared/components/confirm-dialog/confirm-dialog';
 import { ThemeStore } from '@core/services/theme.store';
 import { LocaleStore } from '@core/services/locale.store';
@@ -14,7 +13,7 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-screen overflow-hidden' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ToastContainer, ConfirmDialog, DemoBanner],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ConfirmDialog, DemoBanner],
   template: `
     <header class="header">
 
@@ -81,7 +80,6 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
 
     @defer (on idle) {
       <app-command-palette #cmdPalette />
-      <app-toast-container />
       <app-confirm-dialog />
     }
   `,

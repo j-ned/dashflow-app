@@ -1,6 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { CsrfStore } from '@core/services/csrf/csrf-store';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 
@@ -23,10 +24,15 @@ export type AuthUser = {
   isDemoAccount: boolean;
 };
 
+type LoginResponse =
+  | { mfaRequired: true }
+  | { token?: string; user: AuthUser; keyMaterial?: KeyMaterial };
+
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
+  private readonly csrf = inject(CsrfStore);
 
   private readonly _user = signal<AuthUser | null>(null);
   private readonly _isAuthenticated = signal(false);
@@ -74,7 +80,8 @@ export class AuthStore {
   async checkSession(): Promise<void> {
     this._isLoading.set(true);
     try {
-      await firstValueFrom(this.api.get('/auth/csrf'));
+      const { csrfToken } = await firstValueFrom(this.api.get<{ csrfToken: string }>('/auth/csrf'));
+      this.csrf.setToken(csrfToken);
       const res = await firstValueFrom(
         this.api.get<AuthUser & { keyMaterial?: KeyMaterial }>('/auth/me'),
       );
@@ -128,10 +135,13 @@ export class AuthStore {
     );
   }
 
-  async login(email: string, password: string, totpCode?: string): Promise<void> {
+  async login(email: string, password: string, totpCode?: string): Promise<'authenticated' | 'mfa_required'> {
     const res = await firstValueFrom(
-      this.api.post<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }>('/auth/login', { email, password, totpCode }),
+      this.api.post<LoginResponse>('/auth/login', { email, password, totpCode }),
     );
+    // 2FA activé sans code : le backend renvoie 200 + { mfaRequired: true } (pas une erreur).
+    if ('mfaRequired' in res) return 'mfa_required';
+
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -144,6 +154,7 @@ export class AuthStore {
         // User will be redirected to /auth/unlock to enter their passphrase manually.
       }
     }
+    return 'authenticated';
   }
 
   async forgotPassword(email: string): Promise<void> {

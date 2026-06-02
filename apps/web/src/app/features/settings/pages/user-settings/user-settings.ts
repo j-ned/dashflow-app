@@ -8,6 +8,7 @@ import { Icon } from '@shared/components/icon/icon';
 import { RecoveryKeyModal } from '../../../auth/components/recovery-key-modal/recovery-key-modal';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { Toaster } from '@shared/components/toast/toast';
 
 type ProfileFormShape = {
   displayName: FormControl<string>;
@@ -32,21 +33,6 @@ type PasswordFormShape = {
         {{ 'settings.subtitle' | transloco }}
       </p>
     </header>
-
-    @if (feedback(); as msg) {
-      <div
-        role="alert"
-        class="rounded-xl border p-4 text-sm mb-8 flex items-center gap-3 shadow-sm transition"
-        [class.border-ib-green-30]="msg.type === 'success'"
-        [class.bg-ib-green-10]="msg.type === 'success'"
-        [class.text-ib-green]="msg.type === 'success'"
-        [class.border-ib-red-30]="msg.type === 'error'"
-        [class.bg-ib-red-10]="msg.type === 'error'"
-        [class.text-ib-red]="msg.type === 'error'"
-      >
-        <span class="font-medium">{{ msg.message }}</span>
-      </div>
-    }
 
     <!-- ── Profile ── -->
     <section
@@ -528,9 +514,7 @@ export class UserSettings {
   private readonly router = inject(Router);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
-
-  // Feedback
-  protected readonly feedback = signal<{ type: 'success' | 'error'; message: string } | null>(null);
+  private readonly toaster = inject(Toaster);
 
   // Profile
   protected readonly avatarPreview = signal<string | null>(null);
@@ -768,7 +752,6 @@ export class UserSettings {
   }
 
   private showFeedback(type: 'success' | 'error', message: string) {
-    this.feedback.set({ type, message });
-    setTimeout(() => this.feedback.set(null), 5000);
+    this.toaster[type](message);
   }
 }

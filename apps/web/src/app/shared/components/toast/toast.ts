@@ -100,7 +100,7 @@ export class Toaster {
   imports: [Icon, TranslocoPipe],
   host: { class: 'contents' },
   template: `
-    <div class="fixed bottom-4 right-4 z-[9999] flex flex-col-reverse gap-2 pointer-events-none"
+    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
          aria-live="polite"
          aria-relevant="additions">
       @for (toast of toasts(); track toast.id) {

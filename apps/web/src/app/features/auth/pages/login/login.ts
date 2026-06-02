@@ -231,7 +231,12 @@ export class Login {
 
     try {
       const { email, password } = this.form.getRawValue();
-      await this.auth.login(email, password);
+      const outcome = await this.auth.login(email, password);
+      if (outcome === 'mfa_required') {
+        this.step.set('totp');
+        this.error.set('');
+        return;
+      }
       this.redirectAfterLogin();
     } catch (err: unknown) {
       if (this.getErrorCode(err) === 'EMAIL_NOT_VERIFIED') {
@@ -239,12 +244,7 @@ export class Login {
         this.router.navigate(['/auth/register'], { queryParams: { email, verify: true } });
         return;
       }
-      if (this.getErrorCode(err) === 'TOTP_REQUIRED') {
-        this.step.set('totp');
-        this.error.set('');
-      } else {
-        this.error.set(this._i18n.translate('auth.login.errors.invalidCredentials'));
-      }
+      this.error.set(this._i18n.translate('auth.login.errors.invalidCredentials'));
     } finally {
       this.loading.set(false);
     }
