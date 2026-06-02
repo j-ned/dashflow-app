@@ -3,6 +3,7 @@ import { and, desc, eq, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { loans, loanTransactions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
+import { addMoney } from '../../common/money';
 
 type Loan = typeof loans.$inferSelect;
 const today = (): string => new Date().toISOString().slice(0, 10);
@@ -36,7 +37,7 @@ export class LoansService extends OwnedCrudService<Loan> {
     const current = await this.getOne(userId, id) as Loan | undefined;
     if (!current) return undefined;
     const txDate = opts.date || today();
-    const newRemaining = String(Math.max(0, Number(current.remaining) - opts.amount));
+    const newRemaining = String(Math.max(0, addMoney(Number(current.remaining), -opts.amount)));
     return this.db.transaction(async (tx) => {
       const [updated] = await tx.update(loans).set({ remaining: newRemaining })
         .where(and(eq(loans.id, id), eq(loans.userId, userId))).returning();

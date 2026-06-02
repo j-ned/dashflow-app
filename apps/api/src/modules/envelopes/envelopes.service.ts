@@ -3,6 +3,7 @@ import { and, desc, eq, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { envelopes, envelopeTransactions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
+import { addMoney } from '../../common/money';
 
 type Envelope = typeof envelopes.$inferSelect;
 const today = (): string => new Date().toISOString().slice(0, 10);
@@ -42,7 +43,7 @@ export class EnvelopesService extends OwnedCrudService<Envelope> {
         await tx.insert(envelopeTransactions).values({ envelopeId: id, amount: '0', date: today(), encryptedData: opts.encryptedData });
         return u;
       }
-      const newBalance = String(Number(env.balance) + (opts.amount ?? 0));
+      const newBalance = String(addMoney(Number(env.balance), opts.amount ?? 0));
       const [u] = await tx.update(envelopes).set({ balance: newBalance })
         .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId))).returning();
       await tx.insert(envelopeTransactions).values({ envelopeId: id, amount: String(opts.amount ?? 0), date: opts.date || today(), note: opts.note ?? null });
