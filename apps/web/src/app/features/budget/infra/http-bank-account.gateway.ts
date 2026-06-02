@@ -1,13 +1,24 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow } from '@core/services/crypto/entity-crypto';
 import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
-import { BankAccount } from '../domain/models/bank-account.model';
+import { BankAccount, BankAccountType } from '../domain/models/bank-account.model';
 import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'initialBalance', 'createdAt'] as const;
+
+// `type` est chiffré : les comptes créés avant A3-type n'en ont pas → défaut 'courant'.
+// initialBalance est en clair (numeric → string côté postgres) → coercition en number.
+function coerceBankAccount(row: ApiRow): BankAccount {
+  const a = row as Record<string, unknown>;
+  return {
+    ...(a as unknown as BankAccount),
+    type: (a['type'] as BankAccountType) ?? 'courant',
+    initialBalance: Number(a['initialBalance']),
+  };
+}
 
 @Injectable()
 export class HttpBankAccountGateway implements BankAccountGateway {
@@ -15,7 +26,9 @@ export class HttpBankAccountGateway implements BankAccountGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<BankAccount[]> {
-    return decryptList(this.api.get<ApiRow[]>('/bank-accounts'), this.crypto.getMasterKey());
+    // coerce appliqué APRÈS décryptage (decryptList ne mappe que le chemin plaintext) → vaut pour E2EE aussi.
+    return decryptList<ApiRow>(this.api.get<ApiRow[]>('/bank-accounts'), this.crypto.getMasterKey())
+      .pipe(map((rows) => rows.map(coerceBankAccount)));
   }
 
   create(data: Omit<BankAccount, 'id'>): Observable<BankAccount> {

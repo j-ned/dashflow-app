@@ -680,7 +680,15 @@
         "colorsAuto": "Colors are assigned automatically.",
         "deleteAria": "Delete account {{name}}",
         "renameAria": "Rename account {{name}}",
+        "type": "Account type",
+        "typeAria": "Type of account {{name}}",
         "deleteTitle": "Delete — {{name}}"
+      },
+      "type": {
+        "courant": "Checking",
+        "épargne": "Savings",
+        "carte": "Credit card",
+        "espèces": "Cash"
       },
       "createTitles": {
         "income": "New income",
@@ -705,6 +713,8 @@
         "balanceUpdateError": "Error updating",
         "nameUpdated": "Account renamed",
         "nameUpdateError": "Error renaming account",
+        "typeUpdated": "Account type updated",
+        "typeUpdateError": "Error changing account type",
         "accountDeleted": "Account deleted",
         "accountDeleteError": "Error deleting account",
         "accountDeleteConfirmTitle": "Delete account",

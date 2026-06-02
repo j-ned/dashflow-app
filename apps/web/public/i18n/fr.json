@@ -680,7 +680,15 @@
         "colorsAuto": "Les couleurs sont attribuées automatiquement.",
         "deleteAria": "Supprimer le compte {{name}}",
         "deleteTitle": "Supprimer — {{name}}",
-        "renameAria": "Renommer le compte {{name}}"
+        "renameAria": "Renommer le compte {{name}}",
+        "type": "Type de compte",
+        "typeAria": "Type du compte {{name}}"
+      },
+      "type": {
+        "courant": "Compte courant",
+        "épargne": "Épargne",
+        "carte": "Carte de crédit",
+        "espèces": "Espèces"
       },
       "createTitles": {
         "income": "Nouveau revenu",
@@ -705,6 +713,8 @@
         "balanceUpdateError": "Erreur lors de la mise à jour",
         "nameUpdated": "Compte renommé",
         "nameUpdateError": "Erreur lors du renommage",
+        "typeUpdated": "Type de compte mis à jour",
+        "typeUpdateError": "Erreur lors du changement de type",
         "accountDeleted": "Compte supprimé",
         "accountDeleteError": "Erreur lors de la suppression du compte",
         "accountDeleteConfirmTitle": "Supprimer le compte",

@@ -4,7 +4,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
-import { BankAccount as BankAccountModel } from '../../domain/models/bank-account.model';
+import { BankAccount as BankAccountModel, BankAccountType, BANK_ACCOUNT_TYPES } from '../../domain/models/bank-account.model';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { MemberGateway } from '../../domain/gateways/member.gateway';
@@ -178,7 +178,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
                                class="w-44 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-text-primary hover:border-border focus:border-border focus:bg-raised focus-visible:outline-none"
                                [value]="da.account.name"
                                [attr.aria-label]="'budget.bankAccount.accountModal.renameAria' | transloco: { name: da.account.name }"
-                               (change)="updateAccountName(da.account.id, $event)" />
+                               (change)="updateAccountName(da.account, $event)" />
                       </div>
                       <button type="button"
                               class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
@@ -193,8 +193,18 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
                       <input type="number" step="0.01"
                              class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
                              [value]="da.account.initialBalance"
-                             (change)="updateAccountBalance(da.account.id, $event)" />
+                             (change)="updateAccountBalance(da.account, $event)" />
                       <span class="text-[11px] text-text-muted">&euro;</span>
+                    </div>
+                    <div class="flex items-center gap-2 pl-10">
+                      <label class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.type' | transloco }}</label>
+                      <select class="rounded-lg border border-border bg-raised px-2 py-1 text-xs text-text-primary"
+                              [value]="da.account.type" (change)="updateAccountType(da.account, $event)"
+                              [attr.aria-label]="'budget.bankAccount.accountModal.typeAria' | transloco: { name: da.account.name }">
+                        @for (t of ACCOUNT_TYPES; track t) {
+                          <option [value]="t">{{ ('budget.bankAccount.type.' + t) | transloco }}</option>
+                        }
+                      </select>
                     </div>
                   </div>
                 }
@@ -210,6 +220,15 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
                 <input id="acc-name" type="text" [ngModel]="newAccountName()" (ngModelChange)="newAccountName.set($event)" name="name"
                        class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                        [placeholder]="'budget.bankAccount.accountModal.namePlaceholder' | transloco" />
+              </div>
+              <div>
+                <label for="acc-type" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.bankAccount.accountModal.type' | transloco }}</label>
+                <select id="acc-type" [ngModel]="newAccountType()" (ngModelChange)="newAccountType.set($event)" name="type"
+                        class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary">
+                  @for (t of ACCOUNT_TYPES; track t) {
+                    <option [ngValue]="t">{{ ('budget.bankAccount.type.' + t) | transloco }}</option>
+                  }
+                </select>
               </div>
               <div>
                 <label for="acc-balance" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.bankAccount.accountModal.initialBalance' | transloco }}</label>
@@ -532,7 +551,9 @@ export class BankAccount {
   });
 
   protected readonly newAccountName = signal('');
+  protected readonly newAccountType = signal<BankAccountType>('courant');
   protected readonly newAccountBalance = signal<number>(0);
+  protected readonly ACCOUNT_TYPES = BANK_ACCOUNT_TYPES;
 
   protected readonly memberMap = computed(() => {
     const map = new Map<string, { name: string; color: string }>();
@@ -585,6 +606,7 @@ export class BankAccount {
 
   protected resetAccountForm() {
     this.newAccountName.set('');
+    this.newAccountType.set('courant');
     this.newAccountBalance.set(0);
   }
 
@@ -592,7 +614,7 @@ export class BankAccount {
     const name = this.newAccountName().trim();
     if (!name) return;
     try {
-      await lastValueFrom(this.accountGateway.create({ name, initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
+      await lastValueFrom(this.accountGateway.create({ name, type: this.newAccountType(), initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountCreated'));
       this.resetAccountForm();
       this._refreshAccounts.update(v => v + 1);
@@ -601,31 +623,42 @@ export class BankAccount {
     }
   }
 
-  protected async updateAccountBalance(accountId: string, event: Event) {
-    const value = Number((event.target as HTMLInputElement).value);
+  // En E2EE, l'update remplace tout le blob chiffré → on renvoie TOUJOURS le compte complet
+  // (sinon un update partiel écraserait name/type/color). `changes` ne modifie qu'un champ.
+  private async persistAccount(account: BankAccountModel, changes: Partial<Omit<BankAccountModel, 'id'>>, successKey: string, errorKey: string) {
     try {
-      await lastValueFrom(this.accountGateway.update(accountId, { initialBalance: value }));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.balanceUpdated'));
+      await lastValueFrom(this.accountGateway.update(account.id, {
+        name: account.name,
+        type: account.type,
+        initialBalance: account.initialBalance,
+        color: account.color,
+        dotColor: account.dotColor,
+        ...changes,
+      }));
+      this.toaster.success(this._i18n.translate(successKey));
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.balanceUpdateError'));
+      this.toaster.error(this._i18n.translate(errorKey));
     }
   }
 
-  protected async updateAccountName(accountId: string, event: Event) {
-    const input = event.target as HTMLInputElement;
-    const name = input.value.trim();
+  protected updateAccountBalance(account: BankAccountModel, event: Event) {
+    const value = Number((event.target as HTMLInputElement).value);
+    return this.persistAccount(account, { initialBalance: value }, 'budget.bankAccount.messages.balanceUpdated', 'budget.bankAccount.messages.balanceUpdateError');
+  }
+
+  protected updateAccountName(account: BankAccountModel, event: Event) {
+    const name = (event.target as HTMLInputElement).value.trim();
     if (!name) {
       this._refreshAccounts.update(v => v + 1); // annule la saisie vide
       return;
     }
-    try {
-      await lastValueFrom(this.accountGateway.update(accountId, { name }));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.nameUpdated'));
-      this._refreshAccounts.update(v => v + 1);
-    } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.nameUpdateError'));
-    }
+    return this.persistAccount(account, { name }, 'budget.bankAccount.messages.nameUpdated', 'budget.bankAccount.messages.nameUpdateError');
+  }
+
+  protected updateAccountType(account: BankAccountModel, event: Event) {
+    const type = (event.target as HTMLSelectElement).value as BankAccountType;
+    return this.persistAccount(account, { type }, 'budget.bankAccount.messages.typeUpdated', 'budget.bankAccount.messages.typeUpdateError');
   }
 
   protected async deleteAccount(account: BankAccountModel) {
