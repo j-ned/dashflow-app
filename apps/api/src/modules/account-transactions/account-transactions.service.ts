@@ -46,4 +46,10 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
       .values({ ...values, userId, accountId }).returning();
     return rows[0];
   }
+
+  async addBatch(userId: string, accountId: string, items: NewTransactionValues[]) {
+    if (!(await this.ownsAccount(userId, accountId))) return undefined;
+    return this.db.insert(accountTransactions)
+      .values(items.map((v) => ({ ...v, userId, accountId }))).returning();
+  }
 }

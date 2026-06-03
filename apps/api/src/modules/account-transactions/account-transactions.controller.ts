@@ -6,7 +6,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { createTransactionSchema, createEncryptedTransactionSchema } from './dto/account-transaction.dto';
+import { createTransactionSchema, createEncryptedTransactionSchema, batchTransactionSchema } from './dto/account-transaction.dto';
 
 const today = (): string => new Date().toISOString().slice(0, 10);
 
@@ -48,6 +48,32 @@ export class AccountTransactionsController {
     });
     if (row === undefined) throw new NotFoundException('Compte non trouvé');
     return row;
+  }
+
+  @UseGuards(CsrfGuard) @Post('bank-accounts/:accountId/transactions/batch') @HttpCode(201)
+  async createBatch(
+    @CurrentUser() u: AuthUser,
+    @Param('accountId') accountId: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const { items } = parseBody(batchTransactionSchema, body);
+    const mapped = items.map((raw) => {
+      if (raw.encryptedData) {
+        const d = parseBody(createEncryptedTransactionSchema, raw);
+        return {
+          amount: '0', date: today(), direction: d.direction, toAccountId: d.toAccountId ?? null,
+          memberId: d.memberId ?? null, recurringEntryId: d.recurringEntryId ?? null, encryptedData: d.encryptedData,
+        };
+      }
+      const d = parseBody(createTransactionSchema, raw);
+      return {
+        amount: d.amount, direction: d.direction, date: d.date, toAccountId: d.toAccountId ?? null,
+        category: d.category ?? null, note: d.note ?? null, memberId: d.memberId ?? null, recurringEntryId: d.recurringEntryId ?? null,
+      };
+    });
+    const rows = await this.svc.addBatch(u.id, accountId, mapped);
+    if (rows === undefined) throw new NotFoundException('Compte non trouvé');
+    return rows;
   }
 
   @UseGuards(CsrfGuard) @Put('transactions/:id')
