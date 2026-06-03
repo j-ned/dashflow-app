@@ -386,7 +386,10 @@ export class BankAccount {
 
   protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7));
 
+  private readonly _i18nReady = toSignal(this._i18n.events$, { initialValue: null });
+
   protected readonly spendingMonthLabel = computed(() => {
+    this._i18nReady();
     const [y, m] = this.spendingMonth().split('-');
     const monthKeys = ['janv', 'fevr', 'mars', 'avril', 'mai', 'juin', 'juil', 'aout', 'sept', 'oct', 'nov', 'dec'];
     const monthLabel = this._i18n.translate(`budget.common.month.${monthKeys[Number(m) - 1]}`);
