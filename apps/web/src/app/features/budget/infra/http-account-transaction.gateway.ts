@@ -1,8 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { ApiRow, encryptEntity } from '@core/services/crypto/entity-crypto';
 import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { AccountTransaction } from '../domain/models/account-transaction.model';
 import { AccountTransactionGateway } from '../domain/gateways/account-transaction.gateway';
@@ -39,5 +39,14 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
 
   delete(id: string): Observable<void> {
     return this.api.delete(`/transactions/${id}`);
+  }
+
+  createBatch(accountId: string, items: Omit<AccountTransaction, 'id' | 'accountId'>[]): Observable<AccountTransaction[]> {
+    const key = this.crypto.getMasterKey();
+    const url = `/bank-accounts/${accountId}/transactions/batch`;
+    if (!key) return this.api.post<AccountTransaction[]>(url, { items });
+    return from(Promise.all(items.map((it) => encryptEntity(it as Record<string, unknown>, CLEARTEXT_KEYS, key)))).pipe(
+      switchMap((encrypted) => this.api.post<AccountTransaction[]>(url, { items: encrypted })),
+    );
   }
 }

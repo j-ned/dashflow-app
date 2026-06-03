@@ -44,6 +44,18 @@ describe('HttpAccountTransactionGateway (plaintext)', () => {
     httpMock.verify();
     expect(received).toBe(12.5);
   });
+
+  it('createBatch poste un tableau (plaintext)', () => {
+    let n = 0;
+    gateway.createBatch('acc-1', [
+      { amount: 10, direction: 'expense', toAccountId: null, date: '2026-06-01', category: 'food', note: null, memberId: null, recurringEntryId: null },
+      { amount: 20, direction: 'income', toAccountId: null, date: '2026-06-02', category: null, note: null, memberId: null, recurringEntryId: null },
+    ]).subscribe((rows) => (n = rows.length));
+    const req = httpMock.expectOne(`${BASE}/bank-accounts/acc-1/transactions/batch`);
+    expect(req.request.body.items.length).toBe(2);
+    req.flush([{ id: 'a' }, { id: 'b' }]);
+    expect(n).toBe(2);
+  });
 });
 
 describe('HttpAccountTransactionGateway (E2EE)', () => {
@@ -88,5 +100,27 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
 
     const result = await promise;
     expect(result.amount).toBe(30);
+  });
+
+  it('chiffre chaque item du batch (E2EE)', async () => {
+    const promise = firstValueFrom(
+      gateway.createBatch('acc-1', [
+        { amount: 10, direction: 'expense', toAccountId: null, date: '2026-06-01', category: 'food', note: null, memberId: null, recurringEntryId: null },
+        { amount: 20, direction: 'income', toAccountId: null, date: '2026-06-02', category: null, note: null, memberId: null, recurringEntryId: null },
+      ]),
+    );
+
+    const req = await waitForRequest(httpMock, `${BASE}/bank-accounts/acc-1/transactions/batch`);
+    expect(req.request.body.items.length).toBe(2);
+    expect(req.request.body.items[0].encryptedData).toBeTruthy();
+    expect(req.request.body.items[0].amount).toBeUndefined();
+    expect(req.request.body.items[1].encryptedData).toBeTruthy();
+    expect(req.request.body.items[1].amount).toBeUndefined();
+
+    req.flush([{ id: 'a' }, { id: 'b' }]);
+    httpMock.verify();
+
+    const rows = await promise;
+    expect(rows.length).toBe(2);
   });
 });
