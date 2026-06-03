@@ -11,7 +11,7 @@ import { MemberGateway } from '../../domain/gateways/member.gateway';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
-import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
+import { confirmedBalance as computeConfirmedBalance, isRecurrencePosted } from '../../domain/account-balance';
 import { addMoney } from '../../domain/money';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
@@ -463,6 +463,23 @@ export class BankAccount {
       0,
     );
   });
+
+  private readonly isUnposted = (e: RecurringEntry): boolean =>
+    !isRecurrencePosted(e.id, this.currentMonth, this.accountRealTxs());
+
+  // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
+  // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).
+  protected readonly forecastDelta = computed(() => {
+    const inc = sumAmount(this.incomes().filter(this.isUnposted));
+    const exp = sumAmount(this.monthlyExpenses().filter(this.isUnposted));
+    const ann = sumAmount(this.annualExpenses().filter(this.isUnposted)) / 12;
+    const spend = sumAmount(this.monthSpendings().filter(this.isUnposted));
+    const inTransfers = sumAmount(this.incomingTransfers().filter(this.isUnposted)) + this.totalOneTimeIncoming();
+    const outTransfers = sumAmount(this.outgoingTransfers().filter(this.isUnposted)) + this.totalOneTimeOutgoing();
+    return inc + inTransfers - exp - ann - spend - outTransfers;
+  });
+
+  protected readonly projectedBalance = computed(() => this.confirmedBalance() + this.forecastDelta());
 
   protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));

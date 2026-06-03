@@ -37,6 +37,25 @@ function makeComponent(opts: { entries?: unknown[]; txs?: unknown[] } = {}) {
   return fixture.componentInstance as unknown as Cmp;
 }
 
+describe('BankAccount — solde projeté', () => {
+  const RENT = { id: 'r1', accountId: 'a', label: 'Loyer', amount: 800, type: 'expense' as const, dayOfMonth: 5, date: null, endDate: null, toAccountId: null, category: null, memberId: null, payslipKey: null };
+
+  it('projeté = confirmé + delta des récurrences (zéro transaction réelle)', () => {
+    const cmp = makeComponent({ entries: [RENT] });
+    expect(cmp.confirmedBalance()).toBe(1000);
+    expect(cmp.projectedBalance()).toBe(200); // 1000 − 800
+  });
+
+  it('une récurrence postée (transaction réelle de même recurringEntryId ce mois) est exclue du delta', () => {
+    const month = new Date().toISOString().slice(0, 7);
+    // Daté au 1er du mois : toujours ≤ aujourd'hui (compté dans confirmedBalance) ET même mois (détecté posté).
+    const posted = { id: 'tx', accountId: 'a', amount: 800, direction: 'expense', toAccountId: null, date: `${month}-01`, category: null, note: null, memberId: null, recurringEntryId: 'r1' };
+    const cmp = makeComponent({ entries: [RENT], txs: [posted] });
+    expect(cmp.confirmedBalance()).toBe(200); // 1000 − 800 (dépense réelle)
+    expect(cmp.projectedBalance()).toBe(200); // delta = 0 (loyer posté, exclu)
+  });
+});
+
 describe('BankAccount — solde confirmé', () => {
   it('confirmedBalance = solde initial quand aucune transaction réelle', () => {
     expect(makeComponent().confirmedBalance()).toBe(1000);
