@@ -10,6 +10,7 @@ import { AuthModule } from './auth/auth.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
 import { ConsumablesModule } from './modules/consumables/consumables.module';
 import { EnvelopesModule } from './modules/envelopes/envelopes.module';
+import { AccountTransactionsModule } from './modules/account-transactions/account-transactions.module';
 import { LoansModule } from './modules/loans/loans.module';
 import { RecurringEntriesModule } from './modules/recurring-entries/recurring-entries.module';
 import { SalaryArchivesModule } from './modules/salary-archives/salary-archives.module';
@@ -37,6 +38,7 @@ import { StorageModule } from './storage/storage.module';
     BankAccountsModule,
     ConsumablesModule,
     EnvelopesModule,
+    AccountTransactionsModule,
     LoansModule,
     RecurringEntriesModule,
     SalaryArchivesModule,
