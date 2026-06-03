@@ -28,7 +28,7 @@ function makeComponent(opts: { entries?: unknown[]; txs?: unknown[] } = {}) {
       { provide: AccountTransactionGateway, useValue: { getAll: () => of(opts.txs ?? []) } },
       { provide: Toaster, useValue: { success: () => {}, error: () => {}, info: () => {} } },
       { provide: ConfirmService, useValue: { ask: () => of(true) } },
-      { provide: TranslocoService, useValue: { translate: (k: string) => k, getActiveLang: () => 'fr' } },
+      { provide: TranslocoService, useValue: { translate: (k: string) => k, getActiveLang: () => 'fr', events$: of({ type: 'translationLoadSuccess' }) } },
     ],
   });
   TestBed.overrideComponent(BankAccount, { set: { template: '', imports: [] } });
