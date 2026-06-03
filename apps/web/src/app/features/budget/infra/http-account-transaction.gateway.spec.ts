@@ -10,6 +10,16 @@ import { HttpAccountTransactionGateway } from './http-account-transaction.gatewa
 
 const BASE = environment.apiUrl;
 
+async function waitForRequest(httpMock: HttpTestingController, url: string, tries = 50) {
+  for (let i = 0; i < tries; i++) {
+    const reqs = httpMock.match(url);
+    if (reqs.length === 1) return reqs[0];
+    if (reqs.length > 1) throw new Error(`multiple requests for ${url}`);
+    await new Promise((r) => setTimeout(r, 0));
+  }
+  throw new Error(`no request emitted for ${url}`);
+}
+
 describe('HttpAccountTransactionGateway (plaintext)', () => {
   let gateway: HttpAccountTransactionGateway;
   let httpMock: HttpTestingController;
@@ -64,9 +74,7 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
       gateway.create('acc-1', { amount: 30, direction: 'expense', toAccountId: null, date: '2026-06-02', category: 'food', note: 'courses', memberId: null, recurringEntryId: null }),
     );
 
-    await new Promise((r) => setTimeout(r, 0)); // le POST part après le chiffrement async
-
-    const req = httpMock.expectOne(`${BASE}/bank-accounts/acc-1/transactions`);
+    const req = await waitForRequest(httpMock, `${BASE}/bank-accounts/acc-1/transactions`);
     expect(req.request.body.encryptedData).toBeTruthy();
     expect(req.request.body.amount).toBeUndefined();
 
