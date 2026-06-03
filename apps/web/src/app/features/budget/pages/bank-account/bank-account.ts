@@ -86,13 +86,13 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 
     <!-- ═══ KPI Cards ═══ -->
     <app-bank-kpi-grid
-      [currentBalance]="currentBalance()"
+      [currentBalance]="confirmedBalance()"
       [totalIncome]="totalIncome()"
       [totalMonthlyExpenses]="totalMonthlyExpenses()"
       [totalAnnualExpenses]="totalAnnualExpenses()"
       [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
       [totalMonthSpendings]="totalMonthSpendings()"
-      [endOfMonthBalance]="endOfMonthBalance()"
+      [endOfMonthBalance]="projectedBalance()"
       [today]="today"
       [incomesLabel]="incomesLabel()"
       [monthlyExpensesLabel]="monthlyExpensesLabel()"
@@ -160,7 +160,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
     <app-bank-timeline
       [timelineEvents]="timelineEvents()"
       [currentDay]="currentDay"
-      [currentBalance]="currentBalance()" />
+      [currentBalance]="confirmedBalance()" />
 
     <!-- ═══ Modals ═══ -->
     <app-modal-dialog #accountModal [title]="'budget.bankAccount.accountModal.title' | transloco" (closed)="resetAccountForm()">
@@ -520,19 +520,6 @@ export class BankAccount {
 
   protected readonly totalAllExpenses = computed(() =>
     this.totalMonthlyExpenses() + this.monthlyAnnualExpenses() + this.totalMonthSpendings() + this.totalOutgoing()
-  );
-
-  // Solde actuel = initial + revenus + virements entrants passés - prélèvements passés - virements sortants passés - annuels/12 - dépenses
-  protected readonly currentBalance = computed(() =>
-    this.selectedInitialBalance() + this.totalIncome() + this.passedIncoming()
-    - this.totalPassedExpenses() - this.passedOutgoing()
-    - this.monthlyAnnualExpenses() - this.totalMonthSpendings()
-  );
-
-  // Solde prochain salaire = initial + revenus + virements entrants - TOUTES charges - virements sortants
-  protected readonly endOfMonthBalance = computed(() =>
-    this.selectedInitialBalance() + this.totalIncome() + this.totalIncoming()
-    - this.totalMonthlyExpenses() - this.monthlyAnnualExpenses() - this.totalMonthSpendings() - this.totalOutgoing()
   );
 
   protected readonly usagePercent = computed(() => {
