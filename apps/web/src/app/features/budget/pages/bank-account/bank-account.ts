@@ -1,6 +1,6 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { toSignal, toObservable } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
@@ -24,6 +24,8 @@ import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
 import { BankExpenseColumns } from './bank-expense-columns/bank-expense-columns';
 import { BankTransfersPanel } from './bank-transfers-panel/bank-transfers-panel';
 import { BankTimeline } from './bank-timeline/bank-timeline';
+import { PendingCharge } from '../../domain/pending-charge';
+import { PendingChargesPanel } from './pending-charges-panel/pending-charges-panel';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -42,7 +44,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe],
+  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe, PendingChargesPanel],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -83,6 +85,14 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
         </button>
       </nav>
     </header>
+
+    <!-- ═══ Échéances à confirmer ═══ -->
+    <app-pending-charges-panel
+      [charges]="pendingCharges()"
+      [accountNameById]="accountNameByIdFn"
+      (confirm)="confirmCharge($event.id, $event.amount)"
+      (confirmAll)="confirmAllCharges()"
+      (ignore)="ignoreCharge($event)" />
 
     <!-- ═══ KPI Cards ═══ -->
     <app-bank-kpi-grid
@@ -289,6 +299,7 @@ export class BankAccount {
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
+  private readonly _destroyRef = inject(DestroyRef);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -309,7 +320,12 @@ export class BankAccount {
 
   protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
 
-  private readonly allTx = toSignal(this.txGateway.getAll(), { initialValue: [] as AccountTransaction[] });
+  private readonly _refreshTx = signal(0);
+  private readonly allTx = toSignal(
+    toObservable(this._refreshTx).pipe(switchMap(() => this.txGateway.getAll())),
+    { initialValue: [] as AccountTransaction[] },
+  );
+  private refreshTx(): void { this._refreshTx.update((n) => n + 1); }
   private readonly todayIso = new Date().toISOString().slice(0, 10);
 
   protected readonly selectedAccountId = linkedSignal<string | null>(() => {
@@ -480,6 +496,50 @@ export class BankAccount {
   });
 
   protected readonly projectedBalance = computed(() => this.confirmedBalance() + this.forecastDelta());
+
+  private readonly _ignoredCharges = signal<ReadonlySet<string>>(new Set());
+
+  protected readonly pendingCharges = computed<PendingCharge[]>(() => {
+    const ignored = this._ignoredCharges();
+    const candidates = [...this.incomes(), ...this.monthlyExpenses(), ...this.recurringTransfers()];
+    return candidates
+      .filter((e) => e.dayOfMonth != null && this.isExpensePassed(e) && this.isUnposted(e) && !ignored.has(e.id))
+      .map((e) => ({
+        entry: e,
+        direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
+        suggestedDate: `${this.currentMonth}-${String(e.dayOfMonth).padStart(2, '0')}`,
+        suggestedAmount: Number(e.amount),
+      }));
+  });
+
+  protected confirmCharge(id: string, amount: number): void {
+    const charge = this.pendingCharges().find((c) => c.entry.id === id);
+    if (!charge) return;
+    const e = charge.entry;
+    this.txGateway.create(e.accountId!, {
+      amount, direction: charge.direction, date: charge.suggestedDate,
+      toAccountId: e.toAccountId, category: e.category, note: null,
+      memberId: e.memberId, recurringEntryId: e.id,
+    }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this.refreshTx());
+  }
+
+  protected confirmAllCharges(): void {
+    const charges = this.pendingCharges();
+    let remaining = charges.length;
+    if (remaining === 0) return;
+    for (const c of charges) {
+      const e = c.entry;
+      this.txGateway.create(e.accountId!, {
+        amount: c.suggestedAmount, direction: c.direction, date: c.suggestedDate,
+        toAccountId: e.toAccountId, category: e.category, note: null,
+        memberId: e.memberId, recurringEntryId: e.id,
+      }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => { if (--remaining === 0) this.refreshTx(); });
+    }
+  }
+
+  protected ignoreCharge(id: string): void {
+    this._ignoredCharges.update((s) => new Set(s).add(id));
+  }
 
   protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));

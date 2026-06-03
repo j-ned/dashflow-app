@@ -69,3 +69,26 @@ describe('BankAccount — solde confirmé', () => {
     expect(makeComponent({ txs }).confirmedBalance()).toBe(1150);
   });
 });
+
+describe('BankAccount — échéances à confirmer', () => {
+  const month = new Date().toISOString().slice(0, 7);
+  const RENT = { id: 'r1', accountId: 'a', label: 'Loyer', amount: 800, type: 'expense', dayOfMonth: 1, date: null, endDate: null, toAccountId: null, category: null, memberId: null, payslipKey: null };
+
+  it('pendingCharges inclut une dépense récurrente échue et non postée', () => {
+    const cmp = makeComponent({ entries: [RENT] }) as unknown as { pendingCharges: () => unknown[] };
+    expect(cmp.pendingCharges().length).toBe(1);
+  });
+
+  it('pendingCharges exclut une récurrence déjà postée ce mois', () => {
+    const posted = { id: 'tx', accountId: 'a', amount: 800, direction: 'expense', toAccountId: null, date: `${month}-01`, category: null, note: null, memberId: null, recurringEntryId: 'r1' };
+    const cmp = makeComponent({ entries: [RENT], txs: [posted] }) as unknown as { pendingCharges: () => unknown[] };
+    expect(cmp.pendingCharges().length).toBe(0);
+  });
+
+  it('ignoreCharge retire l\'échéance de la liste', () => {
+    const cmp = makeComponent({ entries: [RENT] }) as unknown as { pendingCharges: () => unknown[]; ignoreCharge: (id: string) => void };
+    expect(cmp.pendingCharges().length).toBe(1);
+    cmp.ignoreCharge('r1');
+    expect(cmp.pendingCharges().length).toBe(0);
+  });
+});

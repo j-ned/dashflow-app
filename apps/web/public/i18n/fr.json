@@ -616,6 +616,7 @@
       "manage": "Gérer",
       "allAccounts": "Tous les comptes",
       "accountNavAria": "Sélection du compte",
+      "pending": { "title": "Échéances à confirmer", "confirm": "Confirmer", "confirmAll": "Tout confirmer", "ignore": "Ignorer", "dueOn": "échéance du {{date}}" },
       "kpi": {
         "balance": "Solde confirmé",
         "balanceAt": "réel au {{date}}",

@@ -616,6 +616,7 @@
       "manage": "Manage",
       "allAccounts": "All accounts",
       "accountNavAria": "Account selection",
+      "pending": { "title": "Charges to confirm", "confirm": "Confirm", "confirmAll": "Confirm all", "ignore": "Dismiss", "dueOn": "due {{date}}" },
       "kpi": {
         "balance": "Confirmed balance",
         "balanceAt": "real as of {{date}}",
