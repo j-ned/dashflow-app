@@ -16,12 +16,39 @@ describe('Transactions page', () => {
       providers: [
         provideHttpClient(),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
-        { provide: AccountTransactionGateway, useValue: { getForAccount: () => of(txs), getAll: () => of(txs) } },
+        { provide: AccountTransactionGateway, useValue: { getAll: () => of(txs) } },
       ],
     });
     const fixture = TestBed.createComponent(Transactions);
     fixture.detectChanges();
     const cmp = fixture.componentInstance as unknown as { confirmedBalanceValue: () => number };
     expect(cmp.confirmedBalanceValue()).toBe(1600);
+  });
+
+  it('crée un mouvement via la gateway puis recharge', () => {
+    const accounts = [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0, color: null, dotColor: null }];
+    const create = vi.fn(() => of({ id: 't9', accountId: 'a', amount: 12, direction: 'expense', toAccountId: null, date: '2026-06-10', category: 'food', note: null, memberId: null, recurringEntryId: null }));
+    const getAll = vi.fn(() => of([]));
+    TestBed.configureTestingModule({
+      providers: [
+        provideHttpClient(),
+        { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
+        { provide: AccountTransactionGateway, useValue: { getAll, getForAccount: () => of([]), create, delete: () => of(void 0) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(Transactions);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as {
+      draftAmount: { set: (n: number) => void };
+      draftDirection: { set: (d: string) => void };
+      draftDate: { set: (d: string) => void };
+      draftCategory: { set: (c: string) => void };
+      addTransaction: () => void;
+    };
+    cmp.draftAmount.set(12); cmp.draftDirection.set('expense');
+    cmp.draftDate.set('2026-06-10'); cmp.draftCategory.set('food');
+    cmp.addTransaction();
+    expect(create).toHaveBeenCalledWith('a', expect.objectContaining({ amount: 12, direction: 'expense', date: '2026-06-10', category: 'food' }));
+    expect(getAll).toHaveBeenCalledTimes(2);
   });
 });
