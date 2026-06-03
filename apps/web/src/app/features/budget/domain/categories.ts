@@ -32,7 +32,7 @@ export const BUDGET_CATEGORIES: readonly BudgetCategory[] = [
   { key: 'other',        label: 'Autre',         i18nKey: 'budget.analytics.category.other',        color: 'var(--color-text-muted)' },
 ];
 
-const OTHER_CATEGORY = BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
+export const OTHER_CATEGORY = BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
 
 /** Repli accents + casse + espaces pour un appariement tolérant. */
 function fold(value: string): string {
@@ -47,4 +47,44 @@ const BY_FOLDED_LABEL = new Map<string, BudgetCategory>(
 export function normalizeCategory(raw: string | null | undefined): BudgetCategory {
   if (!raw) return OTHER_CATEGORY;
   return BY_FOLDED_LABEL.get(fold(raw)) ?? OTHER_CATEGORY;
+}
+
+// ---------------------------------------------------------------------------
+// Taxonomie groupée
+// ---------------------------------------------------------------------------
+
+export interface CategoryGroup {
+  readonly key: string;
+  readonly label: string;
+  readonly categories: readonly BudgetCategory[];
+}
+
+export const CATEGORY_GROUPS: readonly CategoryGroup[] = [
+  { key: 'living', label: 'Vie courante', categories: [
+    BUDGET_CATEGORIES.find((c) => c.key === 'food')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'housing')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'transport')!,
+  ] },
+  { key: 'recurring', label: 'Récurrent', categories: [
+    BUDGET_CATEGORIES.find((c) => c.key === 'subscription')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'insurance')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'repayment')!,
+  ] },
+  { key: 'wellbeing', label: 'Bien-être', categories: [
+    BUDGET_CATEGORIES.find((c) => c.key === 'health')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'leisure')!,
+  ] },
+  { key: 'misc', label: 'Divers', categories: [
+    BUDGET_CATEGORIES.find((c) => c.key === 'envelope')!,
+    BUDGET_CATEGORIES.find((c) => c.key === 'other')!,
+  ] },
+];
+
+const BY_KEY = new Map<string, BudgetCategory & { group: string }>(
+  CATEGORY_GROUPS.flatMap((g) => g.categories.map((c) => [c.key, { ...c, group: g.label }])),
+);
+
+/** Métadonnées d'un code catégorie ; retombe sur « Autre » si inconnu. */
+export function categoryMeta(code: string | null | undefined): BudgetCategory & { group: string } {
+  return (code && BY_KEY.get(code)) || { ...OTHER_CATEGORY, group: 'Divers' };
 }
