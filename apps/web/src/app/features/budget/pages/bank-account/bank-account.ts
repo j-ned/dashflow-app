@@ -9,6 +9,10 @@ import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gat
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { MemberGateway } from '../../domain/gateways/member.gateway';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
+import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
+import { AccountTransaction } from '../../domain/models/account-transaction.model';
+import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
+import { addMoney } from '../../domain/money';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
@@ -281,6 +285,7 @@ export class BankAccount {
   private readonly accountGateway = inject(BankAccountGateway);
   private readonly memberGateway = inject(MemberGateway);
   private readonly archiveGateway = inject(SalaryArchiveGateway);
+  private readonly txGateway = inject(AccountTransactionGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -303,6 +308,9 @@ export class BankAccount {
   );
 
   protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
+
+  private readonly allTx = toSignal(this.txGateway.getAll(), { initialValue: [] as AccountTransaction[] });
+  private readonly todayIso = new Date().toISOString().slice(0, 10);
 
   protected readonly selectedAccountId = linkedSignal<string | null>(() => {
     const accs = this.accounts();
@@ -438,6 +446,23 @@ export class BankAccount {
   protected readonly selectedInitialBalance = computed(() =>
     Number(this.selectedAccount()?.initialBalance ?? 0)
   );
+
+  protected readonly accountRealTxs = computed(() => {
+    const id = this.selectedAccountId();
+    const txs = this.allTx();
+    if (id === null) return txs;
+    return txs.filter((t) => t.accountId === id || t.toAccountId === id);
+  });
+
+  protected readonly confirmedBalance = computed(() => {
+    const acc = this.selectedAccount();
+    if (acc) return computeConfirmedBalance(acc, this.accountRealTxs(), this.todayIso);
+    const txs = this.allTx();
+    return this.accounts().reduce(
+      (sum, a) => addMoney(sum, computeConfirmedBalance(a, txs.filter((t) => t.accountId === a.id || t.toAccountId === a.id), this.todayIso)),
+      0,
+    );
+  });
 
   protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
