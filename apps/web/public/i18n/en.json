@@ -364,7 +364,8 @@
       "loans": "Loans & Debts",
       "account": "Account",
       "archives": "Archives",
-      "analytics": "Analytics"
+      "analytics": "Analytics",
+      "transactions": "Statement"
     },
     "medical": {
       "navLabel": "Medical navigation",
@@ -1679,6 +1680,7 @@
         "navAccount": "Bank account",
         "navArchives": "Salary archives",
         "navAnalytics": "Analytics & Forecasts",
+        "navTransactions": "Transaction statement",
         "navMedical": "Overview — Medical",
         "navPatients": "Patients",
         "navPractitioners": "Practitioners",

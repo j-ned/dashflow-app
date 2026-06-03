@@ -25,5 +25,9 @@ export const BUDGET_ROUTES: Routes = [
     path: 'analytics',
     loadComponent: () => import('./pages/budget-analytics/budget-analytics').then(m => m.BudgetAnalytics),
   },
+  {
+    path: 'transactions',
+    loadComponent: () => import('./pages/transactions/transactions').then(m => m.Transactions),
+  },
   { path: '', redirectTo: 'dashboard', pathMatch: 'full' },
 ];

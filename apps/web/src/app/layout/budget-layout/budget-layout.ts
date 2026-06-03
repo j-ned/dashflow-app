@@ -10,6 +10,7 @@ const BUDGET_NAV: readonly FeatureSidebarItem[] = [
   { route: '/budget/account', icon: 'wallet', labelKey: 'layout.budget.account' },
   { route: '/budget/archives', icon: 'folder', labelKey: 'layout.budget.archives' },
   { route: '/budget/analytics', icon: 'trending-up', labelKey: 'layout.budget.analytics' },
+  { route: '/budget/transactions', icon: 'receipt', labelKey: 'layout.budget.transactions' },
 ];
 
 @Component({

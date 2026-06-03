@@ -364,7 +364,8 @@
       "loans": "Prêts & Dettes",
       "account": "Compte",
       "archives": "Archives",
-      "analytics": "Statistiques"
+      "analytics": "Statistiques",
+      "transactions": "Relevé"
     },
     "medical": {
       "navLabel": "Navigation médicale",
@@ -1679,6 +1680,7 @@
         "navAccount": "Compte bancaire",
         "navArchives": "Archives salaires",
         "navAnalytics": "Statistiques & Prévisions",
+        "navTransactions": "Relevé des transactions",
         "navMedical": "Vue globale — Médical",
         "navPatients": "Patients",
         "navPractitioners": "Praticiens",
