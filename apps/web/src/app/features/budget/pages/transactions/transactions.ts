@@ -5,6 +5,7 @@ import {
   computed,
   inject,
   signal,
+  viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { Subscription } from 'rxjs';
@@ -15,16 +16,26 @@ import { AccountTransactionGateway } from '../../domain/gateways/account-transac
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { confirmedBalance } from '../../domain/account-balance';
 import { CATEGORY_GROUPS, categoryMeta } from '../../domain/categories';
+import { TranslocoPipe } from '@jsverse/transloco';
+import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
+import { CsvImportWizard } from './csv-import-wizard/csv-import-wizard';
 
 type TransactionViewModel = AccountTransaction & { categoryLabel: string; categoryColor: string; isCredit: boolean };
 
 @Component({
   selector: 'app-transactions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, FormsModule],
+  imports: [DecimalPipe, FormsModule, TranslocoPipe, ModalDialog, CsvImportWizard],
   host: { class: 'block p-6' },
   template: `
-    <h1 class="text-xl font-semibold mb-4">Relevé</h1>
+    <div class="flex items-center justify-between mb-4">
+      <h1 class="text-xl font-semibold">Relevé</h1>
+      <button type="button"
+        class="rounded-lg border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
+        (click)="importModalRef().open()">
+        {{ 'budget.transactions.import.button' | transloco }}
+      </button>
+    </div>
 
     <div class="flex flex-wrap gap-2 mb-4">
       @for (acc of accounts(); track acc.id) {
@@ -100,12 +111,23 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
         }
       </ul>
     }
+
+    <app-modal-dialog #importModal [title]="'budget.transactions.import.title' | transloco" size="xl">
+      @if (importModalRef().isOpen()) {
+        <app-csv-import-wizard
+          [accountId]="currentAccount()?.id ?? ''"
+          [existing]="existingForImport()"
+          (imported)="onImported($event)" />
+      }
+    </app-modal-dialog>
   `,
 })
 export class Transactions {
   private readonly _accountGateway = inject(BankAccountGateway);
   private readonly _txGateway = inject(AccountTransactionGateway);
   private readonly _destroyRef = inject(DestroyRef);
+
+  protected readonly importModalRef = viewChild.required<ModalDialog>('importModal');
 
   protected readonly accounts = toSignal(this._accountGateway.getAll(), { initialValue: [] });
   protected readonly selectedId = signal<string | null>(null);
@@ -130,6 +152,8 @@ export class Transactions {
     const id = this.selectedId() ?? this.accounts()[0]?.id ?? null;
     return this.accounts().find((a) => a.id === id) ?? null;
   });
+
+  protected readonly currentAccount = this._currentAccount;
 
   protected readonly transactions = computed<TransactionViewModel[]>(() => {
     const acc = this._currentAccount();
@@ -177,5 +201,16 @@ export class Transactions {
 
   protected removeTransaction(id: string): void {
     this._txGateway.delete(id).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this.reload());
+  }
+
+  protected readonly existingForImport = computed(() =>
+    this.allTx()
+      .filter((t) => t.accountId === (this._currentAccount()?.id ?? ''))
+      .map((t) => ({ date: t.date, amount: t.amount, note: t.note }))
+  );
+
+  protected onImported(n: number): void {
+    this.importModalRef().close();
+    this.reload();
   }
 }

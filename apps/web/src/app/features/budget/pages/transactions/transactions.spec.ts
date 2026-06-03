@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
+import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Transactions } from './transactions';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
@@ -13,6 +14,7 @@ describe('Transactions page', () => {
       { id: 't2', accountId: 'a', amount: 500, direction: 'expense', toAccountId: null, date: '2000-01-02', category: null, note: null, memberId: null, recurringEntryId: null },
     ];
     TestBed.configureTestingModule({
+      imports: [TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } })],
       providers: [
         provideHttpClient(),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
@@ -30,6 +32,7 @@ describe('Transactions page', () => {
     const create = vi.fn(() => of({ id: 't9', accountId: 'a', amount: 12, direction: 'expense', toAccountId: null, date: '2026-06-10', category: 'food', note: null, memberId: null, recurringEntryId: null }));
     const getAll = vi.fn(() => of([]));
     TestBed.configureTestingModule({
+      imports: [TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } })],
       providers: [
         provideHttpClient(),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },

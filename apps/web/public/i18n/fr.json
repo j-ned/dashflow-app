@@ -1187,6 +1187,26 @@
       "fileSizeKb": "{{size}} Ko",
       "submitAdd": "Ajouter",
       "submitEdit": "Modifier"
+    },
+    "transactions": {
+      "import": {
+        "title": "Importer un relevé",
+        "button": "Importer un relevé",
+        "step1": "Choisir un fichier CSV",
+        "fileLabel": "Fichier CSV",
+        "step2": "Associer les colonnes",
+        "step3": "Vérifier et importer",
+        "date": "Date",
+        "label": "Libellé",
+        "amount": "Montant",
+        "category": "Catégorie",
+        "dateFormat": "Format de date",
+        "preview": "Aperçu",
+        "duplicate": "doublon",
+        "selected": "sélectionnées",
+        "readError": "Lecture du fichier impossible",
+        "confirm": "Importer {{count}} transactions"
+      }
     }
   },
   "demo": {

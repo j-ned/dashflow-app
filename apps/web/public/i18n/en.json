@@ -1187,6 +1187,26 @@
       "fileSizeKb": "{{size}} KB",
       "submitAdd": "Add",
       "submitEdit": "Edit"
+    },
+    "transactions": {
+      "import": {
+        "title": "Import statement",
+        "button": "Import statement",
+        "step1": "Choose a CSV file",
+        "fileLabel": "CSV file",
+        "step2": "Map columns",
+        "step3": "Review and import",
+        "date": "Date",
+        "label": "Label",
+        "amount": "Amount",
+        "category": "Category",
+        "dateFormat": "Date format",
+        "preview": "Preview",
+        "duplicate": "duplicate",
+        "selected": "selected",
+        "readError": "Could not read the file",
+        "confirm": "Import {{count}} transactions"
+      }
     }
   },
   "demo": {
