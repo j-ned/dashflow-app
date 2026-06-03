@@ -13,6 +13,8 @@ import { routes } from './app.routes';
 import { transloco, readInitialLang } from './core/i18n/transloco.config';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { HttpEnvelopeGateway } from '@features/budget/infra/http-envelope.gateway';
+import { AccountTransactionGateway } from '@features/budget/domain/gateways/account-transaction.gateway';
+import { HttpAccountTransactionGateway } from '@features/budget/infra/http-account-transaction.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { HttpLoanGateway } from '@features/budget/infra/http-loan.gateway';
 import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
@@ -58,6 +60,7 @@ export const appConfig: ApplicationConfig = {
     ),
     transloco,
 
+    { provide: AccountTransactionGateway, useClass: HttpAccountTransactionGateway },
     { provide: EnvelopeGateway, useClass: HttpEnvelopeGateway },
     { provide: LoanGateway, useClass: HttpLoanGateway },
     { provide: MemberGateway, useClass: HttpMemberGateway },
