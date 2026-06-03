@@ -8,6 +8,8 @@ export const loanDirectionEnum = pgEnum('loan_direction', ['lent', 'borrowed']);
 
 export const bankAccountTypeEnum = pgEnum('bank_account_type', ['courant', 'épargne', 'carte', 'espèces']);
 
+export const transactionDirectionEnum = pgEnum('transaction_direction', ['income', 'expense', 'transfer']);
+
 export const recurringEntryTypeEnum = pgEnum('recurring_entry_type', ['income', 'expense', 'annual_expense', 'spending', 'transfer']);
 
 export const consumableCategoryEnum = pgEnum('consumable_category', [
@@ -25,6 +27,22 @@ export const bankAccounts = pgTable('bank_accounts', {
   initialBalance: numeric('initial_balance', { precision: 12, scale: 2 }).notNull().default('0'),
   color: varchar('color', { length: 7 }),
   dotColor: varchar('dot_color', { length: 7 }),
+  encryptedData: text('encrypted_data'),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
+export const accountTransactions = pgTable('account_transactions', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  userId: uuid('user_id').notNull().references(() => users.id, { onDelete: 'cascade' }),
+  accountId: uuid('account_id').notNull().references(() => bankAccounts.id, { onDelete: 'cascade' }),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull().default('0'),
+  direction: transactionDirectionEnum('direction').notNull().default('expense'),
+  toAccountId: uuid('to_account_id').references(() => bankAccounts.id, { onDelete: 'set null' }),
+  date: date('date').notNull(),
+  category: varchar('category', { length: 100 }),
+  note: varchar('note', { length: 255 }),
+  memberId: uuid('member_id').references(() => patients.id, { onDelete: 'set null' }),
+  recurringEntryId: uuid('recurring_entry_id').references(() => recurringEntries.id, { onDelete: 'set null' }),
   encryptedData: text('encrypted_data'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
