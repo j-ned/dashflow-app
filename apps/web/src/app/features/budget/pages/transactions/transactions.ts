@@ -29,7 +29,7 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
   host: { class: 'block p-6' },
   template: `
     <div class="flex items-center justify-between mb-4">
-      <h1 class="text-xl font-semibold">Relevé</h1>
+      <h1 class="text-xl font-semibold">{{ 'budget.transactions.title' | transloco }}</h1>
       <button type="button"
         class="rounded-lg border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
         (click)="importModalRef().open()">
@@ -48,23 +48,23 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
 
     <p class="text-2xl font-bold mb-6" data-testid="confirmed-balance">
       {{ confirmedBalanceValue() | number: '1.2-2' }} €
-      <span class="text-sm font-normal text-text-muted">solde confirmé</span>
+      <span class="text-sm font-normal text-text-muted">{{ 'budget.transactions.confirmedBalance' | transloco }}</span>
     </p>
 
     <!-- Add form -->
     <div class="flex flex-wrap gap-2 mb-6 p-4 bg-raised rounded-xl">
       <input type="number" min="0" step="0.01"
         class="w-28 rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
-        placeholder="Montant"
+        [placeholder]="'budget.transactions.amountPlaceholder' | transloco"
         [ngModel]="draftAmount()"
         (ngModelChange)="draftAmount.set($event)" />
 
       <select class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [ngModel]="draftDirection()"
         (ngModelChange)="draftDirection.set($event)">
-        <option value="expense">Dépense</option>
-        <option value="income">Revenu</option>
-        <option value="transfer">Virement</option>
+        <option value="expense">{{ 'budget.transactions.direction.expense' | transloco }}</option>
+        <option value="income">{{ 'budget.transactions.direction.income' | transloco }}</option>
+        <option value="transfer">{{ 'budget.transactions.direction.transfer' | transloco }}</option>
       </select>
 
       <input type="date"
@@ -86,11 +86,11 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
 
       <button type="button"
         class="rounded-lg bg-ib-blue px-4 py-1.5 text-sm font-medium text-canvas"
-        (click)="addTransaction()">Ajouter</button>
+        (click)="addTransaction()">{{ 'budget.transactions.add' | transloco }}</button>
     </div>
 
     @if (transactions().length === 0) {
-      <p class="text-text-muted">Aucun mouvement réel pour ce compte.</p>
+      <p class="text-text-muted">{{ 'budget.transactions.empty' | transloco }}</p>
     } @else {
       <ul class="divide-y divide-border/40">
         @for (t of transactions(); track t.id) {
@@ -105,7 +105,7 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
               </span>
               <button type="button"
                 class="text-xs text-text-muted hover:text-ib-red transition-colors"
-                (click)="removeTransaction(t.id)">Supprimer</button>
+                (click)="removeTransaction(t.id)">{{ 'budget.transactions.delete' | transloco }}</button>
             </span>
           </li>
         }

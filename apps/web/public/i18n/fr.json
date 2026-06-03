@@ -1189,6 +1189,17 @@
       "submitEdit": "Modifier"
     },
     "transactions": {
+      "title": "Relevé",
+      "confirmedBalance": "solde confirmé",
+      "amountPlaceholder": "Montant",
+      "direction": {
+        "expense": "Dépense",
+        "income": "Revenu",
+        "transfer": "Virement"
+      },
+      "add": "Ajouter",
+      "empty": "Aucun mouvement réel pour ce compte.",
+      "delete": "Supprimer",
       "import": {
         "title": "Importer un relevé",
         "button": "Importer un relevé",

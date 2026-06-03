@@ -1189,6 +1189,17 @@
       "submitEdit": "Edit"
     },
     "transactions": {
+      "title": "Statement",
+      "confirmedBalance": "confirmed balance",
+      "amountPlaceholder": "Amount",
+      "direction": {
+        "expense": "Expense",
+        "income": "Income",
+        "transfer": "Transfer"
+      },
+      "add": "Add",
+      "empty": "No real transaction for this account.",
+      "delete": "Delete",
       "import": {
         "title": "Import statement",
         "button": "Import statement",
