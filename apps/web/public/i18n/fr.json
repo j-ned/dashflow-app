@@ -617,8 +617,8 @@
       "allAccounts": "Tous les comptes",
       "accountNavAria": "Sélection du compte",
       "kpi": {
-        "balance": "Solde actuel",
-        "balanceAt": "au {{date}}",
+        "balance": "Solde confirmé",
+        "balanceAt": "réel au {{date}}",
         "income": "Revenus",
         "incomeSources": "{{count}} sources",
         "directDebits": "Prélèvements",
@@ -628,8 +628,8 @@
         "spending": "Dépenses",
         "spendingCount": "{{count}} dépense en {{month}}",
         "spendingCountPlural": "{{count}} dépenses en {{month}}",
-        "endOfCycle": "Solde fin de cycle",
-        "endOfCycleSub": "après toutes charges du cycle"
+        "endOfCycle": "Projeté (fin de mois)",
+        "endOfCycleSub": "confirmé + à venir"
       },
       "usage": {
         "label": "Budget utilisé",
