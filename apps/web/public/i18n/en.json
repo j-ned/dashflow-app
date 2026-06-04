@@ -758,7 +758,21 @@
         "chargeConfirmed": "Movement recorded",
         "chargeConfirmError": "Could not confirm the charge",
         "chargesConfirmed": "{{count}} charges confirmed",
-        "chargesConfirmError": "{{failed}} charge(s) could not be confirmed"
+        "chargesConfirmError": "{{failed}} charge(s) could not be confirmed",
+        "entryReassigned": "Recurring entry reassigned",
+        "entryReassignError": "Error reassigning entry"
+      },
+      "orphans": {
+        "title": "Recurring entries without an account",
+        "reassignPlaceholder": "Reassign to…",
+        "delete": "Delete"
+      },
+      "deleteWithEntries": {
+        "title": "Account with recurring entries",
+        "message": "This account has {{count}} recurring entrie(s). What to do?",
+        "reassignTo": "Reassign to {{name}}",
+        "deleteEntries": "Delete the recurring entries",
+        "onlyDeleteMessage": "This account has {{count}} recurring entrie(s). Delete them with the account?"
       },
       "timelineFallback": "Other"
     },

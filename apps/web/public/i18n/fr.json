@@ -758,7 +758,21 @@
         "chargeConfirmed": "Mouvement enregistré",
         "chargeConfirmError": "Impossible de confirmer l'échéance",
         "chargesConfirmed": "{{count}} échéances confirmées",
-        "chargesConfirmError": "{{failed}} échéance(s) n'ont pas pu être confirmées"
+        "chargesConfirmError": "{{failed}} échéance(s) n'ont pas pu être confirmées",
+        "entryReassigned": "Récurrence réassignée",
+        "entryReassignError": "Erreur lors de la réassignation"
+      },
+      "orphans": {
+        "title": "Récurrences sans compte",
+        "reassignPlaceholder": "Réassigner à…",
+        "delete": "Supprimer"
+      },
+      "deleteWithEntries": {
+        "title": "Compte avec récurrences",
+        "message": "Ce compte porte {{count}} récurrence(s). Que faire ?",
+        "reassignTo": "Réassigner à {{name}}",
+        "deleteEntries": "Supprimer les récurrences",
+        "onlyDeleteMessage": "Ce compte porte {{count}} récurrence(s). Les supprimer avec le compte ?"
       },
       "timelineFallback": "Autre"
     },

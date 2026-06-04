@@ -26,6 +26,7 @@ import { BankTransfersPanel } from './bank-transfers-panel/bank-transfers-panel'
 import { BankTimeline } from './bank-timeline/bank-timeline';
 import { PendingCharge } from '../../domain/pending-charge';
 import { PendingChargesPanel } from './pending-charges-panel/pending-charges-panel';
+import { OrphanEntriesPanel } from './orphan-entries-panel/orphan-entries-panel';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -44,7 +45,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe, PendingChargesPanel],
+  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe, PendingChargesPanel, OrphanEntriesPanel],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -93,6 +94,12 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
       (confirm)="confirmCharge($event.id, $event.amount)"
       (confirmAll)="confirmAllCharges()"
       (ignore)="ignoreCharge($event)" />
+
+    <app-orphan-entries-panel
+      [entries]="orphanEntries()"
+      [accounts]="accounts()"
+      (reassign)="reassignEntry($event.id, $event.accountId)"
+      (delete)="deleteEntry($event)" />
 
     <!-- ═══ KPI Cards ═══ -->
     <app-bank-kpi-grid
@@ -502,6 +509,8 @@ export class BankAccount {
 
   private readonly _ignoredCharges = signal<ReadonlySet<string>>(new Set());
 
+  protected readonly orphanEntries = computed(() => this.allEntries().filter((e) => e.accountId == null));
+
   protected readonly pendingCharges = computed<PendingCharge[]>(() => {
     const ignored = this._ignoredCharges();
     const candidates = [...this.incomes(), ...this.monthlyExpenses(), ...this.recurringTransfers()];
@@ -516,6 +525,18 @@ export class BankAccount {
         suggestedAmount: Number(e.amount),
       }));
   });
+
+  protected reassignEntry(id: string, accountId: string): void {
+    const entry = this.allEntries().find((e) => e.id === id);
+    if (!entry) return;
+    const { id: _id, ...rest } = entry;
+    this.entryGateway.update(id, { ...rest, accountId })
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: () => { this._refresh.update((v) => v + 1); this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryReassigned')); },
+        error: () => this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryReassignError')),
+      });
+  }
 
   protected confirmCharge(id: string, amount: number): void {
     const charge = this.pendingCharges().find((c) => c.entry.id === id);
@@ -769,20 +790,67 @@ export class BankAccount {
   }
 
   protected async deleteAccount(account: BankAccountModel) {
-    if (!await this.confirm.confirm({
-      title: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmTitle'),
-      message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', { name: account.name }),
-      confirmLabel: this._i18n.translate('budget.actions.delete'),
-      variant: 'danger',
-    })) return;
+    const entries = this.allEntries().filter((e) => e.accountId === account.id);
+
+    if (entries.length > 0) {
+      const others = this.accounts().filter((a) => a.id !== account.id);
+      const target = others.find((a) => a.id === this.selectedAccountId()) ?? others[0] ?? null;
+
+      let mode: 'reassign' | 'deleteEntries';
+      if (target) {
+        const choice = await this.confirm.choose({
+          title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
+          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.message', { count: entries.length }),
+          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.reassignTo', { name: target.name }),
+          alternativeLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.deleteEntries'),
+          cancelLabel: this._i18n.translate('common.cancel'),
+          variant: 'danger',
+        });
+        if (choice === 'cancel') return;
+        mode = choice === 'confirm' ? 'reassign' : 'deleteEntries';
+      } else {
+        const ok = await this.confirm.confirm({
+          title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
+          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.onlyDeleteMessage', { count: entries.length }),
+          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.deleteEntries'),
+          variant: 'danger',
+        });
+        if (!ok) return;
+        mode = 'deleteEntries';
+      }
+
+      try {
+        if (mode === 'reassign' && target) {
+          for (const e of entries) {
+            const { id: _id, ...rest } = e;
+            await lastValueFrom(this.entryGateway.update(e.id, { ...rest, accountId: target.id }));
+          }
+        } else {
+          for (const e of entries) {
+            await lastValueFrom(this.entryGateway.delete(e.id));
+          }
+        }
+      } catch {
+        this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryReassignError'));
+        return; // interrompre : ne pas supprimer un compte dont des récurrences pointent encore dessus
+      }
+    } else {
+      if (!await this.confirm.confirm({
+        title: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmTitle'),
+        message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', { name: account.name }),
+        confirmLabel: this._i18n.translate('budget.actions.delete'),
+        variant: 'danger',
+      })) return;
+    }
+
     try {
       await lastValueFrom(this.accountGateway.delete(account.id));
       this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountDeleted'));
       if (this.selectedAccountId() === account.id) {
         this.selectedAccountId.set(null);
       }
-      this._refreshAccounts.update(v => v + 1);
-      this._refresh.update(v => v + 1);
+      this._refreshAccounts.update((v) => v + 1);
+      this._refresh.update((v) => v + 1);
     } catch {
       this.toaster.error(this._i18n.translate('budget.bankAccount.messages.accountDeleteError'));
     }
