@@ -428,11 +428,11 @@ export class SalaryArchives {
     };
     try {
       await lastValueFrom(this.gateway.update(id, updated));
-      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.updated'));
+      this.toaster.success('budget.salaryArchive.messages.updated');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.updateError'));
+      this.toaster.error('budget.salaryArchive.messages.updateError');
     }
   }
 
@@ -455,11 +455,11 @@ export class SalaryArchives {
 
     try {
       await lastValueFrom(this.gateway.create(fd));
-      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.created'));
+      this.toaster.success('budget.salaryArchive.messages.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.createError'));
+      this.toaster.error('budget.salaryArchive.messages.createError');
     }
   }
 
@@ -472,10 +472,10 @@ export class SalaryArchives {
     })) return;
     try {
       await lastValueFrom(this.gateway.delete(archive.id));
-      this.toaster.success(this._i18n.translate('budget.salaryArchive.messages.deleted'));
+      this.toaster.success('budget.salaryArchive.messages.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.salaryArchive.messages.deleteError'));
+      this.toaster.error('budget.salaryArchive.messages.deleteError');
     }
   }
 

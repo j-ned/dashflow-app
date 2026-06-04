@@ -330,7 +330,7 @@ export class Reminders {
     a.download = `dashflow-alerte-${reminder.id.slice(0, 8)}.ics`;
     a.click();
     URL.revokeObjectURL(url);
-    this.toaster.success(this._i18n.translate('medical.reminder.feedback.icsDownloaded'));
+    this.toaster.success('medical.reminder.feedback.icsDownloaded');
   }
 
   // ── Date formatting helpers ──
@@ -378,21 +378,21 @@ export class Reminders {
   protected async createReminder(data: Omit<Reminder, 'id'>) {
     try {
       await lastValueFrom(this.createReminderUC.execute(data));
-      this.toaster.success(this._i18n.translate('medical.reminder.feedback.created'));
+      this.toaster.success('medical.reminder.feedback.created');
       this.createReminderModalRef().close();
       this._refreshReminders.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.reminder.feedback.createFailed'));
+      this.toaster.error('medical.reminder.feedback.createFailed');
     }
   }
 
   protected async toggleReminder(id: string) {
     try {
       await lastValueFrom(this.toggleReminderUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.reminder.feedback.updated'));
+      this.toaster.success('medical.reminder.feedback.updated');
       this._refreshReminders.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.reminder.feedback.updateFailed'));
+      this.toaster.error('medical.reminder.feedback.updateFailed');
     }
   }
 
@@ -400,10 +400,10 @@ export class Reminders {
     if (!await this.confirm.delete(this._i18n.translate('medical.reminder.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deleteReminderUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.reminder.feedback.deleted'));
+      this.toaster.success('medical.reminder.feedback.deleted');
       this._refreshReminders.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.reminder.feedback.deleteFailed'));
+      this.toaster.error('medical.reminder.feedback.deleteFailed');
     }
   }
 

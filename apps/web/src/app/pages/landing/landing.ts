@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { NgOptimizedImage } from '@angular/common';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 import { LocaleThemeToggle } from '@shared/components/locale-theme-toggle/locale-theme-toggle';
 import { AuthStore } from '@features/auth/domain/auth.store';
@@ -485,7 +485,6 @@ export class LandingComponent {
   private readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toaster = inject(Toaster);
-  private readonly _i18n = inject(TranslocoService);
 
   protected readonly premiumPrice = 49;
   protected readonly contactEmail = CONTACT_EMAIL;
@@ -499,7 +498,7 @@ export class LandingComponent {
       await this.auth.demoLogin();
       await this.router.navigate(['/budget'], { replaceUrl: true });
     } catch {
-      this.toaster.error(this._i18n.translate('landing.hero.demoError'));
+      this.toaster.error('landing.hero.demoError');
     } finally {
       this.demoLoading.set(false);
     }

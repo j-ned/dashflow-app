@@ -222,11 +222,11 @@ export class Appointments {
   protected async createAppointment(data: Omit<Appointment, 'id'>) {
     try {
       await lastValueFrom(this.createAppointmentUC.execute(data));
-      this.toaster.success(this._i18n.translate('medical.appointment.feedback.created'));
+      this.toaster.success('medical.appointment.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.appointment.feedback.createFailed'));
+      this.toaster.error('medical.appointment.feedback.createFailed');
     }
   }
 
@@ -235,21 +235,21 @@ export class Appointments {
     if (!id) return;
     try {
       await lastValueFrom(this.updateAppointmentUC.execute(id, data));
-      this.toaster.success(this._i18n.translate('medical.appointment.feedback.updated'));
+      this.toaster.success('medical.appointment.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.appointment.feedback.updateFailed'));
+      this.toaster.error('medical.appointment.feedback.updateFailed');
     }
   }
 
   protected async updateStatus(id: string, status: AppointmentStatus) {
     try {
       await lastValueFrom(this.updateAppointmentStatusUC.execute(id, status));
-      this.toaster.success(this._i18n.translate('medical.appointment.feedback.statusUpdated'));
+      this.toaster.success('medical.appointment.feedback.statusUpdated');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.appointment.feedback.statusFailed'));
+      this.toaster.error('medical.appointment.feedback.statusFailed');
     }
   }
 
@@ -257,10 +257,10 @@ export class Appointments {
     if (!await this.confirm.delete(this._i18n.translate('medical.appointment.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deleteAppointmentUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.appointment.feedback.deleted'));
+      this.toaster.success('medical.appointment.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.appointment.feedback.deleteFailed'));
+      this.toaster.error('medical.appointment.feedback.deleteFailed');
     }
   }
 }

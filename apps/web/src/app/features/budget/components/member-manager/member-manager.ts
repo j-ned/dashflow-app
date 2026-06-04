@@ -123,16 +123,16 @@ export class MemberManager {
       if (this._editingMember) {
         // Membre complet (porte d'éventuels champs médicaux au runtime) + champs édités.
         await lastValueFrom(this.gateway.update(this._editingMember.id, { ...this._editingMember, firstName, lastName }));
-        this.toaster.success(this._i18n.translate('budget.members.updated'));
+        this.toaster.success('budget.members.updated');
       } else {
         await lastValueFrom(this.gateway.create({ firstName, lastName, color: null }));
-        this.toaster.success(this._i18n.translate('budget.members.created'));
+        this.toaster.success('budget.members.created');
       }
       this.resetForm();
       this._refresh.update(v => v + 1);
       this.changed.emit();
     } catch {
-      this.toaster.error(this._i18n.translate('budget.members.error'));
+      this.toaster.error('budget.members.error');
     }
   }
 
@@ -145,12 +145,12 @@ export class MemberManager {
     })) return;
     try {
       await lastValueFrom(this.gateway.delete(member.id));
-      this.toaster.success(this._i18n.translate('budget.members.deleted'));
+      this.toaster.success('budget.members.deleted');
       if (this.editingId() === member.id) this.resetForm();
       this._refresh.update(v => v + 1);
       this.changed.emit();
     } catch {
-      this.toaster.error(this._i18n.translate('budget.members.error'));
+      this.toaster.error('budget.members.error');
     }
   }
 }

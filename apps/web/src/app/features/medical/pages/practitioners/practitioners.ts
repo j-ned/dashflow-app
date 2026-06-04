@@ -149,11 +149,11 @@ export class Practitioners {
   protected async createPractitioner(data: Omit<Practitioner, 'id'>) {
     try {
       await lastValueFrom(this.createPractitionerUC.execute(data));
-      this.toaster.success(this._i18n.translate('medical.practitioner.feedback.created'));
+      this.toaster.success('medical.practitioner.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.practitioner.feedback.createFailed'));
+      this.toaster.error('medical.practitioner.feedback.createFailed');
     }
   }
 
@@ -162,11 +162,11 @@ export class Practitioners {
     if (!id) return;
     try {
       await lastValueFrom(this.updatePractitionerUC.execute(id, data));
-      this.toaster.success(this._i18n.translate('medical.practitioner.feedback.updated'));
+      this.toaster.success('medical.practitioner.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.practitioner.feedback.updateFailed'));
+      this.toaster.error('medical.practitioner.feedback.updateFailed');
     }
   }
 
@@ -174,10 +174,10 @@ export class Practitioners {
     if (!await this.confirm.delete(this._i18n.translate('medical.practitioner.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deletePractitionerUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.practitioner.feedback.deleted'));
+      this.toaster.success('medical.practitioner.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.practitioner.feedback.deleteFailed'));
+      this.toaster.error('medical.practitioner.feedback.deleteFailed');
     }
   }
 }

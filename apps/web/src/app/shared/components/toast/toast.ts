@@ -12,9 +12,12 @@ import { Icon, type IconName } from '@shared/components/icon/icon';
 
 type ToastType = 'success' | 'error' | 'info';
 
+type ToastParams = Record<string, string | number>;
+
 type Toast = {
   readonly id: number;
-  readonly message: string;
+  readonly key: string;
+  readonly params?: ToastParams;
   readonly type: ToastType;
   readonly duration: number;
   readonly leaving: boolean;
@@ -59,16 +62,16 @@ export class Toaster {
   private readonly _toasts = signal<Toast[]>([]);
   readonly toasts = this._toasts.asReadonly();
 
-  success(message: string, config?: ToastConfig) {
-    this._add(message, 'success', config);
+  success(key: string, params?: ToastParams, config?: ToastConfig) {
+    this._add(key, 'success', params, config);
   }
 
-  error(message: string, config?: ToastConfig) {
-    this._add(message, 'error', config);
+  error(key: string, params?: ToastParams, config?: ToastConfig) {
+    this._add(key, 'error', params, config);
   }
 
-  info(message: string, config?: ToastConfig) {
-    this._add(message, 'info', config);
+  info(key: string, params?: ToastParams, config?: ToastConfig) {
+    this._add(key, 'info', params, config);
   }
 
   dismiss(id: number) {
@@ -80,11 +83,11 @@ export class Toaster {
     }, LEAVE_ANIMATION_MS);
   }
 
-  private _add(message: string, type: ToastType, config?: ToastConfig) {
+  private _add(key: string, type: ToastType, params?: ToastParams, config?: ToastConfig) {
     const id = this._nextId++;
     const duration = config?.duration ?? DEFAULT_DURATION;
 
-    this._toasts.update(list => [...list, { id, message, type, duration, leaving: false }]);
+    this._toasts.update(list => [...list, { id, key, params, type, duration, leaving: false }]);
 
     if (duration > 0) {
       setTimeout(() => this.dismiss(id), duration);
@@ -113,7 +116,7 @@ export class Toaster {
             <app-icon [name]="icon(toast.type)" size="16"
                       class="shrink-0 mt-0.5"
                       [class]="style(toast.type).icon" />
-            <p class="flex-1 text-sm text-text-primary leading-snug">{{ toast.message }}</p>
+            <p class="flex-1 text-sm text-text-primary leading-snug">{{ toast.key | transloco: toast.params }}</p>
             <button type="button"
                     class="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
                     [attr.aria-label]="'shared.toast.dismiss' | transloco"

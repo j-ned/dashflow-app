@@ -430,9 +430,9 @@ export class Loans {
       if (data.direction === 'lent') this.lentModalRef().close();
       else this.borrowedModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate(data.direction === 'lent' ? 'budget.loan.messages.lentCreated' : 'budget.loan.messages.borrowedCreated'));
+      this.toaster.success(data.direction === 'lent' ? 'budget.loan.messages.lentCreated' : 'budget.loan.messages.borrowedCreated');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.loan.messages.createError'));
+      this.toaster.error('budget.loan.messages.createError');
     }
   }
 
@@ -443,9 +443,9 @@ export class Loans {
       await lastValueFrom(this.loanGateway.update(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.loan.messages.updated'));
+      this.toaster.success('budget.loan.messages.updated');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.loan.messages.updateError'));
+      this.toaster.error('budget.loan.messages.updateError');
     }
   }
 
@@ -456,7 +456,7 @@ export class Loans {
       await lastValueFrom(this.loanGateway.recordPayment(loan.id, event.amount, event.date, event.note));
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.loan.messages.paymentRecorded'));
+      this.toaster.success('budget.loan.messages.paymentRecorded');
 
       if (event.accountId) {
         const labelKey = loan.direction === 'borrowed' ? 'budget.loan.messages.debtRepaymentLabel' : 'budget.loan.messages.loanRepaymentLabel';
@@ -479,7 +479,7 @@ export class Loans {
         );
       }
     } catch {
-      this.toaster.error(this._i18n.translate('budget.loan.messages.paymentError'));
+      this.toaster.error('budget.loan.messages.paymentError');
     }
   }
 
@@ -488,9 +488,9 @@ export class Loans {
     try {
       await lastValueFrom(this.loanGateway.delete(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.loan.messages.deleted'));
+      this.toaster.success('budget.loan.messages.deleted');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.loan.messages.deleteError'));
+      this.toaster.error('budget.loan.messages.deleteError');
     }
   }
 }

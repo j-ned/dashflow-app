@@ -248,11 +248,11 @@ export class Medications {
   protected async createMedication(data: Omit<Medication, 'id'>) {
     try {
       await lastValueFrom(this.createMedicationUC.execute(data));
-      this.toaster.success(this._i18n.translate('medical.medication.feedback.created'));
+      this.toaster.success('medical.medication.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.medication.feedback.createFailed'));
+      this.toaster.error('medical.medication.feedback.createFailed');
     }
   }
 
@@ -261,11 +261,11 @@ export class Medications {
     if (!id) return;
     try {
       await lastValueFrom(this.updateMedicationUC.execute(id, data));
-      this.toaster.success(this._i18n.translate('medical.medication.feedback.updated'));
+      this.toaster.success('medical.medication.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.medication.feedback.updateFailed'));
+      this.toaster.error('medical.medication.feedback.updateFailed');
     }
   }
 
@@ -274,11 +274,11 @@ export class Medications {
     if (!id) return;
     try {
       await lastValueFrom(this.refillMedicationUC.execute(id, event.quantity));
-      this.toaster.success(this._i18n.translate('medical.medication.feedback.refilled'));
+      this.toaster.success('medical.medication.feedback.refilled');
       this.refillModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.medication.feedback.refillFailed'));
+      this.toaster.error('medical.medication.feedback.refillFailed');
     }
   }
 
@@ -286,10 +286,10 @@ export class Medications {
     if (!await this.confirm.delete(this._i18n.translate('medical.medication.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deleteMedicationUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.medication.feedback.deleted'));
+      this.toaster.success('medical.medication.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.medication.feedback.deleteFailed'));
+      this.toaster.error('medical.medication.feedback.deleteFailed');
     }
   }
 }

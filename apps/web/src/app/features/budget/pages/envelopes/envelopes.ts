@@ -395,9 +395,9 @@ export class Envelopes {
       await lastValueFrom(this.envelopeGateway.create(data));
       this.createModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.envelope.messages.created'));
+      this.toaster.success('budget.envelope.messages.created');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.envelope.messages.createError'));
+      this.toaster.error('budget.envelope.messages.createError');
     }
   }
 
@@ -408,9 +408,9 @@ export class Envelopes {
       await lastValueFrom(this.envelopeGateway.update(id, data));
       this.editModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.envelope.messages.updated'));
+      this.toaster.success('budget.envelope.messages.updated');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.envelope.messages.updateError'));
+      this.toaster.error('budget.envelope.messages.updateError');
     }
   }
 
@@ -421,7 +421,7 @@ export class Envelopes {
       await lastValueFrom(this.envelopeGateway.updateBalance(envelope.id, event.amount, event.date, event.note, envelope));
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate(event.amount >= 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited'));
+      this.toaster.success(event.amount >= 0 ? 'budget.envelope.messages.credited' : 'budget.envelope.messages.debited');
       if (event.accountId && event.amount > 0) {
         await lastValueFrom(
           this.recurringEntryGateway.create({
@@ -440,7 +440,7 @@ export class Envelopes {
         );
       }
     } catch {
-      this.toaster.error(this._i18n.translate('budget.envelope.messages.creditError'));
+      this.toaster.error('budget.envelope.messages.creditError');
     }
   }
 
@@ -449,9 +449,9 @@ export class Envelopes {
     try {
       await lastValueFrom(this.envelopeGateway.delete(id));
       this._refresh.update((v) => v + 1);
-      this.toaster.success(this._i18n.translate('budget.envelope.messages.deleted'));
+      this.toaster.success('budget.envelope.messages.deleted');
     } catch {
-      this.toaster.error(this._i18n.translate('budget.envelope.messages.deleteError'));
+      this.toaster.error('budget.envelope.messages.deleteError');
     }
   }
 }

@@ -243,10 +243,10 @@ export class Prescriptions {
     if (!file) return;
     try {
       await lastValueFrom(this.uploadDocumentUC.execute(prescriptionId, file));
-      this.toaster.success(this._i18n.translate('medical.prescription.feedback.documentAdded'));
+      this.toaster.success('medical.prescription.feedback.documentAdded');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.prescription.feedback.documentAddFailed'));
+      this.toaster.error('medical.prescription.feedback.documentAddFailed');
     }
     input.value = '';
   }
@@ -260,10 +260,10 @@ export class Prescriptions {
     })) return;
     try {
       await lastValueFrom(this.deleteDocumentUC.execute(prescriptionId));
-      this.toaster.success(this._i18n.translate('medical.prescription.feedback.documentRemoved'));
+      this.toaster.success('medical.prescription.feedback.documentRemoved');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.prescription.feedback.documentRemoveFailed'));
+      this.toaster.error('medical.prescription.feedback.documentRemoveFailed');
     }
   }
 
@@ -273,19 +273,19 @@ export class Prescriptions {
       if (file) {
         try {
           await lastValueFrom(this.uploadDocumentUC.execute(created.id, file));
-          this.toaster.success(this._i18n.translate('medical.prescription.feedback.created'));
+          this.toaster.success('medical.prescription.feedback.created');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error(this._i18n.translate('medical.prescription.feedback.documentAddFailed'));
+          this.toaster.error('medical.prescription.feedback.documentAddFailed');
         }
       } else {
-        this.toaster.success(this._i18n.translate('medical.prescription.feedback.created'));
+        this.toaster.success('medical.prescription.feedback.created');
         this.createModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error(this._i18n.translate('medical.prescription.feedback.createFailed'));
+      this.toaster.error('medical.prescription.feedback.createFailed');
     }
   }
 
@@ -297,19 +297,19 @@ export class Prescriptions {
       if (file) {
         try {
           await lastValueFrom(this.uploadDocumentUC.execute(id, file));
-          this.toaster.success(this._i18n.translate('medical.prescription.feedback.updated'));
+          this.toaster.success('medical.prescription.feedback.updated');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error(this._i18n.translate('medical.prescription.feedback.documentAddFailed'));
+          this.toaster.error('medical.prescription.feedback.documentAddFailed');
         }
       } else {
-        this.toaster.success(this._i18n.translate('medical.prescription.feedback.updated'));
+        this.toaster.success('medical.prescription.feedback.updated');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error(this._i18n.translate('medical.prescription.feedback.updateFailed'));
+      this.toaster.error('medical.prescription.feedback.updateFailed');
     }
   }
 
@@ -317,10 +317,10 @@ export class Prescriptions {
     if (!await this.confirm.delete(this._i18n.translate('medical.prescription.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deletePrescriptionUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.prescription.feedback.deleted'));
+      this.toaster.success('medical.prescription.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.prescription.feedback.deleteFailed'));
+      this.toaster.error('medical.prescription.feedback.deleteFailed');
     }
   }
 }

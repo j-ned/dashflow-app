@@ -533,8 +533,8 @@ export class BankAccount {
     this.entryGateway.update(id, { ...rest, accountId })
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe({
-        next: () => { this._refresh.update((v) => v + 1); this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryReassigned')); },
-        error: () => this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryReassignError')),
+        next: () => { this._refresh.update((v) => v + 1); this.toaster.success('budget.bankAccount.messages.entryReassigned'); },
+        error: () => this.toaster.error('budget.bankAccount.messages.entryReassignError'),
       });
   }
 
@@ -547,8 +547,8 @@ export class BankAccount {
       toAccountId: e.toAccountId, category: e.category, note: null,
       memberId: e.memberId, recurringEntryId: e.id,
     }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe({
-      next: () => { this.refreshTx(); this.toaster.success(this._i18n.translate('budget.bankAccount.messages.chargeConfirmed')); },
-      error: () => this.toaster.error(this._i18n.translate('budget.bankAccount.messages.chargeConfirmError')),
+      next: () => { this.refreshTx(); this.toaster.success('budget.bankAccount.messages.chargeConfirmed'); },
+      error: () => this.toaster.error('budget.bankAccount.messages.chargeConfirmError'),
     });
   }
 
@@ -560,8 +560,8 @@ export class BankAccount {
     const done = () => {
       if (++settled < charges.length) return;
       this.refreshTx();
-      if (failed > 0) this.toaster.error(this._i18n.translate('budget.bankAccount.messages.chargesConfirmError', { failed }));
-      else this.toaster.success(this._i18n.translate('budget.bankAccount.messages.chargesConfirmed', { count: charges.length }));
+      if (failed > 0) this.toaster.error('budget.bankAccount.messages.chargesConfirmError', { failed });
+      else this.toaster.success('budget.bankAccount.messages.chargesConfirmed', { count: charges.length });
     };
     for (const c of charges) {
       const e = c.entry;
@@ -743,11 +743,11 @@ export class BankAccount {
     if (!name) return;
     try {
       await lastValueFrom(this.accountGateway.create({ name, type: this.newAccountType(), initialBalance: this.newAccountBalance(), color: null, dotColor: null }));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountCreated'));
+      this.toaster.success('budget.bankAccount.messages.accountCreated');
       this.resetAccountForm();
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.accountCreateError'));
+      this.toaster.error('budget.bankAccount.messages.accountCreateError');
     }
   }
 
@@ -763,10 +763,10 @@ export class BankAccount {
         dotColor: account.dotColor,
         ...changes,
       }));
-      this.toaster.success(this._i18n.translate(successKey));
+      this.toaster.success(successKey);
       this._refreshAccounts.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate(errorKey));
+      this.toaster.error(errorKey);
     }
   }
 
@@ -831,7 +831,7 @@ export class BankAccount {
           }
         }
       } catch {
-        this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryReassignError'));
+        this.toaster.error('budget.bankAccount.messages.entryReassignError');
         return; // interrompre : ne pas supprimer un compte dont des récurrences pointent encore dessus
       }
     } else {
@@ -845,14 +845,14 @@ export class BankAccount {
 
     try {
       await lastValueFrom(this.accountGateway.delete(account.id));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.accountDeleted'));
+      this.toaster.success('budget.bankAccount.messages.accountDeleted');
       if (this.selectedAccountId() === account.id) {
         this.selectedAccountId.set(null);
       }
       this._refreshAccounts.update((v) => v + 1);
       this._refresh.update((v) => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.accountDeleteError'));
+      this.toaster.error('budget.bankAccount.messages.accountDeleteError');
     }
   }
 
@@ -889,16 +889,16 @@ export class BankAccount {
           for (const old of this.incomes()) {
             await lastValueFrom(this.entryGateway.delete(old.id));
           }
-          this.toaster.success(this._i18n.translate('budget.bankAccount.messages.cycleArchived'));
+          this.toaster.success('budget.bankAccount.messages.cycleArchived');
         }
       }
 
       await lastValueFrom(this.entryGateway.create(data));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryCreated'));
+      this.toaster.success('budget.bankAccount.messages.entryCreated');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryCreateError'));
+      this.toaster.error('budget.bankAccount.messages.entryCreateError');
     }
   }
 
@@ -936,10 +936,10 @@ export class BankAccount {
     if (!await this.confirm.delete(this._i18n.translate('budget.bankAccount.messages.deleteEntryTarget'))) return;
     try {
       await lastValueFrom(this.entryGateway.delete(id));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryDeleted'));
+      this.toaster.success('budget.bankAccount.messages.entryDeleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryDeleteError'));
+      this.toaster.error('budget.bankAccount.messages.entryDeleteError');
     }
   }
 
@@ -961,19 +961,19 @@ export class BankAccount {
         this._pendingPayslipFile = null;
         try {
           await lastValueFrom(this.entryGateway.uploadPayslip(id, file));
-          this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryUpdated'));
+          this.toaster.success('budget.bankAccount.messages.entryUpdated');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error(this._i18n.translate('budget.bankAccount.messages.payslipUploadError'));
+          this.toaster.error('budget.bankAccount.messages.payslipUploadError');
         }
       } else {
-        this.toaster.success(this._i18n.translate('budget.bankAccount.messages.entryUpdated'));
+        this.toaster.success('budget.bankAccount.messages.entryUpdated');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.entryUpdateError'));
+      this.toaster.error('budget.bankAccount.messages.entryUpdateError');
     }
   }
 
@@ -996,14 +996,14 @@ export class BankAccount {
     if (!await this.confirm.delete(this._i18n.translate('budget.bankAccount.messages.payslipDeleteTarget'))) return;
     try {
       await lastValueFrom(this.entryGateway.deletePayslip(id));
-      this.toaster.success(this._i18n.translate('budget.bankAccount.messages.payslipDeleted'));
+      this.toaster.success('budget.bankAccount.messages.payslipDeleted');
       this._refresh.update(v => v + 1);
       const entry = this.selectedEntry();
       if (entry) {
         this.selectedEntry.set({ ...entry, payslipKey: null });
       }
     } catch {
-      this.toaster.error(this._i18n.translate('budget.bankAccount.messages.payslipDeleteError'));
+      this.toaster.error('budget.bankAccount.messages.payslipDeleteError');
     }
   }
 }

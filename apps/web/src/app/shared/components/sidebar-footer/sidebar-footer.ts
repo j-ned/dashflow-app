@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
@@ -73,13 +73,12 @@ export class SidebarFooter {
   protected readonly auth = inject(AuthStore);
   private readonly router = inject(Router);
   private readonly toaster = inject(Toaster);
-  private readonly _i18n = inject(TranslocoService);
 
   readonly collapsed = input(false);
 
   protected async onLogout() {
     await this.auth.logout();
-    this.toaster.success(this._i18n.translate('auth.logout.success'));
+    this.toaster.success('auth.logout.success');
     this.router.navigate(['/']);
   }
 }

@@ -385,7 +385,7 @@ export class CommandPalette {
 
   private async logout(): Promise<void> {
     await this.auth.logout();
-    this.toaster.success(this._i18n.translate('auth.logout.success'));
+    this.toaster.success('auth.logout.success');
     await this.router.navigate(['/']);
   }
 

@@ -236,10 +236,10 @@ export class Documents {
     if (!file) return;
     try {
       await lastValueFrom(this.uploadFileUC.execute(documentId, file));
-      this.toaster.success(this._i18n.translate('medical.document.feedback.fileAdded'));
+      this.toaster.success('medical.document.feedback.fileAdded');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.document.feedback.fileAddFailed'));
+      this.toaster.error('medical.document.feedback.fileAddFailed');
     }
     input.value = '';
   }
@@ -250,19 +250,19 @@ export class Documents {
       if (file) {
         try {
           await lastValueFrom(this.uploadFileUC.execute(created.id, file));
-          this.toaster.success(this._i18n.translate('medical.document.feedback.created'));
+          this.toaster.success('medical.document.feedback.created');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error(this._i18n.translate('medical.document.feedback.fileAddFailed'));
+          this.toaster.error('medical.document.feedback.fileAddFailed');
         }
       } else {
-        this.toaster.success(this._i18n.translate('medical.document.feedback.created'));
+        this.toaster.success('medical.document.feedback.created');
         this.createModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error(this._i18n.translate('medical.document.feedback.createFailed'));
+      this.toaster.error('medical.document.feedback.createFailed');
     }
   }
 
@@ -274,19 +274,19 @@ export class Documents {
       if (file) {
         try {
           await lastValueFrom(this.uploadFileUC.execute(id, file));
-          this.toaster.success(this._i18n.translate('medical.document.feedback.updated'));
+          this.toaster.success('medical.document.feedback.updated');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
         } catch {
-          this.toaster.error(this._i18n.translate('medical.document.feedback.fileAddFailed'));
+          this.toaster.error('medical.document.feedback.fileAddFailed');
         }
       } else {
-        this.toaster.success(this._i18n.translate('medical.document.feedback.updated'));
+        this.toaster.success('medical.document.feedback.updated');
         this.editModalRef().close();
         this._refresh.update(v => v + 1);
       }
     } catch {
-      this.toaster.error(this._i18n.translate('medical.document.feedback.updateFailed'));
+      this.toaster.error('medical.document.feedback.updateFailed');
     }
   }
 
@@ -294,10 +294,10 @@ export class Documents {
     if (!await this.confirm.delete(this._i18n.translate('medical.document.deleteEntityName'))) return;
     try {
       await lastValueFrom(this.deleteDocumentUC.execute(id));
-      this.toaster.success(this._i18n.translate('medical.document.feedback.deleted'));
+      this.toaster.success('medical.document.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {
-      this.toaster.error(this._i18n.translate('medical.document.feedback.deleteFailed'));
+      this.toaster.error('medical.document.feedback.deleteFailed');
     }
   }
 }
