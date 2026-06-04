@@ -10,7 +10,7 @@ import localeEn from '@angular/common/locales/en';
 registerLocaleData(localeFr);
 registerLocaleData(localeEn);
 import { routes } from './app.routes';
-import { transloco, readInitialLang } from './core/i18n/transloco.config';
+import { transloco, readInitialLang } from '@core/i18n/transloco.config';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { HttpEnvelopeGateway } from '@features/budget/infra/http-envelope.gateway';
 import { AccountTransactionGateway } from '@features/budget/domain/gateways/account-transaction.gateway';
