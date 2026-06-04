@@ -612,11 +612,27 @@
     },
     "bankAccount": {
       "title": "Bank account",
-      "subtitle": "Track your balance progressively",
+      "subtitle": "Your balance, from real to projected",
       "manage": "Manage",
       "allAccounts": "All accounts",
       "accountNavAria": "Account selection",
-      "pending": { "title": "Charges to confirm", "confirm": "Confirm", "confirmAll": "Confirm all", "ignore": "Dismiss", "dueOn": "due {{date}}" },
+      "pending": {
+        "title": "Charges to confirm",
+        "help": "These recurring charges were scheduled and their date has passed. Confirm the amount actually debited on your statement, or dismiss the ones that did not go through.",
+        "confirm": "Debited",
+        "confirmAll": "Confirm all",
+        "ignore": "Not debited",
+        "dueOn": "scheduled for {{date}}",
+        "amountAria": "Debited amount for {{label}}"
+      },
+      "balance": {
+        "confirmedLabel": "Confirmed today",
+        "confirmedHint": "real, from your statement as of {{date}}",
+        "projectedLabel": "Projected end of month",
+        "projectedHint": "estimate: confirmed + upcoming charges",
+        "deltaHint": "still to come before month end",
+        "seeStatement": "See full statement"
+      },
       "kpi": {
         "balance": "Confirmed balance",
         "balanceAt": "real as of {{date}}",
@@ -634,6 +650,8 @@
       },
       "usage": {
         "label": "Budget used",
+        "compose": "What makes up the month",
+        "hint": "{{percent}}% of your income is committed this month",
         "passed": "Processed",
         "upcoming": "Upcoming",
         "annual": "Annual",

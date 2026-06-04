@@ -612,11 +612,27 @@
     },
     "bankAccount": {
       "title": "Compte bancaire",
-      "subtitle": "Suivi progressif de votre solde",
+      "subtitle": "Ton solde, du réel au projeté",
       "manage": "Gérer",
       "allAccounts": "Tous les comptes",
       "accountNavAria": "Sélection du compte",
-      "pending": { "title": "Échéances à confirmer", "confirm": "Confirmer", "confirmAll": "Tout confirmer", "ignore": "Ignorer", "dueOn": "échéance du {{date}}" },
+      "pending": {
+        "title": "Échéances à confirmer",
+        "help": "Ces prélèvements récurrents étaient prévus et leur date est passée. Confirme le montant réellement débité sur ton relevé, ou écarte ceux qui ne sont pas passés.",
+        "confirm": "Débité",
+        "confirmAll": "Tout confirmer",
+        "ignore": "Pas débité",
+        "dueOn": "prévu le {{date}}",
+        "amountAria": "Montant débité pour {{label}}"
+      },
+      "balance": {
+        "confirmedLabel": "Confirmé aujourd'hui",
+        "confirmedHint": "réel, d'après ton relevé au {{date}}",
+        "projectedLabel": "Projeté fin de mois",
+        "projectedHint": "estimation : confirmé + prélèvements à venir",
+        "deltaHint": "encore à venir d'ici la fin du mois",
+        "seeStatement": "Voir le relevé complet"
+      },
       "kpi": {
         "balance": "Solde confirmé",
         "balanceAt": "réel au {{date}}",
@@ -634,6 +650,8 @@
       },
       "usage": {
         "label": "Budget utilisé",
+        "compose": "Ce qui compose le mois",
+        "hint": "{{percent}}% de tes revenus sont engagés ce mois-ci",
         "passed": "Passés",
         "upcoming": "A venir",
         "annual": "Annuels",

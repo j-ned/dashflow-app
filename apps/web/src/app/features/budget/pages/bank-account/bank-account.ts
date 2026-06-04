@@ -18,7 +18,7 @@ import { RecurringEntryForm } from '../../components/recurring-entry-form/recurr
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
-import { BankKpiGrid } from './bank-kpi-grid/bank-kpi-grid';
+import { BankBalanceBand } from './bank-balance-band/bank-balance-band';
 import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
 import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
 import { BankExpenseColumns } from './bank-expense-columns/bank-expense-columns';
@@ -45,7 +45,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankKpiGrid, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe, PendingChargesPanel, OrphanEntriesPanel],
+  imports: [FormsModule, ModalDialog, RecurringEntryForm, Icon, BankBalanceBand, BudgetUsageBar, BankIncomesTable, BankExpenseColumns, BankTransfersPanel, BankTimeline, TranslocoPipe, PendingChargesPanel, OrphanEntriesPanel],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -101,27 +101,18 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
       (reassign)="reassignEntry($event.id, $event.accountId)"
       (delete)="deleteEntry($event)" />
 
-    <!-- ═══ KPI Cards ═══ -->
-    <app-bank-kpi-grid
-      [currentBalance]="confirmedBalance()"
-      [totalIncome]="totalIncome()"
-      [totalMonthlyExpenses]="totalMonthlyExpenses()"
-      [totalAnnualExpenses]="totalAnnualExpenses()"
-      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
-      [totalMonthSpendings]="totalMonthSpendings()"
-      [endOfMonthBalance]="projectedBalance()"
-      [today]="today"
-      [incomesLabel]="incomesLabel()"
-      [monthlyExpensesLabel]="monthlyExpensesLabel()"
-      [monthSpendingsLabel]="monthSpendingsLabel()" />
+    <!-- ═══ Solde : confirmé → projeté ═══ -->
+    <app-bank-balance-band
+      [confirmedBalance]="confirmedBalance()"
+      [projectedBalance]="projectedBalance()"
+      [today]="today" />
 
-    <!-- ═══ Barre de progression ═══ -->
+    <!-- ═══ Ce qui compose le mois (décomposition + barre) ═══ -->
     <app-budget-usage-bar
       [totalIncome]="totalIncome()"
       [totalAllExpenses]="totalAllExpenses()"
       [usagePercent]="usagePercent()"
-      [totalPassedExpenses]="totalPassedExpenses()"
-      [totalUpcomingExpenses]="totalUpcomingExpenses()"
+      [totalMonthlyExpenses]="totalMonthlyExpenses()"
       [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
       [totalMonthSpendings]="totalMonthSpendings()" />
 
@@ -403,19 +394,6 @@ export class BankAccount {
     return `${monthLabel} ${y}`;
   });
 
-  protected readonly incomesLabel = computed(() => {
-    const list = this.incomes();
-    if (list.length === 1) return list[0].label;
-    return this._i18n.translate('budget.bankAccount.kpi.incomeSources', { count: list.length });
-  });
-
-  protected readonly monthlyExpensesLabel = computed(() =>
-    this._i18n.translate('budget.bankAccount.kpi.directDebitsLabel', {
-      passed: this.passedExpenses().length,
-      total: this.monthlyExpenses().length,
-    }),
-  );
-
   protected readonly monthSpendingsLabel = computed(() => {
     const count = this.monthSpendings().length;
     const key = count > 1 ? 'budget.bankAccount.kpi.spendingCountPlural' : 'budget.bankAccount.kpi.spendingCount';
@@ -585,16 +563,6 @@ export class BankAccount {
   protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
   protected readonly totalMonthSpendings = computed(() => sumAmount(this.monthSpendings()));
-
-  // Prélèvements passés/à venir dans le cycle salaire
-  protected readonly passedExpenses = computed(() =>
-    this.monthlyExpenses().filter(e => this.isExpensePassed(e))
-  );
-  protected readonly upcomingExpenses = computed(() =>
-    this.monthlyExpenses().filter(e => !this.isExpensePassed(e))
-  );
-  protected readonly totalPassedExpenses = computed(() => sumAmount(this.passedExpenses()));
-  protected readonly totalUpcomingExpenses = computed(() => sumAmount(this.upcomingExpenses()));
 
   // Virements ponctuels sortants/entrants du mois (tous considérés comme passés)
   protected readonly totalOneTimeOutgoing = computed(() =>
