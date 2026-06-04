@@ -7,7 +7,7 @@
  * aux accents et à la casse) pour que « alimentation », « Alimentation » et « ALIMENTATION »
  * tombent sur la même catégorie au lieu de finir en « Autre ».
  */
-export type BudgetCategoryKey =
+type BudgetCategoryKey =
   | 'housing' | 'transport' | 'food' | 'health' | 'leisure'
   | 'subscription' | 'insurance' | 'envelope' | 'repayment' | 'other';
 
@@ -32,7 +32,7 @@ export const BUDGET_CATEGORIES: readonly BudgetCategory[] = [
   { key: 'other',        label: 'Autre',         i18nKey: 'budget.analytics.category.other',        color: 'var(--color-text-muted)' },
 ];
 
-export const OTHER_CATEGORY = BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
+const OTHER_CATEGORY = BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
 
 /** Repli accents + casse + espaces pour un appariement tolérant. */
 function fold(value: string): string {

@@ -5,13 +5,8 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { MedicalDocument } from '../../domain/models/document.model';
 import { DocumentGateway } from '../../domain/gateways/document.gateway';
-import { GetDocumentsUseCase } from '../../domain/use-cases/get-documents.use-case';
-import { CreateDocumentUseCase } from '../../domain/use-cases/create-document.use-case';
-import { UpdateDocumentUseCase } from '../../domain/use-cases/update-document.use-case';
-import { DeleteDocumentUseCase } from '../../domain/use-cases/delete-document.use-case';
-import { UploadDocumentFileUseCase } from '../../domain/use-cases/upload-document-file.use-case';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { DocumentForm, DocumentSubmitData } from '../../components/document-form/document-form';
 import { Toaster } from '@shared/components/toast/toast';
@@ -152,14 +147,9 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Documents {
-  private readonly documentGateway = inject(DocumentGateway);
-  private readonly getDocuments = inject(GetDocumentsUseCase);
-  private readonly createDocumentUC = inject(CreateDocumentUseCase);
-  private readonly updateDocumentUC = inject(UpdateDocumentUseCase);
-  private readonly deleteDocumentUC = inject(DeleteDocumentUseCase);
-  private readonly uploadFileUC = inject(UploadDocumentFileUseCase);
-  private readonly getPatientsUC = inject(GetPatientsUseCase);
-  private readonly getPractitionersUC = inject(GetPractitionersUseCase);
+  private readonly documentGw = inject(DocumentGateway);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly practitionerGw = inject(PractitionerGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -169,12 +159,12 @@ export class Documents {
 
   private readonly _refresh = signal(0);
   protected readonly documents = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getDocuments.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.documentGw.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly patients = toSignal(this.getPatientsUC.execute(), { initialValue: [] });
-  protected readonly practitioners = toSignal(this.getPractitionersUC.execute(), { initialValue: [] });
+  protected readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
+  protected readonly practitioners = toSignal(this.practitionerGw.getAll(), { initialValue: [] });
 
   protected readonly selectedDocument = signal<MedicalDocument | null>(null);
   protected readonly filterPatientId = signal<string | null>(null);
@@ -224,7 +214,7 @@ export class Documents {
   }
 
   protected async openFile(id: string) {
-    const blob = await lastValueFrom(this.documentGateway.downloadFile(id));
+    const blob = await lastValueFrom(this.documentGw.downloadFile(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
@@ -235,7 +225,7 @@ export class Documents {
     const file = input.files?.[0];
     if (!file) return;
     try {
-      await lastValueFrom(this.uploadFileUC.execute(documentId, file));
+      await lastValueFrom(this.documentGw.uploadFile(documentId, file));
       this.toaster.success('medical.document.feedback.fileAdded');
       this._refresh.update(v => v + 1);
     } catch {
@@ -246,10 +236,10 @@ export class Documents {
 
   protected async createDoc({ data, file }: DocumentSubmitData) {
     try {
-      const created = await lastValueFrom(this.createDocumentUC.execute(data));
+      const created = await lastValueFrom(this.documentGw.create(data));
       if (file) {
         try {
-          await lastValueFrom(this.uploadFileUC.execute(created.id, file));
+          await lastValueFrom(this.documentGw.uploadFile(created.id, file));
           this.toaster.success('medical.document.feedback.created');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
@@ -270,10 +260,10 @@ export class Documents {
     const id = this.selectedDocument()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateDocumentUC.execute(id, data));
+      await lastValueFrom(this.documentGw.update(id, data));
       if (file) {
         try {
-          await lastValueFrom(this.uploadFileUC.execute(id, file));
+          await lastValueFrom(this.documentGw.uploadFile(id, file));
           this.toaster.success('medical.document.feedback.updated');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
@@ -293,7 +283,7 @@ export class Documents {
   protected async deleteDoc(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.document.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deleteDocumentUC.execute(id));
+      await lastValueFrom(this.documentGw.delete(id));
       this.toaster.success('medical.document.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

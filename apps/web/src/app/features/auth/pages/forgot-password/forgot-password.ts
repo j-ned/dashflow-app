@@ -276,7 +276,6 @@ export class ForgotPassword {
   protected readonly recoveryKeyValue = signal('');
 
   private _resetPassword = '';
-  private _resetCode = '';
 
   protected readonly emailForm = new FormGroup<EmailFormShape>({
     email: new FormControl('', {
@@ -333,7 +332,6 @@ export class ForgotPassword {
     try {
       const { code, newPassword } = this.resetForm.getRawValue();
       this._resetPassword = newPassword;
-      this._resetCode = code;
 
       await this.auth.resetPassword(this.pendingEmail(), code, newPassword);
 

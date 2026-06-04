@@ -604,12 +604,6 @@ export class BankAccount {
     sumAmount(this.monthOneTimeTransfers().filter(e => e.toAccountId === this.selectedAccountId()))
   );
 
-  private readonly passedOutgoing = computed(() =>
-    sumAmount(this.outgoingTransfers().filter(e => this.isExpensePassed(e))) + this.totalOneTimeOutgoing()
-  );
-  private readonly passedIncoming = computed(() =>
-    sumAmount(this.incomingTransfers().filter(e => this.isExpensePassed(e))) + this.totalOneTimeIncoming()
-  );
   private readonly totalOutgoing = computed(() =>
     sumAmount(this.outgoingTransfers()) + this.totalOneTimeOutgoing()
   );

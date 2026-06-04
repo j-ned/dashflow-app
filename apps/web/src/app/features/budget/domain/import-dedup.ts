@@ -3,7 +3,7 @@ import { ParsedTransaction } from './models/parsed-transaction.model';
 const fold = (s: string | null | undefined) =>
   (s ?? '').normalize('NFD').replace(/[̀-ͯ]/g, '').trim().toLowerCase();
 
-export function fingerprint(date: string, amount: number, label: string | null): string {
+function fingerprint(date: string, amount: number, label: string | null): string {
   // Number() : robuste si un montant arrive en string (numeric postgres non coercé) → empreinte stable.
   return `${date}|${Number(amount)}|${fold(label)}`;
 }

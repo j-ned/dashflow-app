@@ -5,15 +5,9 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Prescription } from '../../domain/models/prescription.model';
 import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
-import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
-import { CreatePrescriptionUseCase } from '../../domain/use-cases/create-prescription.use-case';
-import { UpdatePrescriptionUseCase } from '../../domain/use-cases/update-prescription.use-case';
-import { DeletePrescriptionUseCase } from '../../domain/use-cases/delete-prescription.use-case';
-import { UploadPrescriptionDocumentUseCase } from '../../domain/use-cases/upload-prescription-document.use-case';
-import { DeletePrescriptionDocumentUseCase } from '../../domain/use-cases/delete-prescription-document.use-case';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
-import { GetAppointmentsUseCase } from '../../domain/use-cases/get-appointments.use-case';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
+import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
 import { PrescriptionForm, PrescriptionSubmitData } from '../../components/prescription-form/prescription-form';
@@ -145,16 +139,10 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
   `,
 })
 export class Prescriptions {
-  private readonly prescriptionGateway = inject(PrescriptionGateway);
-  private readonly getPrescriptions = inject(GetPrescriptionsUseCase);
-  private readonly createPrescriptionUC = inject(CreatePrescriptionUseCase);
-  private readonly updatePrescriptionUC = inject(UpdatePrescriptionUseCase);
-  private readonly deletePrescriptionUC = inject(DeletePrescriptionUseCase);
-  private readonly uploadDocumentUC = inject(UploadPrescriptionDocumentUseCase);
-  private readonly deleteDocumentUC = inject(DeletePrescriptionDocumentUseCase);
-  private readonly getPatientsUC = inject(GetPatientsUseCase);
-  private readonly getPractitionersUC = inject(GetPractitionersUseCase);
-  private readonly getAppointmentsUC = inject(GetAppointmentsUseCase);
+  private readonly prescriptionGw = inject(PrescriptionGateway);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly practitionerGw = inject(PractitionerGateway);
+  private readonly appointmentGw = inject(AppointmentGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -164,13 +152,13 @@ export class Prescriptions {
 
   private readonly _refresh = signal(0);
   protected readonly prescriptions = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getPrescriptions.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.prescriptionGw.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly patients = toSignal(this.getPatientsUC.execute(), { initialValue: [] });
-  protected readonly practitioners = toSignal(this.getPractitionersUC.execute(), { initialValue: [] });
-  protected readonly appointments = toSignal(this.getAppointmentsUC.execute(), { initialValue: [] });
+  protected readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
+  protected readonly practitioners = toSignal(this.practitionerGw.getAll(), { initialValue: [] });
+  protected readonly appointments = toSignal(this.appointmentGw.getAll(), { initialValue: [] });
 
   protected readonly selectedPrescription = signal<Prescription | null>(null);
 
@@ -231,7 +219,7 @@ export class Prescriptions {
   }
 
   protected async openDocument(id: string) {
-    const blob = await lastValueFrom(this.prescriptionGateway.downloadDocument(id));
+    const blob = await lastValueFrom(this.prescriptionGw.downloadDocument(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
@@ -242,7 +230,7 @@ export class Prescriptions {
     const file = input.files?.[0];
     if (!file) return;
     try {
-      await lastValueFrom(this.uploadDocumentUC.execute(prescriptionId, file));
+      await lastValueFrom(this.prescriptionGw.uploadDocument(prescriptionId, file));
       this.toaster.success('medical.prescription.feedback.documentAdded');
       this._refresh.update(v => v + 1);
     } catch {
@@ -259,7 +247,7 @@ export class Prescriptions {
       variant: 'warning',
     })) return;
     try {
-      await lastValueFrom(this.deleteDocumentUC.execute(prescriptionId));
+      await lastValueFrom(this.prescriptionGw.deleteDocument(prescriptionId));
       this.toaster.success('medical.prescription.feedback.documentRemoved');
       this._refresh.update(v => v + 1);
     } catch {
@@ -269,10 +257,10 @@ export class Prescriptions {
 
   protected async createPrescription({ data, file }: PrescriptionSubmitData) {
     try {
-      const created = await lastValueFrom(this.createPrescriptionUC.execute(data));
+      const created = await lastValueFrom(this.prescriptionGw.create(data));
       if (file) {
         try {
-          await lastValueFrom(this.uploadDocumentUC.execute(created.id, file));
+          await lastValueFrom(this.prescriptionGw.uploadDocument(created.id, file));
           this.toaster.success('medical.prescription.feedback.created');
           this.createModalRef().close();
           this._refresh.update(v => v + 1);
@@ -293,10 +281,10 @@ export class Prescriptions {
     const id = this.selectedPrescription()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updatePrescriptionUC.execute(id, data));
+      await lastValueFrom(this.prescriptionGw.update(id, data));
       if (file) {
         try {
-          await lastValueFrom(this.uploadDocumentUC.execute(id, file));
+          await lastValueFrom(this.prescriptionGw.uploadDocument(id, file));
           this.toaster.success('medical.prescription.feedback.updated');
           this.editModalRef().close();
           this._refresh.update(v => v + 1);
@@ -316,7 +304,7 @@ export class Prescriptions {
   protected async deletePrescription(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.prescription.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deletePrescriptionUC.execute(id));
+      await lastValueFrom(this.prescriptionGw.delete(id));
       this.toaster.success('medical.prescription.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

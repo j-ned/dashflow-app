@@ -8,12 +8,11 @@ import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
 import { Prescription } from '../../domain/models/prescription.model';
 import { MedicationWithStock } from '../../domain/models/medication.model';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
-import { GetAppointmentsUseCase } from '../../domain/use-cases/get-appointments.use-case';
-import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
+import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
 import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
-import { GetMedicationsUseCase } from '../../domain/use-cases/get-medications.use-case';
+import { MedicationGateway } from '../../domain/gateways/medication.gateway';
 import { computeMedicationStock } from '../../domain/medication-calculator';
 import { MedicationStockBar } from '../../components/medication-stock-bar/medication-stock-bar';
 import { Icon } from '@shared/components/icon/icon';
@@ -258,19 +257,18 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
   `,
 })
 export class MedicalDashboard {
-  private readonly prescriptionGateway = inject(PrescriptionGateway);
-  private readonly getPatients = inject(GetPatientsUseCase);
-  private readonly getPractitioners = inject(GetPractitionersUseCase);
-  private readonly getAppointments = inject(GetAppointmentsUseCase);
-  private readonly getPrescriptions = inject(GetPrescriptionsUseCase);
-  private readonly getMedications = inject(GetMedicationsUseCase);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly practitionerGw = inject(PractitionerGateway);
+  private readonly appointmentGw = inject(AppointmentGateway);
+  private readonly prescriptionGw = inject(PrescriptionGateway);
+  private readonly medicationGw = inject(MedicationGateway);
   private readonly _i18n = inject(TranslocoService);
 
-  protected readonly patients = toSignal(this.getPatients.execute(), { initialValue: [] });
-  protected readonly practitioners = toSignal(this.getPractitioners.execute(), { initialValue: [] });
-  protected readonly appointments = toSignal(this.getAppointments.execute(), { initialValue: [] });
-  protected readonly prescriptions = toSignal(this.getPrescriptions.execute(), { initialValue: [] });
-  protected readonly medications = toSignal(this.getMedications.execute(), { initialValue: [] });
+  protected readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
+  protected readonly practitioners = toSignal(this.practitionerGw.getAll(), { initialValue: [] });
+  protected readonly appointments = toSignal(this.appointmentGw.getAll(), { initialValue: [] });
+  protected readonly prescriptions = toSignal(this.prescriptionGw.getAll(), { initialValue: [] });
+  protected readonly medications = toSignal(this.medicationGw.getAll(), { initialValue: [] });
 
   protected readonly dayLabels = DAY_SHORT.map((label, idx) => ({ label, idx }));
 
@@ -338,7 +336,7 @@ export class MedicalDashboard {
   }
 
   protected async openDocument(id: string) {
-    const blob = await lastValueFrom(this.prescriptionGateway.downloadDocument(id));
+    const blob = await lastValueFrom(this.prescriptionGw.downloadDocument(id));
     const url = URL.createObjectURL(blob);
     window.open(url, '_blank');
     setTimeout(() => URL.revokeObjectURL(url), 60_000);

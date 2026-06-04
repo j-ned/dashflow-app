@@ -3,10 +3,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Practitioner } from '../../domain/models/practitioner.model';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
-import { CreatePractitionerUseCase } from '../../domain/use-cases/create-practitioner.use-case';
-import { UpdatePractitionerUseCase } from '../../domain/use-cases/update-practitioner.use-case';
-import { DeletePractitionerUseCase } from '../../domain/use-cases/delete-practitioner.use-case';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { PractitionerForm } from '../../components/practitioner-form/practitioner-form';
 import { Toaster } from '@shared/components/toast/toast';
@@ -114,10 +111,7 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Practitioners {
-  private readonly getPractitioners = inject(GetPractitionersUseCase);
-  private readonly createPractitionerUC = inject(CreatePractitionerUseCase);
-  private readonly updatePractitionerUC = inject(UpdatePractitionerUseCase);
-  private readonly deletePractitionerUC = inject(DeletePractitionerUseCase);
+  private readonly practitionerGw = inject(PractitionerGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -127,7 +121,7 @@ export class Practitioners {
 
   private readonly _refresh = signal(0);
   protected readonly practitioners = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getPractitioners.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.practitionerGw.getAll())),
     { initialValue: [] },
   );
 
@@ -148,7 +142,7 @@ export class Practitioners {
 
   protected async createPractitioner(data: Omit<Practitioner, 'id'>) {
     try {
-      await lastValueFrom(this.createPractitionerUC.execute(data));
+      await lastValueFrom(this.practitionerGw.create(data));
       this.toaster.success('medical.practitioner.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -161,7 +155,7 @@ export class Practitioners {
     const id = this.selectedPractitioner()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updatePractitionerUC.execute(id, data));
+      await lastValueFrom(this.practitionerGw.update(id, data));
       this.toaster.success('medical.practitioner.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
@@ -173,7 +167,7 @@ export class Practitioners {
   protected async deletePractitioner(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.practitioner.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deletePractitionerUC.execute(id));
+      await lastValueFrom(this.practitionerGw.delete(id));
       this.toaster.success('medical.practitioner.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

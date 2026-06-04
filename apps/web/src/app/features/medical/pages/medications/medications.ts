@@ -3,13 +3,9 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Medication } from '../../domain/models/medication.model';
-import { GetMedicationsUseCase } from '../../domain/use-cases/get-medications.use-case';
-import { CreateMedicationUseCase } from '../../domain/use-cases/create-medication.use-case';
-import { UpdateMedicationUseCase } from '../../domain/use-cases/update-medication.use-case';
-import { RefillMedicationUseCase } from '../../domain/use-cases/refill-medication.use-case';
-import { DeleteMedicationUseCase } from '../../domain/use-cases/delete-medication.use-case';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPrescriptionsUseCase } from '../../domain/use-cases/get-prescriptions.use-case';
+import { MedicationGateway } from '../../domain/gateways/medication.gateway';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
 import { computeMedicationStock } from '../../domain/medication-calculator';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
@@ -180,13 +176,9 @@ const DAY_LABELS = [
   `,
 })
 export class Medications {
-  private readonly getMedications = inject(GetMedicationsUseCase);
-  private readonly createMedicationUC = inject(CreateMedicationUseCase);
-  private readonly updateMedicationUC = inject(UpdateMedicationUseCase);
-  private readonly refillMedicationUC = inject(RefillMedicationUseCase);
-  private readonly deleteMedicationUC = inject(DeleteMedicationUseCase);
-  private readonly getPatientsUC = inject(GetPatientsUseCase);
-  private readonly getPrescriptionsUC = inject(GetPrescriptionsUseCase);
+  private readonly medicationGw = inject(MedicationGateway);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly prescriptionGw = inject(PrescriptionGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -197,12 +189,12 @@ export class Medications {
 
   private readonly _refresh = signal(0);
   private readonly medications = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getMedications.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.medicationGw.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly patients = toSignal(this.getPatientsUC.execute(), { initialValue: [] });
-  protected readonly prescriptions = toSignal(this.getPrescriptionsUC.execute(), { initialValue: [] });
+  protected readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
+  protected readonly prescriptions = toSignal(this.prescriptionGw.getAll(), { initialValue: [] });
 
   protected readonly medicationsWithStock = computed(() =>
     this.medications().map(med => computeMedicationStock(med))
@@ -247,7 +239,7 @@ export class Medications {
 
   protected async createMedication(data: Omit<Medication, 'id'>) {
     try {
-      await lastValueFrom(this.createMedicationUC.execute(data));
+      await lastValueFrom(this.medicationGw.create(data));
       this.toaster.success('medical.medication.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -260,7 +252,7 @@ export class Medications {
     const id = this.selectedMedication()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateMedicationUC.execute(id, data));
+      await lastValueFrom(this.medicationGw.update(id, data));
       this.toaster.success('medical.medication.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
@@ -273,7 +265,7 @@ export class Medications {
     const id = this.selectedMedication()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.refillMedicationUC.execute(id, event.quantity));
+      await lastValueFrom(this.medicationGw.refill(id, event.quantity));
       this.toaster.success('medical.medication.feedback.refilled');
       this.refillModalRef().close();
       this._refresh.update(v => v + 1);
@@ -285,7 +277,7 @@ export class Medications {
   protected async deleteMedication(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.medication.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deleteMedicationUC.execute(id));
+      await lastValueFrom(this.medicationGw.delete(id));
       this.toaster.success('medical.medication.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

@@ -117,7 +117,7 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
         <app-csv-import-wizard
           [accountId]="currentAccount()?.id ?? ''"
           [existing]="existingForImport()"
-          (imported)="onImported($event)" />
+          (imported)="onImported()" />
       }
     </app-modal-dialog>
   `,
@@ -209,7 +209,7 @@ export class Transactions {
       .map((t) => ({ date: t.date, amount: t.amount, note: t.note }))
   );
 
-  protected onImported(n: number): void {
+  protected onImported(): void {
     this.importModalRef().close();
     this.reload();
   }

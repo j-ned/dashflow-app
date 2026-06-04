@@ -4,10 +4,7 @@ import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Patient } from '../../domain/models/patient.model';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { CreatePatientUseCase } from '../../domain/use-cases/create-patient.use-case';
-import { UpdatePatientUseCase } from '../../domain/use-cases/update-patient.use-case';
-import { DeletePatientUseCase } from '../../domain/use-cases/delete-patient.use-case';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { PatientForm } from '../../components/patient-form/patient-form';
 import { Toaster } from '@shared/components/toast/toast';
@@ -95,10 +92,7 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Patients {
-  private readonly getPatients = inject(GetPatientsUseCase);
-  private readonly createPatientUC = inject(CreatePatientUseCase);
-  private readonly updatePatientUC = inject(UpdatePatientUseCase);
-  private readonly deletePatientUC = inject(DeletePatientUseCase);
+  private readonly patientGw = inject(PatientGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -108,7 +102,7 @@ export class Patients {
 
   private readonly _refresh = signal(0);
   protected readonly patients = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getPatients.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.patientGw.getAll())),
     { initialValue: [] },
   );
 
@@ -129,7 +123,7 @@ export class Patients {
 
   protected async createPatient(data: Omit<Patient, 'id'>) {
     try {
-      await lastValueFrom(this.createPatientUC.execute(data));
+      await lastValueFrom(this.patientGw.create(data));
       this.toaster.success('medical.patient.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -142,7 +136,7 @@ export class Patients {
     const id = this.selectedPatient()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updatePatientUC.execute(id, data));
+      await lastValueFrom(this.patientGw.update(id, data));
       this.toaster.success('medical.patient.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
@@ -154,7 +148,7 @@ export class Patients {
   protected async deletePatient(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.patient.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deletePatientUC.execute(id));
+      await lastValueFrom(this.patientGw.delete(id));
       this.toaster.success('medical.patient.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

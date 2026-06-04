@@ -6,13 +6,9 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Appointment, AppointmentStatus } from '../../domain/models/appointment.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
-import { GetAppointmentsUseCase } from '../../domain/use-cases/get-appointments.use-case';
-import { CreateAppointmentUseCase } from '../../domain/use-cases/create-appointment.use-case';
-import { UpdateAppointmentUseCase } from '../../domain/use-cases/update-appointment.use-case';
-import { UpdateAppointmentStatusUseCase } from '../../domain/use-cases/update-appointment-status.use-case';
-import { DeleteAppointmentUseCase } from '../../domain/use-cases/delete-appointment.use-case';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
+import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { AppointmentForm } from '../../components/appointment-form/appointment-form';
 import { Toaster } from '@shared/components/toast/toast';
@@ -146,13 +142,9 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Appointments {
-  private readonly getAppointments = inject(GetAppointmentsUseCase);
-  private readonly createAppointmentUC = inject(CreateAppointmentUseCase);
-  private readonly updateAppointmentUC = inject(UpdateAppointmentUseCase);
-  private readonly updateAppointmentStatusUC = inject(UpdateAppointmentStatusUseCase);
-  private readonly deleteAppointmentUC = inject(DeleteAppointmentUseCase);
-  private readonly getPatientsUC = inject(GetPatientsUseCase);
-  private readonly getPractitionersUC = inject(GetPractitionersUseCase);
+  private readonly appointmentGw = inject(AppointmentGateway);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly practitionerGw = inject(PractitionerGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -162,19 +154,19 @@ export class Appointments {
 
   private readonly _refresh = signal(0);
   protected readonly appointments = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.getAppointments.execute())),
+    toObservable(this._refresh).pipe(switchMap(() => this.appointmentGw.getAll())),
     { initialValue: [] },
   );
 
   private readonly _refreshPatients = signal(0);
   protected readonly patients = toSignal(
-    toObservable(this._refreshPatients).pipe(switchMap(() => this.getPatientsUC.execute())),
+    toObservable(this._refreshPatients).pipe(switchMap(() => this.patientGw.getAll())),
     { initialValue: [] },
   );
 
   private readonly _refreshPractitioners = signal(0);
   protected readonly practitioners = toSignal(
-    toObservable(this._refreshPractitioners).pipe(switchMap(() => this.getPractitionersUC.execute())),
+    toObservable(this._refreshPractitioners).pipe(switchMap(() => this.practitionerGw.getAll())),
     { initialValue: [] },
   );
 
@@ -221,7 +213,7 @@ export class Appointments {
 
   protected async createAppointment(data: Omit<Appointment, 'id'>) {
     try {
-      await lastValueFrom(this.createAppointmentUC.execute(data));
+      await lastValueFrom(this.appointmentGw.create(data));
       this.toaster.success('medical.appointment.feedback.created');
       this.createModalRef().close();
       this._refresh.update(v => v + 1);
@@ -234,7 +226,7 @@ export class Appointments {
     const id = this.selectedAppointment()?.id;
     if (!id) return;
     try {
-      await lastValueFrom(this.updateAppointmentUC.execute(id, data));
+      await lastValueFrom(this.appointmentGw.update(id, data));
       this.toaster.success('medical.appointment.feedback.updated');
       this.editModalRef().close();
       this._refresh.update(v => v + 1);
@@ -245,7 +237,7 @@ export class Appointments {
 
   protected async updateStatus(id: string, status: AppointmentStatus) {
     try {
-      await lastValueFrom(this.updateAppointmentStatusUC.execute(id, status));
+      await lastValueFrom(this.appointmentGw.updateStatus(id, status));
       this.toaster.success('medical.appointment.feedback.statusUpdated');
       this._refresh.update(v => v + 1);
     } catch {
@@ -256,7 +248,7 @@ export class Appointments {
   protected async deleteAppointment(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.appointment.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deleteAppointmentUC.execute(id));
+      await lastValueFrom(this.appointmentGw.delete(id));
       this.toaster.success('medical.appointment.feedback.deleted');
       this._refresh.update(v => v + 1);
     } catch {

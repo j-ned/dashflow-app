@@ -2,8 +2,8 @@ import { ApplicationConfig, LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
 import { provideRouter, withComponentInputBinding, withInMemoryScrolling, withPreloading, PreloadAllModules } from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
-import { credentialsInterceptor } from './core/interceptors/credentials.interceptor';
-import { csrfInterceptor } from './core/interceptors/csrf.interceptor';
+import { credentialsInterceptor } from '@core/interceptors/credentials.interceptor';
+import { csrfInterceptor } from '@core/interceptors/csrf.interceptor';
 import localeFr from '@angular/common/locales/fr';
 import localeEn from '@angular/common/locales/en';
 
@@ -39,8 +39,6 @@ import { ReminderGateway } from '@features/medical/domain/gateways/reminder.gate
 import { HttpReminderGateway } from '@features/medical/infra/http-reminder.gateway';
 import { DocumentGateway } from '@features/medical/domain/gateways/document.gateway';
 import { HttpDocumentGateway } from '@features/medical/infra/http-document.gateway';
-import { SharedAccessGateway } from '@features/medical/domain/gateways/shared-access.gateway';
-import { HttpSharedAccessGateway } from '@features/medical/infra/http-shared-access.gateway';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -75,6 +73,5 @@ export const appConfig: ApplicationConfig = {
     { provide: MedicationGateway, useClass: HttpMedicationGateway },
     { provide: DocumentGateway, useClass: HttpDocumentGateway },
     { provide: ReminderGateway, useClass: HttpReminderGateway },
-    { provide: SharedAccessGateway, useClass: HttpSharedAccessGateway },
   ],
 };

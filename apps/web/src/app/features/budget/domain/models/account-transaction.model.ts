@@ -1,4 +1,4 @@
-export type TransactionDirection = 'income' | 'expense' | 'transfer';
+type TransactionDirection = 'income' | 'expense' | 'transfer';
 
 export type AccountTransaction = {
   readonly id: string;

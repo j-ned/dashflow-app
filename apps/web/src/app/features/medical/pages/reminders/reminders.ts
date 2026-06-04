@@ -6,15 +6,11 @@ import { Reminder } from '../../domain/models/reminder.model';
 
 import { Appointment } from '../../domain/models/appointment.model';
 import { Medication } from '../../domain/models/medication.model';
-import { GetRemindersUseCase } from '../../domain/use-cases/get-reminders.use-case';
-import { CreateReminderUseCase } from '../../domain/use-cases/create-reminder.use-case';
-import { ToggleReminderUseCase } from '../../domain/use-cases/toggle-reminder.use-case';
-import { DeleteReminderUseCase } from '../../domain/use-cases/delete-reminder.use-case';
-
-import { GetMedicationsUseCase } from '../../domain/use-cases/get-medications.use-case';
-import { GetAppointmentsUseCase } from '../../domain/use-cases/get-appointments.use-case';
-import { GetPatientsUseCase } from '../../domain/use-cases/get-patients.use-case';
-import { GetPractitionersUseCase } from '../../domain/use-cases/get-practitioners.use-case';
+import { ReminderGateway } from '../../domain/gateways/reminder.gateway';
+import { MedicationGateway } from '../../domain/gateways/medication.gateway';
+import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
+import { PatientGateway } from '../../domain/gateways/patient.gateway';
+import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { ReminderForm } from '../../components/reminder-form/reminder-form';
 
@@ -151,15 +147,11 @@ import { Icon } from '@shared/components/icon/icon';
   `,
 })
 export class Reminders {
-  private readonly getReminders = inject(GetRemindersUseCase);
-  private readonly createReminderUC = inject(CreateReminderUseCase);
-  private readonly toggleReminderUC = inject(ToggleReminderUseCase);
-  private readonly deleteReminderUC = inject(DeleteReminderUseCase);
-
-  private readonly getMedicationsUC = inject(GetMedicationsUseCase);
-  private readonly getAppointmentsUC = inject(GetAppointmentsUseCase);
-  private readonly getPatientsUC = inject(GetPatientsUseCase);
-  private readonly getPractitionersUC = inject(GetPractitionersUseCase);
+  private readonly reminderGw = inject(ReminderGateway);
+  private readonly medicationGw = inject(MedicationGateway);
+  private readonly appointmentGw = inject(AppointmentGateway);
+  private readonly patientGw = inject(PatientGateway);
+  private readonly practitionerGw = inject(PractitionerGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -167,14 +159,14 @@ export class Reminders {
   private readonly createReminderModalRef = viewChild.required<ModalDialog>('createReminderModal');
   private readonly _refreshReminders = signal(0);
   protected readonly reminders = toSignal(
-    toObservable(this._refreshReminders).pipe(switchMap(() => this.getReminders.execute())),
+    toObservable(this._refreshReminders).pipe(switchMap(() => this.reminderGw.getAll())),
     { initialValue: [] },
   );
 
-  protected readonly medications = toSignal(this.getMedicationsUC.execute(), { initialValue: [] });
-  protected readonly appointments = toSignal(this.getAppointmentsUC.execute(), { initialValue: [] });
-  private readonly patients = toSignal(this.getPatientsUC.execute(), { initialValue: [] });
-  private readonly practitioners = toSignal(this.getPractitionersUC.execute(), { initialValue: [] });
+  protected readonly medications = toSignal(this.medicationGw.getAll(), { initialValue: [] });
+  protected readonly appointments = toSignal(this.appointmentGw.getAll(), { initialValue: [] });
+  private readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
+  private readonly practitioners = toSignal(this.practitionerGw.getAll(), { initialValue: [] });
 
   private readonly appointmentMap = computed(() => {
     const map = new Map<string, Appointment>();
@@ -377,7 +369,7 @@ export class Reminders {
 
   protected async createReminder(data: Omit<Reminder, 'id'>) {
     try {
-      await lastValueFrom(this.createReminderUC.execute(data));
+      await lastValueFrom(this.reminderGw.create(data));
       this.toaster.success('medical.reminder.feedback.created');
       this.createReminderModalRef().close();
       this._refreshReminders.update(v => v + 1);
@@ -388,7 +380,7 @@ export class Reminders {
 
   protected async toggleReminder(id: string) {
     try {
-      await lastValueFrom(this.toggleReminderUC.execute(id));
+      await lastValueFrom(this.reminderGw.toggle(id));
       this.toaster.success('medical.reminder.feedback.updated');
       this._refreshReminders.update(v => v + 1);
     } catch {
@@ -399,7 +391,7 @@ export class Reminders {
   protected async deleteReminder(id: string) {
     if (!await this.confirm.delete(this._i18n.translate('medical.reminder.deleteEntityName'))) return;
     try {
-      await lastValueFrom(this.deleteReminderUC.execute(id));
+      await lastValueFrom(this.reminderGw.delete(id));
       this.toaster.success('medical.reminder.feedback.deleted');
       this._refreshReminders.update(v => v + 1);
     } catch {
