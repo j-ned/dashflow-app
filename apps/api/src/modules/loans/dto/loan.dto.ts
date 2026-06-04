@@ -34,8 +34,3 @@ export const loanPaymentSchema = z.object({
   date: dateStr.optional(),
   note: z.string().max(255).nullable().optional(),
 });
-
-export type CreateLoanDto = z.infer<typeof createLoanSchema>;
-export type CreateEncryptedLoanDto = z.infer<typeof createEncryptedLoanSchema>;
-export type LoanTransactionDto = z.infer<typeof loanTransactionSchema>;
-export type LoanPaymentDto = z.infer<typeof loanPaymentSchema>;

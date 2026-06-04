@@ -10,5 +10,3 @@ export const createConsumableSchema = z.object({
   installedAt: z.string().datetime({ offset: true }).optional(),
   estimatedLifetimeDays: z.coerce.number().int().min(0).optional(),
 });
-
-export type CreateConsumableDto = z.infer<typeof createConsumableSchema>;

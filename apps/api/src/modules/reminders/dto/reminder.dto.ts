@@ -8,5 +8,3 @@ export const createReminderSchema = z.object({
   recipientEmail: z.string().email(),
   enabled: z.boolean().optional(),
 });
-
-export type CreateReminderDto = z.infer<typeof createReminderSchema>;

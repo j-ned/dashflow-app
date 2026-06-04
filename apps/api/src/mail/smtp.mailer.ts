@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { Mailer } from './mailer';
@@ -19,7 +19,6 @@ const codeCard = (label: string, code: string): string => `
 
 @Injectable()
 export class SmtpMailer implements Mailer {
-  private readonly logger = new Logger('SmtpMailer');
   private readonly transporter: Transporter;
   private readonly from: string;
   private readonly appUrl: string;

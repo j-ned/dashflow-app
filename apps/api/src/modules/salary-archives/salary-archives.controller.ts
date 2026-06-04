@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  Body,
   Controller,
   Delete,
   Get,
@@ -8,7 +7,6 @@ import {
   NotFoundException,
   Param,
   Post,
-  Put,
   Res,
   UploadedFile,
   UseGuards,
@@ -18,7 +16,6 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { SalaryArchivesService } from './salary-archives.service';
 import { StorageService } from '../../storage/storage.service';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -26,23 +23,15 @@ import {
   createSalaryArchiveSchema,
   createEncryptedSalaryArchiveSchema,
 } from './dto/salary-archive.dto';
+import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 
-@UseGuards(JwtAuthGuard)
 @Controller('salary-archives')
-export class SalaryArchivesController {
+export class SalaryArchivesController extends OwnedCrudController<unknown> {
   constructor(
-    private readonly svc: SalaryArchivesService,
+    protected readonly svc: SalaryArchivesService,
     private readonly storage: StorageService,
-  ) {}
-
-  @Get()
-  list(@CurrentUser() u: AuthUser) { return this.svc.list(u.id); }
-
-  @Get(':id')
-  async getOne(@CurrentUser() u: AuthUser, @Param('id') id: string) {
-    const row = await this.svc.getOne(u.id, id);
-    if (!row) throw new NotFoundException('Not found');
-    return row;
+  ) {
+    super();
   }
 
   /**
@@ -53,49 +42,39 @@ export class SalaryArchivesController {
    * file upload (stored in S3/R2). File upload is deferred until a StorageModule
    * is implemented; the payslipKey field remains null on create in this port.
    */
-  @UseGuards(CsrfGuard) @Post() @HttpCode(201)
-  async create(@CurrentUser() u: AuthUser, @Body() body: Record<string, unknown>) {
+  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
     if (body.encryptedData) {
       const { encryptedData, accountId } = parseBody(createEncryptedSalaryArchiveSchema, body);
-      return this.svc.create(u.id, {
+      return {
         accountId: accountId ?? null,
         month: '0000-00',
         salary: '0',
         encryptedData,
-      });
+      };
     }
     const d = parseBody(createSalaryArchiveSchema, body);
-    return this.svc.create(u.id, {
+    return {
       accountId: d.accountId ?? null,
       month: d.month,
       salary: d.salary,
       totalExpenses: d.totalExpenses ?? '0',
       totalSpendings: d.totalSpendings ?? '0',
       spendings: d.spendings ?? [],
-    });
+    };
   }
 
-  @UseGuards(CsrfGuard) @Put(':id')
-  async update(
-    @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
-  ) {
-    let patch: Record<string, unknown>;
+  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
     if (body.encryptedData) {
-      patch = { encryptedData: body.encryptedData };
+      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
       if (body.accountId !== undefined) patch.accountId = body.accountId;
-    } else {
-      const { id: _i, userId: _u, createdAt: _c, ...rest } = body;
-      patch = rest;
+      return patch;
     }
-    const row = await this.svc.update(u.id, id, patch);
-    if (!row) throw new NotFoundException('Not found');
-    return row;
+    const { id: _i, userId: _u, createdAt: _c, ...rest } = body;
+    return rest;
   }
 
   @UseGuards(CsrfGuard) @Delete(':id') @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  override async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Not found');
     await this.svc.remove(u.id, id);

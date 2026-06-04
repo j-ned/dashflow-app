@@ -24,6 +24,3 @@ export const createEncryptedRecurringEntrySchema = z.object({
   accountId: optionalUuid,
   encryptedData: z.string().min(1),
 });
-
-export type CreateRecurringEntryDto = z.infer<typeof createRecurringEntrySchema>;
-export type CreateEncryptedRecurringEntryDto = z.infer<typeof createEncryptedRecurringEntrySchema>;

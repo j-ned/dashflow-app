@@ -15,6 +15,3 @@ export const createEncryptedSalaryArchiveSchema = z.object({
   accountId: z.string().uuid().nullable().optional(),
   encryptedData: z.string().min(1),
 });
-
-export type CreateSalaryArchiveDto = z.infer<typeof createSalaryArchiveSchema>;
-export type CreateEncryptedSalaryArchiveDto = z.infer<typeof createEncryptedSalaryArchiveSchema>;

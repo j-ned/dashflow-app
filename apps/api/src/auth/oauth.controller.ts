@@ -17,7 +17,7 @@ export class OAuthController {
   constructor(
     private readonly oauth: OAuthService,
     private readonly token: TokenService,
-    private readonly config: ConfigService<Env, true>,
+    config: ConfigService<Env, true>,
   ) {
     this.isProd = config.get('NODE_ENV', { infer: true }) === 'production';
     this.frontUrl = config.get('CORS_ORIGIN', { infer: true }).split(',')[0];

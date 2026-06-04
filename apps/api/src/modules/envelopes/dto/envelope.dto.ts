@@ -39,9 +39,3 @@ export const creditEnvelopeSchema = z.object({
 export const creditEncryptedEnvelopeSchema = z.object({
   encryptedData: z.string().min(1),
 });
-
-export type CreateEnvelopeDto = z.infer<typeof createEnvelopeSchema>;
-export type CreateEncryptedEnvelopeDto = z.infer<typeof createEncryptedEnvelopeSchema>;
-export type EnvelopeTransactionDto = z.infer<typeof envelopeTransactionSchema>;
-export type CreditEnvelopeDto = z.infer<typeof creditEnvelopeSchema>;
-export type CreditEncryptedEnvelopeDto = z.infer<typeof creditEncryptedEnvelopeSchema>;

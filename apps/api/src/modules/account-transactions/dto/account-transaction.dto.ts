@@ -25,10 +25,6 @@ export const createEncryptedTransactionSchema = z.object({
   encryptedData: z.string().min(1),
 });
 
-export type CreateTransactionDto = z.infer<typeof createTransactionSchema>;
-export type CreateEncryptedTransactionDto = z.infer<typeof createEncryptedTransactionSchema>;
-
 export const batchTransactionSchema = z.object({
   items: z.array(z.record(z.string(), z.unknown())).min(1).max(1000),
 });
-export type BatchTransactionDto = z.infer<typeof batchTransactionSchema>;
