@@ -1,4 +1,5 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { z } from 'zod';
 import { and, desc, eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { accountTransactions, bankAccounts } from '../../db/schema';
@@ -34,7 +35,12 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
       .orderBy(desc(accountTransactions.date), desc(accountTransactions.createdAt)).limit(1000);
   }
 
+  private static readonly UUID = z.string().uuid();
+
   private async ownsAccount(userId: string, accountId: string): Promise<boolean> {
+    // Garde de format : un accountId non-uuid (ex. "null" issu d'une récurrence orpheline côté
+    // front) ferait planter le bind drizzle → 500. On court-circuite en "non possédé" → 404 propre.
+    if (!AccountTransactionsService.UUID.safeParse(accountId).success) return false;
     const rows = await this.db.select().from(bankAccounts)
       .where(and(eq(bankAccounts.id, accountId), eq(bankAccounts.userId, userId))).limit(1);
     return rows.length > 0;
