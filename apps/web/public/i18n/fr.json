@@ -754,7 +754,11 @@
         "payslipUploadError": "Erreur lors de l'ajout de la fiche de paie",
         "payslipDeleted": "Fiche de paie supprimée",
         "payslipDeleteError": "Erreur lors de la suppression de la fiche de paie",
-        "payslipDeleteTarget": "la fiche de paie"
+        "payslipDeleteTarget": "la fiche de paie",
+        "chargeConfirmed": "Mouvement enregistré",
+        "chargeConfirmError": "Impossible de confirmer l'échéance",
+        "chargesConfirmed": "{{count}} échéances confirmées",
+        "chargesConfirmError": "{{failed}} échéance(s) n'ont pas pu être confirmées"
       },
       "timelineFallback": "Autre"
     },

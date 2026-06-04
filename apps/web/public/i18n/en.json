@@ -754,7 +754,11 @@
         "payslipUploadError": "Error uploading payslip",
         "payslipDeleted": "Payslip deleted",
         "payslipDeleteError": "Error deleting payslip",
-        "payslipDeleteTarget": "the payslip"
+        "payslipDeleteTarget": "the payslip",
+        "chargeConfirmed": "Movement recorded",
+        "chargeConfirmError": "Could not confirm the charge",
+        "chargesConfirmed": "{{count}} charges confirmed",
+        "chargesConfirmError": "{{failed}} charge(s) could not be confirmed"
       },
       "timelineFallback": "Other"
     },

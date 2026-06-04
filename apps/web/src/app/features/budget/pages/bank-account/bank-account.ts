@@ -506,7 +506,9 @@ export class BankAccount {
     const ignored = this._ignoredCharges();
     const candidates = [...this.incomes(), ...this.monthlyExpenses(), ...this.recurringTransfers()];
     return candidates
-      .filter((e) => e.dayOfMonth != null && this.isExpensePassed(e) && this.isUnposted(e) && !ignored.has(e.id))
+      // accountId != null : une récurrence orpheline (compte supprimé → onDelete 'set null')
+      // n'a aucun compte cible ; la confirmer posterait une transaction sur /bank-accounts/null → 500.
+      .filter((e) => e.accountId != null && e.dayOfMonth != null && this.isExpensePassed(e) && this.isUnposted(e) && !ignored.has(e.id))
       .map((e) => ({
         entry: e,
         direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
@@ -523,20 +525,33 @@ export class BankAccount {
       amount, direction: charge.direction, date: charge.suggestedDate,
       toAccountId: e.toAccountId, category: e.category, note: null,
       memberId: e.memberId, recurringEntryId: e.id,
-    }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this.refreshTx());
+    }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe({
+      next: () => { this.refreshTx(); this.toaster.success(this._i18n.translate('budget.bankAccount.messages.chargeConfirmed')); },
+      error: () => this.toaster.error(this._i18n.translate('budget.bankAccount.messages.chargeConfirmError')),
+    });
   }
 
   protected confirmAllCharges(): void {
     const charges = this.pendingCharges();
-    let remaining = charges.length;
-    if (remaining === 0) return;
+    if (charges.length === 0) return;
+    let settled = 0;
+    let failed = 0;
+    const done = () => {
+      if (++settled < charges.length) return;
+      this.refreshTx();
+      if (failed > 0) this.toaster.error(this._i18n.translate('budget.bankAccount.messages.chargesConfirmError', { failed }));
+      else this.toaster.success(this._i18n.translate('budget.bankAccount.messages.chargesConfirmed', { count: charges.length }));
+    };
     for (const c of charges) {
       const e = c.entry;
       this.txGateway.create(e.accountId!, {
         amount: c.suggestedAmount, direction: c.direction, date: c.suggestedDate,
         toAccountId: e.toAccountId, category: e.category, note: null,
         memberId: e.memberId, recurringEntryId: e.id,
-      }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => { if (--remaining === 0) this.refreshTx(); });
+      }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe({
+        next: done,
+        error: () => { failed++; done(); },
+      });
     }
   }
 

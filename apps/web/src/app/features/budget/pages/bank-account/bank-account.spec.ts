@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
@@ -17,7 +17,12 @@ const ACCOUNTS = [
   { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
 ];
 
-function makeComponent(opts: { entries?: unknown[]; txs?: unknown[] } = {}) {
+function makeComponent(opts: {
+  entries?: unknown[];
+  txs?: unknown[];
+  createImpl?: () => Observable<unknown>;
+  toaster?: { success: () => void; error: () => void; info: () => void };
+} = {}) {
   TestBed.configureTestingModule({
     providers: [
       provideHttpClient(),
@@ -25,8 +30,8 @@ function makeComponent(opts: { entries?: unknown[]; txs?: unknown[] } = {}) {
       { provide: BankAccountGateway, useValue: { getAll: () => of(ACCOUNTS) } },
       { provide: MemberGateway, useValue: { getAll: () => of([]) } },
       { provide: SalaryArchiveGateway, useValue: { getAll: () => of([]) } },
-      { provide: AccountTransactionGateway, useValue: { getAll: () => of(opts.txs ?? []) } },
-      { provide: Toaster, useValue: { success: () => {}, error: () => {}, info: () => {} } },
+      { provide: AccountTransactionGateway, useValue: { getAll: () => of(opts.txs ?? []), create: opts.createImpl ?? (() => of({})) } },
+      { provide: Toaster, useValue: opts.toaster ?? { success: () => {}, error: () => {}, info: () => {} } },
       { provide: ConfirmService, useValue: { ask: () => of(true) } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k, getActiveLang: () => 'fr', events$: of({ type: 'translationLoadSuccess' }) } },
     ],
@@ -89,6 +94,31 @@ describe('BankAccount — échéances à confirmer', () => {
     const cmp = makeComponent({ entries: [RENT] }) as unknown as { pendingCharges: () => unknown[]; ignoreCharge: (id: string) => void };
     expect(cmp.pendingCharges().length).toBe(1);
     cmp.ignoreCharge('r1');
+    expect(cmp.pendingCharges().length).toBe(0);
+  });
+
+  // Régression : une récurrence orpheline (son compte a été supprimé → accountId mis à null
+  // par le `onDelete: 'set null'`) ne doit JAMAIS être proposée à la confirmation : la table
+  // transactions exige un compte non-null, donc poster une telle échéance plantait en 500
+  // (avalé par le subscribe → « tu cliques ça fait rien »). Visible en vue « Tous les comptes ».
+  it('confirmCharge affiche un toast d\'erreur si la création échoue (plus de silence)', () => {
+    let errored = false;
+    const cmp = makeComponent({
+      entries: [RENT],
+      createImpl: () => throwError(() => ({ status: 500 })),
+      toaster: { success: () => {}, error: () => { errored = true; }, info: () => {} },
+    }) as unknown as { confirmCharge: (id: string, amount: number) => void };
+    cmp.confirmCharge('r1', 800);
+    expect(errored).toBe(true);
+  });
+
+  it('pendingCharges exclut une récurrence orpheline (accountId null, vue tous comptes)', () => {
+    const ORPHAN = { ...RENT, id: 'orphan', accountId: null };
+    const cmp = makeComponent({ entries: [ORPHAN] }) as unknown as {
+      pendingCharges: () => unknown[];
+      selectedAccountId: { set: (v: string | null) => void };
+    };
+    cmp.selectedAccountId.set(null); // vue « Tous les comptes » → filteredEntries renvoie tout
     expect(cmp.pendingCharges().length).toBe(0);
   });
 });
