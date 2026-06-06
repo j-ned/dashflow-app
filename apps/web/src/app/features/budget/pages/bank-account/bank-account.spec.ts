@@ -21,7 +21,7 @@ function makeComponent(opts: {
   entries?: unknown[];
   txs?: unknown[];
   accounts?: unknown[];
-  createImpl?: () => Observable<unknown>;
+  createImpl?: (accountId: string, body: Record<string, unknown>) => Observable<unknown>;
   updateImpl?: (id: string, data: { accountId: string }) => Observable<unknown>;
   entryDeleteImpl?: (id: string) => Observable<unknown>;
   accountDeleteImpl?: () => Observable<unknown>;
@@ -222,5 +222,38 @@ describe('BankAccount — échéances manuelles', () => {
       accounts: [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }],
     }) as unknown as { pendingCharges: () => Array<{ entry: { id: string } }> };
     expect(cmp.pendingCharges().some((c) => c.entry.id === 'r9')).toBe(false);
+  });
+});
+
+describe('BankAccount — auto-pointage à l\'ouverture', () => {
+  it('crée la transaction d\'une échéance auto échue et non pointée', () => {
+    const created: Array<{ accountId: string; body: Record<string, unknown> }> = [];
+    const auto = { id: 'r1', accountId: 'a', label: 'Loyer', amount: 800, type: 'expense' as const,
+      dayOfMonth: 1, date: null, endDate: null, toAccountId: null, category: null, memberId: null,
+      payslipKey: null, autoPost: true, autoPostSince: new Date().toISOString().slice(0, 7) };
+    makeComponent({
+      entries: [auto],
+      accounts: [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }],
+      createImpl: (accountId, body) => { created.push({ accountId, body }); return of({ id: 't1' }); },
+    });
+    expect(created).toHaveLength(1);
+    expect(created[0].accountId).toBe('a');
+    expect(created[0].body).toMatchObject({ amount: 800, direction: 'expense', recurringEntryId: 'r1', note: 'auto' });
+  });
+
+  it('ne crée rien si l\'échéance auto est déjà pointée ce mois', () => {
+    const created: unknown[] = [];
+    const month = new Date().toISOString().slice(0, 7);
+    const auto = { id: 'r1', accountId: 'a', label: 'Loyer', amount: 800, type: 'expense' as const,
+      dayOfMonth: 1, date: null, endDate: null, toAccountId: null, category: null, memberId: null,
+      payslipKey: null, autoPost: true, autoPostSince: month };
+    makeComponent({
+      entries: [auto],
+      accounts: [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }],
+      txs: [{ id: 't0', accountId: 'a', amount: 800, direction: 'expense', toAccountId: null,
+        date: `${month}-01`, category: null, note: 'auto', memberId: null, recurringEntryId: 'r1' }],
+      createImpl: () => { created.push(1); return of({ id: 'x' }); },
+    });
+    expect(created).toHaveLength(0);
   });
 });

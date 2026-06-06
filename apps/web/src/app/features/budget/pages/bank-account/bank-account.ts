@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, computed, DestroyRef, inject, linkedSignal, signal, viewChild } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, DestroyRef, effect, inject, linkedSignal, signal, untracked, viewChild } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { takeUntilDestroyed, toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { lastValueFrom, switchMap } from 'rxjs';
+import { lastValueFrom, switchMap, tap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount as BankAccountModel, BankAccountType, BANK_ACCOUNT_TYPES } from '../../domain/models/bank-account.model';
@@ -12,6 +12,7 @@ import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gatew
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { confirmedBalance as computeConfirmedBalance, isRecurrencePosted } from '../../domain/account-balance';
+import { duePostings } from '../../domain/auto-post';
 import { addMoney } from '../../domain/money';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
@@ -306,8 +307,12 @@ export class BankAccount {
   private readonly _refresh = signal(0);
   private readonly _refreshAccounts = signal(0);
 
+  private readonly _entriesLoaded = signal(false);
   private readonly allEntries = toSignal(
-    toObservable(this._refresh).pipe(switchMap(() => this.entryGateway.getAll())),
+    toObservable(this._refresh).pipe(
+      switchMap(() => this.entryGateway.getAll()),
+      tap(() => this._entriesLoaded.set(true)),
+    ),
     { initialValue: [] },
   );
 
@@ -319,12 +324,28 @@ export class BankAccount {
   protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
 
   private readonly _refreshTx = signal(0);
+  private readonly _txLoaded = signal(false);
   private readonly allTx = toSignal(
-    toObservable(this._refreshTx).pipe(switchMap(() => this.txGateway.getAll())),
+    toObservable(this._refreshTx).pipe(
+      switchMap(() => this.txGateway.getAll()),
+      tap(() => this._txLoaded.set(true)),
+    ),
     { initialValue: [] as AccountTransaction[] },
   );
   private refreshTx(): void { this._refreshTx.update((n) => n + 1); }
   private readonly todayIso = new Date().toISOString().slice(0, 10);
+
+  private readonly _autoPostAttempted = signal(false);
+
+  constructor() {
+    effect(() => {
+      if (!this._entriesLoaded() || !this._txLoaded() || this._autoPostAttempted()) return;
+      this._autoPostAttempted.set(true);
+      const entries = untracked(this.allEntries);
+      const txs = untracked(this.allTx);
+      untracked(() => this._runAutoPost(entries, txs));
+    });
+  }
 
   protected readonly selectedAccountId = linkedSignal<string | null>(() => {
     const accs = this.accounts();
@@ -556,6 +577,31 @@ export class BankAccount {
 
   protected ignoreCharge(id: string): void {
     this._ignoredCharges.update((s) => new Set(s).add(id));
+  }
+
+  private _runAutoPost(entries: readonly RecurringEntry[], txs: readonly AccountTransaction[]): void {
+    const due = duePostings(entries, txs, { currentMonth: this.currentMonth, currentDay: this.currentDay });
+    if (due.length === 0) return;
+
+    const monthsCount = new Set(due.map((d) => d.month)).size;
+    let settled = 0;
+    let failed = 0;
+    const done = () => {
+      if (++settled < due.length) return;
+      this.refreshTx();
+      if (failed > 0) this.toaster.error('budget.bankAccount.messages.autoPostError', { failed });
+      else if (monthsCount > 1) this.toaster.success('budget.bankAccount.messages.autoPostCaughtUp', { count: due.length, months: monthsCount });
+      else this.toaster.success('budget.bankAccount.messages.autoPosted', { count: due.length });
+    };
+
+    for (const d of due) {
+      const e = d.entry;
+      this.txGateway.create(e.accountId!, {
+        amount: d.amount, direction: d.direction, date: d.date,
+        toAccountId: e.toAccountId, category: e.category, note: 'auto',
+        memberId: e.memberId, recurringEntryId: e.id,
+      }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe({ next: done, error: () => { failed++; done(); } });
+    }
   }
 
   protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
