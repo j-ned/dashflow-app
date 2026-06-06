@@ -778,7 +778,10 @@
         "chargesConfirmed": "{{count}} charges confirmed",
         "chargesConfirmError": "{{failed}} charge(s) could not be confirmed",
         "entryReassigned": "Recurring entry reassigned",
-        "entryReassignError": "Error reassigning entry"
+        "entryReassignError": "Error reassigning entry",
+        "autoPosted": "{{count}} entry/entries posted automatically",
+        "autoPostCaughtUp": "{{count}} entry/entries caught up over {{months}} months",
+        "autoPostError": "{{failed}} auto entry/entries failed"
       },
       "orphans": {
         "title": "Recurring entries without an account",
@@ -1182,6 +1185,8 @@
       "categoryPlaceholder": "e.g. Housing, Subscription...",
       "autoPost": "Post automatically",
       "autoPostHint": "Creates the transaction automatically on the due date",
+      "autoBadge": "Auto",
+      "autoBadgeTitle": "Posted automatically on open",
       "member": "Member",
       "memberNone": "None (global)",
       "incomeDay": "Pay day",

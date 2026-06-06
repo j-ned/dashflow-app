@@ -778,7 +778,10 @@
         "chargesConfirmed": "{{count}} échéances confirmées",
         "chargesConfirmError": "{{failed}} échéance(s) n'ont pas pu être confirmées",
         "entryReassigned": "Récurrence réassignée",
-        "entryReassignError": "Erreur lors de la réassignation"
+        "entryReassignError": "Erreur lors de la réassignation",
+        "autoPosted": "{{count}} échéance(s) pointée(s) automatiquement",
+        "autoPostCaughtUp": "{{count}} échéance(s) rattrapée(s) sur {{months}} mois",
+        "autoPostError": "{{failed}} échéance(s) auto en échec"
       },
       "orphans": {
         "title": "Récurrences sans compte",
@@ -1182,6 +1185,8 @@
       "categoryPlaceholder": "Ex: Logement, Abonnement...",
       "autoPost": "Pointer automatiquement",
       "autoPostHint": "Crée la transaction automatiquement à l'échéance",
+      "autoBadge": "Auto",
+      "autoBadgeTitle": "Pointée automatiquement à l'ouverture",
       "member": "Membre",
       "memberNone": "Aucun (global)",
       "incomeDay": "Jour de versement",
