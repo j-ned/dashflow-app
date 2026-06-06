@@ -495,7 +495,7 @@ export class BankAccount {
     return candidates
       // accountId != null : une récurrence orpheline (compte supprimé → onDelete 'set null')
       // n'a aucun compte cible ; la confirmer posterait une transaction sur /bank-accounts/null → 500.
-      .filter((e) => e.accountId != null && e.dayOfMonth != null && this.isExpensePassed(e) && this.isUnposted(e) && !ignored.has(e.id))
+      .filter((e) => e.accountId != null && e.dayOfMonth != null && !e.autoPost && this.isExpensePassed(e) && this.isUnposted(e) && !ignored.has(e.id))
       .map((e) => ({
         entry: e,
         direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',

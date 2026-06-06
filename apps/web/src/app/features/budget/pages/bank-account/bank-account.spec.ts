@@ -211,3 +211,16 @@ describe('BankAccount — suppression de compte avec récurrences', () => {
     expect(accountDeleted).toBe(false);
   });
 });
+
+describe('BankAccount — échéances manuelles', () => {
+  it('exclut les récurrences auto-pointées des échéances manuelles', () => {
+    const auto = { id: 'r9', accountId: 'a', label: 'Épargne', amount: 100, type: 'transfer' as const,
+      dayOfMonth: 1, date: null, endDate: null, toAccountId: 'b', category: null, memberId: null,
+      payslipKey: null, autoPost: true, autoPostSince: '2026-01' };
+    const cmp = makeComponent({
+      entries: [auto],
+      accounts: [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }],
+    }) as unknown as { pendingCharges: () => Array<{ entry: { id: string } }> };
+    expect(cmp.pendingCharges().some((c) => c.entry.id === 'r9')).toBe(false);
+  });
+});
