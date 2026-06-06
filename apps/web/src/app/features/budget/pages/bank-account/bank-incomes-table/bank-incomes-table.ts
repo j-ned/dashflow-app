@@ -32,7 +32,13 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   @if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
                 </div>
                 <div>
-                  <p class="text-sm font-semibold text-text-primary">{{ entry.label }}</p>
+                  <p class="text-sm font-semibold text-text-primary">{{ entry.label }}@if (entry.autoPost) {
+                    <span data-testid="auto-badge"
+                          class="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ib-green bg-ib-green/10"
+                          [title]="'budget.recurringForm.autoBadgeTitle' | transloco">
+                      {{ 'budget.recurringForm.autoBadge' | transloco }}
+                    </span>
+                  }</p>
                   <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                     @if (entry.category) {
                       <span class="inline-flex items-center rounded-md bg-raised px-1.5 py-0.5 text-[10px] font-medium text-text-muted">{{ entry.category }}</span>

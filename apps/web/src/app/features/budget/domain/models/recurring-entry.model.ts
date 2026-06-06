@@ -13,4 +13,6 @@ export type RecurringEntry = {
   endDate: string | null;
   category: string | null;
   payslipKey: string | null;
+  autoPost: boolean;
+  autoPostSince: string | null; // 'YYYY-MM' figé à l'activation de autoPost ; null si autoPost=false
 };

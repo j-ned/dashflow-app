@@ -20,6 +20,7 @@ type RecurringEntryFormShape = {
   toAccountId: FormControl<string>;
   category: FormControl<string>;
   memberId: FormControl<string>;
+  autoPost: FormControl<boolean>;
 };
 
 @Component({
@@ -185,6 +186,16 @@ type RecurringEntryFormShape = {
           }
         }
 
+        @if (activeType() === 'income' || activeType() === 'expense' || activeType() === 'transfer') {
+          <label class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer">
+            <input type="checkbox" formControlName="autoPost" class="mt-0.5 h-4 w-4 accent-ib-green" />
+            <span class="text-sm">
+              <span class="font-medium text-text-primary">{{ 'budget.recurringForm.autoPost' | transloco }}</span>
+              <span class="block text-xs text-text-muted">{{ 'budget.recurringForm.autoPostHint' | transloco }}</span>
+            </span>
+          </label>
+        }
+
         <div>
           <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.category' | transloco }}</label>
           <input id="re-category" type="text" formControlName="category" list="re-category-options"
@@ -346,6 +357,7 @@ export class RecurringEntryForm {
     toAccountId: new FormControl('', { nonNullable: true }),
     category: new FormControl('', { nonNullable: true }),
     memberId: new FormControl('', { nonNullable: true }),
+    autoPost: new FormControl(false, { nonNullable: true }),
   });
 
   protected readonly isInvalid = toSignal(
@@ -367,6 +379,7 @@ export class RecurringEntryForm {
           toAccountId: data.toAccountId ?? '',
           category: data.category ?? '',
           memberId: data.memberId ?? '',
+          autoPost: data.autoPost ?? false,
         });
       } else {
         this.form.reset();
@@ -427,6 +440,8 @@ export class RecurringEntryForm {
     }
 
     const v = this.form.getRawValue();
+    const month = new Date().toISOString().slice(0, 7);
+    const autoPostSince = v.autoPost ? (this.initial()?.autoPostSince ?? month) : null;
     this.submitted.emit({
       label: v.label,
       amount: v.amount,
@@ -439,6 +454,8 @@ export class RecurringEntryForm {
       memberId: v.memberId || null,
       accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,
       payslipKey: this.initial()?.payslipKey ?? null,
+      autoPost: v.autoPost,
+      autoPostSince,
     });
   }
 }
