@@ -439,6 +439,8 @@ export class RecurringEntryForm {
       memberId: v.memberId || null,
       accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,
       payslipKey: this.initial()?.payslipKey ?? null,
+      autoPost: this.initial()?.autoPost ?? false,
+      autoPostSince: this.initial()?.autoPostSince ?? null,
     });
   }
 }

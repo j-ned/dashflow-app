@@ -475,6 +475,8 @@ export class Loans {
             toAccountId: null,
             category: this._i18n.translate('budget.loan.messages.repaymentCategory'),
             payslipKey: null,
+            autoPost: false,
+            autoPostSince: null,
           }),
         );
       }

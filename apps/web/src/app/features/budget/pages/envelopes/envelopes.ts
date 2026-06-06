@@ -436,6 +436,8 @@ export class Envelopes {
             toAccountId: null,
             category: this._i18n.translate('budget.envelope.messages.envelopeCreditCategory'),
             payslipKey: null,
+            autoPost: false,
+            autoPostSince: null,
           }),
         );
       }
