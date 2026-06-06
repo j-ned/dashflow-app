@@ -1180,6 +1180,8 @@
       "amountPlaceholder": "0.00",
       "category": "Catégorie",
       "categoryPlaceholder": "Ex: Logement, Abonnement...",
+      "autoPost": "Pointer automatiquement",
+      "autoPostHint": "Crée la transaction automatiquement à l'échéance",
       "member": "Membre",
       "memberNone": "Aucun (global)",
       "incomeDay": "Jour de versement",

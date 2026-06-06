@@ -1180,6 +1180,8 @@
       "amountPlaceholder": "0.00",
       "category": "Category",
       "categoryPlaceholder": "e.g. Housing, Subscription...",
+      "autoPost": "Post automatically",
+      "autoPostHint": "Creates the transaction automatically on the due date",
       "member": "Member",
       "memberNone": "None (global)",
       "incomeDay": "Pay day",
