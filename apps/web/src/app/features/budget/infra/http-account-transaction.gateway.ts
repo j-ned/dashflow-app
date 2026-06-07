@@ -1,11 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, encryptEntity } from '@core/services/crypto/entity-crypto';
 import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList } from '@core/services/crypto/validate-decrypted';
 import { AccountTransaction } from '../domain/models/account-transaction.model';
 import { AccountTransactionGateway } from '../domain/gateways/account-transaction.gateway';
+import { AccountTransactionSchema } from './schemas/account-transaction.schema';
 
 const CLEARTEXT_KEYS = [
   'id',
@@ -33,7 +35,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       this.api.get<ApiRow[]>(`/bank-accounts/${accountId}/transactions`),
       this.crypto.getMasterKey(),
       coerceTransaction,
-    );
+    ).pipe(map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })));
   }
 
   getAll(): Observable<AccountTransaction[]> {
@@ -41,7 +43,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       this.api.get<ApiRow[]>('/transactions/all'),
       this.crypto.getMasterKey(),
       coerceTransaction,
-    );
+    ).pipe(map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })));
   }
 
   create(

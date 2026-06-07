@@ -1,4 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -230,6 +239,7 @@ type ReviewRow = {
 })
 export class CsvImportWizard {
   private readonly _txGateway = inject(AccountTransactionGateway);
+  private readonly _destroyRef = inject(DestroyRef);
   readonly accountId = input.required<string>();
   readonly existing = input<ExistingTx[]>([]);
   readonly imported = output<number>();
@@ -307,6 +317,7 @@ export class CsvImportWizard {
           recurringEntryId: null,
         })),
       )
+      .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe(() => this.imported.emit(rows.length));
   }
 }

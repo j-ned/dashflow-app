@@ -159,3 +159,105 @@ describe('RecurringEntryForm — destination prélèvement → livret', () => {
     expect(cmp.form.invalid).toBe(true);
   });
 });
+
+const COURANT: BankAccount = {
+  id: 'a',
+  name: 'Courant',
+  type: 'courant',
+  initialBalance: 0,
+  color: null,
+  dotColor: null,
+};
+
+const EXPENSE_ENTRY = {
+  id: 'e1',
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Netflix',
+  amount: 16,
+  type: 'expense' as const,
+  dayOfMonth: 10,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  memberId: null,
+  autoPost: false,
+  autoPostSince: null,
+};
+
+function mountEdit(entry: typeof EXPENSE_ENTRY) {
+  TestBed.configureTestingModule({
+    imports: [
+      RecurringEntryForm,
+      TranslocoTestingModule.forRoot({
+        langs: {},
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+      }),
+    ],
+  });
+  const fixture = TestBed.createComponent(RecurringEntryForm);
+  fixture.componentRef.setInput('initial', entry);
+  fixture.componentRef.setInput('accounts', [COURANT, SAVINGS]);
+  fixture.detectChanges();
+  return fixture;
+}
+
+describe('RecurringEntryForm — ÉDITION prélèvement → livret (repro bug)', () => {
+  it("édition d'une dépense → bascule my_account + livret → émet type='transfer'", () => {
+    const fixture = mountEdit(EXPENSE_ENTRY);
+    const cmp = fixture.componentInstance as unknown as FormCmp;
+    let emitted: { type: string; toAccountId: string | null } | null = null;
+    fixture.componentInstance.submitted.subscribe((v) => (emitted = v as never));
+
+    cmp.destination.set('my_account');
+    cmp.form.controls.toAccountId.setValue('liv');
+    fixture.detectChanges();
+
+    expect(cmp.form.invalid).toBe(false); // le formulaire doit être valide
+    cmp.submit();
+
+    expect(emitted).not.toBeNull(); // submit doit émettre (sinon "rien ne se passe")
+    expect(emitted!.type).toBe('transfer');
+    expect(emitted!.toAccountId).toBe('liv');
+  });
+
+  it('DOM : clic radio « mon compte » + select livret → bouton activé', () => {
+    const fixture = mountEdit(EXPENSE_ENTRY);
+    const el: HTMLElement = fixture.nativeElement;
+
+    // 2e radio = « Vers un de mes comptes »
+    const radios = el.querySelectorAll<HTMLInputElement>('input[type="radio"][name="destination"]');
+    expect(radios.length).toBe(2);
+    radios[1].click();
+    radios[1].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const select = el.querySelector<HTMLSelectElement>('#re-to-account');
+    expect(select).not.toBeNull(); // le sélecteur de compte doit apparaître
+    select!.value = 'liv';
+    select!.dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    const submitBtn = el.querySelector<HTMLButtonElement>('button[type="submit"]');
+    expect(submitBtn).not.toBeNull();
+    expect(submitBtn!.disabled).toBe(false); // sinon « rien ne se passe » au clic
+  });
+
+  it('bascule « mon compte » SANS livret → bouton désactivé AVEC message d’erreur (anti « rien ne se passe »)', () => {
+    const fixture = mountEdit(EXPENSE_ENTRY);
+    const el: HTMLElement = fixture.nativeElement;
+
+    const radios = el.querySelectorAll<HTMLInputElement>('input[type="radio"][name="destination"]');
+    radios[1].click();
+    radios[1].dispatchEvent(new Event('change'));
+    fixture.detectChanges();
+
+    // toAccountId requis-mais-vide : le bouton est désactivé (correct) MAIS il faut un feedback.
+    const submitBtn = el.querySelector<HTMLButtonElement>('button[type="submit"]');
+    expect(submitBtn!.disabled).toBe(true);
+
+    const requiredMsg = el.querySelector('[data-testid="to-account-required"]');
+    expect(requiredMsg).not.toBeNull(); // sans message, l’utilisateur croit que « rien ne se passe »
+  });
+});

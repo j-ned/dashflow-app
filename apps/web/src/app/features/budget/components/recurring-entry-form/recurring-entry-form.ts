@@ -302,6 +302,14 @@ type RecurringEntryFormShape = {
                   <p class="mt-1 text-xs text-text-muted">
                     {{ 'budget.recurringForm.toAccountHint' | transloco }}
                   </p>
+                  @if (activeType() === 'transfer' && !form.controls.toAccountId.value) {
+                    <small
+                      data-testid="to-account-required"
+                      class="mt-1 block text-xs text-ib-red"
+                      role="alert"
+                      >{{ 'budget.recurringForm.toAccountRequired' | transloco }}</small
+                    >
+                  }
                 </div>
               }
 

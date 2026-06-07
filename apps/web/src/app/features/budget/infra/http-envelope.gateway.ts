@@ -4,7 +4,9 @@ import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow } from '@core/services/crypto/entity-crypto';
 import { decryptList, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Envelope } from '../domain/models/envelope.model';
+import { EnvelopeSchema } from './schemas/envelope.schema';
 import { EnvelopeTransaction } from '../domain/models/envelope-transaction.model';
 import { EnvelopeGateway } from '../domain/gateways/envelope.gateway';
 import { addMoney } from '../domain/money';
@@ -34,7 +36,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       this.api.get<ApiRow[]>('/envelopes'),
       this.crypto.getMasterKey(),
       coerceEnvelope,
-    );
+    ).pipe(map((envs) => validateList(EnvelopeSchema, envs, { entity: 'Envelope' })));
   }
 
   getById(id: string): Observable<Envelope> {
@@ -42,7 +44,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       this.api.get<ApiRow>(`/envelopes/${id}`),
       this.crypto.getMasterKey(),
       coerceEnvelope,
-    );
+    ).pipe(map((env) => validateOne(EnvelopeSchema, env, { entity: 'Envelope' })));
   }
 
   create(data: Omit<Envelope, 'id'>): Observable<Envelope> {

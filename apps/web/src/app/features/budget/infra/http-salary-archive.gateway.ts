@@ -1,11 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, encryptEntity } from '@core/services/crypto/entity-crypto';
 import { decryptBlob, decryptList, decryptOne } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
+import { SalaryArchiveSchema } from './schemas/salary-archive.schema';
 import { SalaryArchiveGateway } from '../domain/gateways/salary-archive.gateway';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'accountId', 'createdAt'] as const;
@@ -16,7 +18,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<SalaryArchive[]> {
-    return decryptList(this.api.get<ApiRow[]>('/salary-archives'), this.crypto.getMasterKey());
+    return decryptList(this.api.get<ApiRow[]>('/salary-archives'), this.crypto.getMasterKey()).pipe(
+      map((archives) => validateList(SalaryArchiveSchema, archives, { entity: 'SalaryArchive' })),
+    );
   }
 
   create(data: FormData): Observable<SalaryArchive> {
@@ -56,7 +60,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
       }),
     );
 
-    return decryptOne<SalaryArchive>(response$, key);
+    return decryptOne<SalaryArchive>(response$, key).pipe(
+      map((a) => validateOne(SalaryArchiveSchema, a, { entity: 'SalaryArchive' })),
+    );
   }
 
   update(id: string, archive: SalaryArchive): Observable<SalaryArchive> {
@@ -77,7 +83,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
     const response$ = from(encryptEntity(fields, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.put<ApiRow>(`/salary-archives/${id}`, encrypted)),
     );
-    return decryptOne<SalaryArchive>(response$, key);
+    return decryptOne<SalaryArchive>(response$, key).pipe(
+      map((a) => validateOne(SalaryArchiveSchema, a, { entity: 'SalaryArchive' })),
+    );
   }
 
   delete(id: string): Observable<void> {

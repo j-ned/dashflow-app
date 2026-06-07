@@ -5,33 +5,27 @@ import {
   DestroyRef,
   effect,
   inject,
-  linkedSignal,
   signal,
   untracked,
   viewChild,
 } from '@angular/core';
-import { FormsModule } from '@angular/forms';
-import { takeUntilDestroyed, toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { lastValueFrom, switchMap, tap } from 'rxjs';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { lastValueFrom } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
-import {
-  BankAccount as BankAccountModel,
-  BankAccountType,
-  BANK_ACCOUNT_TYPES,
-} from '../../domain/models/bank-account.model';
+import { BankAccountType } from '../../domain/models/bank-account.model';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
-import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
-import { MemberGateway } from '../../domain/gateways/member.gateway';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
-import {
-  confirmedBalance as computeConfirmedBalance,
-  isRecurrencePosted,
-} from '../../domain/account-balance';
+import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
+import { buildPendingCharges } from '../../domain/pending-charges';
 import { duePostings } from '../../domain/auto-post';
 import { addMoney } from '../../domain/money';
+import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
+import { buildTimelineEvents } from '../../domain/timeline-builder';
+import { sumAmount } from '../../domain/recurring-entry-totals';
+import { computeForecastDelta } from '../../domain/forecast-delta';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
@@ -46,6 +40,8 @@ import { BankTimeline } from './bank-timeline/bank-timeline';
 import { PendingCharge } from '../../domain/pending-charge';
 import { PendingChargesPanel } from './pending-charges-panel/pending-charges-panel';
 import { OrphanEntriesPanel } from './orphan-entries-panel/orphan-entries-panel';
+import { AccountManager } from './account-manager/account-manager';
+import { BudgetDataStore } from './budget-data.store';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -58,14 +54,10 @@ const PALETTE = [
   'var(--color-ib-red)',
 ] as const;
 
-const sumAmount = (entries: readonly RecurringEntry[]): number =>
-  entries.reduce((s, e) => s + Number(e.amount), 0);
-
 @Component({
   selector: 'app-bank-account',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    FormsModule,
     ModalDialog,
     RecurringEntryForm,
     Icon,
@@ -78,7 +70,9 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
     TranslocoPipe,
     PendingChargesPanel,
     OrphanEntriesPanel,
+    AccountManager,
   ],
+  providers: [BudgetDataStore],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -92,16 +86,16 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
         class="flex items-center gap-2 flex-wrap"
         [attr.aria-label]="'budget.bankAccount.accountNavAria' | transloco"
       >
-        @if (accounts().length > 1) {
+        @if (store.accounts().length > 1) {
           <button
             type="button"
             class="inline-flex items-center rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition-colors"
-            [class.border-ib-blue]="selectedAccountId() === null"
-            [class.bg-ib-blue]="selectedAccountId() === null"
-            [class.text-canvas]="selectedAccountId() === null"
-            [class.border-border]="selectedAccountId() !== null"
-            [class.text-text-muted]="selectedAccountId() !== null"
-            (click)="selectAccount(null)"
+            [class.border-ib-blue]="store.selectedAccountId() === null"
+            [class.bg-ib-blue]="store.selectedAccountId() === null"
+            [class.text-canvas]="store.selectedAccountId() === null"
+            [class.border-border]="store.selectedAccountId() !== null"
+            [class.text-text-muted]="store.selectedAccountId() !== null"
+            (click)="store.selectAccount(null)"
           >
             {{ 'budget.bankAccount.allAccounts' | transloco }}
           </button>
@@ -111,14 +105,14 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
             type="button"
             class="inline-flex items-center gap-2 rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"
             [style.border-color]="
-              selectedAccountId() === da.account.id ? da.color : 'var(--border)'
+              store.selectedAccountId() === da.account.id ? da.color : 'var(--border)'
             "
             [style.background-color]="
-              selectedAccountId() === da.account.id ? da.color : 'transparent'
+              store.selectedAccountId() === da.account.id ? da.color : 'transparent'
             "
-            [class.text-canvas]="selectedAccountId() === da.account.id"
-            [class.text-text-muted]="selectedAccountId() !== da.account.id"
-            (click)="selectAccount(da.account.id)"
+            [class.text-canvas]="store.selectedAccountId() === da.account.id"
+            [class.text-text-muted]="store.selectedAccountId() !== da.account.id"
+            (click)="store.selectAccount(da.account.id)"
           >
             <span
               class="inline-block h-2.5 w-2.5 rounded-full"
@@ -130,7 +124,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
         <button
           type="button"
           class="rounded-lg border border-dashed border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
-          (click)="accountModalRef().open()"
+          (click)="accountManager().open()"
         >
           <app-icon name="settings" size="12" class="inline -mt-0.5" />
           {{ 'budget.bankAccount.manage' | transloco }}
@@ -149,7 +143,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 
     <app-orphan-entries-panel
       [entries]="orphanEntries()"
-      [accounts]="accounts()"
+      [accounts]="store.accounts()"
       (reassign)="reassignEntry($event.id, $event.accountId)"
       (delete)="deleteEntry($event)"
     />
@@ -210,12 +204,12 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
       [monthOneTimeTransfers]="monthOneTimeTransfers()"
       [totalOneTimeOutgoing]="totalOneTimeOutgoing()"
       [totalOneTimeIncoming]="totalOneTimeIncoming()"
-      [selectedAccountId]="selectedAccountId()"
+      [selectedAccountId]="store.selectedAccountId()"
       [memberMap]="memberMap()"
       [accountNameById]="accountNameByIdFn"
       [isExpensePassed]="isExpensePassedFn"
       [spendingMonthLabel]="spendingMonthLabel()"
-      [accountsCount]="accounts().length"
+      [accountsCount]="store.accounts().length"
       (createOneTime)="openCreateModal('transfer', 'one_time')"
       (edit)="openEditModal($event)"
       (delete)="deleteEntry($event)"
@@ -231,199 +225,22 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
     />
 
     <!-- ═══ Modals ═══ -->
-    <app-modal-dialog
-      #accountModal
-      [title]="'budget.bankAccount.accountModal.title' | transloco"
-      (closed)="resetAccountForm()"
-    >
-      @if (accountModal.isOpen()) {
-        <div class="space-y-6">
-          @if (accounts().length > 0) {
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-                {{ 'budget.bankAccount.accountModal.existing' | transloco }}
-              </p>
-              <div
-                class="rounded-xl border border-border overflow-hidden divide-y divide-border/30"
-              >
-                @for (da of decoratedAccounts(); track da.account.id) {
-                  <div class="px-4 py-3 hover:bg-hover/30 transition-colors space-y-2">
-                    <div class="flex items-center justify-between">
-                      <div class="flex items-center gap-3">
-                        <span class="inline-flex items-center gap-2">
-                          <span
-                            class="inline-block h-3 w-3 rounded-full"
-                            [style.background-color]="da.dot"
-                          ></span>
-                          <span
-                            class="inline-block h-4 w-4 rounded-md"
-                            [style.background-color]="da.color"
-                          ></span>
-                        </span>
-                        <input
-                          type="text"
-                          class="w-44 rounded-lg border border-transparent bg-transparent px-2 py-1 text-sm font-medium text-text-primary hover:border-border focus:border-border focus:bg-raised focus-visible:outline-none"
-                          [value]="da.account.name"
-                          [attr.aria-label]="
-                            'budget.bankAccount.accountModal.renameAria'
-                              | transloco: { name: da.account.name }
-                          "
-                          (change)="updateAccountName(da.account, $event)"
-                        />
-                      </div>
-                      <button
-                        type="button"
-                        class="rounded-lg border border-border p-1.5 text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                        [title]="
-                          'budget.bankAccount.accountModal.deleteTitle'
-                            | transloco: { name: da.account.name }
-                        "
-                        [attr.aria-label]="
-                          'budget.bankAccount.accountModal.deleteAria'
-                            | transloco: { name: da.account.name }
-                        "
-                        (click)="deleteAccount(da.account)"
-                      >
-                        <app-icon name="trash" size="14" />
-                      </button>
-                    </div>
-                    <div class="flex items-center gap-2 pl-10">
-                      <label
-                        [for]="'acct-balance-' + da.account.id"
-                        class="text-[11px] text-text-muted whitespace-nowrap"
-                        >{{ 'budget.bankAccount.accountModal.currentBalance' | transloco }}</label
-                      >
-                      <input
-                        [id]="'acct-balance-' + da.account.id"
-                        type="number"
-                        step="0.01"
-                        class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
-                        [value]="da.account.initialBalance"
-                        (change)="updateAccountBalance(da.account, $event)"
-                      />
-                      <span class="text-[11px] text-text-muted">&euro;</span>
-                    </div>
-                    <div class="flex items-center gap-2 pl-10">
-                      <label
-                        [for]="'acct-type-' + da.account.id"
-                        class="text-[11px] text-text-muted whitespace-nowrap"
-                        >{{ 'budget.bankAccount.accountModal.type' | transloco }}</label
-                      >
-                      <select
-                        [id]="'acct-type-' + da.account.id"
-                        class="rounded-lg border border-border bg-raised px-2 py-1 text-xs text-text-primary"
-                        [value]="da.account.type"
-                        (change)="updateAccountType(da.account, $event)"
-                        [attr.aria-label]="
-                          'budget.bankAccount.accountModal.typeAria'
-                            | transloco: { name: da.account.name }
-                        "
-                      >
-                        @for (t of ACCOUNT_TYPES; track t) {
-                          <option [value]="t">
-                            {{ 'budget.bankAccount.type.' + t | transloco }}
-                          </option>
-                        }
-                      </select>
-                    </div>
-                  </div>
-                }
-              </div>
-            </div>
-          }
-
-          <div>
-            <p class="text-xs font-semibold uppercase tracking-wider text-text-muted mb-2">
-              {{ 'budget.bankAccount.accountModal.addAccount' | transloco }}
-            </p>
-            <form (ngSubmit)="createAccount()" class="space-y-3">
-              <div>
-                <label for="acc-name" class="block text-sm font-medium text-text-muted mb-1"
-                  >{{ 'budget.bankAccount.accountModal.name' | transloco }}
-                  <span aria-hidden="true">*</span></label
-                >
-                <input
-                  id="acc-name"
-                  type="text"
-                  [ngModel]="newAccountName()"
-                  (ngModelChange)="newAccountName.set($event)"
-                  name="name"
-                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                  [placeholder]="'budget.bankAccount.accountModal.namePlaceholder' | transloco"
-                />
-              </div>
-              <div>
-                <label for="acc-type" class="block text-sm font-medium text-text-muted mb-1">{{
-                  'budget.bankAccount.accountModal.type' | transloco
-                }}</label>
-                <select
-                  id="acc-type"
-                  [ngModel]="newAccountType()"
-                  (ngModelChange)="newAccountType.set($event)"
-                  name="type"
-                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                >
-                  @for (t of ACCOUNT_TYPES; track t) {
-                    <option [ngValue]="t">{{ 'budget.bankAccount.type.' + t | transloco }}</option>
-                  }
-                </select>
-              </div>
-              <div>
-                <label for="acc-balance" class="block text-sm font-medium text-text-muted mb-1">{{
-                  'budget.bankAccount.accountModal.initialBalance' | transloco
-                }}</label>
-                <div class="relative">
-                  <input
-                    id="acc-balance"
-                    type="number"
-                    step="0.01"
-                    [ngModel]="newAccountBalance()"
-                    (ngModelChange)="newAccountBalance.set($event)"
-                    name="balance"
-                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 pr-8 text-sm font-mono text-text-primary"
-                    placeholder="0.00"
-                  />
-                  <span class="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-text-muted"
-                    >&euro;</span
-                  >
-                </div>
-                <p class="mt-1 text-xs text-text-muted">
-                  {{ 'budget.bankAccount.accountModal.balanceHint' | transloco }}
-                </p>
-              </div>
-              <p class="text-xs text-text-muted">
-                {{ 'budget.bankAccount.accountModal.colorsAuto' | transloco }}
-              </p>
-              <footer class="flex justify-end gap-3 pt-2">
-                <button
-                  type="button"
-                  class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
-                  (click)="accountModalRef().close()"
-                >
-                  {{ 'common.close' | transloco }}
-                </button>
-                <button
-                  type="submit"
-                  [disabled]="!newAccountName().trim()"
-                  class="rounded-lg bg-ib-cyan px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-cyan/90 transition-colors disabled:opacity-50"
-                >
-                  {{ 'budget.actions.add' | transloco }}
-                </button>
-              </footer>
-            </form>
-          </div>
-        </div>
-      }
-    </app-modal-dialog>
+    <app-account-manager
+      [decoratedAccounts]="decoratedAccounts()"
+      [entries]="store.entries()"
+      [(selectedAccountId)]="store.selectedAccountId"
+      (accountsChanged)="store.refreshAccounts()"
+      (entriesChanged)="store.refreshEntries()"
+    />
 
     <app-modal-dialog #createModal [title]="createModalTitle()" (closed)="onModalClosed()">
       @if (createModal.isOpen()) {
         <app-recurring-entry-form
           [forcedType]="createType()"
-          [forcedAccountId]="selectedAccountId()"
+          [forcedAccountId]="store.selectedAccountId()"
           [initialTransferMode]="createTransferMode()"
-          [accounts]="accounts()"
-          [members]="members()"
+          [accounts]="store.accounts()"
+          [members]="store.members()"
           (submitted)="createEntry($event)"
           (cancelled)="createModal.close()"
         />
@@ -434,8 +251,8 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
       @if (editModal.isOpen()) {
         <app-recurring-entry-form
           [initial]="selectedEntry()"
-          [accounts]="accounts()"
-          [members]="members()"
+          [accounts]="store.accounts()"
+          [members]="store.members()"
           (submitted)="updateEntry($event)"
           (fileAttached)="uploadPayslip($event)"
           (viewPayslip)="openPayslip()"
@@ -448,72 +265,36 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 })
 export class BankAccount {
   private readonly entryGateway = inject(RecurringEntryGateway);
-  private readonly accountGateway = inject(BankAccountGateway);
-  private readonly memberGateway = inject(MemberGateway);
   private readonly archiveGateway = inject(SalaryArchiveGateway);
   private readonly txGateway = inject(AccountTransactionGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
   private readonly _destroyRef = inject(DestroyRef);
+  protected readonly store = inject(BudgetDataStore);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
-  protected readonly accountModalRef = viewChild.required<ModalDialog>('accountModal');
+  protected readonly accountManager = viewChild.required(AccountManager);
 
-  private readonly _refresh = signal(0);
-  private readonly _refreshAccounts = signal(0);
-
-  private readonly _entriesLoaded = signal(false);
-  private readonly allEntries = toSignal(
-    toObservable(this._refresh).pipe(
-      switchMap(() => this.entryGateway.getAll()),
-      tap(() => this._entriesLoaded.set(true)),
-    ),
-    { initialValue: [] },
-  );
-
-  protected readonly accounts = toSignal(
-    toObservable(this._refreshAccounts).pipe(switchMap(() => this.accountGateway.getAll())),
-    { initialValue: [] },
-  );
-
-  protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
-
-  private readonly _refreshTx = signal(0);
-  private readonly _txLoaded = signal(false);
-  private readonly allTx = toSignal(
-    toObservable(this._refreshTx).pipe(
-      switchMap(() => this.txGateway.getAll()),
-      tap(() => this._txLoaded.set(true)),
-    ),
-    { initialValue: [] as AccountTransaction[] },
-  );
-  private refreshTx(): void {
-    this._refreshTx.update((n) => n + 1);
-  }
   private readonly todayIso = new Date().toISOString().slice(0, 10);
 
   private readonly _autoPostAttempted = signal(false);
 
   constructor() {
     effect(() => {
-      if (!this._entriesLoaded() || !this._txLoaded() || this._autoPostAttempted()) return;
+      if (!this.store.entriesLoaded() || !this.store.transactionsLoaded() || this._autoPostAttempted())
+        return;
       this._autoPostAttempted.set(true);
-      const entries = untracked(this.allEntries);
-      const txs = untracked(this.allTx);
+      const entries = untracked(this.store.entries);
+      const txs = untracked(this.store.transactions);
       untracked(() => this._runAutoPost(entries, txs));
     });
   }
 
-  protected readonly selectedAccountId = linkedSignal<string | null>(() => {
-    const accs = this.accounts();
-    return accs.length > 0 ? accs[0].id : null;
-  });
-
   protected readonly filteredEntries = computed(() => {
-    const accountId = this.selectedAccountId();
-    const all = this.allEntries();
+    const accountId = this.store.selectedAccountId();
+    const all = this.store.entries();
     if (accountId === null) return all;
     return all.filter((e) => e.accountId === accountId);
   });
@@ -539,8 +320,8 @@ export class BankAccount {
   );
 
   protected readonly transfers = computed(() => {
-    const accountId = this.selectedAccountId();
-    const all = this.allEntries().filter((e) => e.type === 'transfer' && this.isActive(e));
+    const accountId = this.store.selectedAccountId();
+    const all = this.store.entries().filter((e) => e.type === 'transfer' && this.isActive(e));
     if (accountId === null) return all;
     return all.filter((e) => e.accountId === accountId || e.toAccountId === accountId);
   });
@@ -561,18 +342,18 @@ export class BankAccount {
   });
 
   private readonly outgoingTransfers = computed(() => {
-    const accountId = this.selectedAccountId();
+    const accountId = this.store.selectedAccountId();
     return this.recurringTransfers().filter((e) => e.accountId === accountId);
   });
 
   protected readonly incomingTransfers = computed(() => {
-    const accountId = this.selectedAccountId();
+    const accountId = this.store.selectedAccountId();
     return this.recurringTransfers().filter((e) => e.toAccountId === accountId);
   });
 
   private readonly accountTypeById = computed(() => {
     const map = new Map<string, BankAccountType>();
-    for (const a of this.accounts()) map.set(a.id, a.type);
+    for (const a of this.store.accounts()) map.set(a.id, a.type);
     return map;
   });
 
@@ -647,20 +428,8 @@ export class BankAccount {
     return firstIncome?.dayOfMonth ?? 1;
   });
 
-  // Un prélèvement est "passé" dans le cycle salaire → salaire
-  // Ex: salaire le 25, aujourd'hui le 3 → passés = jours 25-31 + 1-3
-  // Ex: salaire le 5, aujourd'hui le 20 → passés = jours 5-20
   protected isExpensePassed(entry: RecurringEntry): boolean {
-    const day = entry.dayOfMonth ?? 1;
-    const salary = this.salaryDay();
-    const today = this.currentDay;
-
-    if (today >= salary) {
-      // Cycle dans le même mois : passé si entre salaryDay et today
-      return day >= salary && day <= today;
-    }
-    // Cycle à cheval sur 2 mois : passé si >= salaryDay OU <= today
-    return day >= salary || day <= today;
+    return isExpensePassedInCycle(entry, this.salaryDay(), this.currentDay);
   }
 
   // Bound function references for child components (kept stable)
@@ -668,8 +437,8 @@ export class BankAccount {
   protected readonly accountNameByIdFn = (id: string | null) => this.accountNameById(id);
 
   protected readonly selectedAccount = computed(() => {
-    const id = this.selectedAccountId();
-    return this.accounts().find((a) => a.id === id) ?? null;
+    const id = this.store.selectedAccountId();
+    return this.store.accounts().find((a) => a.id === id) ?? null;
   });
 
   protected readonly selectedInitialBalance = computed(() =>
@@ -677,8 +446,8 @@ export class BankAccount {
   );
 
   protected readonly accountRealTxs = computed(() => {
-    const id = this.selectedAccountId();
-    const txs = this.allTx();
+    const id = this.store.selectedAccountId();
+    const txs = this.store.transactions();
     if (id === null) return txs;
     return txs.filter((t) => t.accountId === id || t.toAccountId === id);
   });
@@ -686,8 +455,8 @@ export class BankAccount {
   protected readonly confirmedBalance = computed(() => {
     const acc = this.selectedAccount();
     if (acc) return computeConfirmedBalance(acc, this.accountRealTxs(), this.todayIso);
-    const txs = this.allTx();
-    return this.accounts().reduce(
+    const txs = this.store.transactions();
+    return this.store.accounts().reduce(
       (sum, a) =>
         addMoney(
           sum,
@@ -701,22 +470,22 @@ export class BankAccount {
     );
   });
 
-  private readonly isUnposted = (e: RecurringEntry): boolean =>
-    !isRecurrencePosted(e.id, this.currentMonth, this.accountRealTxs());
-
   // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
   // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).
-  protected readonly forecastDelta = computed(() => {
-    const inc = sumAmount(this.incomes().filter(this.isUnposted));
-    const exp = sumAmount(this.monthlyExpenses().filter(this.isUnposted));
-    const ann = sumAmount(this.annualExpenses().filter(this.isUnposted)) / 12;
-    const spend = sumAmount(this.monthSpendings().filter(this.isUnposted));
-    const inTransfers =
-      sumAmount(this.incomingTransfers().filter(this.isUnposted)) + this.totalOneTimeIncoming();
-    const outTransfers =
-      sumAmount(this.outgoingTransfers().filter(this.isUnposted)) + this.totalOneTimeOutgoing();
-    return inc + inTransfers - exp - ann - spend - outTransfers;
-  });
+  protected readonly forecastDelta = computed(() =>
+    computeForecastDelta({
+      incomes: this.incomes(),
+      monthlyExpenses: this.monthlyExpenses(),
+      annualExpenses: this.annualExpenses(),
+      monthSpendings: this.monthSpendings(),
+      incomingTransfers: this.incomingTransfers(),
+      outgoingTransfers: this.outgoingTransfers(),
+      oneTimeIncoming: this.totalOneTimeIncoming(),
+      oneTimeOutgoing: this.totalOneTimeOutgoing(),
+      txs: this.accountRealTxs(),
+      currentMonth: this.currentMonth,
+    }),
+  );
 
   protected readonly projectedBalance = computed(
     () => this.confirmedBalance() + this.forecastDelta(),
@@ -725,37 +494,24 @@ export class BankAccount {
   private readonly _ignoredCharges = signal<ReadonlySet<string>>(new Set());
 
   protected readonly orphanEntries = computed(() =>
-    this.allEntries().filter((e) => e.accountId == null),
+    this.store.entries().filter((e) => e.accountId == null),
   );
 
-  protected readonly pendingCharges = computed<PendingCharge[]>(() => {
-    const ignored = this._ignoredCharges();
-    const candidates = [...this.incomes(), ...this.monthlyExpenses(), ...this.recurringTransfers()];
-    return (
-      candidates
-        // accountId != null : une récurrence orpheline (compte supprimé → onDelete 'set null')
-        // n'a aucun compte cible ; la confirmer posterait une transaction sur /bank-accounts/null → 500.
-        .filter(
-          (e) =>
-            e.accountId != null &&
-            e.dayOfMonth != null &&
-            !e.autoPost &&
-            this.isExpensePassed(e) &&
-            this.isUnposted(e) &&
-            !ignored.has(e.id),
-        )
-        .map((e) => ({
-          entry: e,
-          direction:
-            e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
-          suggestedDate: `${this.currentMonth}-${String(e.dayOfMonth).padStart(2, '0')}`,
-          suggestedAmount: Number(e.amount),
-        }))
-    );
-  });
+  protected readonly pendingCharges = computed<PendingCharge[]>(() =>
+    buildPendingCharges({
+      incomes: this.incomes(),
+      monthlyExpenses: this.monthlyExpenses(),
+      recurringTransfers: this.recurringTransfers(),
+      ignored: this._ignoredCharges(),
+      salaryDay: this.salaryDay(),
+      currentDay: this.currentDay,
+      currentMonth: this.currentMonth,
+      txs: this.accountRealTxs(),
+    }),
+  );
 
   protected reassignEntry(id: string, accountId: string): void {
-    const entry = this.allEntries().find((e) => e.id === id);
+    const entry = this.store.entries().find((e) => e.id === id);
     if (!entry) return;
     const { id: _id, ...rest } = entry;
     this.entryGateway
@@ -763,7 +519,7 @@ export class BankAccount {
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe({
         next: () => {
-          this._refresh.update((v) => v + 1);
+          this.store.refreshEntries();
           this.toaster.success('budget.bankAccount.messages.entryReassigned');
         },
         error: () => this.toaster.error('budget.bankAccount.messages.entryReassignError'),
@@ -788,7 +544,7 @@ export class BankAccount {
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe({
         next: () => {
-          this.refreshTx();
+          this.store.refreshTransactions();
           this.toaster.success('budget.bankAccount.messages.chargeConfirmed');
         },
         error: () => this.toaster.error('budget.bankAccount.messages.chargeConfirmError'),
@@ -802,7 +558,7 @@ export class BankAccount {
     let failed = 0;
     const done = () => {
       if (++settled < charges.length) return;
-      this.refreshTx();
+      this.store.refreshTransactions();
       if (failed > 0)
         this.toaster.error('budget.bankAccount.messages.chargesConfirmError', { failed });
       else
@@ -853,7 +609,7 @@ export class BankAccount {
     let failed = 0;
     const done = () => {
       if (++settled < due.length) return;
-      this.refreshTx();
+      this.store.refreshTransactions();
       if (failed > 0) this.toaster.error('budget.bankAccount.messages.autoPostError', { failed });
       else if (monthsCount > 1)
         this.toaster.success('budget.bankAccount.messages.autoPostCaughtUp', {
@@ -895,11 +651,13 @@ export class BankAccount {
 
   // Virements ponctuels sortants/entrants du mois (tous considérés comme passés)
   protected readonly totalOneTimeOutgoing = computed(() =>
-    sumAmount(this.monthOneTimeTransfers().filter((e) => e.accountId === this.selectedAccountId())),
+    sumAmount(
+      this.monthOneTimeTransfers().filter((e) => e.accountId === this.store.selectedAccountId()),
+    ),
   );
   protected readonly totalOneTimeIncoming = computed(() =>
     sumAmount(
-      this.monthOneTimeTransfers().filter((e) => e.toAccountId === this.selectedAccountId()),
+      this.monthOneTimeTransfers().filter((e) => e.toAccountId === this.store.selectedAccountId()),
     ),
   );
 
@@ -928,73 +686,18 @@ export class BankAccount {
   protected readonly createType = signal<RecurringEntryType>('income');
   protected readonly createTransferMode = signal<'recurring' | 'one_time'>('recurring');
   // Timeline du mois : tous les événements triés par cycle salaire
-  protected readonly timelineEvents = computed(() => {
-    const salary = this.salaryDay();
-    const events: {
-      id: string;
-      day: number;
-      label: string;
-      amount: number;
-      sign: string;
-      type: RecurringEntryType;
-      passed: boolean;
-    }[] = [];
-
-    for (const e of this.incomes()) {
-      if (e.dayOfMonth)
-        events.push({
-          id: e.id,
-          day: e.dayOfMonth,
-          label: e.label,
-          amount: Number(e.amount),
-          sign: '+',
-          type: 'income',
-          passed: this.isExpensePassed(e),
-        });
-    }
-    for (const e of this.monthlyExpenses()) {
-      const day = e.dayOfMonth ?? 1;
-      events.push({
-        id: e.id,
-        day,
-        label: e.label,
-        amount: Number(e.amount),
-        sign: '-',
-        type: 'expense',
-        passed: this.isExpensePassed(e),
-      });
-    }
-    const fallback = this._i18n.translate('budget.bankAccount.timelineFallback');
-    for (const e of this.outgoingTransfers()) {
-      events.push({
-        id: e.id,
-        day: e.dayOfMonth ?? 1,
-        label: `→ ${this.accountNameById(e.toAccountId) ?? fallback} — ${e.label}`,
-        amount: Number(e.amount),
-        sign: '-',
-        type: 'transfer',
-        passed: this.isExpensePassed(e),
-      });
-    }
-    for (const e of this.incomingTransfers()) {
-      events.push({
-        id: e.id + '-in',
-        day: e.dayOfMonth ?? 1,
-        label: `← ${this.accountNameById(e.accountId) ?? fallback} — ${e.label}`,
-        amount: Number(e.amount),
-        sign: '+',
-        type: 'transfer',
-        passed: this.isExpensePassed(e),
-      });
-    }
-
-    // Tri dans l'ordre du cycle salaire (salaryDay en premier)
-    return events.sort((a, b) => {
-      const orderA = a.day >= salary ? a.day - salary : a.day + 31 - salary;
-      const orderB = b.day >= salary ? b.day - salary : b.day + 31 - salary;
-      return orderA - orderB;
-    });
-  });
+  protected readonly timelineEvents = computed(() =>
+    buildTimelineEvents({
+      incomes: this.incomes(),
+      monthlyExpenses: this.monthlyExpenses(),
+      outgoingTransfers: this.outgoingTransfers(),
+      incomingTransfers: this.incomingTransfers(),
+      salaryDay: this.salaryDay(),
+      currentDay: this.currentDay,
+      accountName: (id) => this.accountNameById(id),
+      fallbackLabel: this._i18n.translate('budget.bankAccount.timelineFallback'),
+    }),
+  );
 
   protected readonly createModalTitle = computed(() => {
     switch (this.createType()) {
@@ -1031,14 +734,9 @@ export class BankAccount {
     }
   });
 
-  protected readonly newAccountName = signal('');
-  protected readonly newAccountType = signal<BankAccountType>('courant');
-  protected readonly newAccountBalance = signal<number>(0);
-  protected readonly ACCOUNT_TYPES = BANK_ACCOUNT_TYPES;
-
   protected readonly memberMap = computed(() => {
     const map = new Map<string, { name: string; color: string }>();
-    const members = this.members();
+    const members = this.store.members();
     for (let i = 0; i < members.length; i++) {
       const m = members[i];
       map.set(m.id, {
@@ -1050,7 +748,7 @@ export class BankAccount {
   });
 
   protected readonly decoratedAccounts = computed(() =>
-    this.accounts().map((account, i) => ({
+    this.store.accounts().map((account, i) => ({
       account,
       color: PALETTE[i % PALETTE.length],
       dot: PALETTE[(i + 3) % PALETTE.length],
@@ -1059,7 +757,7 @@ export class BankAccount {
 
   private readonly accountMap = computed(() => {
     const map = new Map<string, string>();
-    for (const a of this.accounts()) {
+    for (const a of this.store.accounts()) {
       map.set(a.id, a.name);
     }
     return map;
@@ -1068,10 +766,6 @@ export class BankAccount {
   protected accountNameById(id: string | null): string | null {
     if (!id) return null;
     return this.accountMap().get(id) ?? null;
-  }
-
-  protected selectAccount(id: string | null) {
-    this.selectedAccountId.set(id);
   }
 
   private shiftMonth(delta: number) {
@@ -1086,173 +780,6 @@ export class BankAccount {
 
   protected nextMonth() {
     this.shiftMonth(1);
-  }
-
-  protected resetAccountForm() {
-    this.newAccountName.set('');
-    this.newAccountType.set('courant');
-    this.newAccountBalance.set(0);
-  }
-
-  protected async createAccount() {
-    const name = this.newAccountName().trim();
-    if (!name) return;
-    try {
-      await lastValueFrom(
-        this.accountGateway.create({
-          name,
-          type: this.newAccountType(),
-          initialBalance: this.newAccountBalance(),
-          color: null,
-          dotColor: null,
-        }),
-      );
-      this.toaster.success('budget.bankAccount.messages.accountCreated');
-      this.resetAccountForm();
-      this._refreshAccounts.update((v) => v + 1);
-    } catch {
-      this.toaster.error('budget.bankAccount.messages.accountCreateError');
-    }
-  }
-
-  // En E2EE, l'update remplace tout le blob chiffré → on renvoie TOUJOURS le compte complet
-  // (sinon un update partiel écraserait name/type/color). `changes` ne modifie qu'un champ.
-  private async persistAccount(
-    account: BankAccountModel,
-    changes: Partial<Omit<BankAccountModel, 'id'>>,
-    successKey: string,
-    errorKey: string,
-  ) {
-    try {
-      await lastValueFrom(
-        this.accountGateway.update(account.id, {
-          name: account.name,
-          type: account.type,
-          initialBalance: account.initialBalance,
-          color: account.color,
-          dotColor: account.dotColor,
-          ...changes,
-        }),
-      );
-      this.toaster.success(successKey);
-      this._refreshAccounts.update((v) => v + 1);
-    } catch {
-      this.toaster.error(errorKey);
-    }
-  }
-
-  protected updateAccountBalance(account: BankAccountModel, event: Event) {
-    const value = Number((event.target as HTMLInputElement).value);
-    return this.persistAccount(
-      account,
-      { initialBalance: value },
-      'budget.bankAccount.messages.balanceUpdated',
-      'budget.bankAccount.messages.balanceUpdateError',
-    );
-  }
-
-  protected updateAccountName(account: BankAccountModel, event: Event) {
-    const name = (event.target as HTMLInputElement).value.trim();
-    if (!name) {
-      this._refreshAccounts.update((v) => v + 1); // annule la saisie vide
-      return;
-    }
-    return this.persistAccount(
-      account,
-      { name },
-      'budget.bankAccount.messages.nameUpdated',
-      'budget.bankAccount.messages.nameUpdateError',
-    );
-  }
-
-  protected updateAccountType(account: BankAccountModel, event: Event) {
-    const type = (event.target as HTMLSelectElement).value as BankAccountType;
-    return this.persistAccount(
-      account,
-      { type },
-      'budget.bankAccount.messages.typeUpdated',
-      'budget.bankAccount.messages.typeUpdateError',
-    );
-  }
-
-  protected async deleteAccount(account: BankAccountModel) {
-    const entries = this.allEntries().filter((e) => e.accountId === account.id);
-
-    if (entries.length > 0) {
-      const others = this.accounts().filter((a) => a.id !== account.id);
-      const target = others.find((a) => a.id === this.selectedAccountId()) ?? others[0] ?? null;
-
-      let mode: 'reassign' | 'deleteEntries';
-      if (target) {
-        const choice = await this.confirm.choose({
-          title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
-          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.message', {
-            count: entries.length,
-          }),
-          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.reassignTo', {
-            name: target.name,
-          }),
-          alternativeLabel: this._i18n.translate(
-            'budget.bankAccount.deleteWithEntries.deleteEntries',
-          ),
-          cancelLabel: this._i18n.translate('common.cancel'),
-          variant: 'danger',
-        });
-        if (choice === 'cancel') return;
-        mode = choice === 'confirm' ? 'reassign' : 'deleteEntries';
-      } else {
-        const ok = await this.confirm.confirm({
-          title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
-          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.onlyDeleteMessage', {
-            count: entries.length,
-          }),
-          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.deleteEntries'),
-          variant: 'danger',
-        });
-        if (!ok) return;
-        mode = 'deleteEntries';
-      }
-
-      try {
-        if (mode === 'reassign' && target) {
-          for (const e of entries) {
-            const { id: _id, ...rest } = e;
-            await lastValueFrom(this.entryGateway.update(e.id, { ...rest, accountId: target.id }));
-          }
-        } else {
-          for (const e of entries) {
-            await lastValueFrom(this.entryGateway.delete(e.id));
-          }
-        }
-      } catch {
-        this.toaster.error('budget.bankAccount.messages.entryReassignError');
-        return; // interrompre : ne pas supprimer un compte dont des récurrences pointent encore dessus
-      }
-    } else {
-      if (
-        !(await this.confirm.confirm({
-          title: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmTitle'),
-          message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', {
-            name: account.name,
-          }),
-          confirmLabel: this._i18n.translate('budget.actions.delete'),
-          variant: 'danger',
-        }))
-      )
-        return;
-    }
-
-    try {
-      await lastValueFrom(this.accountGateway.delete(account.id));
-      this.toaster.success('budget.bankAccount.messages.accountDeleted');
-      if (this.selectedAccountId() === account.id) {
-        this.selectedAccountId.set(null);
-      }
-      this._refreshAccounts.update((v) => v + 1);
-      this._refresh.update((v) => v + 1);
-    } catch {
-      this.toaster.error('budget.bankAccount.messages.accountDeleteError');
-    }
   }
 
   protected openCreateModal(
@@ -1300,7 +827,7 @@ export class BankAccount {
       await lastValueFrom(this.entryGateway.create(data));
       this.toaster.success('budget.bankAccount.messages.entryCreated');
       this.createModalRef().close();
-      this._refresh.update((v) => v + 1);
+      this.store.refreshEntries();
     } catch {
       this.toaster.error('budget.bankAccount.messages.entryCreateError');
     }
@@ -1311,7 +838,7 @@ export class BankAccount {
     if (salary <= 0) return;
 
     const month = new Date().toISOString().slice(0, 7);
-    const accountId = this.selectedAccountId();
+    const accountId = this.store.selectedAccountId();
     const totalExpenses = this.totalMonthlyExpenses() + this.monthlyAnnualExpenses();
     const totalSpendings = this.totalMonthSpendings();
     const spendings = this.monthSpendings().map((e) => ({
@@ -1346,7 +873,7 @@ export class BankAccount {
     try {
       await lastValueFrom(this.entryGateway.delete(id));
       this.toaster.success('budget.bankAccount.messages.entryDeleted');
-      this._refresh.update((v) => v + 1);
+      this.store.refreshEntries();
     } catch {
       this.toaster.error('budget.bankAccount.messages.entryDeleteError');
     }
@@ -1372,14 +899,14 @@ export class BankAccount {
           await lastValueFrom(this.entryGateway.uploadPayslip(id, file));
           this.toaster.success('budget.bankAccount.messages.entryUpdated');
           this.editModalRef().close();
-          this._refresh.update((v) => v + 1);
+          this.store.refreshEntries();
         } catch {
           this.toaster.error('budget.bankAccount.messages.payslipUploadError');
         }
       } else {
         this.toaster.success('budget.bankAccount.messages.entryUpdated');
         this.editModalRef().close();
-        this._refresh.update((v) => v + 1);
+        this.store.refreshEntries();
       }
     } catch {
       this.toaster.error('budget.bankAccount.messages.entryUpdateError');
@@ -1411,7 +938,7 @@ export class BankAccount {
     try {
       await lastValueFrom(this.entryGateway.deletePayslip(id));
       this.toaster.success('budget.bankAccount.messages.payslipDeleted');
-      this._refresh.update((v) => v + 1);
+      this.store.refreshEntries();
       const entry = this.selectedEntry();
       if (entry) {
         this.selectedEntry.set({ ...entry, payslipKey: null });

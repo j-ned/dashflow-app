@@ -1,12 +1,4 @@
-/**
- * Référentiel centralisé des catégories de dépense.
- *
- * `category` reste un champ texte libre côté données (pas de table ni de CRUD — différé
- * au chantier Tier-1). Ce module fournit l'unique source de vérité pour les libellés
- * « connus », leurs couleurs et leur traduction, avec un **matching tolérant** (insensible
- * aux accents et à la casse) pour que « alimentation », « Alimentation » et « ALIMENTATION »
- * tombent sur la même catégorie au lieu de finir en « Autre ».
- */
+// category est un champ texte libre (pas de table) : matching tolérant accent+casse pour éviter que « Alimentation » et « alimentation » tombent en « Autre ».
 type BudgetCategoryKey =
   | 'housing'
   | 'transport'

@@ -4,8 +4,10 @@ import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow } from '@core/services/crypto/entity-crypto';
 import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList } from '@core/services/crypto/validate-decrypted';
 import { BankAccount, BankAccountType } from '../domain/models/bank-account.model';
 import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
+import { BankAccountSchema } from './schemas/bank-account.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'initialBalance', 'createdAt'] as const;
 
@@ -30,7 +32,10 @@ export class HttpBankAccountGateway implements BankAccountGateway {
     return decryptList<ApiRow>(
       this.api.get<ApiRow[]>('/bank-accounts'),
       this.crypto.getMasterKey(),
-    ).pipe(map((rows) => rows.map(coerceBankAccount)));
+    ).pipe(
+      map((rows) => rows.map(coerceBankAccount)),
+      map((accounts) => validateList(BankAccountSchema, accounts, { entity: 'BankAccount' })),
+    );
   }
 
   create(data: Omit<BankAccount, 'id'>): Observable<BankAccount> {

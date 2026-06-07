@@ -2,7 +2,7 @@ import { RecurringEntry } from './models/recurring-entry.model';
 import { AccountTransaction } from './models/account-transaction.model';
 import { isRecurrencePosted } from './account-balance';
 
-export type DuePostingDirection = 'income' | 'expense' | 'transfer';
+type DuePostingDirection = 'income' | 'expense' | 'transfer';
 
 export type DuePosting = {
   readonly entry: RecurringEntry;

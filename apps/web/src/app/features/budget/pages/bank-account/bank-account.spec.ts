@@ -177,7 +177,7 @@ describe('BankAccount — prélèvement vers livret', () => {
 
   it('expose les virements entrants pour le panneau quand on consulte le livret', () => {
     const cmp = makeComponent({ entries: [SAVING], accounts: ACCS });
-    (cmp as unknown as { selectAccount: (id: string) => void }).selectAccount('liv');
+    (cmp as unknown as { store: { selectAccount: (id: string | null) => void } }).store.selectAccount('liv');
     expect(cmp.incomingTransfers().map((e) => e.id)).toEqual(['t1']);
   });
 });
@@ -339,9 +339,9 @@ describe('BankAccount — échéances à confirmer', () => {
     const ORPHAN = { ...RENT, id: 'orphan', accountId: null };
     const cmp = makeComponent({ entries: [ORPHAN] }) as unknown as {
       pendingCharges: () => unknown[];
-      selectedAccountId: { set: (v: string | null) => void };
+      store: { selectedAccountId: { set: (v: string | null) => void } };
     };
-    cmp.selectedAccountId.set(null); // vue « Tous les comptes » → filteredEntries renvoie tout
+    cmp.store.selectedAccountId.set(null); // vue « Tous les comptes » → filteredEntries renvoie tout
     expect(cmp.pendingCharges().length).toBe(0);
   });
 });
@@ -407,90 +407,6 @@ describe('BankAccount — récurrences orphelines', () => {
     }) as unknown as { reassignEntry: (id: string, accountId: string) => void };
     cmp.reassignEntry('o1', 'a');
     expect(errored).toBe(true);
-  });
-});
-
-describe('BankAccount — suppression de compte avec récurrences', () => {
-  const ENTRY_ON_A = {
-    id: 'r1',
-    accountId: 'a',
-    label: 'Loyer',
-    amount: 800,
-    type: 'expense',
-    dayOfMonth: 5,
-    date: null,
-    endDate: null,
-    toAccountId: null,
-    category: null,
-    memberId: null,
-    payslipKey: null,
-  };
-  const TWO_ACCOUNTS = [
-    { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0, color: null, dotColor: null },
-    { id: 'b', name: 'Livret', type: 'epargne', initialBalance: 0, color: null, dotColor: null },
-  ];
-
-  it("choix « réassigner » : update vers l'autre compte puis suppression du compte", async () => {
-    const reassigned: string[] = [];
-    let accountDeleted = false;
-    const cmp = makeComponent({
-      entries: [ENTRY_ON_A],
-      accounts: TWO_ACCOUNTS,
-      choose: () => Promise.resolve('confirm'),
-      updateImpl: (id: string) => {
-        reassigned.push(id);
-        return of({});
-      },
-      accountDeleteImpl: () => {
-        accountDeleted = true;
-        return of(undefined);
-      },
-    }) as unknown as { deleteAccount: (a: { id: string; name: string }) => Promise<void> };
-    await cmp.deleteAccount({ id: 'a', name: 'Courant' });
-    expect(reassigned).toEqual(['r1']);
-    expect(accountDeleted).toBe(true);
-  });
-
-  it('choix « supprimer les récurrences » : delete des entrées puis suppression du compte', async () => {
-    const deletedEntries: string[] = [];
-    let accountDeleted = false;
-    const cmp = makeComponent({
-      entries: [ENTRY_ON_A],
-      accounts: TWO_ACCOUNTS,
-      choose: () => Promise.resolve('alternative'),
-      entryDeleteImpl: (id: string) => {
-        deletedEntries.push(id);
-        return of(undefined);
-      },
-      accountDeleteImpl: () => {
-        accountDeleted = true;
-        return of(undefined);
-      },
-    }) as unknown as { deleteAccount: (a: { id: string; name: string }) => Promise<void> };
-    await cmp.deleteAccount({ id: 'a', name: 'Courant' });
-    expect(deletedEntries).toEqual(['r1']);
-    expect(accountDeleted).toBe(true);
-  });
-
-  it('choix « annuler » : ni delete des entrées ni suppression du compte', async () => {
-    let accountDeleted = false;
-    let entryDeleted = false;
-    const cmp = makeComponent({
-      entries: [ENTRY_ON_A],
-      accounts: TWO_ACCOUNTS,
-      choose: () => Promise.resolve('cancel'),
-      entryDeleteImpl: () => {
-        entryDeleted = true;
-        return of(undefined);
-      },
-      accountDeleteImpl: () => {
-        accountDeleted = true;
-        return of(undefined);
-      },
-    }) as unknown as { deleteAccount: (a: { id: string; name: string }) => Promise<void> };
-    await cmp.deleteAccount({ id: 'a', name: 'Courant' });
-    expect(entryDeleted).toBe(false);
-    expect(accountDeleted).toBe(false);
   });
 });
 

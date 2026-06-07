@@ -1,11 +1,13 @@
 import { inject, Injectable } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow } from '@core/services/crypto/entity-crypto';
 import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList } from '@core/services/crypto/validate-decrypted';
 import { Member } from '../domain/models/member.model';
 import { MemberGateway } from '../domain/gateways/member.gateway';
+import { MemberSchema } from './schemas/member.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
@@ -15,7 +17,9 @@ export class HttpMemberGateway implements MemberGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Member[]> {
-    return decryptList(this.api.get<ApiRow[]>('/members'), this.crypto.getMasterKey());
+    return decryptList(this.api.get<ApiRow[]>('/members'), this.crypto.getMasterKey()).pipe(
+      map((members) => validateList(MemberSchema, members, { entity: 'Member' })),
+    );
   }
 
   create(member: Omit<Member, 'id'>): Observable<Member> {
