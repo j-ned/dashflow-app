@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -27,58 +34,105 @@ import { Icon } from '@shared/components/icon/icon';
     <!-- Section 1: Alertes -->
     <header class="flex items-center justify-between">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">{{ 'medical.reminder.title' | transloco }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary">
+          {{ 'medical.reminder.title' | transloco }}
+        </h2>
         <p class="mt-1 text-sm text-text-muted">{{ 'medical.reminder.subtitle' | transloco }}</p>
       </div>
-      <button type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
-              (click)="openCreateReminderModal()">
+      <button
+        type="button"
+        class="inline-flex items-center gap-1.5 rounded-lg bg-ib-purple px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
+        (click)="openCreateReminderModal()"
+      >
         <app-icon name="plus" size="14" /> {{ 'medical.reminder.create' | transloco }}
       </button>
     </header>
 
-    <section [attr.aria-label]="'medical.reminder.listLabel' | transloco" class="rounded-xl border border-border bg-surface overflow-hidden">
-      <div class="flex items-center justify-between px-5 py-3 bg-ib-red/5 border-b border-border/50">
+    <section
+      [attr.aria-label]="'medical.reminder.listLabel' | transloco"
+      class="rounded-xl border border-border bg-surface overflow-hidden"
+    >
+      <div
+        class="flex items-center justify-between px-5 py-3 bg-ib-red/5 border-b border-border/50"
+      >
         <div class="flex items-center gap-2">
           <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
             <app-icon name="bell" size="14" class="text-ib-red" />
           </div>
-          <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'medical.reminder.groupLabel' | transloco }}</span>
+          <span class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{
+            'medical.reminder.groupLabel' | transloco
+          }}</span>
         </div>
-        <span class="text-[11px] font-mono font-semibold text-ib-red">{{ reminders().length }}</span>
+        <span class="text-[11px] font-mono font-semibold text-ib-red">{{
+          reminders().length
+        }}</span>
       </div>
       <div class="overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr class="border-b border-border/50 bg-hover/30">
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.reminder.type' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.reminder.target' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.reminder.detail' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">{{ 'medical.reminder.email' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center">{{ 'medical.reminder.enabled' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center">{{ 'medical.reminder.calendar' | transloco }}</th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right">{{ 'medical.reminder.actions' | transloco }}</th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
+                {{ 'medical.reminder.type' | transloco }}
+              </th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
+                {{ 'medical.reminder.target' | transloco }}
+              </th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
+                {{ 'medical.reminder.detail' | transloco }}
+              </th>
+              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
+                {{ 'medical.reminder.email' | transloco }}
+              </th>
+              <th
+                class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center"
+              >
+                {{ 'medical.reminder.enabled' | transloco }}
+              </th>
+              <th
+                class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center"
+              >
+                {{ 'medical.reminder.calendar' | transloco }}
+              </th>
+              <th
+                class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-right"
+              >
+                {{ 'medical.reminder.actions' | transloco }}
+              </th>
             </tr>
           </thead>
           <tbody>
             @for (reminder of reminders(); track reminder.id) {
               <tr class="border-b border-border/50 hover:bg-hover/50 transition-colors">
                 <td class="px-5 py-3">
-                  <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                        [class.bg-ib-purple-10]="reminder.type === 'email'"
-                        [class.text-ib-purple]="reminder.type === 'email'"
-                        [class.bg-ib-cyan-10]="reminder.type === 'ical'"
-                        [class.text-ib-cyan]="reminder.type === 'ical'">
-                    {{ (reminder.type === 'email' ? 'medical.reminder.typeEmail' : 'medical.reminder.typeIcal') | transloco }}
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-medium"
+                    [class.bg-ib-purple-10]="reminder.type === 'email'"
+                    [class.text-ib-purple]="reminder.type === 'email'"
+                    [class.bg-ib-cyan-10]="reminder.type === 'ical'"
+                    [class.text-ib-cyan]="reminder.type === 'ical'"
+                  >
+                    {{
+                      (reminder.type === 'email'
+                        ? 'medical.reminder.typeEmail'
+                        : 'medical.reminder.typeIcal'
+                      ) | transloco
+                    }}
                   </span>
                 </td>
                 <td class="px-5 py-3">
-                  <span class="rounded-full px-2 py-0.5 text-xs font-medium"
-                        [class.bg-ib-orange-10]="reminder.target === 'medication'"
-                        [class.text-ib-orange]="reminder.target === 'medication'"
-                        [class.bg-ib-blue-10]="reminder.target === 'appointment'"
-                        [class.text-ib-blue]="reminder.target === 'appointment'">
-                    {{ (reminder.target === 'medication' ? 'medical.reminder.targetMedication' : 'medical.reminder.targetAppointment') | transloco }}
+                  <span
+                    class="rounded-full px-2 py-0.5 text-xs font-medium"
+                    [class.bg-ib-orange-10]="reminder.target === 'medication'"
+                    [class.text-ib-orange]="reminder.target === 'medication'"
+                    [class.bg-ib-blue-10]="reminder.target === 'appointment'"
+                    [class.text-ib-blue]="reminder.target === 'appointment'"
+                  >
+                    {{
+                      (reminder.target === 'medication'
+                        ? 'medical.reminder.targetMedication'
+                        : 'medical.reminder.targetAppointment'
+                      ) | transloco
+                    }}
                   </span>
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
@@ -86,41 +140,54 @@ import { Icon } from '@shared/components/icon/icon';
                 </td>
                 <td class="px-5 py-3 text-sm text-text-primary">{{ reminder.recipientEmail }}</td>
                 <td class="px-5 py-3 text-center">
-                  <button type="button"
-                          class="relative inline-flex h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
-                          [class.bg-ib-purple]="reminder.enabled"
-                          [class.bg-hover]="!reminder.enabled"
-                          [attr.aria-checked]="reminder.enabled"
-                          role="switch"
-                          (click)="toggleReminder(reminder.id)">
-                    <span class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5"
-                          [class.translate-x-4]="reminder.enabled"
-                          [class.translate-x-0.5]="!reminder.enabled"></span>
+                  <button
+                    type="button"
+                    class="relative inline-flex h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
+                    [class.bg-ib-purple]="reminder.enabled"
+                    [class.bg-hover]="!reminder.enabled"
+                    [attr.aria-checked]="reminder.enabled"
+                    role="switch"
+                    (click)="toggleReminder(reminder.id)"
+                  >
+                    <span
+                      class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5"
+                      [class.translate-x-4]="reminder.enabled"
+                      [class.translate-x-0.5]="!reminder.enabled"
+                    ></span>
                   </button>
                 </td>
                 <td class="px-5 py-3">
                   <div class="flex items-center justify-center gap-1">
                     <!-- Google Calendar -->
                     @if (googleCalendarUrl(reminder); as gUrl) {
-                      <a [href]="gUrl" target="_blank" rel="noopener"
-                         class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
-                         [title]="'medical.reminder.googleTitle' | transloco">
-                        <app-icon name="calendar" size="12" /> {{ 'medical.reminder.google' | transloco }}
+                      <a
+                        [href]="gUrl"
+                        target="_blank"
+                        rel="noopener"
+                        class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+                        [title]="'medical.reminder.googleTitle' | transloco"
+                      >
+                        <app-icon name="calendar" size="12" />
+                        {{ 'medical.reminder.google' | transloco }}
                       </a>
                     }
                     <!-- .ics download (Apple/Thunderbird/Outlook) -->
-                    <button type="button"
-                            class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-                            [title]="'medical.reminder.icsTitle' | transloco"
-                            (click)="downloadIcs(reminder)">
+                    <button
+                      type="button"
+                      class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                      [title]="'medical.reminder.icsTitle' | transloco"
+                      (click)="downloadIcs(reminder)"
+                    >
                       <app-icon name="download" size="12" /> .ics
                     </button>
                   </div>
                 </td>
                 <td class="px-5 py-3 text-right">
-                  <button type="button"
-                          class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
-                          (click)="deleteReminder(reminder.id)">
+                  <button
+                    type="button"
+                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+                    (click)="deleteReminder(reminder.id)"
+                  >
                     {{ 'medical.reminder.delete' | transloco }}
                   </button>
                 </td>
@@ -130,7 +197,9 @@ import { Icon } from '@shared/components/icon/icon';
                 <td colspan="7" class="px-5 py-16 text-center">
                   <app-icon name="bell" size="48" class="text-text-muted/20 mx-auto mb-3" />
                   <p class="text-sm text-text-muted">{{ 'medical.reminder.empty' | transloco }}</p>
-                  <p class="text-xs text-text-muted mt-1">{{ 'medical.reminder.emptyHint' | transloco }}</p>
+                  <p class="text-xs text-text-muted mt-1">
+                    {{ 'medical.reminder.emptyHint' | transloco }}
+                  </p>
                 </td>
               </tr>
             }
@@ -139,9 +208,18 @@ import { Icon } from '@shared/components/icon/icon';
       </div>
     </section>
 
-    <app-modal-dialog #createReminderModal [title]="'medical.reminder.modalCreateTitle' | transloco" (closed)="onReminderModalClosed()">
+    <app-modal-dialog
+      #createReminderModal
+      [title]="'medical.reminder.modalCreateTitle' | transloco"
+      (closed)="onReminderModalClosed()"
+    >
       @if (createReminderModal.isOpen()) {
-        <app-reminder-form [medications]="medications()" [appointments]="appointments()" (submitted)="createReminder($event)" (cancelled)="createReminderModal.close()" />
+        <app-reminder-form
+          [medications]="medications()"
+          [appointments]="appointments()"
+          (submitted)="createReminder($event)"
+          (cancelled)="createReminderModal.close()"
+        />
       }
     </app-modal-dialog>
   `,
@@ -217,22 +295,37 @@ export class Reminders {
     if (reminder.target === 'appointment' && reminder.appointmentId) {
       const appt = this.appointmentMap().get(reminder.appointmentId);
       if (!appt) return null;
-      const patient = this.patientMap().get(appt.patientId) ?? this._i18n.translate('medical.reminder.fallbackPatient');
+      const patient =
+        this.patientMap().get(appt.patientId) ??
+        this._i18n.translate('medical.reminder.fallbackPatient');
       const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-      const title = this._i18n.translate('medical.reminder.appointmentTitle', { patient, practitioner });
+      const title = this._i18n.translate('medical.reminder.appointmentTitle', {
+        patient,
+        practitioner,
+      });
       const start = this.toGoogleDate(appt.date, appt.time);
       const end = this.toGoogleDate(appt.date, appt.time, 60);
-      const details = appt.reason ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason }) : '';
+      const details = appt.reason
+        ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason })
+        : '';
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${end}&details=${encodeURIComponent(details)}`;
     }
     if (reminder.target === 'medication' && reminder.medicationId) {
       const med = this.medicationMap().get(reminder.medicationId);
       if (!med) return null;
-      const patient = this.patientMap().get(med.patientId) ?? this._i18n.translate('medical.reminder.fallbackPatient');
-      const title = this._i18n.translate('medical.reminder.medicationTitle', { name: med.name, patient });
+      const patient =
+        this.patientMap().get(med.patientId) ??
+        this._i18n.translate('medical.reminder.fallbackPatient');
+      const title = this._i18n.translate('medical.reminder.medicationTitle', {
+        name: med.name,
+        patient,
+      });
       const today = new Date();
       const start = this.formatGoogleDateOnly(today);
-      const details = this._i18n.translate('medical.reminder.medicationDescription', { dosage: med.dosage, patient });
+      const details = this._i18n.translate('medical.reminder.medicationDescription', {
+        dosage: med.dosage,
+        patient,
+      });
       return `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(title)}&dates=${start}/${start}&details=${encodeURIComponent(details)}&recur=RRULE:FREQ=DAILY`;
     }
     return null;
@@ -244,12 +337,19 @@ export class Reminders {
     if (reminder.target === 'appointment' && reminder.appointmentId) {
       const appt = this.appointmentMap().get(reminder.appointmentId);
       if (!appt) return;
-      const patient = this.patientMap().get(appt.patientId) ?? this._i18n.translate('medical.reminder.fallbackPatient');
+      const patient =
+        this.patientMap().get(appt.patientId) ??
+        this._i18n.translate('medical.reminder.fallbackPatient');
       const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-      const title = this._i18n.translate('medical.reminder.appointmentTitle', { patient, practitioner });
+      const title = this._i18n.translate('medical.reminder.appointmentTitle', {
+        patient,
+        practitioner,
+      });
       const dtStart = this.toIcsDateTime(appt.date, appt.time);
       const dtEnd = this.toIcsDateTime(appt.date, appt.time, 60);
-      const description = appt.reason ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason }) : '';
+      const description = appt.reason
+        ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason })
+        : '';
       const alarmDescription = this._i18n.translate('medical.reminder.alarmAppointment');
 
       icsContent = [
@@ -271,23 +371,38 @@ export class Reminders {
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR',
-      ].filter(Boolean).join('\r\n');
+      ]
+        .filter(Boolean)
+        .join('\r\n');
     }
 
     if (reminder.target === 'medication' && reminder.medicationId) {
       const med = this.medicationMap().get(reminder.medicationId);
       if (!med) return;
-      const patient = this.patientMap().get(med.patientId) ?? this._i18n.translate('medical.reminder.fallbackPatient');
-      const title = this._i18n.translate('medical.reminder.medicationTitle', { name: med.name, patient });
-      const description = this._i18n.translate('medical.reminder.medicationDescription', { dosage: med.dosage, patient }).replace(/\n/g, '\\n');
+      const patient =
+        this.patientMap().get(med.patientId) ??
+        this._i18n.translate('medical.reminder.fallbackPatient');
+      const title = this._i18n.translate('medical.reminder.medicationTitle', {
+        name: med.name,
+        patient,
+      });
+      const description = this._i18n
+        .translate('medical.reminder.medicationDescription', { dosage: med.dosage, patient })
+        .replace(/\n/g, '\\n');
       const alarmDescription = this._i18n.translate('medical.reminder.alarmMedication');
       const dtStart = this.toIcsDateOnly(new Date());
 
       const rruleParts = ['FREQ=DAILY'];
       if (med.skipDays.length > 0) {
-        const icsSkipDays = med.skipDays.map(d => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d]).filter(Boolean);
+        const icsSkipDays = med.skipDays
+          .map((d) => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d])
+          .filter(Boolean);
         if (icsSkipDays.length > 0) {
-          rruleParts.push(`BYDAY=${this.allDaysExcept(med.skipDays).map(d => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d]).join(',')}`);
+          rruleParts.push(
+            `BYDAY=${this.allDaysExcept(med.skipDays)
+              .map((d) => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d])
+              .join(',')}`,
+          );
         }
       }
 
@@ -330,7 +445,10 @@ export class Reminders {
   private toGoogleDate(date: string, time: string, addMinutes = 0): string {
     const d = new Date(`${date}T${time}`);
     if (addMinutes) d.setMinutes(d.getMinutes() + addMinutes);
-    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    return d
+      .toISOString()
+      .replace(/[-:]/g, '')
+      .replace(/\.\d{3}/, '');
   }
 
   private formatGoogleDateOnly(d: Date): string {
@@ -350,11 +468,11 @@ export class Reminders {
   }
 
   private escapeIcs(s: string): string {
-    return s.replace(/[\\;,]/g, c => `\\${c}`).replace(/\n/g, '\\n');
+    return s.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
   }
 
   private allDaysExcept(skipDays: number[]): number[] {
-    return [0, 1, 2, 3, 4, 5, 6].filter(d => !skipDays.includes(d));
+    return [0, 1, 2, 3, 4, 5, 6].filter((d) => !skipDays.includes(d));
   }
 
   // ── Reminder CRUD ──
@@ -372,7 +490,7 @@ export class Reminders {
       await lastValueFrom(this.reminderGw.create(data));
       this.toaster.success('medical.reminder.feedback.created');
       this.createReminderModalRef().close();
-      this._refreshReminders.update(v => v + 1);
+      this._refreshReminders.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.reminder.feedback.createFailed');
     }
@@ -382,21 +500,21 @@ export class Reminders {
     try {
       await lastValueFrom(this.reminderGw.toggle(id));
       this.toaster.success('medical.reminder.feedback.updated');
-      this._refreshReminders.update(v => v + 1);
+      this._refreshReminders.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.reminder.feedback.updateFailed');
     }
   }
 
   protected async deleteReminder(id: string) {
-    if (!await this.confirm.delete(this._i18n.translate('medical.reminder.deleteEntityName'))) return;
+    if (!(await this.confirm.delete(this._i18n.translate('medical.reminder.deleteEntityName'))))
+      return;
     try {
       await lastValueFrom(this.reminderGw.delete(id));
       this.toaster.success('medical.reminder.feedback.deleted');
-      this._refreshReminders.update(v => v + 1);
+      this._refreshReminders.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.reminder.feedback.deleteFailed');
     }
   }
-
 }

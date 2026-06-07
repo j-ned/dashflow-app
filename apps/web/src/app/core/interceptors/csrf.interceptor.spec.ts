@@ -6,7 +6,10 @@ import { CsrfStore } from '@core/services/csrf/csrf-store';
 
 function run(method: string): HttpRequest<unknown> | null {
   let captured: HttpRequest<unknown> | null = null;
-  const next: HttpHandlerFn = (r) => { captured = r; return { subscribe: () => ({}) } as never; };
+  const next: HttpHandlerFn = (r) => {
+    captured = r;
+    return { subscribe: () => ({}) } as never;
+  };
   const body = method === 'GET' ? undefined : {};
   TestBed.runInInjectionContext(() =>
     csrfInterceptor(new HttpRequest(method as 'POST', '/x', body as never, {}), next),

@@ -7,8 +7,13 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="none"
-         role="img" [attr.aria-label]="ariaLabel()">
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      class="w-full h-full"
+      preserveAspectRatio="none"
+      role="img"
+      [attr.aria-label]="ariaLabel()"
+    >
       <defs>
         <!-- noinspection HtmlUnknownAttribute -->
         <linearGradient [attr.id]="gradientId" x1="0" y1="0" x2="0" y2="1">
@@ -19,31 +24,62 @@ export type AreaChartPoint = { readonly label: string; readonly value: number };
 
       <!-- Grid lines -->
       @for (y of gridLines(); track y) {
-        <line [attr.x1]="pad" [attr.y1]="y" [attr.x2]="width - pad" [attr.y2]="y"
-              stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3" />
+        <line
+          [attr.x1]="pad"
+          [attr.y1]="y"
+          [attr.x2]="width - pad"
+          [attr.y2]="y"
+          stroke="var(--border)"
+          stroke-width="0.5"
+          stroke-dasharray="3,3"
+        />
       }
 
       <!-- Area fill -->
       <path [attr.d]="areaPath()" [attr.fill]="'url(#' + gradientId + ')'" />
 
       <!-- Line -->
-      <path [attr.d]="linePath()" fill="none" [attr.stroke]="color()"
-            stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+      <path
+        [attr.d]="linePath()"
+        fill="none"
+        [attr.stroke]="color()"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+      />
 
       <!-- Dots + labels -->
       @for (pt of plotPoints(); track pt.x) {
-        <circle [attr.cx]="pt.x" [attr.cy]="pt.y" r="3.5"
-                [attr.fill]="color()" stroke="var(--bg-surface)" stroke-width="2" />
-        <text [attr.x]="pt.x" [attr.y]="height - 4" text-anchor="middle"
-              fill="var(--text-muted)" font-size="11" font-family="var(--font-sans)">
+        <circle
+          [attr.cx]="pt.x"
+          [attr.cy]="pt.y"
+          r="3.5"
+          [attr.fill]="color()"
+          stroke="var(--bg-surface)"
+          stroke-width="2"
+        />
+        <text
+          [attr.x]="pt.x"
+          [attr.y]="height - 4"
+          text-anchor="middle"
+          fill="var(--text-muted)"
+          font-size="11"
+          font-family="var(--font-sans)"
+        >
           {{ pt.label }}
         </text>
       }
 
       <!-- Y-axis labels -->
       @for (gl of gridLabels(); track gl.y) {
-        <text [attr.x]="pad - 4" [attr.y]="gl.y + 3" text-anchor="end"
-              fill="var(--text-muted)" font-size="10" font-family="var(--font-mono)">
+        <text
+          [attr.x]="pad - 4"
+          [attr.y]="gl.y + 3"
+          text-anchor="end"
+          fill="var(--text-muted)"
+          font-size="10"
+          font-family="var(--font-mono)"
+        >
           {{ gl.label }}
         </text>
       }
@@ -74,7 +110,7 @@ export class AreaChart {
   });
 
   private readonly minMax = computed(() => {
-    const vals = this.data().map(d => d.value);
+    const vals = this.data().map((d) => d.value);
     const min = Math.min(...vals, 0);
     const max = Math.max(...vals, 1);
     const range = max - min || 1;

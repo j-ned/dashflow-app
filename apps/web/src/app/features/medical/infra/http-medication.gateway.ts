@@ -2,7 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import {
+  ApiRow,
+  encryptEntity,
+  decryptEntities,
+  decryptEntity,
+} from '@core/services/crypto/entity-crypto';
 import { Medication, MedicationWithStock } from '../domain/models/medication.model';
 import { MedicationGateway } from '../domain/gateways/medication.gateway';
 
@@ -49,7 +54,9 @@ export class HttpMedicationGateway implements MedicationGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.post<ApiRow>('/medications', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
+      ),
     );
   }
 
@@ -59,7 +66,9 @@ export class HttpMedicationGateway implements MedicationGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.put<ApiRow>(`/medications/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
+      ),
     );
   }
 
@@ -70,7 +79,9 @@ export class HttpMedicationGateway implements MedicationGateway {
 
     return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.patch<ApiRow>(`/medications/${id}/refill`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
+      ),
     );
   }
 

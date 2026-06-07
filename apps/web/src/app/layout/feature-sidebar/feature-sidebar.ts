@@ -27,13 +27,12 @@ export type FeatureSidebarItem = {
           type="button"
           (click)="sidebar.toggle()"
           class="flex h-7 w-7 items-center justify-center rounded-md text-text-muted hover:bg-hover hover:text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-          [attr.aria-label]="(sidebar.collapsed() ? 'layout.sidebar.expand' : 'layout.sidebar.collapse') | transloco"
+          [attr.aria-label]="
+            (sidebar.collapsed() ? 'layout.sidebar.expand' : 'layout.sidebar.collapse') | transloco
+          "
           [attr.aria-expanded]="!sidebar.collapsed()"
         >
-          <app-icon
-            [name]="sidebar.collapsed() ? 'chevrons-right' : 'chevrons-left'"
-            size="16"
-          />
+          <app-icon [name]="sidebar.collapsed() ? 'chevrons-right' : 'chevrons-left'" size="16" />
         </button>
       </div>
 
@@ -87,7 +86,9 @@ export type FeatureSidebarItem = {
       font-weight: 500;
       color: var(--text-muted);
       white-space: nowrap;
-      transition: background-color 150ms, color 150ms;
+      transition:
+        background-color 150ms,
+        color 150ms;
     }
 
     .nav-link:hover {

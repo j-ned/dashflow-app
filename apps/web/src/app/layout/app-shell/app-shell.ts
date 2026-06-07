@@ -13,59 +13,86 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
   selector: 'app-shell',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'flex flex-col h-screen overflow-hidden' },
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, TranslocoPipe, Icon, CommandPalette, ConfirmDialog, DemoBanner],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    TranslocoPipe,
+    Icon,
+    CommandPalette,
+    ConfirmDialog,
+    DemoBanner,
+  ],
   template: `
     <header class="header">
-
       <a routerLink="/budget" class="logo-link" aria-label="Accueil DashFlow">
         <app-icon name="dashflow-logo" size="22" />
         <span>DashFlow</span>
       </a>
 
-      <nav aria-label="Espaces" class="flex items-center bg-canvas p-1 rounded-lg border border-border">
-        <a routerLink="/budget"
-           routerLinkActive="tab--active-budget"
-           class="tab">
+      <nav
+        aria-label="Espaces"
+        class="flex items-center bg-canvas p-1 rounded-lg border border-border"
+      >
+        <a routerLink="/budget" routerLinkActive="tab--active-budget" class="tab">
           <app-icon name="wallet" size="15" /> Budget
         </a>
-        <a routerLink="/medical"
-           routerLinkActive="tab--active-medical"
-           class="tab">
+        <a routerLink="/medical" routerLinkActive="tab--active-medical" class="tab">
           <app-icon name="heart-pulse" size="15" /> Médical
         </a>
       </nav>
 
       <div class="flex items-center gap-2 shrink-0">
-        <button type="button"
-                class="header-btn hidden sm:inline-flex"
-                (click)="commandPalette()?.open()">
+        <button
+          type="button"
+          class="header-btn hidden sm:inline-flex"
+          (click)="commandPalette()?.open()"
+        >
           <app-icon name="search" size="14" />
           <span class="text-text-muted">{{ 'common.search' | transloco }}</span>
-          <kbd class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted">{{ kbdShortcut }}</kbd>
+          <kbd
+            class="ml-3 rounded border border-border bg-elevated px-1.5 py-0.5 text-[10px] font-mono text-text-muted"
+            >{{ kbdShortcut }}</kbd
+          >
         </button>
 
-        <button type="button"
-                class="icon-btn font-mono text-[11px] font-semibold tracking-tight uppercase"
-                (click)="locale.toggle()"
-                [attr.aria-label]="(locale.isFrench() ? 'locale.toEnglish' : 'locale.toFrench') | transloco">
+        <button
+          type="button"
+          class="icon-btn font-mono text-[11px] font-semibold tracking-tight uppercase"
+          (click)="locale.toggle()"
+          [attr.aria-label]="
+            (locale.isFrench() ? 'locale.toEnglish' : 'locale.toFrench') | transloco
+          "
+        >
           {{ locale.isFrench() ? 'EN' : 'FR' }}
         </button>
 
-        <button type="button"
-                class="icon-btn"
-                (click)="theme.toggle()"
-                [attr.aria-label]="(theme.isDark() ? 'theme.toLight' : 'theme.toDark') | transloco">
+        <button
+          type="button"
+          class="icon-btn"
+          (click)="theme.toggle()"
+          [attr.aria-label]="(theme.isDark() ? 'theme.toLight' : 'theme.toDark') | transloco"
+        >
           <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" size="18" />
         </button>
 
-        <a routerLink="/settings"
-           class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-           [attr.aria-label]="'common.settings' | transloco">
+        <a
+          routerLink="/settings"
+          class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+          [attr.aria-label]="'common.settings' | transloco"
+        >
           @if (auth.avatarUrl()) {
-            <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
-            <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
+            <!-- eslint-disable @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
+            <img
+              [src]="auth.avatarUrl()"
+              [alt]="auth.displayName()"
+              class="w-8 h-8 rounded-full object-cover border border-border"
+            />
+            <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
           } @else {
-            <div class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-canvas">
+            <div
+              class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-canvas"
+            >
               {{ auth.userInitial() }}
             </div>
           }
@@ -129,7 +156,9 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       font-size: 0.8125rem;
       font-weight: 500;
       color: var(--text-muted);
-      transition: color 150ms, background-color 150ms;
+      transition:
+        color 150ms,
+        background-color 150ms;
     }
 
     .tab:hover {
@@ -165,7 +194,9 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       font-size: 0.8125rem;
       color: var(--text-muted);
       cursor: pointer;
-      transition: border-color 150ms, color 150ms;
+      transition:
+        border-color 150ms,
+        color 150ms;
     }
 
     .header-btn:hover {
@@ -184,7 +215,10 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       background: var(--bg-canvas);
       color: var(--text-muted);
       cursor: pointer;
-      transition: border-color 150ms, color 150ms, background-color 150ms;
+      transition:
+        border-color 150ms,
+        color 150ms,
+        background-color 150ms;
     }
 
     .icon-btn:hover {
@@ -199,5 +233,7 @@ export class AppShell {
   protected readonly theme = inject(ThemeStore);
   protected readonly locale = inject(LocaleStore);
   protected readonly commandPalette = viewChild<CommandPalette>('cmdPalette');
-  protected readonly kbdShortcut = /Mac|iPhone|iPad|iPod/.test(navigator.platform) ? '⌘K' : 'Ctrl K';
+  protected readonly kbdShortcut = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
+    ? '⌘K'
+    : 'Ctrl K';
 }

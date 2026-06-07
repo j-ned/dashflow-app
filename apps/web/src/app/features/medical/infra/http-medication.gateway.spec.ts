@@ -43,7 +43,9 @@ describe('HttpMedicationGateway', () => {
 
   it('getAll() should GET /api/medications and return medications', async () => {
     const promise = firstValueFrom(gateway.getAll());
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/medications` }).flush([MEDICATION]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/medications` })
+      .flush([MEDICATION]);
     httpController.verify();
 
     expect(await promise).toEqual([MEDICATION]);
@@ -52,7 +54,10 @@ describe('HttpMedicationGateway', () => {
   it('create() should POST /api/medications with cleartext body when crypto is off', async () => {
     const { id, ...data } = MEDICATION;
     const promise = firstValueFrom(gateway.create(data));
-    const req = httpController.expectOne({ method: 'POST', url: `${environment.apiUrl}/medications` });
+    const req = httpController.expectOne({
+      method: 'POST',
+      url: `${environment.apiUrl}/medications`,
+    });
     expect(req.request.body).toEqual(data);
     req.flush(MEDICATION);
     httpController.verify();
@@ -62,7 +67,10 @@ describe('HttpMedicationGateway', () => {
 
   it('refill() should PATCH /api/medications/:id/refill with quantity', async () => {
     const promise = firstValueFrom(gateway.refill('med-1', 20));
-    const req = httpController.expectOne({ method: 'PATCH', url: `${environment.apiUrl}/medications/med-1/refill` });
+    const req = httpController.expectOne({
+      method: 'PATCH',
+      url: `${environment.apiUrl}/medications/med-1/refill`,
+    });
     expect(req.request.body).toEqual({ quantity: 20 });
     req.flush(MEDICATION);
     httpController.verify();
@@ -72,7 +80,9 @@ describe('HttpMedicationGateway', () => {
 
   it('delete() should DELETE /api/medications/:id', async () => {
     const promise = firstValueFrom(gateway.delete('med-1'));
-    httpController.expectOne({ method: 'DELETE', url: `${environment.apiUrl}/medications/med-1` }).flush(null);
+    httpController
+      .expectOne({ method: 'DELETE', url: `${environment.apiUrl}/medications/med-1` })
+      .flush(null);
     httpController.verify();
 
     await promise;
@@ -81,7 +91,9 @@ describe('HttpMedicationGateway', () => {
   it('getAlerts() should GET /api/medications/alerts', async () => {
     const alert = { ...MEDICATION, daysRemaining: 3, estimatedRunOut: '2026-03-15', isLow: true };
     const promise = firstValueFrom(gateway.getAlerts());
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/medications/alerts` }).flush([alert]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/medications/alerts` })
+      .flush([alert]);
     httpController.verify();
 
     expect(await promise).toEqual([alert]);

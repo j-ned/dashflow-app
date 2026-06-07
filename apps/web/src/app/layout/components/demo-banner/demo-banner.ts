@@ -14,7 +14,12 @@ import { ApiClient } from '@core/services/api/api-client';
         <span class="demo-banner__label">{{ 'demo.banner.label' | transloco }}</span>
         <span class="demo-banner__sep" aria-hidden="true">·</span>
         <span class="demo-banner__hint">{{ 'demo.banner.resetEvery' | transloco }}</span>
-        <button type="button" class="demo-banner__action" [disabled]="resetting()" (click)="onReset()">
+        <button
+          type="button"
+          class="demo-banner__action"
+          [disabled]="resetting()"
+          (click)="onReset()"
+        >
           {{ 'demo.banner.resetNow' | transloco }}
         </button>
       </div>
@@ -34,9 +39,17 @@ import { ApiClient } from '@core/services/api/api-client';
       top: 0;
       z-index: 50;
     }
-    .demo-banner__label { font-weight: 600; color: var(--color-ib-orange); }
-    .demo-banner__hint { color: var(--color-text-muted); }
-    .demo-banner__sep { opacity: 0.5; color: var(--color-text-muted); }
+    .demo-banner__label {
+      font-weight: 600;
+      color: var(--color-ib-orange);
+    }
+    .demo-banner__hint {
+      color: var(--color-text-muted);
+    }
+    .demo-banner__sep {
+      opacity: 0.5;
+      color: var(--color-text-muted);
+    }
     .demo-banner__action {
       margin-left: auto;
       min-height: 44px;
@@ -49,9 +62,17 @@ import { ApiClient } from '@core/services/api/api-client';
       border: none;
       transition: background-color 0.15s;
     }
-    .demo-banner__action:hover:not(:disabled) { background-color: color-mix(in srgb, var(--color-ib-orange) 88%, black); }
-    .demo-banner__action:focus-visible { outline: 2px solid var(--color-ib-orange); outline-offset: 2px; }
-    .demo-banner__action:disabled { opacity: 0.6; cursor: wait; }
+    .demo-banner__action:hover:not(:disabled) {
+      background-color: color-mix(in srgb, var(--color-ib-orange) 88%, black);
+    }
+    .demo-banner__action:focus-visible {
+      outline: 2px solid var(--color-ib-orange);
+      outline-offset: 2px;
+    }
+    .demo-banner__action:disabled {
+      opacity: 0.6;
+      cursor: wait;
+    }
   `,
 })
 export class DemoBanner {

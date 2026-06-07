@@ -27,18 +27,28 @@ export class HttpBankAccountGateway implements BankAccountGateway {
 
   getAll(): Observable<BankAccount[]> {
     // coerce appliqué APRÈS décryptage (decryptList ne mappe que le chemin plaintext) → vaut pour E2EE aussi.
-    return decryptList<ApiRow>(this.api.get<ApiRow[]>('/bank-accounts'), this.crypto.getMasterKey())
-      .pipe(map((rows) => rows.map(coerceBankAccount)));
+    return decryptList<ApiRow>(
+      this.api.get<ApiRow[]>('/bank-accounts'),
+      this.crypto.getMasterKey(),
+    ).pipe(map((rows) => rows.map(coerceBankAccount)));
   }
 
   create(data: Omit<BankAccount, 'id'>): Observable<BankAccount> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.post<ApiRow>('/bank-accounts', body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/bank-accounts', body),
+    );
   }
 
   update(id: string, data: Partial<Omit<BankAccount, 'id'>>): Observable<BankAccount> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.put<ApiRow>(`/bank-accounts/${id}`, body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/bank-accounts/${id}`, body),
+    );
   }
 
   delete(id: string): Observable<void> {

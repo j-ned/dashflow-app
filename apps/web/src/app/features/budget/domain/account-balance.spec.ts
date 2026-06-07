@@ -2,8 +2,17 @@ import { confirmedBalance, isRecurrencePosted } from './account-balance';
 import { AccountTransaction } from './models/account-transaction.model';
 
 const tx = (p: Partial<AccountTransaction>): AccountTransaction => ({
-  id: 'x', accountId: 'a', amount: 0, direction: 'expense', toAccountId: null,
-  date: '2026-06-01', category: null, note: null, memberId: null, recurringEntryId: null, ...p,
+  id: 'x',
+  accountId: 'a',
+  amount: 0,
+  direction: 'expense',
+  toAccountId: null,
+  date: '2026-06-01',
+  category: null,
+  note: null,
+  memberId: null,
+  recurringEntryId: null,
+  ...p,
 });
 
 describe('confirmedBalance', () => {

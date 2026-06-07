@@ -12,7 +12,11 @@ export async function encryptFile(file: File, key: CryptoKey): Promise<Blob> {
 /**
  * Decrypts an encrypted Blob back into a usable Blob with the original MIME type.
  */
-export async function decryptFile(encryptedBlob: Blob, key: CryptoKey, mimeType: string): Promise<Blob> {
+export async function decryptFile(
+  encryptedBlob: Blob,
+  key: CryptoKey,
+  mimeType: string,
+): Promise<Blob> {
   const data = await encryptedBlob.arrayBuffer();
   const decrypted = await decryptBufferWithKey(data, key);
   return new Blob([decrypted], { type: mimeType });

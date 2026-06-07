@@ -6,7 +6,11 @@ import { FeatureSidebar, type FeatureSidebarItem } from '../feature-sidebar/feat
 const MEDICAL_NAV: readonly FeatureSidebarItem[] = [
   { route: '/medical/dashboard', icon: 'layout-dashboard', labelKey: 'layout.medical.dashboard' },
   { route: '/medical/patients', icon: 'users', labelKey: 'layout.medical.patients' },
-  { route: '/medical/practitioners', icon: 'stethoscope', labelKey: 'layout.medical.practitioners' },
+  {
+    route: '/medical/practitioners',
+    icon: 'stethoscope',
+    labelKey: 'layout.medical.practitioners',
+  },
   { route: '/medical/appointments', icon: 'calendar', labelKey: 'layout.medical.appointments' },
   { route: '/medical/prescriptions', icon: 'file-text', labelKey: 'layout.medical.prescriptions' },
   { route: '/medical/documents', icon: 'folder', labelKey: 'layout.medical.documents' },
@@ -26,7 +30,9 @@ const MEDICAL_NAV: readonly FeatureSidebarItem[] = [
       aria-labelledby="medical-content-heading"
       class="flex-1 flex flex-col overflow-auto bg-canvas p-6"
     >
-      <h1 id="medical-content-heading" class="sr-only">{{ 'layout.medical.contentHeading' | transloco }}</h1>
+      <h1 id="medical-content-heading" class="sr-only">
+        {{ 'layout.medical.contentHeading' | transloco }}
+      </h1>
       <router-outlet />
     </section>
   `,

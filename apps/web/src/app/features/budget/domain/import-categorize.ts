@@ -1,5 +1,8 @@
 const RULES: readonly { readonly re: RegExp; readonly code: string }[] = [
-  { re: /carrefour|leclerc|auchan|lidl|intermarch|monoprix|course|restau|boulanger/i, code: 'food' },
+  {
+    re: /carrefour|leclerc|auchan|lidl|intermarch|monoprix|course|restau|boulanger/i,
+    code: 'food',
+  },
   { re: /loyer|rent|edf|engie|eau|gaz|charges/i, code: 'housing' },
   { re: /sncf|ratp|uber|essence|carburant|total|peage|train|billet/i, code: 'transport' },
   { re: /netflix|spotify|abonnement|cotisation|free|sfr|orange|bouygues/i, code: 'subscription' },

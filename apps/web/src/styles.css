@@ -38,31 +38,31 @@
      Generates bg/text/border/ring/shadow utilities like `bg-ib-red-10`
      for use with Angular class bindings (which can't carry a `/` in the
      class name). Equivalent to vanilla Tailwind `bg-ib-red/10`. */
-  --color-ib-blue-5:    color-mix(in srgb, var(--color-ib-blue)   5%, transparent);
-  --color-ib-blue-10:   color-mix(in srgb, var(--color-ib-blue)  10%, transparent);
-  --color-ib-blue-15:   color-mix(in srgb, var(--color-ib-blue)  15%, transparent);
-  --color-ib-blue-20:   color-mix(in srgb, var(--color-ib-blue)  20%, transparent);
-  --color-ib-blue-30:   color-mix(in srgb, var(--color-ib-blue)  30%, transparent);
-  --color-ib-blue-40:   color-mix(in srgb, var(--color-ib-blue)  40%, transparent);
-  --color-ib-blue-50:   color-mix(in srgb, var(--color-ib-blue)  50%, transparent);
+  --color-ib-blue-5: color-mix(in srgb, var(--color-ib-blue) 5%, transparent);
+  --color-ib-blue-10: color-mix(in srgb, var(--color-ib-blue) 10%, transparent);
+  --color-ib-blue-15: color-mix(in srgb, var(--color-ib-blue) 15%, transparent);
+  --color-ib-blue-20: color-mix(in srgb, var(--color-ib-blue) 20%, transparent);
+  --color-ib-blue-30: color-mix(in srgb, var(--color-ib-blue) 30%, transparent);
+  --color-ib-blue-40: color-mix(in srgb, var(--color-ib-blue) 40%, transparent);
+  --color-ib-blue-50: color-mix(in srgb, var(--color-ib-blue) 50%, transparent);
 
-  --color-ib-cyan-5:    color-mix(in srgb, var(--color-ib-cyan)   5%, transparent);
-  --color-ib-cyan-10:   color-mix(in srgb, var(--color-ib-cyan)  10%, transparent);
-  --color-ib-cyan-15:   color-mix(in srgb, var(--color-ib-cyan)  15%, transparent);
-  --color-ib-cyan-20:   color-mix(in srgb, var(--color-ib-cyan)  20%, transparent);
-  --color-ib-cyan-30:   color-mix(in srgb, var(--color-ib-cyan)  30%, transparent);
-  --color-ib-cyan-40:   color-mix(in srgb, var(--color-ib-cyan)  40%, transparent);
-  --color-ib-cyan-50:   color-mix(in srgb, var(--color-ib-cyan)  50%, transparent);
+  --color-ib-cyan-5: color-mix(in srgb, var(--color-ib-cyan) 5%, transparent);
+  --color-ib-cyan-10: color-mix(in srgb, var(--color-ib-cyan) 10%, transparent);
+  --color-ib-cyan-15: color-mix(in srgb, var(--color-ib-cyan) 15%, transparent);
+  --color-ib-cyan-20: color-mix(in srgb, var(--color-ib-cyan) 20%, transparent);
+  --color-ib-cyan-30: color-mix(in srgb, var(--color-ib-cyan) 30%, transparent);
+  --color-ib-cyan-40: color-mix(in srgb, var(--color-ib-cyan) 40%, transparent);
+  --color-ib-cyan-50: color-mix(in srgb, var(--color-ib-cyan) 50%, transparent);
 
-  --color-ib-green-5:   color-mix(in srgb, var(--color-ib-green)  5%, transparent);
-  --color-ib-green-10:  color-mix(in srgb, var(--color-ib-green) 10%, transparent);
-  --color-ib-green-15:  color-mix(in srgb, var(--color-ib-green) 15%, transparent);
-  --color-ib-green-20:  color-mix(in srgb, var(--color-ib-green) 20%, transparent);
-  --color-ib-green-30:  color-mix(in srgb, var(--color-ib-green) 30%, transparent);
-  --color-ib-green-40:  color-mix(in srgb, var(--color-ib-green) 40%, transparent);
-  --color-ib-green-50:  color-mix(in srgb, var(--color-ib-green) 50%, transparent);
+  --color-ib-green-5: color-mix(in srgb, var(--color-ib-green) 5%, transparent);
+  --color-ib-green-10: color-mix(in srgb, var(--color-ib-green) 10%, transparent);
+  --color-ib-green-15: color-mix(in srgb, var(--color-ib-green) 15%, transparent);
+  --color-ib-green-20: color-mix(in srgb, var(--color-ib-green) 20%, transparent);
+  --color-ib-green-30: color-mix(in srgb, var(--color-ib-green) 30%, transparent);
+  --color-ib-green-40: color-mix(in srgb, var(--color-ib-green) 40%, transparent);
+  --color-ib-green-50: color-mix(in srgb, var(--color-ib-green) 50%, transparent);
 
-  --color-ib-orange-5:  color-mix(in srgb, var(--color-ib-orange)  5%, transparent);
+  --color-ib-orange-5: color-mix(in srgb, var(--color-ib-orange) 5%, transparent);
   --color-ib-orange-10: color-mix(in srgb, var(--color-ib-orange) 10%, transparent);
   --color-ib-orange-15: color-mix(in srgb, var(--color-ib-orange) 15%, transparent);
   --color-ib-orange-20: color-mix(in srgb, var(--color-ib-orange) 20%, transparent);
@@ -70,15 +70,15 @@
   --color-ib-orange-40: color-mix(in srgb, var(--color-ib-orange) 40%, transparent);
   --color-ib-orange-50: color-mix(in srgb, var(--color-ib-orange) 50%, transparent);
 
-  --color-ib-red-5:     color-mix(in srgb, var(--color-ib-red)    5%, transparent);
-  --color-ib-red-10:    color-mix(in srgb, var(--color-ib-red)   10%, transparent);
-  --color-ib-red-15:    color-mix(in srgb, var(--color-ib-red)   15%, transparent);
-  --color-ib-red-20:    color-mix(in srgb, var(--color-ib-red)   20%, transparent);
-  --color-ib-red-30:    color-mix(in srgb, var(--color-ib-red)   30%, transparent);
-  --color-ib-red-40:    color-mix(in srgb, var(--color-ib-red)   40%, transparent);
-  --color-ib-red-50:    color-mix(in srgb, var(--color-ib-red)   50%, transparent);
+  --color-ib-red-5: color-mix(in srgb, var(--color-ib-red) 5%, transparent);
+  --color-ib-red-10: color-mix(in srgb, var(--color-ib-red) 10%, transparent);
+  --color-ib-red-15: color-mix(in srgb, var(--color-ib-red) 15%, transparent);
+  --color-ib-red-20: color-mix(in srgb, var(--color-ib-red) 20%, transparent);
+  --color-ib-red-30: color-mix(in srgb, var(--color-ib-red) 30%, transparent);
+  --color-ib-red-40: color-mix(in srgb, var(--color-ib-red) 40%, transparent);
+  --color-ib-red-50: color-mix(in srgb, var(--color-ib-red) 50%, transparent);
 
-  --color-ib-purple-5:  color-mix(in srgb, var(--color-ib-purple)  5%, transparent);
+  --color-ib-purple-5: color-mix(in srgb, var(--color-ib-purple) 5%, transparent);
   --color-ib-purple-10: color-mix(in srgb, var(--color-ib-purple) 10%, transparent);
   --color-ib-purple-15: color-mix(in srgb, var(--color-ib-purple) 15%, transparent);
   --color-ib-purple-20: color-mix(in srgb, var(--color-ib-purple) 20%, transparent);
@@ -86,7 +86,7 @@
   --color-ib-purple-40: color-mix(in srgb, var(--color-ib-purple) 40%, transparent);
   --color-ib-purple-50: color-mix(in srgb, var(--color-ib-purple) 50%, transparent);
 
-  --color-ib-yellow-5:  color-mix(in srgb, var(--color-ib-yellow)  5%, transparent);
+  --color-ib-yellow-5: color-mix(in srgb, var(--color-ib-yellow) 5%, transparent);
   --color-ib-yellow-10: color-mix(in srgb, var(--color-ib-yellow) 10%, transparent);
   --color-ib-yellow-15: color-mix(in srgb, var(--color-ib-yellow) 15%, transparent);
   --color-ib-yellow-20: color-mix(in srgb, var(--color-ib-yellow) 20%, transparent);
@@ -94,19 +94,19 @@
   --color-ib-yellow-40: color-mix(in srgb, var(--color-ib-yellow) 40%, transparent);
   --color-ib-yellow-50: color-mix(in srgb, var(--color-ib-yellow) 50%, transparent);
 
-  --color-ib-pink-5:    color-mix(in srgb, var(--color-ib-pink)   5%, transparent);
-  --color-ib-pink-10:   color-mix(in srgb, var(--color-ib-pink)  10%, transparent);
-  --color-ib-pink-15:   color-mix(in srgb, var(--color-ib-pink)  15%, transparent);
-  --color-ib-pink-20:   color-mix(in srgb, var(--color-ib-pink)  20%, transparent);
-  --color-ib-pink-30:   color-mix(in srgb, var(--color-ib-pink)  30%, transparent);
-  --color-ib-pink-40:   color-mix(in srgb, var(--color-ib-pink)  40%, transparent);
-  --color-ib-pink-50:   color-mix(in srgb, var(--color-ib-pink)  50%, transparent);
+  --color-ib-pink-5: color-mix(in srgb, var(--color-ib-pink) 5%, transparent);
+  --color-ib-pink-10: color-mix(in srgb, var(--color-ib-pink) 10%, transparent);
+  --color-ib-pink-15: color-mix(in srgb, var(--color-ib-pink) 15%, transparent);
+  --color-ib-pink-20: color-mix(in srgb, var(--color-ib-pink) 20%, transparent);
+  --color-ib-pink-30: color-mix(in srgb, var(--color-ib-pink) 30%, transparent);
+  --color-ib-pink-40: color-mix(in srgb, var(--color-ib-pink) 40%, transparent);
+  --color-ib-pink-50: color-mix(in srgb, var(--color-ib-pink) 50%, transparent);
 
   /* Neutral-suffixed tokens for muted/border alpha variants */
   --color-text-muted-30: color-mix(in srgb, var(--color-text-muted) 30%, transparent);
   --color-text-muted-50: color-mix(in srgb, var(--color-text-muted) 50%, transparent);
-  --color-border-30:     color-mix(in srgb, var(--color-border)     30%, transparent);
-  --color-border-50:     color-mix(in srgb, var(--color-border)     50%, transparent);
+  --color-border-30: color-mix(in srgb, var(--color-border) 30%, transparent);
+  --color-border-50: color-mix(in srgb, var(--color-border) 50%, transparent);
 }
 
 /* ══════════════════════════════════════════════════
@@ -123,7 +123,7 @@
    ─ All accents  ≥ 4.7:1 on canvas, ≥ 4.5:1 on elevated ✅
    ══════════════════════════════════════════════════ */
 :root,
-[data-theme="dark"] {
+[data-theme='dark'] {
   --bg-canvas: #16171a;
   --bg-surface: #1c1d21;
   --bg-elevated: #24262a;
@@ -152,7 +152,7 @@
    ─ text-muted   #5e5e63 on hover   #e2e2e7 →  4.7:1 ✅
    ─ All accents  ≥ 4.5:1 on surface #ffffff ✅
    ══════════════════════════════════════════════════ */
-[data-theme="light"] {
+[data-theme='light'] {
   --bg-canvas: #f4f4f6;
   --bg-surface: #ffffff;
   --bg-elevated: #ebebef;
@@ -197,7 +197,9 @@ body {
   padding: 0;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  transition: background-color 200ms ease, color 200ms ease;
+  transition:
+    background-color 200ms ease,
+    color 200ms ease;
 }
 
 /* ── Form fields ── */
@@ -218,7 +220,9 @@ body {
   padding: 0.5rem 0.75rem;
   font-size: 0.875rem;
   color: var(--color-text-primary);
-  transition: border-color 150ms ease, box-shadow 150ms ease;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
 }
 
 .form-input::placeholder {
@@ -264,7 +268,9 @@ body {
   background: transparent;
   border: none;
   cursor: pointer;
-  transition: color 150ms ease, background-color 150ms ease;
+  transition:
+    color 150ms ease,
+    background-color 150ms ease;
 }
 
 .btn-cancel:hover {
@@ -294,7 +300,9 @@ body {
 
 .btn-submit:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px var(--bg-surface), 0 0 0 4px currentColor;
+  box-shadow:
+    0 0 0 2px var(--bg-surface),
+    0 0 0 4px currentColor;
 }
 
 /* Form validation */
@@ -348,19 +356,41 @@ dialog.modal-dialog .modal-content {
   max-height: 90vh;
 }
 
-dialog.modal-dialog .modal-sm { min-width: 20rem; max-width: 26rem; }
-dialog.modal-dialog .modal-md { min-width: 24rem; max-width: 32rem; }
-dialog.modal-dialog .modal-lg { min-width: 32rem; max-width: 48rem; }
-dialog.modal-dialog .modal-xl { min-width: 40rem; max-width: 64rem; }
+dialog.modal-dialog .modal-sm {
+  min-width: 20rem;
+  max-width: 26rem;
+}
+dialog.modal-dialog .modal-md {
+  min-width: 24rem;
+  max-width: 32rem;
+}
+dialog.modal-dialog .modal-lg {
+  min-width: 32rem;
+  max-width: 48rem;
+}
+dialog.modal-dialog .modal-xl {
+  min-width: 40rem;
+  max-width: 64rem;
+}
 
 @keyframes modal-fade-in {
-  from { opacity: 0; transform: scale(0.95) translateY(-10px); }
-  to { opacity: 1; transform: scale(1) translateY(0); }
+  from {
+    opacity: 0;
+    transform: scale(0.95) translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 }
 
 @keyframes backdrop-fade-in {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 html {

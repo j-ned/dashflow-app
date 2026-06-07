@@ -35,7 +35,10 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
         if (file) {
           return from(encryptFile(file, key)).pipe(
             switchMap((encryptedBlob) => {
-              fd.append('file', new File([encryptedBlob], file.name, { type: 'application/octet-stream' }));
+              fd.append(
+                'file',
+                new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
+              );
               fd.append('originalMimeType', file.type);
               fd.append('encrypted', 'true');
               fd.append('encryptedData', encrypted.encryptedData as string);
@@ -82,6 +85,10 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   }
 
   downloadPayslip(id: string): Observable<Blob> {
-    return decryptBlob(this.api.getBlob(`/salary-archives/${id}/payslip`), this.crypto.getMasterKey(), 'application/pdf');
+    return decryptBlob(
+      this.api.getBlob(`/salary-archives/${id}/payslip`),
+      this.crypto.getMasterKey(),
+      'application/pdf',
+    );
   }
 }

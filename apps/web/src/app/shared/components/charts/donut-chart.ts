@@ -8,22 +8,45 @@ export type DonutSlice = { readonly label: string; readonly value: number; reado
   host: { class: 'block' },
   template: `
     <div class="flex items-center gap-6">
-      <svg viewBox="0 0 120 120" class="w-32 h-32 shrink-0"
-           role="img" [attr.aria-label]="ariaLabel()">
+      <svg
+        viewBox="0 0 120 120"
+        class="w-32 h-32 shrink-0"
+        role="img"
+        [attr.aria-label]="ariaLabel()"
+      >
         @for (arc of arcs(); track arc.label) {
-          <circle cx="60" cy="60" r="48" fill="none"
-                  [attr.stroke]="arc.color" stroke-width="22"
-                  [attr.stroke-dasharray]="arc.dashArray"
-                  [attr.stroke-dashoffset]="arc.dashOffset"
-                  stroke-linecap="round"
-                  class="transition duration-500" />
+          <circle
+            cx="60"
+            cy="60"
+            r="48"
+            fill="none"
+            [attr.stroke]="arc.color"
+            stroke-width="22"
+            [attr.stroke-dasharray]="arc.dashArray"
+            [attr.stroke-dashoffset]="arc.dashOffset"
+            stroke-linecap="round"
+            class="transition duration-500"
+          />
         }
-        <text x="60" y="56" text-anchor="middle" fill="var(--text-primary)"
-              font-size="16" font-weight="700" font-family="var(--font-mono)">
+        <text
+          x="60"
+          y="56"
+          text-anchor="middle"
+          fill="var(--text-primary)"
+          font-size="16"
+          font-weight="700"
+          font-family="var(--font-mono)"
+        >
           {{ centerLabel() }}
         </text>
-        <text x="60" y="70" text-anchor="middle" fill="var(--text-muted)"
-              font-size="8" font-family="var(--font-sans)">
+        <text
+          x="60"
+          y="70"
+          text-anchor="middle"
+          fill="var(--text-muted)"
+          font-size="8"
+          font-family="var(--font-sans)"
+        >
           {{ centerSub() }}
         </text>
       </svg>
@@ -31,9 +54,14 @@ export type DonutSlice = { readonly label: string; readonly value: number; reado
       <div class="flex-1 space-y-2 min-w-0">
         @for (item of legendItems(); track item.label) {
           <div class="flex items-center gap-2">
-            <div class="w-2.5 h-2.5 rounded-full shrink-0" [style.background-color]="item.color"></div>
+            <div
+              class="w-2.5 h-2.5 rounded-full shrink-0"
+              [style.background-color]="item.color"
+            ></div>
             <span class="text-xs text-text-muted truncate flex-1">{{ item.label }}</span>
-            <span class="text-xs font-mono font-medium text-text-primary shrink-0">{{ item.display }}</span>
+            <span class="text-xs font-mono font-medium text-text-primary shrink-0">{{
+              item.display
+            }}</span>
           </div>
         }
       </div>
@@ -56,7 +84,7 @@ export class DonutChart {
     const gap = 3;
     let offset = circ * 0.25; // start from top
 
-    return slices.map(s => {
+    return slices.map((s) => {
       const pct = s.value / total;
       const segLen = circ * pct - gap;
       const arc = {
@@ -72,7 +100,7 @@ export class DonutChart {
 
   protected readonly legendItems = computed(() => {
     const total = this.data().reduce((s, d) => s + d.value, 0);
-    return this.data().map(s => ({
+    return this.data().map((s) => ({
       label: s.label,
       color: s.color,
       display: `${s.value.toFixed(0)}€ (${total > 0 ? ((s.value / total) * 100).toFixed(0) : 0}%)`,

@@ -60,17 +60,16 @@ export class AuthStore {
   });
   readonly hasPassword = computed(() => this._user()?.hasPassword ?? false);
   readonly encryptionVersion = computed(() => this._user()?.encryptionVersion ?? 0);
-  readonly needsEncryptionSetup = computed(() =>
-    this.isAuthenticated()
-    && this.encryptionVersion() === 0
-    && !this._user()?.isDemoAccount
+  readonly needsEncryptionSetup = computed(
+    () => this.isAuthenticated() && this.encryptionVersion() === 0 && !this._user()?.isDemoAccount,
   );
 
-  readonly needsUnlock = computed(() =>
-    this.isAuthenticated()
-    && this.encryptionVersion() === 1
-    && !this.crypto.isUnlocked()
-    && !this._user()?.isDemoAccount
+  readonly needsUnlock = computed(
+    () =>
+      this.isAuthenticated() &&
+      this.encryptionVersion() === 1 &&
+      !this.crypto.isUnlocked() &&
+      !this._user()?.isDemoAccount,
   );
 
   constructor() {
@@ -101,9 +100,7 @@ export class AuthStore {
   }
 
   async register(email: string, password: string, displayName?: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/auth/register', { email, password, displayName }),
-    );
+    await firstValueFrom(this.api.post('/auth/register', { email, password, displayName }));
   }
 
   async demoLogin(): Promise<void> {
@@ -122,7 +119,10 @@ export class AuthStore {
 
   async verifyCode(email: string, code: string): Promise<void> {
     const res = await firstValueFrom(
-      this.api.post<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }>('/auth/verify', { email, code }),
+      this.api.post<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }>('/auth/verify', {
+        email,
+        code,
+      }),
     );
     this._user.set(res.user);
     this._isAuthenticated.set(true);
@@ -130,12 +130,14 @@ export class AuthStore {
   }
 
   async resendCode(email: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/auth/resend-code', { email }),
-    );
+    await firstValueFrom(this.api.post('/auth/resend-code', { email }));
   }
 
-  async login(email: string, password: string, totpCode?: string): Promise<'authenticated' | 'mfa_required'> {
+  async login(
+    email: string,
+    password: string,
+    totpCode?: string,
+  ): Promise<'authenticated' | 'mfa_required'> {
     const res = await firstValueFrom(
       this.api.post<LoginResponse>('/auth/login', { email, password, totpCode }),
     );
@@ -158,15 +160,11 @@ export class AuthStore {
   }
 
   async forgotPassword(email: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/auth/forgot-password', { email }),
-    );
+    await firstValueFrom(this.api.post('/auth/forgot-password', { email }));
   }
 
   async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
-    await firstValueFrom(
-      this.api.post('/auth/reset-password', { email, code, newPassword }),
-    );
+    await firstValueFrom(this.api.post('/auth/reset-password', { email, code, newPassword }));
   }
 
   async hydrateFromCookie(): Promise<void> {
@@ -181,7 +179,11 @@ export class AuthStore {
 
   async logout(): Promise<void> {
     this.crypto.lock();
-    try { await firstValueFrom(this.api.post('/auth/logout', {})); } catch { /* non-blocking */ }
+    try {
+      await firstValueFrom(this.api.post('/auth/logout', {}));
+    } catch {
+      /* non-blocking */
+    }
     this._user.set(null);
     this._isAuthenticated.set(false);
     this._keyMaterial = null;
@@ -219,9 +221,7 @@ export class AuthStore {
   }
 
   async updatePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await firstValueFrom(
-      this.api.patch('/auth/me/password', { currentPassword, newPassword }),
-    );
+    await firstValueFrom(this.api.patch('/auth/me/password', { currentPassword, newPassword }));
   }
 
   async setPassword(newPassword: string): Promise<void> {
@@ -239,9 +239,7 @@ export class AuthStore {
       body['newWrappedMasterKey'] = wrappedMasterKey;
     }
 
-    await firstValueFrom(
-      this.api.post('/auth/me/set-password', body),
-    );
+    await firstValueFrom(this.api.post('/auth/me/set-password', body));
     const user = this._user();
     if (user) this._user.set({ ...user, hasPassword: true, hasEncryptionPassphrase: false });
 
@@ -291,7 +289,11 @@ export class AuthStore {
     const recoveryWrappedKey = this._keyMaterial.recoveryWrappedKey;
 
     await firstValueFrom(
-      this.api.patch('/auth/me/encryption-keys', { salt: saltHex, wrappedMasterKey, recoveryWrappedKey }),
+      this.api.patch('/auth/me/encryption-keys', {
+        salt: saltHex,
+        wrappedMasterKey,
+        recoveryWrappedKey,
+      }),
     );
 
     this._keyMaterial = { salt: saltHex, wrappedMasterKey, recoveryWrappedKey };
@@ -318,14 +320,14 @@ export class AuthStore {
 
   async saveEncryptionKeys(): Promise<void> {
     if (!this._keyMaterial) throw new Error('No key material');
-    await firstValueFrom(
-      this.api.patch('/auth/me/encryption-keys', this._keyMaterial),
-    );
+    await firstValueFrom(this.api.patch('/auth/me/encryption-keys', this._keyMaterial));
     const user = this._user();
     if (user) this._user.set({ ...user, encryptionVersion: 1 });
   }
 
-  async migrateEncryption(data: Record<string, { id: string; encryptedData: string }[]>): Promise<void> {
+  async migrateEncryption(
+    data: Record<string, { id: string; encryptedData: string }[]>,
+  ): Promise<void> {
     if (!this._keyMaterial) throw new Error('No key material');
     await firstValueFrom(
       this.api.post('/auth/me/migrate-encryption', {

@@ -1,6 +1,12 @@
 import { ApplicationConfig, LOCALE_ID } from '@angular/core';
 import { registerLocaleData } from '@angular/common';
-import { provideRouter, withComponentInputBinding, withInMemoryScrolling, withPreloading, PreloadAllModules } from '@angular/router';
+import {
+  provideRouter,
+  withComponentInputBinding,
+  withInMemoryScrolling,
+  withPreloading,
+  PreloadAllModules,
+} from '@angular/router';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { credentialsInterceptor } from '@core/interceptors/credentials.interceptor';
 import { csrfInterceptor } from '@core/interceptors/csrf.interceptor';
@@ -52,10 +58,7 @@ export const appConfig: ApplicationConfig = {
         scrollPositionRestoration: 'enabled',
       }),
     ),
-    provideHttpClient(
-      withFetch(),
-      withInterceptors([credentialsInterceptor, csrfInterceptor]),
-    ),
+    provideHttpClient(withFetch(), withInterceptors([credentialsInterceptor, csrfInterceptor])),
     transloco,
 
     { provide: AccountTransactionGateway, useClass: HttpAccountTransactionGateway },

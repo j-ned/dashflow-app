@@ -18,7 +18,8 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
     <a
       href="#main"
       class="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[60] focus:rounded-md focus:bg-ib-blue focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-canvas"
-    >{{ 'landing.skipToContent' | transloco }}</a>
+      >{{ 'landing.skipToContent' | transloco }}</a
+    >
 
     <nav
       class="sticky top-0 z-50 border-b border-border bg-canvas"
@@ -40,24 +41,34 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
           <a
             routerLink="/auth/login"
             class="inline-flex min-h-11 items-center rounded-md px-3 py-2 text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-          >{{ 'landing.nav.login' | transloco }}</a>
+            >{{ 'landing.nav.login' | transloco }}</a
+          >
           <a
             routerLink="/auth/register"
             class="inline-flex min-h-11 items-center rounded-md bg-ib-blue px-4 py-2 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-          >{{ 'landing.nav.cta' | transloco }}</a>
+            >{{ 'landing.nav.cta' | transloco }}</a
+          >
         </div>
       </div>
     </nav>
 
     <main id="main">
       <!-- Hero -->
-      <section class="mx-auto max-w-6xl px-6 pt-16 pb-16 lg:pt-24 lg:pb-20" aria-labelledby="hero-title">
+      <section
+        class="mx-auto max-w-6xl px-6 pt-16 pb-16 lg:pt-24 lg:pb-20"
+        aria-labelledby="hero-title"
+      >
         <div class="mx-auto max-w-3xl text-center">
-          <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue">
+          <span
+            class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue"
+          >
             <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-ib-blue"></span>
             {{ 'landing.hero.eyebrow' | transloco }}
           </span>
-          <h1 id="hero-title" class="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.75rem]">
+          <h1
+            id="hero-title"
+            class="mt-6 text-4xl font-semibold leading-[1.1] tracking-tight sm:text-5xl lg:text-[3.75rem]"
+          >
             {{ 'landing.hero.titleLine1' | transloco }}<br />
             <span class="text-ib-blue">{{ 'landing.hero.titleLine2' | transloco }}</span>
           </h1>
@@ -76,7 +87,8 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
             <a
               href="#pricing"
               class="inline-flex min-h-12 items-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
-            >{{ 'landing.hero.secondaryCta' | transloco }}</a>
+              >{{ 'landing.hero.secondaryCta' | transloco }}</a
+            >
           </div>
 
           <button
@@ -95,7 +107,9 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
           </p>
         </div>
 
-        <figure class="mt-14 overflow-hidden rounded-lg border border-border bg-surface p-2 shadow-2xl shadow-black/40 lg:mt-16">
+        <figure
+          class="mt-14 overflow-hidden rounded-lg border border-border bg-surface p-2 shadow-2xl shadow-black/40 lg:mt-16"
+        >
           <img
             ngSrc="/screen/img_9.webp"
             [alt]="'landing.hero.screenshotAlt' | transloco"
@@ -114,7 +128,9 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <section class="border-y border-border bg-surface" aria-labelledby="problem-title">
         <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">
           <header class="max-w-3xl">
-            <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
+            <span
+              class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-text-muted"
+            >
               <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-text-muted"></span>
               {{ 'landing.problem.eyebrow' | transloco }}
             </span>
@@ -128,25 +144,43 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
 
           <dl class="mt-12 grid gap-x-12 gap-y-10 border-t border-border pt-10 sm:grid-cols-3">
             <div>
-              <dt class="text-base font-semibold tracking-tight text-text-primary">{{ 'landing.problem.free.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.problem.free.description' | transloco }}</dd>
+              <dt class="text-base font-semibold tracking-tight text-text-primary">
+                {{ 'landing.problem.free.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.problem.free.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="text-base font-semibold tracking-tight text-text-primary">{{ 'landing.problem.profile.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.problem.profile.description' | transloco }}</dd>
+              <dt class="text-base font-semibold tracking-tight text-text-primary">
+                {{ 'landing.problem.profile.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.problem.profile.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="text-base font-semibold tracking-tight text-text-primary">{{ 'landing.problem.readable.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.problem.readable.description' | transloco }}</dd>
+              <dt class="text-base font-semibold tracking-tight text-text-primary">
+                {{ 'landing.problem.readable.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.problem.readable.description' | transloco }}
+              </dd>
             </div>
           </dl>
         </div>
       </section>
 
       <!-- How it works (E2EE) -->
-      <section id="security" class="mx-auto max-w-6xl px-6 py-24 lg:py-32" aria-labelledby="how-title">
+      <section
+        id="security"
+        class="mx-auto max-w-6xl px-6 py-24 lg:py-32"
+        aria-labelledby="how-title"
+      >
         <header class="max-w-3xl">
-          <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue">
+          <span
+            class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue"
+          >
             <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-ib-blue"></span>
             {{ 'landing.how.eyebrow' | transloco }}
           </span>
@@ -161,22 +195,36 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
         <ol class="mt-12 grid gap-x-10 gap-y-10 border-t border-border pt-10 sm:grid-cols-3">
           <li>
             <span class="font-mono text-sm text-ib-blue">01</span>
-            <h3 class="mt-3 text-xl font-semibold tracking-tight">{{ 'landing.how.step1.title' | transloco }}</h3>
-            <p class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.how.step1.body' | transloco }}</p>
+            <h3 class="mt-3 text-xl font-semibold tracking-tight">
+              {{ 'landing.how.step1.title' | transloco }}
+            </h3>
+            <p class="mt-2 text-base leading-relaxed text-text-muted">
+              {{ 'landing.how.step1.body' | transloco }}
+            </p>
           </li>
           <li>
             <span class="font-mono text-sm text-ib-blue">02</span>
-            <h3 class="mt-3 text-xl font-semibold tracking-tight">{{ 'landing.how.step2.title' | transloco }}</h3>
-            <p class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.how.step2.body' | transloco }}</p>
+            <h3 class="mt-3 text-xl font-semibold tracking-tight">
+              {{ 'landing.how.step2.title' | transloco }}
+            </h3>
+            <p class="mt-2 text-base leading-relaxed text-text-muted">
+              {{ 'landing.how.step2.body' | transloco }}
+            </p>
           </li>
           <li>
             <span class="font-mono text-sm text-ib-blue">03</span>
-            <h3 class="mt-3 text-xl font-semibold tracking-tight">{{ 'landing.how.step3.title' | transloco }}</h3>
-            <p class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.how.step3.body' | transloco }}</p>
+            <h3 class="mt-3 text-xl font-semibold tracking-tight">
+              {{ 'landing.how.step3.title' | transloco }}
+            </h3>
+            <p class="mt-2 text-base leading-relaxed text-text-muted">
+              {{ 'landing.how.step3.body' | transloco }}
+            </p>
           </li>
         </ol>
 
-        <ul class="mt-12 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-border pt-8 font-mono text-xs tracking-tight text-text-muted">
+        <ul
+          class="mt-12 flex flex-wrap items-center gap-x-8 gap-y-2 border-t border-border pt-8 font-mono text-xs tracking-tight text-text-muted"
+        >
           <li class="flex items-center gap-2">
             <app-icon name="key" [size]="14" class="text-ib-blue" />
             <span>PBKDF2</span>
@@ -197,7 +245,9 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <section id="budget" class="border-t border-border bg-surface" aria-labelledby="budget-title">
         <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">
           <header class="max-w-3xl">
-            <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-green">
+            <span
+              class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-green"
+            >
               <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-ib-green"></span>
               {{ 'landing.budget.tag' | transloco }}
             </span>
@@ -211,24 +261,42 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
 
           <dl class="mt-12 grid gap-x-12 gap-y-8 border-t border-border pt-10 sm:grid-cols-2">
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">{{ 'landing.budget.accounts.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.budget.accounts.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">
+                {{ 'landing.budget.accounts.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.budget.accounts.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">{{ 'landing.budget.envelopes.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.budget.envelopes.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">
+                {{ 'landing.budget.envelopes.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.budget.envelopes.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">{{ 'landing.budget.recurrences.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.budget.recurrences.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">
+                {{ 'landing.budget.recurrences.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.budget.recurrences.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">{{ 'landing.budget.loans.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.budget.loans.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-green">
+                {{ 'landing.budget.loans.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.budget.loans.description' | transloco }}
+              </dd>
             </div>
           </dl>
 
-          <figure class="mt-12 overflow-hidden rounded-lg border border-border bg-canvas p-2 shadow-2xl shadow-black/40 lg:mt-16">
+          <figure
+            class="mt-12 overflow-hidden rounded-lg border border-border bg-canvas p-2 shadow-2xl shadow-black/40 lg:mt-16"
+          >
             <img
               ngSrc="/screen/img.webp"
               [alt]="'landing.budget.screenshotAlt' | transloco"
@@ -245,7 +313,9 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <section id="medical" class="border-t border-border" aria-labelledby="medical-title">
         <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">
           <header class="max-w-3xl">
-            <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-purple">
+            <span
+              class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-purple"
+            >
               <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-ib-purple"></span>
               {{ 'landing.medical.tag' | transloco }}
             </span>
@@ -259,24 +329,42 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
 
           <dl class="mt-12 grid gap-x-12 gap-y-8 border-t border-border pt-10 sm:grid-cols-2">
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">{{ 'landing.medical.members.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.medical.members.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">
+                {{ 'landing.medical.members.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.medical.members.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">{{ 'landing.medical.appointments.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.medical.appointments.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">
+                {{ 'landing.medical.appointments.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.medical.appointments.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">{{ 'landing.medical.medications.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.medical.medications.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">
+                {{ 'landing.medical.medications.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.medical.medications.description' | transloco }}
+              </dd>
             </div>
             <div>
-              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">{{ 'landing.medical.documents.title' | transloco }}</dt>
-              <dd class="mt-2 text-base leading-relaxed text-text-muted">{{ 'landing.medical.documents.description' | transloco }}</dd>
+              <dt class="font-mono text-xs uppercase tracking-[0.16em] text-ib-purple">
+                {{ 'landing.medical.documents.title' | transloco }}
+              </dt>
+              <dd class="mt-2 text-base leading-relaxed text-text-muted">
+                {{ 'landing.medical.documents.description' | transloco }}
+              </dd>
             </div>
           </dl>
 
-          <figure class="mt-12 overflow-hidden rounded-lg border border-border bg-surface p-2 shadow-2xl shadow-black/40 lg:mt-16">
+          <figure
+            class="mt-12 overflow-hidden rounded-lg border border-border bg-surface p-2 shadow-2xl shadow-black/40 lg:mt-16"
+          >
             <img
               ngSrc="/screen/img_6.webp"
               [alt]="'landing.medical.screenshotAlt' | transloco"
@@ -290,10 +378,16 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       </section>
 
       <!-- Pricing -->
-      <section id="pricing" class="border-t border-border bg-surface" aria-labelledby="pricing-title">
+      <section
+        id="pricing"
+        class="border-t border-border bg-surface"
+        aria-labelledby="pricing-title"
+      >
         <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">
           <header class="max-w-3xl">
-            <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue">
+            <span
+              class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-ib-blue"
+            >
               <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-ib-blue"></span>
               {{ 'landing.pricing.eyebrow' | transloco }}
             </span>
@@ -308,12 +402,20 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
           <div class="mt-12 grid gap-6 lg:grid-cols-2">
             <!-- Free -->
             <article class="flex flex-col rounded-lg border border-border bg-canvas p-8">
-              <h3 class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">{{ 'landing.pricing.free.name' | transloco }}</h3>
+              <h3 class="font-mono text-xs uppercase tracking-[0.16em] text-text-muted">
+                {{ 'landing.pricing.free.name' | transloco }}
+              </h3>
               <p class="mt-4 flex items-baseline gap-1.5">
-                <span class="text-4xl font-semibold tracking-tight">{{ 'landing.pricing.free.price' | transloco }}</span>
-                <span class="text-sm text-text-muted">{{ 'landing.pricing.free.period' | transloco }}</span>
+                <span class="text-4xl font-semibold tracking-tight">{{
+                  'landing.pricing.free.price' | transloco
+                }}</span>
+                <span class="text-sm text-text-muted">{{
+                  'landing.pricing.free.period' | transloco
+                }}</span>
               </p>
-              <p class="mt-3 text-base leading-relaxed text-text-muted">{{ 'landing.pricing.free.tagline' | transloco }}</p>
+              <p class="mt-3 text-base leading-relaxed text-text-muted">
+                {{ 'landing.pricing.free.tagline' | transloco }}
+              </p>
               <ul class="mt-6 space-y-3 border-t border-border pt-6 text-base text-text-primary">
                 <li class="flex items-start gap-3">
                   <app-icon name="check" [size]="16" class="mt-1 text-ib-green" />
@@ -335,20 +437,32 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
               <a
                 routerLink="/auth/register"
                 class="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-text-primary transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-              >{{ 'landing.pricing.free.cta' | transloco }}</a>
+                >{{ 'landing.pricing.free.cta' | transloco }}</a
+              >
             </article>
 
             <!-- Premium -->
             <article class="flex flex-col rounded-lg border border-ib-blue bg-canvas p-8">
               <div class="flex items-center justify-between gap-3">
-                <h3 class="font-mono text-xs uppercase tracking-[0.16em] text-ib-blue">{{ 'landing.pricing.premium.name' | transloco }}</h3>
-                <span class="rounded-md bg-ib-blue/10 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.16em] text-ib-blue">{{ 'landing.pricing.premium.badge' | transloco }}</span>
+                <h3 class="font-mono text-xs uppercase tracking-[0.16em] text-ib-blue">
+                  {{ 'landing.pricing.premium.name' | transloco }}
+                </h3>
+                <span
+                  class="rounded-md bg-ib-blue/10 px-2.5 py-1 font-mono text-xs uppercase tracking-[0.16em] text-ib-blue"
+                  >{{ 'landing.pricing.premium.badge' | transloco }}</span
+                >
               </div>
               <p class="mt-4 flex items-baseline gap-1.5">
-                <span class="text-4xl font-semibold tracking-tight text-ib-blue">{{ premiumPrice }}{{ 'landing.pricing.premium.currency' | transloco }}</span>
-                <span class="text-sm text-text-muted">{{ 'landing.pricing.premium.period' | transloco }}</span>
+                <span class="text-4xl font-semibold tracking-tight text-ib-blue"
+                  >{{ premiumPrice }}{{ 'landing.pricing.premium.currency' | transloco }}</span
+                >
+                <span class="text-sm text-text-muted">{{
+                  'landing.pricing.premium.period' | transloco
+                }}</span>
               </p>
-              <p class="mt-3 text-base leading-relaxed text-text-muted">{{ 'landing.pricing.premium.tagline' | transloco }}</p>
+              <p class="mt-3 text-base leading-relaxed text-text-muted">
+                {{ 'landing.pricing.premium.tagline' | transloco }}
+              </p>
               <ul class="mt-6 space-y-3 border-t border-border pt-6 text-base text-text-primary">
                 <li class="flex items-start gap-3">
                   <app-icon name="check" [size]="16" class="mt-1 text-ib-blue" />
@@ -374,7 +488,8 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
               <a
                 routerLink="/auth/register"
                 class="mt-8 inline-flex min-h-12 items-center justify-center gap-2 rounded-md bg-ib-blue px-6 py-3 text-base font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-              >{{ 'landing.pricing.premium.cta' | transloco }}</a>
+                >{{ 'landing.pricing.premium.cta' | transloco }}</a
+              >
             </article>
           </div>
         </div>
@@ -383,7 +498,9 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <!-- FAQ -->
       <section id="faq" class="mx-auto max-w-6xl px-6 py-24 lg:py-32" aria-labelledby="faq-title">
         <header class="max-w-3xl">
-          <span class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
+          <span
+            class="inline-flex items-center gap-2 font-mono text-xs uppercase tracking-[0.18em] text-text-muted"
+          >
             <span aria-hidden="true" class="h-1.5 w-1.5 rounded-full bg-text-muted"></span>
             {{ 'landing.faq.eyebrow' | transloco }}
           </span>
@@ -393,46 +510,89 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
         </header>
 
         <dl class="mt-12 border-t border-border">
-            <details class="group border-b border-border py-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
-                <span>{{ 'landing.faq.q1.question' | transloco }}</span>
-                <app-icon name="chevron-down" [size]="18" class="shrink-0 text-text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">{{ 'landing.faq.q1.answer' | transloco }}</p>
-            </details>
-            <details class="group border-b border-border py-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
-                <span>{{ 'landing.faq.q2.question' | transloco }}</span>
-                <app-icon name="chevron-down" [size]="18" class="shrink-0 text-text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">{{ 'landing.faq.q2.answer' | transloco }}</p>
-            </details>
-            <details class="group border-b border-border py-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
-                <span>{{ 'landing.faq.q3.question' | transloco }}</span>
-                <app-icon name="chevron-down" [size]="18" class="shrink-0 text-text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">{{ 'landing.faq.q3.answer' | transloco }}</p>
-            </details>
-            <details class="group border-b border-border py-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
-                <span>{{ 'landing.faq.q4.question' | transloco }}</span>
-                <app-icon name="chevron-down" [size]="18" class="shrink-0 text-text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">{{ 'landing.faq.q4.answer' | transloco }}</p>
-            </details>
-            <details class="group border-b border-border py-5">
-              <summary class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue">
-                <span>{{ 'landing.faq.q5.question' | transloco }}</span>
-                <app-icon name="chevron-down" [size]="18" class="shrink-0 text-text-muted transition-transform group-open:rotate-180" />
-              </summary>
-              <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">{{ 'landing.faq.q5.answer' | transloco }}</p>
-            </details>
-          </dl>
+          <details class="group border-b border-border py-5">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            >
+              <span>{{ 'landing.faq.q1.question' | transloco }}</span>
+              <app-icon
+                name="chevron-down"
+                [size]="18"
+                class="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">
+              {{ 'landing.faq.q1.answer' | transloco }}
+            </p>
+          </details>
+          <details class="group border-b border-border py-5">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            >
+              <span>{{ 'landing.faq.q2.question' | transloco }}</span>
+              <app-icon
+                name="chevron-down"
+                [size]="18"
+                class="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">
+              {{ 'landing.faq.q2.answer' | transloco }}
+            </p>
+          </details>
+          <details class="group border-b border-border py-5">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            >
+              <span>{{ 'landing.faq.q3.question' | transloco }}</span>
+              <app-icon
+                name="chevron-down"
+                [size]="18"
+                class="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">
+              {{ 'landing.faq.q3.answer' | transloco }}
+            </p>
+          </details>
+          <details class="group border-b border-border py-5">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            >
+              <span>{{ 'landing.faq.q4.question' | transloco }}</span>
+              <app-icon
+                name="chevron-down"
+                [size]="18"
+                class="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">
+              {{ 'landing.faq.q4.answer' | transloco }}
+            </p>
+          </details>
+          <details class="group border-b border-border py-5">
+            <summary
+              class="flex cursor-pointer list-none items-center justify-between gap-4 rounded-sm text-lg font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+            >
+              <span>{{ 'landing.faq.q5.question' | transloco }}</span>
+              <app-icon
+                name="chevron-down"
+                [size]="18"
+                class="shrink-0 text-text-muted transition-transform group-open:rotate-180"
+              />
+            </summary>
+            <p class="mt-3 max-w-2xl text-base leading-relaxed text-text-muted">
+              {{ 'landing.faq.q5.answer' | transloco }}
+            </p>
+          </details>
+        </dl>
       </section>
 
       <!-- Final CTA -->
-      <section class="border-t border-border bg-surface" [attr.aria-label]="'landing.finalCta.ariaLabel' | transloco">
+      <section
+        class="border-t border-border bg-surface"
+        [attr.aria-label]="'landing.finalCta.ariaLabel' | transloco"
+      >
         <div class="mx-auto max-w-3xl px-6 py-24 text-center lg:py-32">
           <h2 class="text-3xl font-semibold tracking-tight sm:text-4xl">
             {{ 'landing.finalCta.title' | transloco }}
@@ -451,14 +611,17 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
             <a
               routerLink="/auth/login"
               class="inline-flex min-h-12 items-center gap-2 rounded-md border border-border bg-canvas px-7 py-3 text-base font-medium text-text-primary transition-colors hover:bg-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface"
-            >{{ 'landing.finalCta.secondaryCta' | transloco }}</a>
+              >{{ 'landing.finalCta.secondaryCta' | transloco }}</a
+            >
           </div>
         </div>
       </section>
     </main>
 
     <footer class="border-t border-border bg-canvas">
-      <div class="mx-auto flex max-w-6xl flex-col items-start gap-4 px-6 py-10 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="mx-auto flex max-w-6xl flex-col items-start gap-4 px-6 py-10 text-sm text-text-muted sm:flex-row sm:items-center sm:justify-between"
+      >
         <p class="flex items-center gap-2">
           <app-icon name="dashflow-logo" [size]="14" class="text-ib-blue" />
           <span>DashFlow · &copy; {{ currentYear }}</span>
@@ -467,15 +630,18 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
           <a
             [href]="'mailto:' + contactEmail"
             class="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-          >{{ contactEmail }}</a>
+            >{{ contactEmail }}</a
+          >
           <a
             routerLink="/legal"
             class="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-          >{{ 'landing.footer.legal' | transloco }}</a>
+            >{{ 'landing.footer.legal' | transloco }}</a
+          >
           <a
             routerLink="/auth/login"
             class="rounded-sm transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
-          >{{ 'landing.footer.login' | transloco }}</a>
+            >{{ 'landing.footer.login' | transloco }}</a
+          >
         </p>
       </div>
     </footer>

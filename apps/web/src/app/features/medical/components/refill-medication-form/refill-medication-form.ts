@@ -20,24 +20,36 @@ type RefillFormShape = {
 
         <div>
           <label for="refill-quantity" class="form-label">
-            {{ 'medical.medication.refill.quantity' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.medication.refill.quantity' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="refill-quantity" type="number" formControlName="quantity" min="1" aria-required="true"
-                 class="form-input mono" />
+          <input
+            id="refill-quantity"
+            type="number"
+            formControlName="quantity"
+            min="1"
+            aria-required="true"
+            class="form-input mono"
+          />
           @if (form.controls.quantity.touched) {
             @if (form.controls.quantity.errors?.['required']) {
-              <small class="error" role="alert">{{ 'medical.medication.refill.quantityRequired' | transloco }}</small>
+              <small class="error" role="alert">{{
+                'medical.medication.refill.quantityRequired' | transloco
+              }}</small>
             } @else if (form.controls.quantity.errors?.['min']) {
-              <small class="error" role="alert">{{ 'medical.medication.refill.quantityMin' | transloco }}</small>
+              <small class="error" role="alert">{{
+                'medical.medication.refill.quantityMin' | transloco
+              }}</small>
             }
           }
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit bg-ib-purple">
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">
+          {{ 'common.cancel' | transloco }}
+        </button>
+        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
           {{ 'medical.medication.refill.submit' | transloco }}
         </button>
       </footer>
@@ -49,7 +61,10 @@ export class RefillMedicationForm {
   readonly cancelled = output<void>();
 
   protected readonly form = new FormGroup<RefillFormShape>({
-    quantity: new FormControl(1, { nonNullable: true, validators: [Validators.required, Validators.min(1)] }),
+    quantity: new FormControl(1, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(1)],
+    }),
   });
 
   protected readonly isInvalid = toSignal(

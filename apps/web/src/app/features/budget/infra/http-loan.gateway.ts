@@ -38,13 +38,21 @@ export class HttpLoanGateway implements LoanGateway {
   }
 
   create(data: Omit<Loan, 'id'>): Observable<Loan> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.post<ApiRow>('/loans', body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/loans', body),
+    );
   }
 
   update(id: string, data: Partial<Omit<Loan, 'id'>>): Observable<Loan> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.put<ApiRow>(`/loans/${id}`, body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/loans/${id}`, body),
+    );
   }
 
   recordPayment(id: string, amount: number, date: string, note: string | null): Observable<Loan> {
@@ -58,23 +66,38 @@ export class HttpLoanGateway implements LoanGateway {
         const newRemaining = Math.max(0, addMoney(loan.remaining, -amount));
         const { id: _, ...loanData } = loan;
         return this.update(id, { ...loanData, remaining: newRemaining }).pipe(
-          switchMap((updated) => this.addTransaction(id, { amount, date, note }).pipe(map(() => updated))),
+          switchMap((updated) =>
+            this.addTransaction(id, { amount, date, note }).pipe(map(() => updated)),
+          ),
         );
       }),
     );
   }
 
   getTransactions(loanId: string): Observable<LoanTransaction[]> {
-    return decryptList(this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`), this.crypto.getMasterKey());
+    return decryptList(
+      this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`),
+      this.crypto.getMasterKey(),
+    );
   }
 
   getAllTransactions(): Observable<LoanTransaction[]> {
-    return decryptList(this.api.get<ApiRow[]>('/loans/transactions/all'), this.crypto.getMasterKey());
+    return decryptList(
+      this.api.get<ApiRow[]>('/loans/transactions/all'),
+      this.crypto.getMasterKey(),
+    );
   }
 
-  addTransaction(loanId: string, data: { amount: number; date: string; note: string | null }): Observable<LoanTransaction> {
-    return mutateEncrypted(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, body));
+  addTransaction(
+    loanId: string,
+    data: { amount: number; date: string; note: string | null },
+  ): Observable<LoanTransaction> {
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      TX_CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>(`/loans/${loanId}/transactions`, body),
+    );
   }
 
   delete(id: string): Observable<void> {

@@ -53,7 +53,9 @@ describe('HttpEnvelopeGateway', () => {
 
   it('getAll() should GET /api/envelopes and return envelopes', async () => {
     const promise = firstValueFrom(gateway.getAll());
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes` }).flush([ENVELOPE]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes` })
+      .flush([ENVELOPE]);
     httpController.verify();
 
     expect(await promise).toEqual([ENVELOPE]);
@@ -61,7 +63,9 @@ describe('HttpEnvelopeGateway', () => {
 
   it('getById() should GET /api/envelopes/:id', async () => {
     const promise = firstValueFrom(gateway.getById('env-1'));
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1` }).flush(ENVELOPE);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1` })
+      .flush(ENVELOPE);
     httpController.verify();
 
     expect(await promise).toEqual(ENVELOPE);
@@ -70,7 +74,10 @@ describe('HttpEnvelopeGateway', () => {
   it('create() should POST /api/envelopes with cleartext body when crypto is off', async () => {
     const { id, ...data } = ENVELOPE;
     const promise = firstValueFrom(gateway.create(data));
-    const req = httpController.expectOne({ method: 'POST', url: `${environment.apiUrl}/envelopes` });
+    const req = httpController.expectOne({
+      method: 'POST',
+      url: `${environment.apiUrl}/envelopes`,
+    });
     expect(req.request.body).toEqual(data);
     req.flush(ENVELOPE);
     httpController.verify();
@@ -80,7 +87,9 @@ describe('HttpEnvelopeGateway', () => {
 
   it('delete() should DELETE /api/envelopes/:id', async () => {
     const promise = firstValueFrom(gateway.delete('env-1'));
-    httpController.expectOne({ method: 'DELETE', url: `${environment.apiUrl}/envelopes/env-1` }).flush(null);
+    httpController
+      .expectOne({ method: 'DELETE', url: `${environment.apiUrl}/envelopes/env-1` })
+      .flush(null);
     httpController.verify();
 
     await promise;
@@ -89,7 +98,9 @@ describe('HttpEnvelopeGateway', () => {
   it('getTransactions() should GET /api/envelopes/:id/transactions', async () => {
     const tx = { id: 'tx-1', envelopeId: 'env-1', amount: 100, date: '2026-03-01' };
     const promise = firstValueFrom(gateway.getTransactions('env-1'));
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1/transactions` }).flush([tx]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1/transactions` })
+      .flush([tx]);
     httpController.verify();
 
     expect(await promise).toEqual([tx]);
@@ -118,13 +129,22 @@ describe('HttpEnvelopeGateway (E2EE)', () => {
   const TX_CLEARTEXT_KEYS = ['id', 'envelopeId', 'createdAt'] as const;
 
   const ENVELOPE: Envelope = {
-    id: 'env-1', memberId: 'm-1', name: 'Épargne', type: 'épargne',
-    balance: 500, target: 1000, color: '#3B82F6', dueDay: 15,
+    id: 'env-1',
+    memberId: 'm-1',
+    name: 'Épargne',
+    type: 'épargne',
+    balance: 500,
+    target: 1000,
+    color: '#3B82F6',
+    dueDay: 15,
   };
   const TX = { id: 'tx-1', envelopeId: 'env-1', amount: 100, date: '2026-03-01', note: 'salaire' };
 
   beforeAll(async () => {
-    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   });
 
   beforeEach(() => {
@@ -144,7 +164,9 @@ describe('HttpEnvelopeGateway (E2EE)', () => {
     const row = await encryptEntity(ENVELOPE as Record<string, unknown>, CLEARTEXT_KEYS, key);
     expect(row['name']).toBeUndefined();
     const promise = firstValueFrom(gateway.getAll());
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes` }).flush([row]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes` })
+      .flush([row]);
     httpController.verify();
 
     expect(await promise).toEqual([ENVELOPE]);
@@ -153,7 +175,9 @@ describe('HttpEnvelopeGateway (E2EE)', () => {
   it('getById() decrypts an encrypted row', async () => {
     const row = await encryptEntity(ENVELOPE as Record<string, unknown>, CLEARTEXT_KEYS, key);
     const promise = firstValueFrom(gateway.getById('env-1'));
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1` }).flush(row);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/env-1` })
+      .flush(row);
     httpController.verify();
 
     expect(await promise).toEqual(ENVELOPE);
@@ -178,7 +202,9 @@ describe('HttpEnvelopeGateway (E2EE)', () => {
   it('getAllTransactions() decrypts encrypted transaction rows', async () => {
     const row = await encryptEntity(TX as Record<string, unknown>, TX_CLEARTEXT_KEYS, key);
     const promise = firstValueFrom(gateway.getAllTransactions());
-    httpController.expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/transactions/all` }).flush([row]);
+    httpController
+      .expectOne({ method: 'GET', url: `${environment.apiUrl}/envelopes/transactions/all` })
+      .flush([row]);
     httpController.verify();
 
     expect(await promise).toEqual([TX]);

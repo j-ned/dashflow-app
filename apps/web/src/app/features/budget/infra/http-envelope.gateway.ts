@@ -30,24 +30,46 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Envelope[]> {
-    return decryptList(this.api.get<ApiRow[]>('/envelopes'), this.crypto.getMasterKey(), coerceEnvelope);
+    return decryptList(
+      this.api.get<ApiRow[]>('/envelopes'),
+      this.crypto.getMasterKey(),
+      coerceEnvelope,
+    );
   }
 
   getById(id: string): Observable<Envelope> {
-    return decryptOne(this.api.get<ApiRow>(`/envelopes/${id}`), this.crypto.getMasterKey(), coerceEnvelope);
+    return decryptOne(
+      this.api.get<ApiRow>(`/envelopes/${id}`),
+      this.crypto.getMasterKey(),
+      coerceEnvelope,
+    );
   }
 
   create(data: Omit<Envelope, 'id'>): Observable<Envelope> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.post<ApiRow>('/envelopes', body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/envelopes', body),
+    );
   }
 
   update(id: string, data: Partial<Omit<Envelope, 'id'>>): Observable<Envelope> {
-    return mutateEncrypted(data as Record<string, unknown>, CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.put<ApiRow>(`/envelopes/${id}`, body));
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/envelopes/${id}`, body),
+    );
   }
 
-  updateBalance(id: string, amount: number, date: string, note: string | null, envelope: Envelope): Observable<Envelope> {
+  updateBalance(
+    id: string,
+    amount: number,
+    date: string,
+    note: string | null,
+    envelope: Envelope,
+  ): Observable<Envelope> {
     const key = this.crypto.getMasterKey();
 
     // Plaintext: the /balance endpoint updates the balance and records the transaction.
@@ -66,21 +88,36 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
     };
 
     return this.update(id, updatedEnvelope).pipe(
-      switchMap((updated) => this.addTransaction(id, { amount, date, note }).pipe(map(() => updated))),
+      switchMap((updated) =>
+        this.addTransaction(id, { amount, date, note }).pipe(map(() => updated)),
+      ),
     );
   }
 
   getTransactions(envelopeId: string): Observable<EnvelopeTransaction[]> {
-    return decryptList(this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`), this.crypto.getMasterKey());
+    return decryptList(
+      this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`),
+      this.crypto.getMasterKey(),
+    );
   }
 
   getAllTransactions(): Observable<EnvelopeTransaction[]> {
-    return decryptList(this.api.get<ApiRow[]>('/envelopes/transactions/all'), this.crypto.getMasterKey());
+    return decryptList(
+      this.api.get<ApiRow[]>('/envelopes/transactions/all'),
+      this.crypto.getMasterKey(),
+    );
   }
 
-  addTransaction(envelopeId: string, data: { amount: number; date: string; note: string | null }): Observable<EnvelopeTransaction> {
-    return mutateEncrypted(data as Record<string, unknown>, TX_CLEARTEXT_KEYS, this.crypto.getMasterKey(),
-      (body) => this.api.post<ApiRow>(`/envelopes/${envelopeId}/transactions`, body));
+  addTransaction(
+    envelopeId: string,
+    data: { amount: number; date: string; note: string | null },
+  ): Observable<EnvelopeTransaction> {
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      TX_CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>(`/envelopes/${envelopeId}/transactions`, body),
+    );
   }
 
   delete(id: string): Observable<void> {

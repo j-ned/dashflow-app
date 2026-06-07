@@ -59,27 +59,27 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 
 ### 💰 Budget
 
-| Fonctionnalité | Détails |
-|---------------|---------|
-| **Compte bancaire** | Revenus, prélèvements, charges annuelles, dépenses, solde restant |
-| **Enveloppes virtuelles** | Épargne, vacances, équipement, impôts — progression et objectifs |
-| **Prêts & Dettes** | Suivi des emprunts, remboursements, historique complet |
-| **Entrées récurrentes** | Charges mensuelles et annuelles par membre du foyer |
-| **Archives salaires** | Fiches de paie historisées (stockage S3 chiffré) |
-| **Statistiques** | KPIs, évolution 12 mois, répartition, projections |
+| Fonctionnalité            | Détails                                                           |
+| ------------------------- | ----------------------------------------------------------------- |
+| **Compte bancaire**       | Revenus, prélèvements, charges annuelles, dépenses, solde restant |
+| **Enveloppes virtuelles** | Épargne, vacances, équipement, impôts — progression et objectifs  |
+| **Prêts & Dettes**        | Suivi des emprunts, remboursements, historique complet            |
+| **Entrées récurrentes**   | Charges mensuelles et annuelles par membre du foyer               |
+| **Archives salaires**     | Fiches de paie historisées (stockage S3 chiffré)                  |
+| **Statistiques**          | KPIs, évolution 12 mois, répartition, projections                 |
 
 ### 🏥 Médical
 
-| Fonctionnalité | Détails |
-|---------------|---------|
+| Fonctionnalité          | Détails                                                       |
+| ----------------------- | ------------------------------------------------------------- |
 | **Vue globale famille** | Dashboard par membre : RDV, ordonnances, médicaments, alertes |
-| **Patients** | Profils santé complets par membre de la famille |
-| **Praticiens** | Carnet de contacts médicaux avec spécialités |
-| **Médicaments** | Stocks, posologies, alertes d'épuisement |
-| **Documents** | Bilans sanguins, certificats, carnets de vaccination |
-| **Rendez-vous** | Planning des consultations par patient et praticien |
-| **Ordonnances** | Prescriptions actives et expirées |
-| **Alertes** | Notifications stock bas et rappels automatiques |
+| **Patients**            | Profils santé complets par membre de la famille               |
+| **Praticiens**          | Carnet de contacts médicaux avec spécialités                  |
+| **Médicaments**         | Stocks, posologies, alertes d'épuisement                      |
+| **Documents**           | Bilans sanguins, certificats, carnets de vaccination          |
+| **Rendez-vous**         | Planning des consultations par patient et praticien           |
+| **Ordonnances**         | Prescriptions actives et expirées                             |
+| **Alertes**             | Notifications stock bas et rappels automatiques               |
 
 ### ⚙️ Transversal
 
@@ -274,7 +274,6 @@ docker run -p 80:80 dashflow-front
 ```
 
 > Le déploiement prod complet (proxy `/api` → NestJS) sera configuré dans Dokploy avec 2 services séparés.
-
 
 ---
 

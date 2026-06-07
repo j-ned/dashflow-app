@@ -5,15 +5,35 @@ import { PendingCharge } from '../../../domain/pending-charge';
 
 function charge(id: string, amount: number): PendingCharge {
   return {
-    entry: { id, accountId: 'a', label: 'Loyer', amount, type: 'expense', dayOfMonth: 5, date: null, endDate: null, toAccountId: null, category: null, memberId: null, payslipKey: null } as PendingCharge['entry'],
-    direction: 'expense', suggestedDate: '2026-06-05', suggestedAmount: amount,
+    entry: {
+      id,
+      accountId: 'a',
+      label: 'Loyer',
+      amount,
+      type: 'expense',
+      dayOfMonth: 5,
+      date: null,
+      endDate: null,
+      toAccountId: null,
+      category: null,
+      memberId: null,
+      payslipKey: null,
+    } as PendingCharge['entry'],
+    direction: 'expense',
+    suggestedDate: '2026-06-05',
+    suggestedAmount: amount,
   };
 }
 
 describe('PendingChargesPanel', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
-      imports: [TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } })],
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
     });
   });
 
@@ -24,11 +44,13 @@ describe('PendingChargesPanel', () => {
     fixture.detectChanges();
     let emitted: { id: string; amount: number } | undefined;
     fixture.componentInstance.confirm.subscribe((e) => (emitted = e));
-    (fixture.nativeElement.querySelector('[data-testid="confirm-r1"]') as HTMLButtonElement).click();
+    (
+      fixture.nativeElement.querySelector('[data-testid="confirm-r1"]') as HTMLButtonElement
+    ).click();
     expect(emitted).toEqual({ id: 'r1', amount: 800 });
   });
 
-  it('émet ignore avec l\'id', () => {
+  it("émet ignore avec l'id", () => {
     const fixture = TestBed.createComponent(PendingChargesPanel);
     fixture.componentRef.setInput('charges', [charge('r1', 800)]);
     fixture.componentRef.setInput('accountNameById', () => null);

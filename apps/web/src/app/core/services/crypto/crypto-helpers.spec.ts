@@ -38,11 +38,10 @@ describe('text encrypt/decrypt', () => {
   let key: CryptoKey;
 
   beforeAll(async () => {
-    key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['encrypt', 'decrypt'],
-    );
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   });
 
   it('should roundtrip plaintext', async () => {
@@ -73,11 +72,10 @@ describe('buffer encrypt/decrypt', () => {
   let key: CryptoKey;
 
   beforeAll(async () => {
-    key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['encrypt', 'decrypt'],
-    );
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   });
 
   it('should roundtrip binary data', async () => {

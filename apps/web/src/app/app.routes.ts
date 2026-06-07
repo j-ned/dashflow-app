@@ -8,15 +8,15 @@ export const routes: Routes = [
     path: '',
     pathMatch: 'full',
     canMatch: [guestGuard],
-    loadComponent: () => import('./pages/landing/landing').then(m => m.LandingComponent),
+    loadComponent: () => import('./pages/landing/landing').then((m) => m.LandingComponent),
   },
   {
     path: 'auth',
-    loadChildren: () => import('./features/auth/auth.routes').then(m => m.AUTH_ROUTES),
+    loadChildren: () => import('./features/auth/auth.routes').then((m) => m.AUTH_ROUTES),
   },
   {
     path: 'legal',
-    loadComponent: () => import('./pages/legal/legal').then(m => m.LegalComponent),
+    loadComponent: () => import('./pages/legal/legal').then((m) => m.LegalComponent),
   },
   {
     path: '',
@@ -26,17 +26,21 @@ export const routes: Routes = [
       { path: '', redirectTo: 'budget', pathMatch: 'full' },
       {
         path: 'budget',
-        loadComponent: () => import('./layout/budget-layout/budget-layout').then(m => m.BudgetLayout),
-        loadChildren: () => import('./features/budget/budget.routes').then(m => m.BUDGET_ROUTES),
+        loadComponent: () =>
+          import('./layout/budget-layout/budget-layout').then((m) => m.BudgetLayout),
+        loadChildren: () => import('./features/budget/budget.routes').then((m) => m.BUDGET_ROUTES),
       },
       {
         path: 'medical',
-        loadComponent: () => import('./layout/medical-layout/medical-layout').then(m => m.MedicalLayout),
-        loadChildren: () => import('./features/medical/medical.routes').then(m => m.MEDICAL_ROUTES),
+        loadComponent: () =>
+          import('./layout/medical-layout/medical-layout').then((m) => m.MedicalLayout),
+        loadChildren: () =>
+          import('./features/medical/medical.routes').then((m) => m.MEDICAL_ROUTES),
       },
       {
         path: 'settings',
-        loadChildren: () => import('./features/settings/settings.routes').then(m => m.SETTINGS_ROUTES),
+        loadChildren: () =>
+          import('./features/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
       },
     ],
   },

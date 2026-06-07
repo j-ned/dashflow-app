@@ -24,45 +24,71 @@ type CreditFormShape = {
 
         <div>
           <label for="credit-amount" class="form-label">
-            {{ 'budget.envelope.creditForm.amount' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'budget.envelope.creditForm.amount' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <p class="text-xs mb-2 text-text-muted">{{ 'budget.envelope.creditForm.amountHint' | transloco }}</p>
-          <input id="credit-amount" type="number" formControlName="amount" step="0.01" aria-required="true"
-                 class="form-input mono" />
+          <p class="text-xs mb-2 text-text-muted">
+            {{ 'budget.envelope.creditForm.amountHint' | transloco }}
+          </p>
+          <input
+            id="credit-amount"
+            type="number"
+            formControlName="amount"
+            step="0.01"
+            aria-required="true"
+            class="form-input mono"
+          />
           @if (form.controls.amount.touched && form.controls.amount.errors?.['required']) {
-            <small class="error" role="alert">{{ 'budget.errors.amountRequired' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'budget.errors.amountRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
-          <label for="credit-date" class="form-label">{{ 'budget.envelope.creditForm.date' | transloco }}</label>
+          <label for="credit-date" class="form-label">{{
+            'budget.envelope.creditForm.date' | transloco
+          }}</label>
           <input id="credit-date" type="date" formControlName="date" class="form-input" />
         </div>
 
         <div>
-          <label for="credit-note" class="form-label">{{ 'budget.envelope.creditForm.note' | transloco }}</label>
-          <input id="credit-note" type="text" formControlName="note" maxlength="255"
-                 [placeholder]="'budget.envelope.creditForm.notePlaceholder' | transloco" class="form-input" />
+          <label for="credit-note" class="form-label">{{
+            'budget.envelope.creditForm.note' | transloco
+          }}</label>
+          <input
+            id="credit-note"
+            type="text"
+            formControlName="note"
+            maxlength="255"
+            [placeholder]="'budget.envelope.creditForm.notePlaceholder' | transloco"
+            class="form-input"
+          />
         </div>
 
         @if (accounts().length > 0) {
           <div>
-            <label for="credit-account" class="form-label">{{ 'budget.envelope.creditForm.deductFromAccount' | transloco }}</label>
+            <label for="credit-account" class="form-label">{{
+              'budget.envelope.creditForm.deductFromAccount' | transloco
+            }}</label>
             <select id="credit-account" formControlName="accountId" class="form-select">
               <option value="">{{ 'budget.envelope.creditForm.noDeduction' | transloco }}</option>
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }}</option>
               }
             </select>
-            <p class="text-xs mt-1 text-text-muted">{{ 'budget.envelope.creditForm.deductionHint' | transloco }}</p>
+            <p class="text-xs mt-1 text-text-muted">
+              {{ 'budget.envelope.creditForm.deductionHint' | transloco }}
+            </p>
           </div>
         }
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit bg-ib-blue">
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">
+          {{ 'common.cancel' | transloco }}
+        </button>
+        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-blue">
           {{ 'budget.actions.validate' | transloco }}
         </button>
       </footer>
@@ -71,7 +97,12 @@ type CreditFormShape = {
 })
 export class CreditEnvelopeForm {
   readonly accounts = input<BankAccount[]>([]);
-  readonly submitted = output<{ amount: number; date: string; note: string | null; accountId: string | null }>();
+  readonly submitted = output<{
+    amount: number;
+    date: string;
+    note: string | null;
+    accountId: string | null;
+  }>();
   readonly cancelled = output<void>();
 
   protected readonly form = new FormGroup<CreditFormShape>({
@@ -95,6 +126,11 @@ export class CreditEnvelopeForm {
       note: v.note.trim() || null,
       accountId: v.accountId || null,
     });
-    this.form.reset({ amount: 0, date: new Date().toISOString().slice(0, 10), note: '', accountId: '' });
+    this.form.reset({
+      amount: 0,
+      date: new Date().toISOString().slice(0, 10),
+      note: '',
+      accountId: '',
+    });
   }
 }

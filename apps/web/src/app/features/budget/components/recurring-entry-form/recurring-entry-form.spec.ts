@@ -6,7 +6,10 @@ function mount() {
   TestBed.configureTestingModule({
     imports: [
       RecurringEntryForm,
-      TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } }),
+      TranslocoTestingModule.forRoot({
+        langs: {},
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+      }),
     ],
   });
   const fixture = TestBed.createComponent(RecurringEntryForm);
@@ -16,10 +19,17 @@ function mount() {
 }
 
 describe('RecurringEntryForm — autoPost', () => {
-  it('émet autoPost=true et fige autoPostSince au mois courant à l\'activation', () => {
+  it("émet autoPost=true et fige autoPostSince au mois courant à l'activation", () => {
     const fixture = mount();
     const cmp = fixture.componentInstance as unknown as {
-      form: { controls: { label: { setValue: (v: string) => void }; amount: { setValue: (v: number) => void }; dayOfMonth: { setValue: (v: number) => void }; autoPost: { setValue: (v: boolean) => void } } };
+      form: {
+        controls: {
+          label: { setValue: (v: string) => void };
+          amount: { setValue: (v: number) => void };
+          dayOfMonth: { setValue: (v: number) => void };
+          autoPost: { setValue: (v: boolean) => void };
+        };
+      };
       submit: () => void;
     };
     let emitted: { autoPost: boolean; autoPostSince: string | null } | null = null;
@@ -38,7 +48,13 @@ describe('RecurringEntryForm — autoPost', () => {
   it('émet autoPost=false et autoPostSince=null quand décoché', () => {
     const fixture = mount();
     const cmp = fixture.componentInstance as unknown as {
-      form: { controls: { label: { setValue: (v: string) => void }; amount: { setValue: (v: number) => void }; dayOfMonth: { setValue: (v: number) => void } } };
+      form: {
+        controls: {
+          label: { setValue: (v: string) => void };
+          amount: { setValue: (v: number) => void };
+          dayOfMonth: { setValue: (v: number) => void };
+        };
+      };
       submit: () => void;
     };
     let emitted: { autoPost: boolean; autoPostSince: string | null } | null = null;

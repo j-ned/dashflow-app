@@ -15,9 +15,21 @@ type PractitionerFormShape = {
 };
 
 const PRACTITIONER_TYPES: PractitionerType[] = [
-  'generaliste', 'pediatre', 'psychiatre', 'neurologue', 'ophtalmologue',
-  'dentiste', 'orthodontiste', 'orthophoniste', 'psychologue', 'psychomotricien',
-  'ergotherapeute', 'kinesitherapeute', 'dermatologue', 'cardiologue', 'autre',
+  'generaliste',
+  'pediatre',
+  'psychiatre',
+  'neurologue',
+  'ophtalmologue',
+  'dentiste',
+  'orthodontiste',
+  'orthophoniste',
+  'psychologue',
+  'psychomotricien',
+  'ergotherapeute',
+  'kinesitherapeute',
+  'dermatologue',
+  'cardiologue',
+  'autre',
 ];
 
 @Component({
@@ -28,64 +40,114 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ (initial() ? 'medical.practitioner.form.legendEdit' : 'medical.practitioner.form.legendCreate') | transloco }}</legend>
+        <legend class="sr-only">
+          {{
+            (initial()
+              ? 'medical.practitioner.form.legendEdit'
+              : 'medical.practitioner.form.legendCreate'
+            ) | transloco
+          }}
+        </legend>
 
         <div>
           <label for="pract-name" class="form-label">
-            {{ 'medical.practitioner.form.name' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.practitioner.form.name' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="pract-name" type="text" formControlName="name" aria-required="true"
-                 class="form-input" />
+          <input
+            id="pract-name"
+            type="text"
+            formControlName="name"
+            aria-required="true"
+            class="form-input"
+          />
           @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <small class="error" role="alert">{{ 'medical.practitioner.form.nameRequired' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'medical.practitioner.form.nameRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
           <label for="pract-type" class="form-label">
-            {{ 'medical.practitioner.form.type' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.practitioner.form.type' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select id="pract-type" formControlName="type" aria-required="true"
-                  class="form-select">
+          <select id="pract-type" formControlName="type" aria-required="true" class="form-select">
             @for (entry of practitionerTypes; track entry) {
-              <option [value]="entry">{{ ('medical.practitioner.types.' + entry) | transloco }}</option>
+              <option [value]="entry">
+                {{ 'medical.practitioner.types.' + entry | transloco }}
+              </option>
             }
           </select>
         </div>
 
         <div>
-          <label for="pract-phone" class="form-label">{{ 'medical.practitioner.form.phone' | transloco }}</label>
-          <input id="pract-phone" type="tel" formControlName="phone" autocomplete="tel"
-                 class="form-input" />
+          <label for="pract-phone" class="form-label">{{
+            'medical.practitioner.form.phone' | transloco
+          }}</label>
+          <input
+            id="pract-phone"
+            type="tel"
+            formControlName="phone"
+            autocomplete="tel"
+            class="form-input"
+          />
         </div>
 
         <div>
-          <label for="pract-email" class="form-label">{{ 'medical.practitioner.form.email' | transloco }}</label>
-          <input id="pract-email" type="email" formControlName="email" autocomplete="email"
-                 class="form-input" />
+          <label for="pract-email" class="form-label">{{
+            'medical.practitioner.form.email' | transloco
+          }}</label>
+          <input
+            id="pract-email"
+            type="email"
+            formControlName="email"
+            autocomplete="email"
+            class="form-input"
+          />
           @if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-            <small class="error" role="alert">{{ 'medical.practitioner.form.emailInvalid' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'medical.practitioner.form.emailInvalid' | transloco
+            }}</small>
           }
         </div>
 
         <div>
-          <label for="pract-address" class="form-label">{{ 'medical.practitioner.form.address' | transloco }}</label>
-          <textarea id="pract-address" formControlName="address" rows="2"
-                    class="form-input"></textarea>
+          <label for="pract-address" class="form-label">{{
+            'medical.practitioner.form.address' | transloco
+          }}</label>
+          <textarea
+            id="pract-address"
+            formControlName="address"
+            rows="2"
+            class="form-input"
+          ></textarea>
         </div>
 
         <div>
-          <label for="pract-booking" class="form-label">{{ 'medical.practitioner.form.bookingUrl' | transloco }}</label>
-          <input id="pract-booking" type="text" formControlName="bookingUrl" placeholder="https://www.doctolib.fr/..."
-                 class="form-input" />
+          <label for="pract-booking" class="form-label">{{
+            'medical.practitioner.form.bookingUrl' | transloco
+          }}</label>
+          <input
+            id="pract-booking"
+            type="text"
+            formControlName="bookingUrl"
+            placeholder="https://www.doctolib.fr/..."
+            class="form-input"
+          />
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit bg-ib-purple">
-          {{ (initial() ? 'medical.practitioner.form.save' : 'medical.practitioner.form.create') | transloco }}
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">
+          {{ 'common.cancel' | transloco }}
+        </button>
+        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+          {{
+            (initial() ? 'medical.practitioner.form.save' : 'medical.practitioner.form.create')
+              | transloco
+          }}
         </button>
       </footer>
     </form>
@@ -100,7 +162,10 @@ export class PractitionerForm {
 
   protected readonly form = new FormGroup<PractitionerFormShape>({
     name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    type: new FormControl<PractitionerType>('generaliste', { nonNullable: true, validators: [Validators.required] }),
+    type: new FormControl<PractitionerType>('generaliste', {
+      nonNullable: true,
+      validators: [Validators.required],
+    }),
     phone: new FormControl('', { nonNullable: true }),
     email: new FormControl('', { nonNullable: true, validators: [Validators.email] }),
     address: new FormControl('', { nonNullable: true }),

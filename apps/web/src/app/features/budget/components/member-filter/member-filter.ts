@@ -27,13 +27,19 @@ import { MemberDisplay } from '../../domain/member-map';
         type="button"
         class="inline-flex items-center gap-2 rounded-full border px-3 py-1 text-xs font-medium transition-colors"
         [style.border-color]="selected() === m.id ? memberMap().get(m.id)?.color : 'var(--border)'"
-        [style.background-color]="selected() === m.id ? memberMap().get(m.id)?.color : 'transparent'"
+        [style.background-color]="
+          selected() === m.id ? memberMap().get(m.id)?.color : 'transparent'
+        "
         [class.text-canvas]="selected() === m.id"
         [class.text-text-muted]="selected() !== m.id"
         (click)="selected.set(m.id)"
       >
-        <span class="inline-block h-2.5 w-2.5 rounded-full"
-              [style.background-color]="selected() === m.id ? 'var(--color-canvas)' : memberMap().get(m.id)?.color"></span>
+        <span
+          class="inline-block h-2.5 w-2.5 rounded-full"
+          [style.background-color]="
+            selected() === m.id ? 'var(--color-canvas)' : memberMap().get(m.id)?.color
+          "
+        ></span>
         {{ m.firstName }}
       </button>
     }

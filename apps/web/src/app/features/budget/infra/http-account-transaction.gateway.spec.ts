@@ -27,7 +27,8 @@ describe('HttpAccountTransactionGateway (plaintext)', () => {
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(), provideHttpClientTesting(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         HttpAccountTransactionGateway,
         { provide: CryptoStore, useValue: { getMasterKey: () => null } },
       ],
@@ -38,19 +39,54 @@ describe('HttpAccountTransactionGateway (plaintext)', () => {
 
   it('coerce amount en number (plaintext)', () => {
     let received: number | undefined;
-    gateway.getForAccount('acc-1').subscribe((txs) => { received = txs[0]?.amount; });
+    gateway.getForAccount('acc-1').subscribe((txs) => {
+      received = txs[0]?.amount;
+    });
     const req = httpMock.expectOne(`${BASE}/bank-accounts/acc-1/transactions`);
-    req.flush([{ id: 't1', accountId: 'acc-1', amount: '12.50', direction: 'expense', toAccountId: null, date: '2026-06-01', category: 'food', note: null, memberId: null, recurringEntryId: null }]);
+    req.flush([
+      {
+        id: 't1',
+        accountId: 'acc-1',
+        amount: '12.50',
+        direction: 'expense',
+        toAccountId: null,
+        date: '2026-06-01',
+        category: 'food',
+        note: null,
+        memberId: null,
+        recurringEntryId: null,
+      },
+    ]);
     httpMock.verify();
     expect(received).toBe(12.5);
   });
 
   it('createBatch poste un tableau (plaintext)', () => {
     let n = 0;
-    gateway.createBatch('acc-1', [
-      { amount: 10, direction: 'expense', toAccountId: null, date: '2026-06-01', category: 'food', note: null, memberId: null, recurringEntryId: null },
-      { amount: 20, direction: 'income', toAccountId: null, date: '2026-06-02', category: null, note: null, memberId: null, recurringEntryId: null },
-    ]).subscribe((rows) => (n = rows.length));
+    gateway
+      .createBatch('acc-1', [
+        {
+          amount: 10,
+          direction: 'expense',
+          toAccountId: null,
+          date: '2026-06-01',
+          category: 'food',
+          note: null,
+          memberId: null,
+          recurringEntryId: null,
+        },
+        {
+          amount: 20,
+          direction: 'income',
+          toAccountId: null,
+          date: '2026-06-02',
+          category: null,
+          note: null,
+          memberId: null,
+          recurringEntryId: null,
+        },
+      ])
+      .subscribe((rows) => (n = rows.length));
     const req = httpMock.expectOne(`${BASE}/bank-accounts/acc-1/transactions/batch`);
     expect(req.request.body.items.length).toBe(2);
     req.flush([{ id: 'a' }, { id: 'b' }]);
@@ -63,16 +99,29 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
   let httpMock: HttpTestingController;
   let key: CryptoKey;
 
-  const CLEARTEXT_KEYS = ['id', 'userId', 'accountId', 'toAccountId', 'direction', 'memberId', 'recurringEntryId', 'createdAt'] as const;
+  const CLEARTEXT_KEYS = [
+    'id',
+    'userId',
+    'accountId',
+    'toAccountId',
+    'direction',
+    'memberId',
+    'recurringEntryId',
+    'createdAt',
+  ] as const;
 
   beforeAll(async () => {
-    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt', 'decrypt']);
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   });
 
   beforeEach(() => {
     TestBed.configureTestingModule({
       providers: [
-        provideHttpClient(), provideHttpClientTesting(),
+        provideHttpClient(),
+        provideHttpClientTesting(),
         HttpAccountTransactionGateway,
         { provide: CryptoStore, useValue: { getMasterKey: () => key } },
       ],
@@ -83,7 +132,16 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
 
   it('chiffre puis déchiffre à la création (E2EE)', async () => {
     const promise = firstValueFrom(
-      gateway.create('acc-1', { amount: 30, direction: 'expense', toAccountId: null, date: '2026-06-02', category: 'food', note: 'courses', memberId: null, recurringEntryId: null }),
+      gateway.create('acc-1', {
+        amount: 30,
+        direction: 'expense',
+        toAccountId: null,
+        date: '2026-06-02',
+        category: 'food',
+        note: 'courses',
+        memberId: null,
+        recurringEntryId: null,
+      }),
     );
 
     const req = await waitForRequest(httpMock, `${BASE}/bank-accounts/acc-1/transactions`);
@@ -91,7 +149,18 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
     expect(req.request.body.amount).toBeUndefined();
 
     const row = await encryptEntity(
-      { id: 't9', accountId: 'acc-1', amount: 30, direction: 'expense', toAccountId: null, date: '2026-06-02', category: 'food', note: 'courses', memberId: null, recurringEntryId: null } as Record<string, unknown>,
+      {
+        id: 't9',
+        accountId: 'acc-1',
+        amount: 30,
+        direction: 'expense',
+        toAccountId: null,
+        date: '2026-06-02',
+        category: 'food',
+        note: 'courses',
+        memberId: null,
+        recurringEntryId: null,
+      } as Record<string, unknown>,
       CLEARTEXT_KEYS,
       key,
     );
@@ -105,8 +174,26 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
   it('chiffre chaque item du batch (E2EE)', async () => {
     const promise = firstValueFrom(
       gateway.createBatch('acc-1', [
-        { amount: 10, direction: 'expense', toAccountId: null, date: '2026-06-01', category: 'food', note: null, memberId: null, recurringEntryId: null },
-        { amount: 20, direction: 'income', toAccountId: null, date: '2026-06-02', category: null, note: null, memberId: null, recurringEntryId: null },
+        {
+          amount: 10,
+          direction: 'expense',
+          toAccountId: null,
+          date: '2026-06-01',
+          category: 'food',
+          note: null,
+          memberId: null,
+          recurringEntryId: null,
+        },
+        {
+          amount: 20,
+          direction: 'income',
+          toAccountId: null,
+          date: '2026-06-02',
+          category: null,
+          note: null,
+          memberId: null,
+          recurringEntryId: null,
+        },
       ]),
     );
 

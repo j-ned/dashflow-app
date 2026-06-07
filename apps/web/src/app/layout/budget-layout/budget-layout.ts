@@ -25,7 +25,9 @@ const BUDGET_NAV: readonly FeatureSidebarItem[] = [
       aria-labelledby="budget-content-heading"
       class="flex-1 flex flex-col overflow-auto bg-canvas p-6"
     >
-      <h1 id="budget-content-heading" class="sr-only">{{ 'layout.budget.contentHeading' | transloco }}</h1>
+      <h1 id="budget-content-heading" class="sr-only">
+        {{ 'layout.budget.contentHeading' | transloco }}
+      </h1>
       <router-outlet />
     </section>
   `,

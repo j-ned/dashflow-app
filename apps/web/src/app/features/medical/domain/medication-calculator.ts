@@ -16,9 +16,8 @@ export function computeMedicationStock(med: Medication, now = new Date()): Medic
   const activeDaysPerWeek = 7 - med.skipDays.length;
 
   // Consumed since startDate (0 if start is in the future)
-  const activeDaysSinceStart = startDate < today
-    ? countActiveDays(startDate, today, med.skipDays)
-    : 0;
+  const activeDaysSinceStart =
+    startDate < today ? countActiveDays(startDate, today, med.skipDays) : 0;
   const consumedQuantity = Math.min(med.quantity, activeDaysSinceStart * med.dailyRate);
   const remainingQuantity = Math.max(0, med.quantity - consumedQuantity);
 
@@ -51,7 +50,11 @@ export function computeMedicationStock(med: Medication, now = new Date()): Medic
     daysRemaining,
     takeDaysRemaining,
     restDaysRemaining,
-    estimatedRunOut: runOutDate.toLocaleDateString('fr-FR', { day: 'numeric', month: 'long', year: 'numeric' }),
+    estimatedRunOut: runOutDate.toLocaleDateString('fr-FR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+    }),
     isLow: daysRemaining <= med.alertDaysBefore,
   };
 }

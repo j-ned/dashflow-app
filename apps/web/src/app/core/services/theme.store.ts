@@ -27,7 +27,7 @@ export class ThemeStore {
   readonly isDark = computed(() => this.resolved() === 'dark');
 
   constructor() {
-    window.matchMedia(SYSTEM_QUERY).addEventListener('change', e => {
+    window.matchMedia(SYSTEM_QUERY).addEventListener('change', (e) => {
       this._systemTheme.set(e.matches ? 'light' : 'dark');
     });
 

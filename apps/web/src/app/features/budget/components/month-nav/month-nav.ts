@@ -17,7 +17,9 @@ import { Icon } from '@shared/components/icon/icon';
     >
       <app-icon name="chevron-right" size="12" class="rotate-180" />
     </button>
-    <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{ label() }}</span>
+    <span class="text-[11px] font-medium text-text-primary min-w-20 text-center">{{
+      label()
+    }}</span>
     <button
       type="button"
       class="rounded p-0.5 text-text-muted transition-colors"

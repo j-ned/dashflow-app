@@ -7,7 +7,6 @@ import { ToastContainer } from '@shared/components/toast/toast';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterOutlet, ToastContainer],
   templateUrl: './app.html',
-  host: { class: 'contents' }
+  host: { class: 'contents' },
 })
-export class AppComponent {
-}
+export class AppComponent {}

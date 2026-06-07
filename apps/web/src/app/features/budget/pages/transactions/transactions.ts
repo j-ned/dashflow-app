@@ -20,7 +20,11 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { CsvImportWizard } from './csv-import-wizard/csv-import-wizard';
 
-type TransactionViewModel = AccountTransaction & { categoryLabel: string; categoryColor: string; isCredit: boolean };
+type TransactionViewModel = AccountTransaction & {
+  categoryLabel: string;
+  categoryColor: string;
+  isCredit: boolean;
+};
 
 @Component({
   selector: 'app-transactions',
@@ -30,51 +34,69 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
   template: `
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-xl font-semibold">{{ 'budget.transactions.title' | transloco }}</h1>
-      <button type="button"
+      <button
+        type="button"
         class="rounded-lg border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
-        (click)="importModalRef().open()">
+        (click)="importModalRef().open()"
+      >
         {{ 'budget.transactions.import.button' | transloco }}
       </button>
     </div>
 
     <div class="flex flex-wrap gap-2 mb-4">
       @for (acc of accounts(); track acc.id) {
-        <button type="button"
+        <button
+          type="button"
           class="px-3 py-1.5 rounded-lg text-sm"
           [class.bg-raised]="selectedId() === acc.id"
-          (click)="selectedId.set(acc.id)">{{ acc.name }}</button>
+          (click)="selectedId.set(acc.id)"
+        >
+          {{ acc.name }}
+        </button>
       }
     </div>
 
     <p class="text-2xl font-bold mb-6" data-testid="confirmed-balance">
       {{ confirmedBalanceValue() | number: '1.2-2' }} €
-      <span class="text-sm font-normal text-text-muted">{{ 'budget.transactions.confirmedBalance' | transloco }}</span>
+      <span class="text-sm font-normal text-text-muted">{{
+        'budget.transactions.confirmedBalance' | transloco
+      }}</span>
     </p>
 
     <!-- Add form -->
     <div class="flex flex-wrap gap-2 mb-6 p-4 bg-raised rounded-xl">
-      <input type="number" min="0" step="0.01"
+      <input
+        type="number"
+        min="0"
+        step="0.01"
         class="w-28 rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [placeholder]="'budget.transactions.amountPlaceholder' | transloco"
         [ngModel]="draftAmount()"
-        (ngModelChange)="draftAmount.set($event)" />
+        (ngModelChange)="draftAmount.set($event)"
+      />
 
-      <select class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
+      <select
+        class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [ngModel]="draftDirection()"
-        (ngModelChange)="draftDirection.set($event)">
+        (ngModelChange)="draftDirection.set($event)"
+      >
         <option value="expense">{{ 'budget.transactions.direction.expense' | transloco }}</option>
         <option value="income">{{ 'budget.transactions.direction.income' | transloco }}</option>
         <option value="transfer">{{ 'budget.transactions.direction.transfer' | transloco }}</option>
       </select>
 
-      <input type="date"
+      <input
+        type="date"
         class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [ngModel]="draftDate()"
-        (ngModelChange)="draftDate.set($event)" />
+        (ngModelChange)="draftDate.set($event)"
+      />
 
-      <select class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
+      <select
+        class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [ngModel]="draftCategory()"
-        (ngModelChange)="draftCategory.set($event)">
+        (ngModelChange)="draftCategory.set($event)"
+      >
         @for (group of categoryGroups; track group.key) {
           <optgroup [label]="group.label">
             @for (cat of group.categories; track cat.key) {
@@ -84,9 +106,13 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
         }
       </select>
 
-      <button type="button"
+      <button
+        type="button"
         class="rounded-lg bg-ib-blue px-4 py-1.5 text-sm font-medium text-canvas"
-        (click)="addTransaction()">{{ 'budget.transactions.add' | transloco }}</button>
+        (click)="addTransaction()"
+      >
+        {{ 'budget.transactions.add' | transloco }}
+      </button>
     </div>
 
     @if (transactions().length === 0) {
@@ -96,28 +122,40 @@ type TransactionViewModel = AccountTransaction & { categoryLabel: string; catego
         @for (t of transactions(); track t.id) {
           <li class="flex items-center justify-between py-2">
             <span>
-              <span class="inline-block w-2 h-2 rounded-full mr-2" [style.background]="t.categoryColor"></span>
+              <span
+                class="inline-block w-2 h-2 rounded-full mr-2"
+                [style.background]="t.categoryColor"
+              ></span>
               {{ t.date }} — {{ t.note || t.categoryLabel }}
             </span>
             <span class="flex items-center gap-3">
               <span [class.text-ib-green]="t.isCredit">
                 {{ t.isCredit ? '+' : '−' }}{{ t.amount | number: '1.2-2' }} €
               </span>
-              <button type="button"
+              <button
+                type="button"
                 class="text-xs text-text-muted hover:text-ib-red transition-colors"
-                (click)="removeTransaction(t.id)">{{ 'budget.transactions.delete' | transloco }}</button>
+                (click)="removeTransaction(t.id)"
+              >
+                {{ 'budget.transactions.delete' | transloco }}
+              </button>
             </span>
           </li>
         }
       </ul>
     }
 
-    <app-modal-dialog #importModal [title]="'budget.transactions.import.title' | transloco" size="xl">
+    <app-modal-dialog
+      #importModal
+      [title]="'budget.transactions.import.title' | transloco"
+      size="xl"
+    >
       @if (importModalRef().isOpen()) {
         <app-csv-import-wizard
           [accountId]="currentAccount()?.id ?? ''"
           [existing]="existingForImport()"
-          (imported)="onImported()" />
+          (imported)="onImported()"
+        />
       }
     </app-modal-dialog>
   `,
@@ -139,11 +177,14 @@ export class Transactions {
   protected readonly allTx = this._allTx.asReadonly();
   private _reloadSub?: Subscription;
 
-  constructor() { this.reload(); }
+  constructor() {
+    this.reload();
+  }
 
   private reload(): void {
     this._reloadSub?.unsubscribe();
-    this._reloadSub = this._txGateway.getAll()
+    this._reloadSub = this._txGateway
+      .getAll()
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe((txs) => this._allTx.set(txs));
   }
@@ -163,7 +204,8 @@ export class Transactions {
       .sort((a, b) => (a.date < b.date ? 1 : -1))
       .map((t) => {
         const meta = categoryMeta(t.category);
-        const isCredit = t.direction === 'income' || (t.direction === 'transfer' && t.toAccountId === acc.id);
+        const isCredit =
+          t.direction === 'income' || (t.direction === 'transfer' && t.toAccountId === acc.id);
         return { ...t, categoryLabel: meta.label, categoryColor: meta.color, isCredit };
       });
   });
@@ -184,29 +226,35 @@ export class Transactions {
   protected addTransaction(): void {
     const acc = this._currentAccount();
     if (!acc) return;
-    this._txGateway.create(acc.id, {
-      amount: Math.abs(this.draftAmount()),
-      direction: this.draftDirection(),
-      toAccountId: null,
-      date: this.draftDate(),
-      category: this.draftCategory(),
-      note: null,
-      memberId: null,
-      recurringEntryId: null,
-    }).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => {
-      this.draftAmount.set(0);
-      this.reload();
-    });
+    this._txGateway
+      .create(acc.id, {
+        amount: Math.abs(this.draftAmount()),
+        direction: this.draftDirection(),
+        toAccountId: null,
+        date: this.draftDate(),
+        category: this.draftCategory(),
+        note: null,
+        memberId: null,
+        recurringEntryId: null,
+      })
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe(() => {
+        this.draftAmount.set(0);
+        this.reload();
+      });
   }
 
   protected removeTransaction(id: string): void {
-    this._txGateway.delete(id).pipe(takeUntilDestroyed(this._destroyRef)).subscribe(() => this.reload());
+    this._txGateway
+      .delete(id)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe(() => this.reload());
   }
 
   protected readonly existingForImport = computed(() =>
     this.allTx()
       .filter((t) => t.accountId === (this._currentAccount()?.id ?? ''))
-      .map((t) => ({ date: t.date, amount: t.amount, note: t.note }))
+      .map((t) => ({ date: t.date, amount: t.amount, note: t.note })),
   );
 
   protected onImported(): void {

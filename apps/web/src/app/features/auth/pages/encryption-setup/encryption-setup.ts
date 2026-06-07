@@ -48,87 +48,122 @@ const API_PATHS: Record<string, string> = {
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
-    <article class="w-full max-w-lg rounded-xl border border-border bg-surface p-8 shadow-lg">
-      <header class="mb-6 text-center">
-        <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10">
-          <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-               stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-               class="text-ib-green" aria-hidden="true">
-            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
-          </svg>
-        </div>
-        <h1 class="text-xl font-bold text-text-primary">{{ 'auth.encryptionSetup.title' | transloco }}</h1>
-        <p class="mt-2 text-sm text-text-muted">
-          {{ 'auth.encryptionSetup.subtitle' | transloco }}
-        </p>
-      </header>
-
-      @if (error()) {
-        <p role="alert" class="mb-4 rounded-md bg-ib-red/10 p-3 text-sm text-ib-red">{{ error() }}</p>
-      }
-
-      <div class="flex flex-col gap-4">
-        @switch (step()) {
-          @case ('init') {
-            <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
-              <p class="text-sm font-medium text-ib-amber">{{ 'auth.encryptionSetup.warningTitle' | transloco }}</p>
-              <p class="mt-1 text-sm text-text-primary">
-                {{ 'auth.encryptionSetup.warningBody' | transloco }}
-              </p>
-            </div>
-
-            <button
-              type="button"
-              (click)="startSetup()"
-              [disabled]="loading()"
-              class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+      <article class="w-full max-w-lg rounded-xl border border-border bg-surface p-8 shadow-lg">
+        <header class="mb-6 text-center">
+          <div
+            class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="text-ib-green"
+              aria-hidden="true"
             >
-              {{ (loading() ? 'auth.encryptionSetup.preparing' : 'auth.encryptionSetup.activate') | transloco }}
-            </button>
-          }
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h1 class="text-xl font-bold text-text-primary">
+            {{ 'auth.encryptionSetup.title' | transloco }}
+          </h1>
+          <p class="mt-2 text-sm text-text-muted">
+            {{ 'auth.encryptionSetup.subtitle' | transloco }}
+          </p>
+        </header>
 
-          @case ('migrating') {
-            <div class="flex flex-col items-center gap-4 py-8">
-              <div class="h-8 w-8 animate-spin rounded-full border-2 border-ib-blue border-t-transparent"></div>
-              <p class="text-sm text-text-muted">{{ progressMessage() }}</p>
-              <div class="w-full bg-canvas rounded-full h-2">
-                <div class="bg-ib-blue h-2 rounded-full transition duration-300"
-                     [style.width.%]="progress()"></div>
-              </div>
-            </div>
-          }
+        @if (error()) {
+          <p role="alert" class="mb-4 rounded-md bg-ib-red/10 p-3 text-sm text-ib-red">
+            {{ error() }}
+          </p>
+        }
 
-          @case ('done') {
-            <div class="flex flex-col items-center gap-4 py-4">
-              <div class="flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
-                     class="text-ib-green" aria-hidden="true">
-                  <polyline points="20 6 9 17 4 12"/>
-                </svg>
+        <div class="flex flex-col gap-4">
+          @switch (step()) {
+            @case ('init') {
+              <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
+                <p class="text-sm font-medium text-ib-amber">
+                  {{ 'auth.encryptionSetup.warningTitle' | transloco }}
+                </p>
+                <p class="mt-1 text-sm text-text-primary">
+                  {{ 'auth.encryptionSetup.warningBody' | transloco }}
+                </p>
               </div>
-              <p class="text-sm font-medium text-text-primary">{{ 'auth.encryptionSetup.doneTitle' | transloco }}</p>
+
               <button
                 type="button"
-                (click)="goToDashboard()"
-                class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90"
+                (click)="startSetup()"
+                [disabled]="loading()"
+                class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                {{ 'auth.encryptionSetup.goToDashboard' | transloco }}
+                {{
+                  (loading() ? 'auth.encryptionSetup.preparing' : 'auth.encryptionSetup.activate')
+                    | transloco
+                }}
               </button>
-            </div>
+            }
+
+            @case ('migrating') {
+              <div class="flex flex-col items-center gap-4 py-8">
+                <div
+                  class="h-8 w-8 animate-spin rounded-full border-2 border-ib-blue border-t-transparent"
+                ></div>
+                <p class="text-sm text-text-muted">{{ progressMessage() }}</p>
+                <div class="w-full bg-canvas rounded-full h-2">
+                  <div
+                    class="bg-ib-blue h-2 rounded-full transition duration-300"
+                    [style.width.%]="progress()"
+                  ></div>
+                </div>
+              </div>
+            }
+
+            @case ('done') {
+              <div class="flex flex-col items-center gap-4 py-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-ib-green"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-text-primary">
+                  {{ 'auth.encryptionSetup.doneTitle' | transloco }}
+                </p>
+                <button
+                  type="button"
+                  (click)="goToDashboard()"
+                  class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90"
+                >
+                  {{ 'auth.encryptionSetup.goToDashboard' | transloco }}
+                </button>
+              </div>
+            }
           }
-        }
-      </div>
-    </article>
+        </div>
+      </article>
 
-    <app-recovery-key-modal
-      [recoveryKey]="recoveryKey()"
-      (confirmed$)="onRecoveryKeyConfirmed()"
-    />
+      <app-recovery-key-modal
+        [recoveryKey]="recoveryKey()"
+        (confirmed$)="onRecoveryKeyConfirmed()"
+      />
 
-    <app-encryption-passphrase-modal
-      (passphraseSet)="onPassphraseSet($event)"
-    />
+      <app-encryption-passphrase-modal (passphraseSet)="onPassphraseSet($event)" />
     </main>
   `,
 })
@@ -221,7 +256,11 @@ export class EncryptionSetup {
     try {
       const keyMaterial = this.auth.getKeyMaterial();
       if (keyMaterial) {
-        await this.cryptoStore.unlock(this._password, keyMaterial.salt, keyMaterial.wrappedMasterKey);
+        await this.cryptoStore.unlock(
+          this._password,
+          keyMaterial.salt,
+          keyMaterial.wrappedMasterKey,
+        );
       }
 
       const masterKey = this.cryptoStore.getMasterKey();
@@ -238,7 +277,9 @@ export class EncryptionSetup {
       const total = tableNames.length;
 
       for (const tableName of tableNames) {
-        this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.encryptingTable', { table: tableName }));
+        this.progressMessage.set(
+          this._i18n.translate('auth.encryptionSetup.encryptingTable', { table: tableName }),
+        );
         this.progress.set(Math.round((completed / total) * 100));
 
         try {

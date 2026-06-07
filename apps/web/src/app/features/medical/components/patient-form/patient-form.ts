@@ -20,53 +20,91 @@ type PatientFormShape = {
   template: `
     <form [formGroup]="form" (ngSubmit)="submitForm()">
       <fieldset class="space-y-3">
-        <legend class="sr-only">{{ (initial() ? 'medical.patient.form.legendEdit' : 'medical.patient.form.legendCreate') | transloco }}</legend>
+        <legend class="sr-only">
+          {{
+            (initial() ? 'medical.patient.form.legendEdit' : 'medical.patient.form.legendCreate')
+              | transloco
+          }}
+        </legend>
 
         <div>
           <label for="patient-firstName" class="form-label">
-            {{ 'medical.patient.form.firstName' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.firstName' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="patient-firstName" type="text" formControlName="firstName" aria-required="true"
-                 class="form-input" />
+          <input
+            id="patient-firstName"
+            type="text"
+            formControlName="firstName"
+            aria-required="true"
+            class="form-input"
+          />
           @if (form.controls.firstName.touched && form.controls.firstName.errors?.['required']) {
-            <small class="error" role="alert">{{ 'medical.patient.form.firstNameRequired' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'medical.patient.form.firstNameRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
           <label for="patient-lastName" class="form-label">
-            {{ 'medical.patient.form.lastName' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.lastName' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="patient-lastName" type="text" formControlName="lastName" aria-required="true"
-                 class="form-input" />
+          <input
+            id="patient-lastName"
+            type="text"
+            formControlName="lastName"
+            aria-required="true"
+            class="form-input"
+          />
           @if (form.controls.lastName.touched && form.controls.lastName.errors?.['required']) {
-            <small class="error" role="alert">{{ 'medical.patient.form.lastNameRequired' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'medical.patient.form.lastNameRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
           <label for="patient-birthDate" class="form-label">
-            {{ 'medical.patient.form.birthDate' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.patient.form.birthDate' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="patient-birthDate" type="date" formControlName="birthDate" aria-required="true"
-                 class="form-input" />
+          <input
+            id="patient-birthDate"
+            type="date"
+            formControlName="birthDate"
+            aria-required="true"
+            class="form-input"
+          />
           @if (form.controls.birthDate.touched && form.controls.birthDate.errors?.['required']) {
-            <small class="error" role="alert">{{ 'medical.patient.form.birthDateRequired' | transloco }}</small>
+            <small class="error" role="alert">{{
+              'medical.patient.form.birthDateRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
-          <label for="patient-notes" class="form-label">{{ 'medical.patient.form.notes' | transloco }}</label>
-          <textarea id="patient-notes" formControlName="notes" rows="3"
-                    class="form-input"></textarea>
+          <label for="patient-notes" class="form-label">{{
+            'medical.patient.form.notes' | transloco
+          }}</label>
+          <textarea
+            id="patient-notes"
+            formControlName="notes"
+            rows="3"
+            class="form-input"
+          ></textarea>
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit bg-ib-purple">
-          {{ (initial() ? 'medical.patient.form.save' : 'medical.patient.form.create') | transloco }}
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">
+          {{ 'common.cancel' | transloco }}
+        </button>
+        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+          {{
+            (initial() ? 'medical.patient.form.save' : 'medical.patient.form.create') | transloco
+          }}
         </button>
       </footer>
     </form>

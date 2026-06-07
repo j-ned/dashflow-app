@@ -8,13 +8,49 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 
 describe('Transactions page', () => {
   it('expose le solde confirmé du compte sélectionné', () => {
-    const accounts = [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 100, color: null, dotColor: null }];
+    const accounts = [
+      {
+        id: 'a',
+        name: 'Courant',
+        type: 'courant',
+        initialBalance: 100,
+        color: null,
+        dotColor: null,
+      },
+    ];
     const txs = [
-      { id: 't1', accountId: 'a', amount: 2000, direction: 'income', toAccountId: null, date: '2000-01-01', category: null, note: null, memberId: null, recurringEntryId: null },
-      { id: 't2', accountId: 'a', amount: 500, direction: 'expense', toAccountId: null, date: '2000-01-02', category: null, note: null, memberId: null, recurringEntryId: null },
+      {
+        id: 't1',
+        accountId: 'a',
+        amount: 2000,
+        direction: 'income',
+        toAccountId: null,
+        date: '2000-01-01',
+        category: null,
+        note: null,
+        memberId: null,
+        recurringEntryId: null,
+      },
+      {
+        id: 't2',
+        accountId: 'a',
+        amount: 500,
+        direction: 'expense',
+        toAccountId: null,
+        date: '2000-01-02',
+        category: null,
+        note: null,
+        memberId: null,
+        recurringEntryId: null,
+      },
     ];
     TestBed.configureTestingModule({
-      imports: [TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } })],
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
       providers: [
         provideHttpClient(),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
@@ -28,15 +64,38 @@ describe('Transactions page', () => {
   });
 
   it('crée un mouvement via la gateway puis recharge', () => {
-    const accounts = [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0, color: null, dotColor: null }];
-    const create = vi.fn(() => of({ id: 't9', accountId: 'a', amount: 12, direction: 'expense', toAccountId: null, date: '2026-06-10', category: 'food', note: null, memberId: null, recurringEntryId: null }));
+    const accounts = [
+      { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0, color: null, dotColor: null },
+    ];
+    const create = vi.fn(() =>
+      of({
+        id: 't9',
+        accountId: 'a',
+        amount: 12,
+        direction: 'expense',
+        toAccountId: null,
+        date: '2026-06-10',
+        category: 'food',
+        note: null,
+        memberId: null,
+        recurringEntryId: null,
+      }),
+    );
     const getAll = vi.fn(() => of([]));
     TestBed.configureTestingModule({
-      imports: [TranslocoTestingModule.forRoot({ langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' } })],
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
       providers: [
         provideHttpClient(),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
-        { provide: AccountTransactionGateway, useValue: { getAll, getForAccount: () => of([]), create, delete: () => of(void 0) } },
+        {
+          provide: AccountTransactionGateway,
+          useValue: { getAll, getForAccount: () => of([]), create, delete: () => of(void 0) },
+        },
       ],
     });
     const fixture = TestBed.createComponent(Transactions);
@@ -48,10 +107,20 @@ describe('Transactions page', () => {
       draftCategory: { set: (c: string) => void };
       addTransaction: () => void;
     };
-    cmp.draftAmount.set(12); cmp.draftDirection.set('expense');
-    cmp.draftDate.set('2026-06-10'); cmp.draftCategory.set('food');
+    cmp.draftAmount.set(12);
+    cmp.draftDirection.set('expense');
+    cmp.draftDate.set('2026-06-10');
+    cmp.draftCategory.set('food');
     cmp.addTransaction();
-    expect(create).toHaveBeenCalledWith('a', expect.objectContaining({ amount: 12, direction: 'expense', date: '2026-06-10', category: 'food' }));
+    expect(create).toHaveBeenCalledWith(
+      'a',
+      expect.objectContaining({
+        amount: 12,
+        direction: 'expense',
+        date: '2026-06-10',
+        category: 'food',
+      }),
+    );
     expect(getAll).toHaveBeenCalledTimes(2);
   });
 });

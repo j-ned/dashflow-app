@@ -1,4 +1,12 @@
-export type MedicationType = 'comprime' | 'gelule' | 'sirop' | 'patch' | 'injection' | 'gouttes' | 'creme' | 'autre';
+export type MedicationType =
+  | 'comprime'
+  | 'gelule'
+  | 'sirop'
+  | 'patch'
+  | 'injection'
+  | 'gouttes'
+  | 'creme'
+  | 'autre';
 
 export type Medication = {
   readonly id: string;

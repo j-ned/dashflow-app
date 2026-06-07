@@ -1,4 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, effect, inject, input, linkedSignal, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -34,25 +44,48 @@ type RecurringEntryFormShape = {
         <legend class="sr-only">{{ 'budget.recurringForm.legend' | transloco }}</legend>
 
         <div>
-          <label for="re-label" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.label' | transloco }} <span aria-hidden="true">*</span></label>
-          <input id="re-label" type="text" formControlName="label" aria-required="true"
-                 class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                 [placeholder]="labelPlaceholder()" />
+          <label for="re-label" class="block text-sm font-medium text-text-muted mb-1"
+            >{{ 'budget.recurringForm.label' | transloco }} <span aria-hidden="true">*</span></label
+          >
+          <input
+            id="re-label"
+            type="text"
+            formControlName="label"
+            aria-required="true"
+            class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+            [placeholder]="labelPlaceholder()"
+          />
           @if (form.controls.label.touched && form.controls.label.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'budget.errors.labelRequired' | transloco }}</small>
+            <small class="mt-1 block text-xs text-ib-red" role="alert">{{
+              'budget.errors.labelRequired' | transloco
+            }}</small>
           }
         </div>
 
         <div>
-          <label for="re-amount" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.amount' | transloco }} <span aria-hidden="true">*</span></label>
-          <input id="re-amount" type="number" formControlName="amount" step="0.01" min="0" aria-required="true"
-                 class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                 [placeholder]="'budget.recurringForm.amountPlaceholder' | transloco" />
+          <label for="re-amount" class="block text-sm font-medium text-text-muted mb-1"
+            >{{ 'budget.recurringForm.amount' | transloco }}
+            <span aria-hidden="true">*</span></label
+          >
+          <input
+            id="re-amount"
+            type="number"
+            formControlName="amount"
+            step="0.01"
+            min="0"
+            aria-required="true"
+            class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+            [placeholder]="'budget.recurringForm.amountPlaceholder' | transloco"
+          />
           @if (form.controls.amount.touched) {
             @if (form.controls.amount.errors?.['required']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'budget.errors.amountRequired' | transloco }}</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{
+                'budget.errors.amountRequired' | transloco
+              }}</small>
             } @else if (form.controls.amount.errors?.['min']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">{{ 'budget.errors.amountMin' | transloco }}</small>
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{
+                'budget.errors.amountMin' | transloco
+              }}</small>
             }
           }
         </div>
@@ -62,83 +95,155 @@ type RecurringEntryFormShape = {
           @case ('income') {
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.incomeDay' | transloco }}</label>
-                <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                       [placeholder]="'budget.recurringForm.incomeDayPlaceholder' | transloco" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.incomeDayHint' | transloco }}</p>
+                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">{{
+                  'budget.recurringForm.incomeDay' | transloco
+                }}</label>
+                <input
+                  id="re-day"
+                  type="number"
+                  formControlName="dayOfMonth"
+                  min="1"
+                  max="31"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                  [placeholder]="'budget.recurringForm.incomeDayPlaceholder' | transloco"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.incomeDayHint' | transloco }}
+                </p>
               </div>
               <div>
-                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.exactDate' | transloco }}</label>
-                <input id="re-date" type="date" formControlName="date"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.exactDateHint' | transloco }}</p>
+                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                  'budget.recurringForm.exactDate' | transloco
+                }}</label>
+                <input
+                  id="re-date"
+                  type="date"
+                  formControlName="date"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.exactDateHint' | transloco }}
+                </p>
               </div>
             </div>
           }
           @case ('expense') {
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.expenseDay' | transloco }} <span aria-hidden="true">*</span></label>
-                <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31" aria-required="true"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                       [placeholder]="'budget.recurringForm.expenseDayPlaceholder' | transloco" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.expenseDayHint' | transloco }}</p>
+                <label for="re-day" class="block text-sm font-medium text-text-muted mb-1"
+                  >{{ 'budget.recurringForm.expenseDay' | transloco }}
+                  <span aria-hidden="true">*</span></label
+                >
+                <input
+                  id="re-day"
+                  type="number"
+                  formControlName="dayOfMonth"
+                  min="1"
+                  max="31"
+                  aria-required="true"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                  [placeholder]="'budget.recurringForm.expenseDayPlaceholder' | transloco"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.expenseDayHint' | transloco }}
+                </p>
               </div>
               <div>
-                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.endDate' | transloco }}</label>
-                <input id="re-end-date" type="date" formControlName="endDate"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.endDateHint' | transloco }}</p>
+                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                  'budget.recurringForm.endDate' | transloco
+                }}</label>
+                <input
+                  id="re-end-date"
+                  type="date"
+                  formControlName="endDate"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.endDateHint' | transloco }}
+                </p>
               </div>
             </div>
           }
           @case ('annual_expense') {
             <div class="grid grid-cols-2 gap-4">
               <div>
-                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.annualDate' | transloco }}</label>
-                <input id="re-date" type="date" formControlName="date"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.annualDateHint' | transloco }}</p>
+                <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                  'budget.recurringForm.annualDate' | transloco
+                }}</label>
+                <input
+                  id="re-date"
+                  type="date"
+                  formControlName="date"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.annualDateHint' | transloco }}
+                </p>
               </div>
               <div>
-                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.endDate' | transloco }}</label>
-                <input id="re-end-date" type="date" formControlName="endDate"
-                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.endDateHint' | transloco }}</p>
+                <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                  'budget.recurringForm.endDate' | transloco
+                }}</label>
+                <input
+                  id="re-end-date"
+                  type="date"
+                  formControlName="endDate"
+                  class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                />
+                <p class="mt-1 text-xs text-text-muted">
+                  {{ 'budget.recurringForm.endDateHint' | transloco }}
+                </p>
               </div>
             </div>
           }
           @case ('spending') {
             <div>
-              <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.spendingDate' | transloco }}</label>
-              <input id="re-date" type="date" formControlName="date"
-                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-              <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.spendingDateHint' | transloco }}</p>
+              <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                'budget.recurringForm.spendingDate' | transloco
+              }}</label>
+              <input
+                id="re-date"
+                type="date"
+                formControlName="date"
+                class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+              />
+              <p class="mt-1 text-xs text-text-muted">
+                {{ 'budget.recurringForm.spendingDateHint' | transloco }}
+              </p>
             </div>
           }
           @case ('transfer') {
             <div class="space-y-4">
               <!-- Toggle récurrent / ponctuel -->
               <div>
-                <p class="text-xs font-medium text-text-muted mb-2">{{ 'budget.recurringForm.transferType' | transloco }}</p>
-                <div class="flex rounded-lg border border-border overflow-hidden" role="group" [attr.aria-label]="'budget.recurringForm.transferTypeAria' | transloco">
-                  <button type="button"
-                          class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
-                          [class.bg-ib-purple]="transferMode() === 'recurring'"
-                          [class.text-canvas]="transferMode() === 'recurring'"
-                          [class.text-text-muted]="transferMode() !== 'recurring'"
-                          [attr.aria-pressed]="transferMode() === 'recurring'"
-                          (click)="setTransferMode('recurring')">
+                <p class="text-xs font-medium text-text-muted mb-2">
+                  {{ 'budget.recurringForm.transferType' | transloco }}
+                </p>
+                <div
+                  class="flex rounded-lg border border-border overflow-hidden"
+                  role="group"
+                  [attr.aria-label]="'budget.recurringForm.transferTypeAria' | transloco"
+                >
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                    [class.bg-ib-purple]="transferMode() === 'recurring'"
+                    [class.text-canvas]="transferMode() === 'recurring'"
+                    [class.text-text-muted]="transferMode() !== 'recurring'"
+                    [attr.aria-pressed]="transferMode() === 'recurring'"
+                    (click)="setTransferMode('recurring')"
+                  >
                     {{ 'budget.recurringForm.transferRecurring' | transloco }}
                   </button>
-                  <button type="button"
-                          class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
-                          [class.bg-ib-purple]="transferMode() === 'one_time'"
-                          [class.text-canvas]="transferMode() === 'one_time'"
-                          [class.text-text-muted]="transferMode() !== 'one_time'"
-                          [attr.aria-pressed]="transferMode() === 'one_time'"
-                          (click)="setTransferMode('one_time')">
+                  <button
+                    type="button"
+                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
+                    [class.bg-ib-purple]="transferMode() === 'one_time'"
+                    [class.text-canvas]="transferMode() === 'one_time'"
+                    [class.text-text-muted]="transferMode() !== 'one_time'"
+                    [attr.aria-pressed]="transferMode() === 'one_time'"
+                    (click)="setTransferMode('one_time')"
+                  >
                     {{ 'budget.recurringForm.transferOneTime' | transloco }}
                   </button>
                 </div>
@@ -146,61 +251,119 @@ type RecurringEntryFormShape = {
 
               @if (accounts().length > 0) {
                 <div>
-                  <label for="re-to-account" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.toAccount' | transloco }} <span aria-hidden="true">*</span></label>
-                  <select id="re-to-account" formControlName="toAccountId" aria-required="true"
-                          class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary">
-                    <option value="">{{ 'budget.recurringForm.toAccountChoose' | transloco }}</option>
+                  <label for="re-to-account" class="block text-sm font-medium text-text-muted mb-1"
+                    >{{ 'budget.recurringForm.toAccount' | transloco }}
+                    <span aria-hidden="true">*</span></label
+                  >
+                  <select
+                    id="re-to-account"
+                    formControlName="toAccountId"
+                    aria-required="true"
+                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                  >
+                    <option value="">
+                      {{ 'budget.recurringForm.toAccountChoose' | transloco }}
+                    </option>
                     @for (acc of targetAccounts(); track acc.id) {
                       <option [value]="acc.id">{{ acc.name }}</option>
                     }
                   </select>
-                  <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.toAccountHint' | transloco }}</p>
+                  <p class="mt-1 text-xs text-text-muted">
+                    {{ 'budget.recurringForm.toAccountHint' | transloco }}
+                  </p>
                 </div>
               }
 
               @if (transferMode() === 'recurring') {
                 <div class="grid grid-cols-2 gap-4">
                   <div>
-                    <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.transferDay' | transloco }}</label>
-                    <input id="re-day" type="number" formControlName="dayOfMonth" min="1" max="31"
-                           class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                           [placeholder]="'budget.recurringForm.transferDayPlaceholder' | transloco" />
-                    <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.transferDayHint' | transloco }}</p>
+                    <label for="re-day" class="block text-sm font-medium text-text-muted mb-1">{{
+                      'budget.recurringForm.transferDay' | transloco
+                    }}</label>
+                    <input
+                      id="re-day"
+                      type="number"
+                      formControlName="dayOfMonth"
+                      min="1"
+                      max="31"
+                      class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                      [placeholder]="'budget.recurringForm.transferDayPlaceholder' | transloco"
+                    />
+                    <p class="mt-1 text-xs text-text-muted">
+                      {{ 'budget.recurringForm.transferDayHint' | transloco }}
+                    </p>
                   </div>
                   <div>
-                    <label for="re-end-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.endDate' | transloco }}</label>
-                    <input id="re-end-date" type="date" formControlName="endDate"
-                           class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                    <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.endDateHint' | transloco }}</p>
+                    <label
+                      for="re-end-date"
+                      class="block text-sm font-medium text-text-muted mb-1"
+                      >{{ 'budget.recurringForm.endDate' | transloco }}</label
+                    >
+                    <input
+                      id="re-end-date"
+                      type="date"
+                      formControlName="endDate"
+                      class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                    />
+                    <p class="mt-1 text-xs text-text-muted">
+                      {{ 'budget.recurringForm.endDateHint' | transloco }}
+                    </p>
                   </div>
                 </div>
               } @else {
                 <div>
-                  <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.transferDate' | transloco }}</label>
-                  <input id="re-date" type="date" formControlName="date"
-                         class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary" />
-                  <p class="mt-1 text-xs text-text-muted">{{ 'budget.recurringForm.transferDateHint' | transloco }}</p>
+                  <label for="re-date" class="block text-sm font-medium text-text-muted mb-1">{{
+                    'budget.recurringForm.transferDate' | transloco
+                  }}</label>
+                  <input
+                    id="re-date"
+                    type="date"
+                    formControlName="date"
+                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+                  />
+                  <p class="mt-1 text-xs text-text-muted">
+                    {{ 'budget.recurringForm.transferDateHint' | transloco }}
+                  </p>
                 </div>
               }
             </div>
           }
         }
 
-        @if (activeType() === 'income' || activeType() === 'expense' || activeType() === 'transfer') {
-          <label class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer">
-            <input type="checkbox" formControlName="autoPost" class="mt-0.5 h-4 w-4 accent-ib-green" />
+        @if (
+          activeType() === 'income' || activeType() === 'expense' || activeType() === 'transfer'
+        ) {
+          <label
+            class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              formControlName="autoPost"
+              class="mt-0.5 h-4 w-4 accent-ib-green"
+            />
             <span class="text-sm">
-              <span class="font-medium text-text-primary">{{ 'budget.recurringForm.autoPost' | transloco }}</span>
-              <span class="block text-xs text-text-muted">{{ 'budget.recurringForm.autoPostHint' | transloco }}</span>
+              <span class="font-medium text-text-primary">{{
+                'budget.recurringForm.autoPost' | transloco
+              }}</span>
+              <span class="block text-xs text-text-muted">{{
+                'budget.recurringForm.autoPostHint' | transloco
+              }}</span>
             </span>
           </label>
         }
 
         <div>
-          <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.category' | transloco }}</label>
-          <input id="re-category" type="text" formControlName="category" list="re-category-options"
-                 class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
-                 [placeholder]="'budget.recurringForm.categoryPlaceholder' | transloco" />
+          <label for="re-category" class="block text-sm font-medium text-text-muted mb-1">{{
+            'budget.recurringForm.category' | transloco
+          }}</label>
+          <input
+            id="re-category"
+            type="text"
+            formControlName="category"
+            list="re-category-options"
+            class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+            [placeholder]="'budget.recurringForm.categoryPlaceholder' | transloco"
+          />
           <datalist id="re-category-options">
             @for (cat of categorySuggestions; track cat.key) {
               <option [value]="cat.label"></option>
@@ -210,9 +373,14 @@ type RecurringEntryFormShape = {
 
         @if (members().length > 0) {
           <div>
-            <label for="re-member" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.member' | transloco }}</label>
-            <select id="re-member" formControlName="memberId"
-                    class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary">
+            <label for="re-member" class="block text-sm font-medium text-text-muted mb-1">{{
+              'budget.recurringForm.member' | transloco
+            }}</label>
+            <select
+              id="re-member"
+              formControlName="memberId"
+              class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
+            >
               <option value="">{{ 'budget.recurringForm.memberNone' | transloco }}</option>
               @for (m of members(); track m.id) {
                 <option [value]="m.id">{{ m.firstName }} {{ m.lastName }}</option>
@@ -224,48 +392,71 @@ type RecurringEntryFormShape = {
         <!-- Drag & drop fiche de paie (income only, edit mode) -->
         @if (showPayslipZone()) {
           <div role="group" aria-labelledby="recurring-payslip-label">
-            <span id="recurring-payslip-label" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.payslip' | transloco }}</span>
+            <span
+              id="recurring-payslip-label"
+              class="block text-sm font-medium text-text-muted mb-1"
+              >{{ 'budget.recurringForm.payslip' | transloco }}</span
+            >
 
             @if (hasExistingPayslip() && !_pendingFile()) {
-              <div class="flex items-center justify-between rounded-lg border border-ib-green/30 bg-ib-green/5 px-3 py-2">
+              <div
+                class="flex items-center justify-between rounded-lg border border-ib-green/30 bg-ib-green/5 px-3 py-2"
+              >
                 <div class="flex items-center gap-2 text-sm text-ib-green">
                   <app-icon name="file-text" size="16" />
                   <span>{{ 'budget.recurringForm.payslipAttached' | transloco }}</span>
                 </div>
                 <div class="flex gap-2">
-                  <button type="button"
-                          class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-                          (click)="viewPayslip.emit()">
+                  <button
+                    type="button"
+                    class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+                    (click)="viewPayslip.emit()"
+                  >
                     {{ 'budget.recurringForm.payslipView' | transloco }}
                   </button>
-                  <button type="button"
-                          class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                          (click)="removePayslip.emit()">
+                  <button
+                    type="button"
+                    class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                    (click)="removePayslip.emit()"
+                  >
                     {{ 'budget.recurringForm.payslipRemove' | transloco }}
                   </button>
                 </div>
               </div>
             } @else {
-              <div class="relative rounded-lg border-2 border-dashed transition-colors"
-                   [class.border-ib-cyan]="isDragging()"
-                   [class.bg-ib-cyan-5]="isDragging()"
-                   [class.border-border]="!isDragging()"
-                   (dragover)="onDragOver($event)"
-                   (dragleave)="onDragLeave()"
-                   (drop)="onDrop($event)">
-                <input type="file"
-                       accept=".pdf,.jpg,.jpeg,.png,.webp"
-                       class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                       (change)="onFileInput($event)" />
+              <div
+                class="relative rounded-lg border-2 border-dashed transition-colors"
+                [class.border-ib-cyan]="isDragging()"
+                [class.bg-ib-cyan-5]="isDragging()"
+                [class.border-border]="!isDragging()"
+                (dragover)="onDragOver($event)"
+                (dragleave)="onDragLeave()"
+                (drop)="onDrop($event)"
+              >
+                <input
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.webp"
+                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                  (change)="onFileInput($event)"
+                />
                 <div class="flex flex-col items-center py-6 pointer-events-none">
                   @if (_pendingFile()) {
                     <app-icon name="file-text" size="24" class="text-ib-green mb-1" />
                     <p class="text-sm font-medium text-ib-green">{{ _pendingFile()!.name }}</p>
-                    <p class="text-xs text-text-muted mt-0.5">{{ 'budget.recurringForm.fileSizeKb' | transloco: { size: ((_pendingFile()!.size / 1024) | number:'1.0-0') } }}</p>
+                    <p class="text-xs text-text-muted mt-0.5">
+                      {{
+                        'budget.recurringForm.fileSizeKb'
+                          | transloco: { size: (_pendingFile()!.size / 1024 | number: '1.0-0') }
+                      }}
+                    </p>
                   } @else {
                     <app-icon name="file-text" size="24" class="text-text-muted mb-1" />
-                    <p class="text-sm text-text-muted">{{ 'budget.recurringForm.payslipDropHint' | transloco }}</p>
-                    <p class="text-xs text-text-muted mt-0.5">{{ 'budget.recurringForm.payslipBrowseHint' | transloco }}</p>
+                    <p class="text-sm text-text-muted">
+                      {{ 'budget.recurringForm.payslipDropHint' | transloco }}
+                    </p>
+                    <p class="text-xs text-text-muted mt-0.5">
+                      {{ 'budget.recurringForm.payslipBrowseHint' | transloco }}
+                    </p>
                   }
                 </div>
               </div>
@@ -275,14 +466,23 @@ type RecurringEntryFormShape = {
       </fieldset>
 
       <footer class="flex justify-end gap-3 pt-2">
-        <button type="button"
-                class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
-                (click)="cancelled.emit()">
+        <button
+          type="button"
+          class="rounded-lg border border-border px-4 py-2 text-sm text-text-muted hover:bg-hover transition-colors"
+          (click)="cancelled.emit()"
+        >
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors disabled:opacity-50">
-          {{ initial() ? ('budget.recurringForm.submitEdit' | transloco) : ('budget.recurringForm.submitAdd' | transloco) }}
+        <button
+          type="submit"
+          [disabled]="isInvalid()"
+          class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors disabled:opacity-50"
+        >
+          {{
+            initial()
+              ? ('budget.recurringForm.submitEdit' | transloco)
+              : ('budget.recurringForm.submitAdd' | transloco)
+          }}
         </button>
       </footer>
     </form>
@@ -304,8 +504,8 @@ export class RecurringEntryForm {
   protected readonly isDragging = signal(false);
   protected readonly _pendingFile = signal<File | null>(null);
 
-  protected readonly activeType = computed(() =>
-    this.forcedType() ?? this.initial()?.type ?? 'expense'
+  protected readonly activeType = computed(
+    () => this.forcedType() ?? this.initial()?.type ?? 'expense',
   );
 
   // Mode virement : détecté depuis les données initiales, overridable par l'utilisateur
@@ -320,7 +520,7 @@ export class RecurringEntryForm {
   // Comptes cibles pour les virements (exclut le compte source)
   protected readonly targetAccounts = computed(() => {
     const sourceId = this.forcedAccountId() ?? this.initial()?.accountId;
-    return this.accounts().filter(a => a.id !== sourceId);
+    return this.accounts().filter((a) => a.id !== sourceId);
   });
 
   protected readonly showPayslipZone = computed(() => {
@@ -338,18 +538,27 @@ export class RecurringEntryForm {
   private readonly _i18n = inject(TranslocoService);
   protected readonly labelPlaceholder = computed(() => {
     switch (this.activeType()) {
-      case 'income': return this._i18n.translate('budget.recurringForm.labelPlaceholderIncome');
-      case 'expense': return this._i18n.translate('budget.recurringForm.labelPlaceholderExpense');
-      case 'annual_expense': return this._i18n.translate('budget.recurringForm.labelPlaceholderAnnual');
-      case 'spending': return this._i18n.translate('budget.recurringForm.labelPlaceholderSpending');
-      case 'transfer': return this._i18n.translate('budget.recurringForm.labelPlaceholderTransfer');
-      default: return this._i18n.translate('budget.recurringForm.labelPlaceholderDefault');
+      case 'income':
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderIncome');
+      case 'expense':
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderExpense');
+      case 'annual_expense':
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderAnnual');
+      case 'spending':
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderSpending');
+      case 'transfer':
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderTransfer');
+      default:
+        return this._i18n.translate('budget.recurringForm.labelPlaceholderDefault');
     }
   });
 
   protected readonly form = new FormGroup<RecurringEntryFormShape>({
     label: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    amount: new FormControl(0, { nonNullable: true, validators: [Validators.required, Validators.min(0.01)] }),
+    amount: new FormControl(0, {
+      nonNullable: true,
+      validators: [Validators.required, Validators.min(0.01)],
+    }),
     type: new FormControl<RecurringEntryType>('expense', { nonNullable: true }),
     dayOfMonth: new FormControl<number | null>(null),
     date: new FormControl('', { nonNullable: true }),

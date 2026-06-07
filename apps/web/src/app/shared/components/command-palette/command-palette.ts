@@ -74,25 +74,30 @@ function fuzzyScore(query: string, target: string): number {
   },
   template: `
     <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native <dialog>: Échap et focus-trap gérés par showModal(), le click ne fait que backdrop-close -->
-    <dialog #dialog
-            class="command-palette"
-            (click)="onBackdropClick($event)"
-            (close)="onDialogClose()">
+    <dialog
+      #dialog
+      class="command-palette"
+      (click)="onBackdropClick($event)"
+      (close)="onDialogClose()"
+    >
       <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- stopPropagation seul, pas un contrôle interactif -->
       <div class="command-panel" (click)="$event.stopPropagation()">
-
         <div class="flex items-center gap-3 px-4 py-3 border-b border-border">
           <app-icon name="search" size="18" class="text-text-muted shrink-0" />
-          <input #searchInput
-                 type="text"
-                 class="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
-                 [placeholder]="'shared.commandPalette.placeholder' | transloco"
-                 [value]="query()"
-                 (input)="onInput($event)"
-                 (keydown)="onKeydown($event)"
-                 autocomplete="off"
-                 spellcheck="false" />
-          <kbd class="hidden sm:inline-flex items-center gap-0.5 rounded border border-border bg-raised px-1.5 py-0.5 text-[10px] font-mono text-text-muted">
+          <input
+            #searchInput
+            type="text"
+            class="flex-1 bg-transparent text-sm text-text-primary placeholder:text-text-muted outline-none"
+            [placeholder]="'shared.commandPalette.placeholder' | transloco"
+            [value]="query()"
+            (input)="onInput($event)"
+            (keydown)="onKeydown($event)"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <kbd
+            class="hidden sm:inline-flex items-center gap-0.5 rounded border border-border bg-raised px-1.5 py-0.5 text-[10px] font-mono text-text-muted"
+          >
             {{ 'shared.commandPalette.esc' | transloco }}
           </kbd>
         </div>
@@ -101,16 +106,20 @@ function fuzzyScore(query: string, target: string): number {
           @if (grouped().length > 0) {
             @for (group of grouped(); track group.category) {
               <div class="mb-1 last:mb-0">
-                <p class="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                <p
+                  class="px-2 pt-2 pb-1 text-[10px] font-semibold uppercase tracking-wider text-text-muted"
+                >
                   {{ group.label }}
                 </p>
                 @for (cmd of group.commands; track cmd.id) {
-                  <button type="button"
-                          [attr.data-cmd-id]="cmd.id"
-                          class="command-item"
-                          [class.command-item--active]="cmd.id === activeId()"
-                          (mouseenter)="activeId.set(cmd.id)"
-                          (click)="executeCommand(cmd)">
+                  <button
+                    type="button"
+                    [attr.data-cmd-id]="cmd.id"
+                    class="command-item"
+                    [class.command-item--active]="cmd.id === activeId()"
+                    (mouseenter)="activeId.set(cmd.id)"
+                    (click)="executeCommand(cmd)"
+                  >
                     <app-icon [name]="cmd.icon" size="16" class="shrink-0" />
                     <span class="truncate">{{ cmd.labelKey | transloco }}</span>
                   </button>
@@ -124,10 +133,13 @@ function fuzzyScore(query: string, target: string): number {
           }
         </div>
 
-        <div class="flex items-center justify-between gap-4 border-t border-border px-4 py-2 text-[10px] text-text-muted">
+        <div
+          class="flex items-center justify-between gap-4 border-t border-border px-4 py-2 text-[10px] text-text-muted"
+        >
           <div class="flex items-center gap-3">
             <span class="inline-flex items-center gap-1">
-              <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd> {{ 'shared.commandPalette.navigate' | transloco }}
+              <kbd class="kbd">↑</kbd><kbd class="kbd">↓</kbd>
+              {{ 'shared.commandPalette.navigate' | transloco }}
             </span>
             <span class="inline-flex items-center gap-1">
               <kbd class="kbd">↵</kbd> {{ 'shared.commandPalette.open' | transloco }}
@@ -164,13 +176,23 @@ function fuzzyScore(query: string, target: string): number {
     }
 
     @keyframes cp-fade-in {
-      from { opacity: 0; transform: scale(0.96) translateY(-8px); }
-      to   { opacity: 1; transform: scale(1) translateY(0); }
+      from {
+        opacity: 0;
+        transform: scale(0.96) translateY(-8px);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+      }
     }
 
     @keyframes cp-backdrop-in {
-      from { opacity: 0; }
-      to   { opacity: 1; }
+      from {
+        opacity: 0;
+      }
+      to {
+        opacity: 1;
+      }
     }
 
     .command-panel {
@@ -238,26 +260,147 @@ export class CommandPalette {
   // ── Commands registry ──
 
   private readonly commands: Command[] = [
-    { id: 'nav-budget',       labelKey: 'shared.commandPalette.commands.navBudget',         category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard budget vue globale tableau de bord overview',  action: () => this.go('/budget/dashboard') },
-    { id: 'nav-envelopes',    labelKey: 'shared.commandPalette.commands.navEnvelopes',      category: 'budget',     icon: 'mail',             keywords: 'enveloppes epargne savings envelopes',                   action: () => this.go('/budget/envelopes') },
-    { id: 'nav-loans',        labelKey: 'shared.commandPalette.commands.navLoans',          category: 'budget',     icon: 'banknote',         keywords: 'prets dettes loans emprunt rembourser debts',            action: () => this.go('/budget/loans') },
-    { id: 'nav-account',      labelKey: 'shared.commandPalette.commands.navAccount',        category: 'budget',     icon: 'wallet',           keywords: 'compte banque bank account solde',                       action: () => this.go('/budget/account') },
-    { id: 'nav-archives',     labelKey: 'shared.commandPalette.commands.navArchives',       category: 'budget',     icon: 'folder',           keywords: 'archives salaires historique revenus salary fiches paie', action: () => this.go('/budget/archives') },
-    { id: 'nav-analytics',       labelKey: 'shared.commandPalette.commands.navAnalytics',      category: 'budget',     icon: 'trending-up',      keywords: 'statistiques analytics graphiques charts previsions forecast projection', action: () => this.go('/budget/analytics') },
-    { id: 'nav-transactions',    labelKey: 'shared.commandPalette.commands.navTransactions',  category: 'budget',     icon: 'receipt',          keywords: 'releve transactions mouvements historique liste solde confirmed', action: () => this.go('/budget/transactions') },
+    {
+      id: 'nav-budget',
+      labelKey: 'shared.commandPalette.commands.navBudget',
+      category: 'navigation',
+      icon: 'layout-dashboard',
+      keywords: 'dashboard budget vue globale tableau de bord overview',
+      action: () => this.go('/budget/dashboard'),
+    },
+    {
+      id: 'nav-envelopes',
+      labelKey: 'shared.commandPalette.commands.navEnvelopes',
+      category: 'budget',
+      icon: 'mail',
+      keywords: 'enveloppes epargne savings envelopes',
+      action: () => this.go('/budget/envelopes'),
+    },
+    {
+      id: 'nav-loans',
+      labelKey: 'shared.commandPalette.commands.navLoans',
+      category: 'budget',
+      icon: 'banknote',
+      keywords: 'prets dettes loans emprunt rembourser debts',
+      action: () => this.go('/budget/loans'),
+    },
+    {
+      id: 'nav-account',
+      labelKey: 'shared.commandPalette.commands.navAccount',
+      category: 'budget',
+      icon: 'wallet',
+      keywords: 'compte banque bank account solde',
+      action: () => this.go('/budget/account'),
+    },
+    {
+      id: 'nav-archives',
+      labelKey: 'shared.commandPalette.commands.navArchives',
+      category: 'budget',
+      icon: 'folder',
+      keywords: 'archives salaires historique revenus salary fiches paie',
+      action: () => this.go('/budget/archives'),
+    },
+    {
+      id: 'nav-analytics',
+      labelKey: 'shared.commandPalette.commands.navAnalytics',
+      category: 'budget',
+      icon: 'trending-up',
+      keywords: 'statistiques analytics graphiques charts previsions forecast projection',
+      action: () => this.go('/budget/analytics'),
+    },
+    {
+      id: 'nav-transactions',
+      labelKey: 'shared.commandPalette.commands.navTransactions',
+      category: 'budget',
+      icon: 'receipt',
+      keywords: 'releve transactions mouvements historique liste solde confirmed',
+      action: () => this.go('/budget/transactions'),
+    },
 
-    { id: 'nav-medical',      labelKey: 'shared.commandPalette.commands.navMedical',        category: 'navigation', icon: 'layout-dashboard', keywords: 'dashboard medical vue globale sante health overview',    action: () => this.go('/medical/dashboard') },
-    { id: 'nav-patients',     labelKey: 'shared.commandPalette.commands.navPatients',       category: 'medical',    icon: 'users',            keywords: 'patients famille membres enfants family kids',           action: () => this.go('/medical/patients') },
-    { id: 'nav-practitioners', labelKey: 'shared.commandPalette.commands.navPractitioners', category: 'medical',    icon: 'stethoscope',      keywords: 'praticiens medecins docteur dentiste specialiste practitioner doctor', action: () => this.go('/medical/practitioners') },
-    { id: 'nav-appointments', labelKey: 'shared.commandPalette.commands.navAppointments',   category: 'medical',    icon: 'calendar',         keywords: 'rendez-vous rdv consultation visite appointment',         action: () => this.go('/medical/appointments') },
-    { id: 'nav-prescriptions', labelKey: 'shared.commandPalette.commands.navPrescriptions', category: 'medical',    icon: 'file-text',        keywords: 'ordonnances prescriptions documents',                    action: () => this.go('/medical/prescriptions') },
-    { id: 'nav-medications',  labelKey: 'shared.commandPalette.commands.navMedications',    category: 'medical',    icon: 'pill',             keywords: 'medicaments traitements stock pilules medication pills',  action: () => this.go('/medical/medications') },
-    { id: 'nav-documents',    labelKey: 'shared.commandPalette.commands.navDocuments',      category: 'medical',    icon: 'folder',           keywords: 'documents fichiers comptes rendus bilans reports',        action: () => this.go('/medical/documents') },
-    { id: 'nav-reminders',    labelKey: 'shared.commandPalette.commands.navReminders',      category: 'medical',    icon: 'bell',             keywords: 'alertes rappels notifications reminders',                action: () => this.go('/medical/reminders') },
+    {
+      id: 'nav-medical',
+      labelKey: 'shared.commandPalette.commands.navMedical',
+      category: 'navigation',
+      icon: 'layout-dashboard',
+      keywords: 'dashboard medical vue globale sante health overview',
+      action: () => this.go('/medical/dashboard'),
+    },
+    {
+      id: 'nav-patients',
+      labelKey: 'shared.commandPalette.commands.navPatients',
+      category: 'medical',
+      icon: 'users',
+      keywords: 'patients famille membres enfants family kids',
+      action: () => this.go('/medical/patients'),
+    },
+    {
+      id: 'nav-practitioners',
+      labelKey: 'shared.commandPalette.commands.navPractitioners',
+      category: 'medical',
+      icon: 'stethoscope',
+      keywords: 'praticiens medecins docteur dentiste specialiste practitioner doctor',
+      action: () => this.go('/medical/practitioners'),
+    },
+    {
+      id: 'nav-appointments',
+      labelKey: 'shared.commandPalette.commands.navAppointments',
+      category: 'medical',
+      icon: 'calendar',
+      keywords: 'rendez-vous rdv consultation visite appointment',
+      action: () => this.go('/medical/appointments'),
+    },
+    {
+      id: 'nav-prescriptions',
+      labelKey: 'shared.commandPalette.commands.navPrescriptions',
+      category: 'medical',
+      icon: 'file-text',
+      keywords: 'ordonnances prescriptions documents',
+      action: () => this.go('/medical/prescriptions'),
+    },
+    {
+      id: 'nav-medications',
+      labelKey: 'shared.commandPalette.commands.navMedications',
+      category: 'medical',
+      icon: 'pill',
+      keywords: 'medicaments traitements stock pilules medication pills',
+      action: () => this.go('/medical/medications'),
+    },
+    {
+      id: 'nav-documents',
+      labelKey: 'shared.commandPalette.commands.navDocuments',
+      category: 'medical',
+      icon: 'folder',
+      keywords: 'documents fichiers comptes rendus bilans reports',
+      action: () => this.go('/medical/documents'),
+    },
+    {
+      id: 'nav-reminders',
+      labelKey: 'shared.commandPalette.commands.navReminders',
+      category: 'medical',
+      icon: 'bell',
+      keywords: 'alertes rappels notifications reminders',
+      action: () => this.go('/medical/reminders'),
+    },
 
-    { id: 'nav-settings',     labelKey: 'shared.commandPalette.commands.navSettings',       category: 'navigation', icon: 'settings',         keywords: 'parametres reglages profil compte settings',             action: () => this.go('/settings') },
+    {
+      id: 'nav-settings',
+      labelKey: 'shared.commandPalette.commands.navSettings',
+      category: 'navigation',
+      icon: 'settings',
+      keywords: 'parametres reglages profil compte settings',
+      action: () => this.go('/settings'),
+    },
 
-    { id: 'act-logout',       labelKey: 'shared.commandPalette.commands.actLogout',         category: 'action',     icon: 'log-out',          keywords: 'deconnexion logout quitter sortir signout',              action: () => { void this.logout(); } },
+    {
+      id: 'act-logout',
+      labelKey: 'shared.commandPalette.commands.actLogout',
+      category: 'action',
+      icon: 'log-out',
+      keywords: 'deconnexion logout quitter sortir signout',
+      action: () => {
+        void this.logout();
+      },
+    },
   ];
 
   // ── Filtered + grouped ──
@@ -267,10 +410,13 @@ export class CommandPalette {
     if (!q) return this.commands;
 
     return this.commands
-      .map(cmd => ({ cmd, score: fuzzyScore(q, `${this._i18n.translate(cmd.labelKey)} ${cmd.keywords}`) }))
-      .filter(r => r.score > 0)
+      .map((cmd) => ({
+        cmd,
+        score: fuzzyScore(q, `${this._i18n.translate(cmd.labelKey)} ${cmd.keywords}`),
+      }))
+      .filter((r) => r.score > 0)
       .sort((a, b) => b.score - a.score)
-      .map(r => r.cmd);
+      .map((r) => r.cmd);
   });
 
   protected readonly grouped = computed(() => {
@@ -283,13 +429,11 @@ export class CommandPalette {
       map.set(cmd.category, list);
     }
 
-    return CATEGORY_ORDER
-      .filter(cat => map.has(cat))
-      .map(cat => ({
-        category: cat,
-        label: this._i18n.translate(CATEGORY_LABEL_KEYS[cat]),
-        commands: map.get(cat)!,
-      }));
+    return CATEGORY_ORDER.filter((cat) => map.has(cat)).map((cat) => ({
+      category: cat,
+      label: this._i18n.translate(CATEGORY_LABEL_KEYS[cat]),
+      commands: map.get(cat)!,
+    }));
   });
 
   private readonly flatFiltered = computed(() => this.filtered());
@@ -345,7 +489,7 @@ export class CommandPalette {
     const list = this.flatFiltered();
     if (!list.length) return;
 
-    const currentIdx = list.findIndex(c => c.id === this.activeId());
+    const currentIdx = list.findIndex((c) => c.id === this.activeId());
 
     switch (e.key) {
       case 'ArrowDown': {
@@ -364,7 +508,7 @@ export class CommandPalette {
       }
       case 'Enter': {
         e.preventDefault();
-        const active = list.find(c => c.id === this.activeId());
+        const active = list.find((c) => c.id === this.activeId());
         if (active) this.executeCommand(active);
         break;
       }

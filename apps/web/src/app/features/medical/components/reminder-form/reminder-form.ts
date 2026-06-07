@@ -29,23 +29,32 @@ type ReminderFormShape = {
         <div class="grid grid-cols-2 gap-3">
           <div>
             <label for="rem-type" class="form-label">
-              {{ 'medical.reminder.form.type' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.reminder.form.type' | transloco }}
+              <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="rem-type" formControlName="type" aria-required="true"
-                    class="form-select">
+            <select id="rem-type" formControlName="type" aria-required="true" class="form-select">
               <option value="email">{{ 'medical.reminder.typeEmail' | transloco }}</option>
               <option value="ical">{{ 'medical.reminder.typeIcal' | transloco }}</option>
             </select>
           </div>
           <div>
             <label for="rem-target" class="form-label">
-              {{ 'medical.reminder.form.target' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.reminder.form.target' | transloco }}
+              <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="rem-target" formControlName="target" aria-required="true"
-                    class="form-select"
-                    (change)="onTargetChange()">
-              <option value="medication">{{ 'medical.reminder.targetMedication' | transloco }}</option>
-              <option value="appointment">{{ 'medical.reminder.targetAppointment' | transloco }}</option>
+            <select
+              id="rem-target"
+              formControlName="target"
+              aria-required="true"
+              class="form-select"
+              (change)="onTargetChange()"
+            >
+              <option value="medication">
+                {{ 'medical.reminder.targetMedication' | transloco }}
+              </option>
+              <option value="appointment">
+                {{ 'medical.reminder.targetAppointment' | transloco }}
+              </option>
             </select>
           </div>
         </div>
@@ -53,10 +62,15 @@ type ReminderFormShape = {
         @if (selectedTarget() === 'medication') {
           <div>
             <label for="rem-medication" class="form-label">
-              {{ 'medical.reminder.form.medication' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.reminder.form.medication' | transloco }}
+              <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="rem-medication" formControlName="medicationId" aria-required="true"
-                    class="form-select">
+            <select
+              id="rem-medication"
+              formControlName="medicationId"
+              aria-required="true"
+              class="form-select"
+            >
               <option value="">{{ 'medical.reminder.form.selectPlaceholder' | transloco }}</option>
               @for (m of medications(); track m.id) {
                 <option [value]="m.id">{{ m.name }} ({{ m.dosage }})</option>
@@ -68,10 +82,15 @@ type ReminderFormShape = {
         @if (selectedTarget() === 'appointment') {
           <div>
             <label for="rem-appointment" class="form-label">
-              {{ 'medical.reminder.form.appointment' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+              {{ 'medical.reminder.form.appointment' | transloco }}
+              <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="rem-appointment" formControlName="appointmentId" aria-required="true"
-                    class="form-select">
+            <select
+              id="rem-appointment"
+              formControlName="appointmentId"
+              aria-required="true"
+              class="form-select"
+            >
               <option value="">{{ 'medical.reminder.form.selectPlaceholder' | transloco }}</option>
               @for (a of appointments(); track a.id) {
                 <option [value]="a.id">{{ a.date }} {{ a.time }}</option>
@@ -82,24 +101,35 @@ type ReminderFormShape = {
 
         <div>
           <label for="rem-email" class="form-label">
-            {{ 'medical.reminder.form.recipientEmail' | transloco }} <span aria-hidden="true" class="text-ib-red">*</span>
+            {{ 'medical.reminder.form.recipientEmail' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="rem-email" type="email" formControlName="recipientEmail" aria-required="true"
-                 class="form-input" />
+          <input
+            id="rem-email"
+            type="email"
+            formControlName="recipientEmail"
+            aria-required="true"
+            class="form-input"
+          />
           @if (form.controls.recipientEmail.touched) {
             @if (form.controls.recipientEmail.errors?.['required']) {
-              <small class="error" role="alert">{{ 'medical.reminder.form.emailRequired' | transloco }}</small>
+              <small class="error" role="alert">{{
+                'medical.reminder.form.emailRequired' | transloco
+              }}</small>
             } @else if (form.controls.recipientEmail.errors?.['email']) {
-              <small class="error" role="alert">{{ 'medical.reminder.form.emailInvalid' | transloco }}</small>
+              <small class="error" role="alert">{{
+                'medical.reminder.form.emailInvalid' | transloco
+              }}</small>
             }
           }
         </div>
       </fieldset>
 
       <footer class="form-footer">
-        <button type="button" class="btn-cancel" (click)="cancelled.emit()">{{ 'common.cancel' | transloco }}</button>
-        <button type="submit" [disabled]="isInvalid()"
-                class="btn-submit bg-ib-purple">
+        <button type="button" class="btn-cancel" (click)="cancelled.emit()">
+          {{ 'common.cancel' | transloco }}
+        </button>
+        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
           {{ 'medical.reminder.form.submit' | transloco }}
         </button>
       </footer>
@@ -112,18 +142,30 @@ export class ReminderForm {
   readonly submitted = output<Omit<Reminder, 'id'>>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<ReminderFormShape>({
-    type: new FormControl<ReminderType>('email', { nonNullable: true, validators: [Validators.required] }),
-    target: new FormControl<ReminderTarget>('medication', { nonNullable: true, validators: [Validators.required] }),
-    medicationId: new FormControl('', { nonNullable: true }),
-    appointmentId: new FormControl('', { nonNullable: true }),
-    recipientEmail: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.email] }),
-  }, {
-    validators: [
-      conditionalRequiredValidator('target', 'medication', 'medicationId'),
-      conditionalRequiredValidator('target', 'appointment', 'appointmentId'),
-    ],
-  });
+  protected readonly form = new FormGroup<ReminderFormShape>(
+    {
+      type: new FormControl<ReminderType>('email', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      target: new FormControl<ReminderTarget>('medication', {
+        nonNullable: true,
+        validators: [Validators.required],
+      }),
+      medicationId: new FormControl('', { nonNullable: true }),
+      appointmentId: new FormControl('', { nonNullable: true }),
+      recipientEmail: new FormControl('', {
+        nonNullable: true,
+        validators: [Validators.required, Validators.email],
+      }),
+    },
+    {
+      validators: [
+        conditionalRequiredValidator('target', 'medication', 'medicationId'),
+        conditionalRequiredValidator('target', 'appointment', 'appointmentId'),
+      ],
+    },
+  );
 
   protected readonly selectedTarget = toSignal(
     this.form.controls.target.valueChanges.pipe(startWith(this.form.controls.target.value)),

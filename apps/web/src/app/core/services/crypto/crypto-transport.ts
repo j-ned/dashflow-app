@@ -59,10 +59,16 @@ export function mutateEncrypted<T>(
 }
 
 /** Decrypt a downloaded blob when it was stored encrypted (octet-stream), else pass through. */
-export function decryptBlob(blob$: Observable<Blob>, key: CryptoKey | null, mimeType: string): Observable<Blob> {
+export function decryptBlob(
+  blob$: Observable<Blob>,
+  key: CryptoKey | null,
+  mimeType: string,
+): Observable<Blob> {
   return blob$.pipe(
     switchMap((blob) =>
-      key && blob.type === 'application/octet-stream' ? from(decryptFile(blob, key, mimeType)) : from([blob]),
+      key && blob.type === 'application/octet-stream'
+        ? from(decryptFile(blob, key, mimeType))
+        : from([blob]),
     ),
   );
 }

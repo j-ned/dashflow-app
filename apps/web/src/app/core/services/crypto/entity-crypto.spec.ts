@@ -5,11 +5,10 @@ describe('entity-crypto', () => {
   let key: CryptoKey;
 
   beforeAll(async () => {
-    key = await crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: 256 },
-      true,
-      ['encrypt', 'decrypt'],
-    );
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   });
 
   const CLEARTEXT_KEYS = ['id', 'userId'] as const;
@@ -35,7 +34,7 @@ describe('entity-crypto', () => {
 
   it('should roundtrip: encrypt then decrypt restores original entity', async () => {
     const encrypted = await encryptEntity(entity, CLEARTEXT_KEYS, key);
-    const decrypted = await decryptEntity<typeof entity>(encrypted as any, key);
+    const decrypted = await decryptEntity<typeof entity>(encrypted, key);
 
     expect(decrypted).toEqual(entity);
   });
@@ -47,10 +46,8 @@ describe('entity-crypto', () => {
       { id: '3', userId: 'u3', name: 'C', balance: 300 },
     ];
 
-    const rows = await Promise.all(
-      entities.map((e) => encryptEntity(e, CLEARTEXT_KEYS, key)),
-    );
-    const decrypted = await decryptEntities<(typeof entities)[number]>(rows as any, key);
+    const rows = await Promise.all(entities.map((e) => encryptEntity(e, CLEARTEXT_KEYS, key)));
+    const decrypted = await decryptEntities<(typeof entities)[number]>(rows, key);
 
     expect(decrypted).toEqual(entities);
   });
@@ -58,7 +55,7 @@ describe('entity-crypto', () => {
   it('should handle entity with null and array values', async () => {
     const complex = { id: 'x', userId: 'u', tags: ['a', 'b'], note: null };
     const encrypted = await encryptEntity(complex, CLEARTEXT_KEYS, key);
-    const decrypted = await decryptEntity<typeof complex>(encrypted as any, key);
+    const decrypted = await decryptEntity<typeof complex>(encrypted, key);
 
     expect(decrypted).toEqual(complex);
   });

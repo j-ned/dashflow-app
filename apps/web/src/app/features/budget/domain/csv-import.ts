@@ -1,9 +1,13 @@
 import { ParsedTransaction, CsvMapping } from './models/parsed-transaction.model';
 
 export function parseCsv(text: string): { headers: string[]; rows: string[][] } {
-  const lines = text.replace(/\r\n/g, '\n').split('\n').filter((l) => l.trim().length > 0);
+  const lines = text
+    .replace(/\r\n/g, '\n')
+    .split('\n')
+    .filter((l) => l.trim().length > 0);
   if (lines.length === 0) return { headers: [], rows: [] };
-  const delim = (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ';' : ',';
+  const delim =
+    (lines[0].match(/;/g)?.length ?? 0) >= (lines[0].match(/,/g)?.length ?? 0) ? ';' : ',';
   const split = (line: string) => line.split(delim).map((c) => c.trim().replace(/^"(.*)"$/, '$1'));
   return { headers: split(lines[0]), rows: lines.slice(1).map(split) };
 }
@@ -11,7 +15,10 @@ export function parseCsv(text: string): { headers: string[]; rows: string[][] } 
 export function parseAmount(raw: string): number {
   const neg = /^\(.*\)$/.test(raw.trim()) || raw.trim().startsWith('-');
   const cleaned = raw.replace(/[()\s]/g, '').replace(/[^0-9.,-]/g, '');
-  const norm = cleaned.replace(/\.(?=\d{3}(\D|$))/g, '').replace(',', '.').replace(/-/g, '');
+  const norm = cleaned
+    .replace(/\.(?=\d{3}(\D|$))/g, '')
+    .replace(',', '.')
+    .replace(/-/g, '');
   const n = Number(norm) || 0;
   return neg ? -n : n;
 }

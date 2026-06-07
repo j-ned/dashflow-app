@@ -15,11 +15,10 @@ export class CryptoStore {
   // ── Key Generation ──
 
   async generateMasterKey(): Promise<CryptoKey> {
-    return crypto.subtle.generateKey(
-      { name: 'AES-GCM', length: KEY_BITS },
-      true,
-      ['encrypt', 'decrypt'],
-    );
+    return crypto.subtle.generateKey({ name: 'AES-GCM', length: KEY_BITS }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
   }
 
   generateSalt(): Uint8Array {
@@ -44,7 +43,12 @@ export class CryptoStore {
     );
 
     return crypto.subtle.deriveKey(
-      { name: 'PBKDF2', salt: salt.buffer as ArrayBuffer, iterations: PBKDF2_ITERATIONS, hash: 'SHA-256' },
+      {
+        name: 'PBKDF2',
+        salt: salt.buffer as ArrayBuffer,
+        iterations: PBKDF2_ITERATIONS,
+        hash: 'SHA-256',
+      },
       keyMaterial,
       { name: 'AES-KW', length: KEY_BITS },
       false,
@@ -54,13 +58,10 @@ export class CryptoStore {
 
   async deriveWrappingKeyFromRecovery(recoveryHex: string): Promise<CryptoKey> {
     const bytes = new Uint8Array(recoveryHex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
-    return crypto.subtle.importKey(
-      'raw',
-      bytes,
-      { name: 'AES-KW', length: KEY_BITS },
-      false,
-      ['wrapKey', 'unwrapKey'],
-    );
+    return crypto.subtle.importKey('raw', bytes, { name: 'AES-KW', length: KEY_BITS }, false, [
+      'wrapKey',
+      'unwrapKey',
+    ]);
   }
 
   // ── Key Wrapping ──
@@ -188,7 +189,10 @@ export async function decryptWithKey(blob: string, key: CryptoKey): Promise<stri
   return new TextDecoder().decode(plainBuffer);
 }
 
-export async function encryptBufferWithKey(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
+export async function encryptBufferWithKey(
+  data: ArrayBuffer,
+  key: CryptoKey,
+): Promise<ArrayBuffer> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data);
 
@@ -199,7 +203,10 @@ export async function encryptBufferWithKey(data: ArrayBuffer, key: CryptoKey): P
   return combined.buffer;
 }
 
-export async function decryptBufferWithKey(data: ArrayBuffer, key: CryptoKey): Promise<ArrayBuffer> {
+export async function decryptBufferWithKey(
+  data: ArrayBuffer,
+  key: CryptoKey,
+): Promise<ArrayBuffer> {
   const combined = new Uint8Array(data);
   const iv = combined.slice(0, IV_BYTES);
   const ciphertext = combined.slice(IV_BYTES);

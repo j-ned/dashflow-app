@@ -59,27 +59,27 @@ Even if the server is compromised: no exploitable data leaves the box.
 
 ### 💰 Budget
 
-| Feature | Details |
-|---------|---------|
-| **Bank account** | Income, direct debits, annual charges, spending, remaining balance |
-| **Virtual envelopes** | Savings, holidays, equipment, taxes — progress and goals |
-| **Loans & Debts** | Loan tracking, repayments, full history |
-| **Recurring entries** | Monthly and annual charges per household member |
-| **Salary archives** | Historized payslips (encrypted S3 storage) |
-| **Statistics** | KPIs, 12-month evolution, breakdown, projections |
+| Feature               | Details                                                            |
+| --------------------- | ------------------------------------------------------------------ |
+| **Bank account**      | Income, direct debits, annual charges, spending, remaining balance |
+| **Virtual envelopes** | Savings, holidays, equipment, taxes — progress and goals           |
+| **Loans & Debts**     | Loan tracking, repayments, full history                            |
+| **Recurring entries** | Monthly and annual charges per household member                    |
+| **Salary archives**   | Historized payslips (encrypted S3 storage)                         |
+| **Statistics**        | KPIs, 12-month evolution, breakdown, projections                   |
 
 ### 🏥 Medical
 
-| Feature | Details |
-|---------|---------|
+| Feature             | Details                                                                |
+| ------------------- | ---------------------------------------------------------------------- |
 | **Family overview** | Per-member dashboard: appointments, prescriptions, medications, alerts |
-| **Patients** | Complete health profiles for each family member |
-| **Practitioners** | Medical contact book with specialties |
-| **Medications** | Stock, dosages, depletion alerts |
-| **Documents** | Blood tests, certificates, vaccination records |
-| **Appointments** | Per-patient and per-practitioner schedule |
-| **Prescriptions** | Active and expired prescriptions |
-| **Alerts** | Low-stock notifications and automatic reminders |
+| **Patients**        | Complete health profiles for each family member                        |
+| **Practitioners**   | Medical contact book with specialties                                  |
+| **Medications**     | Stock, dosages, depletion alerts                                       |
+| **Documents**       | Blood tests, certificates, vaccination records                         |
+| **Appointments**    | Per-patient and per-practitioner schedule                              |
+| **Prescriptions**   | Active and expired prescriptions                                       |
+| **Alerts**          | Low-stock notifications and automatic reminders                        |
 
 ### ⚙️ Cross-feature
 
@@ -274,7 +274,6 @@ docker run -p 80:80 dashflow-front
 ```
 
 > Full prod deployment (proxy `/api` → NestJS) will be configured in Dokploy with 2 separate services.
-
 
 ---
 

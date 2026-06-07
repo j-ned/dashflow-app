@@ -2,7 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import {
+  ApiRow,
+  encryptEntity,
+  decryptEntities,
+  decryptEntity,
+} from '@core/services/crypto/entity-crypto';
 import { Patient } from '../domain/models/patient.model';
 import { PatientGateway } from '../domain/gateways/patient.gateway';
 
@@ -39,7 +44,9 @@ export class HttpPatientGateway implements PatientGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.post<ApiRow>('/patients', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient]),
+      ),
     );
   }
 
@@ -49,7 +56,9 @@ export class HttpPatientGateway implements PatientGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.put<ApiRow>(`/patients/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient]),
+      ),
     );
   }
 

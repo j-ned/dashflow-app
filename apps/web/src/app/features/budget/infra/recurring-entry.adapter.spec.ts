@@ -1,9 +1,18 @@
 import { withAutoPostDefaults } from './recurring-entry.adapter';
 
 const base = {
-  id: 'r1', memberId: null, accountId: 'a', toAccountId: null,
-  label: 'Loyer', amount: 800, type: 'expense' as const,
-  dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null,
+  id: 'r1',
+  memberId: null,
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Loyer',
+  amount: 800,
+  type: 'expense' as const,
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
 };
 
 describe('withAutoPostDefaults', () => {
@@ -14,7 +23,11 @@ describe('withAutoPostDefaults', () => {
   });
 
   it('préserve les valeurs présentes', () => {
-    const result = withAutoPostDefaults({ ...base, autoPost: true, autoPostSince: '2026-05' } as never);
+    const result = withAutoPostDefaults({
+      ...base,
+      autoPost: true,
+      autoPostSince: '2026-05',
+    } as never);
     expect(result.autoPost).toBe(true);
     expect(result.autoPostSince).toBe('2026-05');
   });

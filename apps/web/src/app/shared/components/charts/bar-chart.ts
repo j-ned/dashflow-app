@@ -10,18 +10,36 @@ export type BarGroup = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
-    <svg [attr.viewBox]="'0 0 ' + width + ' ' + height" class="w-full h-full" preserveAspectRatio="xMidYMid meet"
-         role="img" [attr.aria-label]="ariaLabel()">
+    <svg
+      [attr.viewBox]="'0 0 ' + width + ' ' + height"
+      class="w-full h-full"
+      preserveAspectRatio="xMidYMid meet"
+      role="img"
+      [attr.aria-label]="ariaLabel()"
+    >
       <!-- Grid lines -->
       @for (y of gridLines(); track y) {
-        <line [attr.x1]="pad" [attr.y1]="y" [attr.x2]="width - 8" [attr.y2]="y"
-              stroke="var(--border)" stroke-width="0.5" stroke-dasharray="3,3" />
+        <line
+          [attr.x1]="pad"
+          [attr.y1]="y"
+          [attr.x2]="width - 8"
+          [attr.y2]="y"
+          stroke="var(--border)"
+          stroke-width="0.5"
+          stroke-dasharray="3,3"
+        />
       }
 
       <!-- Y-axis labels -->
       @for (gl of gridLabels(); track gl.y) {
-        <text [attr.x]="pad - 4" [attr.y]="gl.y + 3" text-anchor="end"
-              fill="var(--text-muted)" font-size="8" font-family="var(--font-mono)">
+        <text
+          [attr.x]="pad - 4"
+          [attr.y]="gl.y + 3"
+          text-anchor="end"
+          fill="var(--text-muted)"
+          font-size="8"
+          font-family="var(--font-mono)"
+        >
           {{ gl.label }}
         </text>
       }
@@ -29,12 +47,24 @@ export type BarGroup = {
       <!-- Bar groups -->
       @for (group of barGroups(); track group.label) {
         @for (bar of group.bars; track $index) {
-          <rect [attr.x]="bar.x" [attr.y]="bar.y"
-                [attr.width]="bar.w" [attr.height]="bar.h"
-                [attr.fill]="bar.color" rx="3" class="transition duration-300" />
+          <rect
+            [attr.x]="bar.x"
+            [attr.y]="bar.y"
+            [attr.width]="bar.w"
+            [attr.height]="bar.h"
+            [attr.fill]="bar.color"
+            rx="3"
+            class="transition duration-300"
+          />
         }
-        <text [attr.x]="group.cx" [attr.y]="height - 4" text-anchor="middle"
-              fill="var(--text-muted)" font-size="9" font-family="var(--font-sans)">
+        <text
+          [attr.x]="group.cx"
+          [attr.y]="height - 4"
+          text-anchor="middle"
+          fill="var(--text-muted)"
+          font-size="9"
+          font-family="var(--font-sans)"
+        >
           {{ group.label }}
         </text>
       }
@@ -57,7 +87,7 @@ export class BarChart {
   }));
 
   private readonly maxValue = computed(() => {
-    const allVals = this.data().flatMap(g => g.bars.map(b => b.value));
+    const allVals = this.data().flatMap((g) => g.bars.map((b) => b.value));
     return Math.max(...allVals, 1);
   });
 

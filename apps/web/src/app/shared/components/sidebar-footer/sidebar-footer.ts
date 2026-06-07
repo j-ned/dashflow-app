@@ -12,15 +12,21 @@ import { Toaster } from '@shared/components/toast/toast';
   host: { class: 'block mt-auto' },
   template: `
     <div class="border-t border-border p-2 space-y-0.5">
-
       @if (!collapsed()) {
         <!-- User info (expanded) -->
         <div class="flex items-center gap-3 px-3 py-2 mb-1">
           @if (auth.avatarUrl()) {
-            <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
-            <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
+            <!-- eslint-disable @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
+            <img
+              [src]="auth.avatarUrl()"
+              [alt]="auth.displayName()"
+              class="w-8 h-8 rounded-full object-cover border border-border shrink-0"
+            />
+            <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
           } @else {
-            <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas shrink-0">
+            <div
+              class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas shrink-0"
+            >
               {{ auth.userInitial() }}
             </div>
           }
@@ -30,14 +36,20 @@ import { Toaster } from '@shared/components/toast/toast';
           </div>
         </div>
 
-        <a routerLink="/settings" routerLinkActive="bg-hover text-text-primary"
-           class="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary">
+        <a
+          routerLink="/settings"
+          routerLinkActive="bg-hover text-text-primary"
+          class="flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
+        >
           <app-icon name="settings" size="16" />
           {{ 'layout.sidebar.settings' | transloco }}
         </a>
 
-        <button type="button" (click)="onLogout()"
-                class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-ib-red">
+        <button
+          type="button"
+          (click)="onLogout()"
+          class="w-full flex items-center gap-3 px-3 py-2 rounded-md text-sm font-medium text-text-muted transition-colors hover:bg-hover hover:text-ib-red"
+        >
           <app-icon name="log-out" size="16" />
           {{ 'layout.sidebar.logout' | transloco }}
         </button>
@@ -46,24 +58,37 @@ import { Toaster } from '@shared/components/toast/toast';
         <div class="flex flex-col items-center gap-0.5">
           <div class="mb-1" [title]="auth.displayName()">
             @if (auth.avatarUrl()) {
-              <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
-              <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
+              <!-- eslint-disable @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
+              <img
+                [src]="auth.avatarUrl()"
+                [alt]="auth.displayName()"
+                class="w-8 h-8 rounded-full object-cover border border-border"
+              />
+              <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
             } @else {
-              <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas">
+              <div
+                class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas"
+              >
                 {{ auth.userInitial() }}
               </div>
             }
           </div>
 
-          <a routerLink="/settings" routerLinkActive="bg-hover text-text-primary"
-             class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
-             [title]="'layout.sidebar.settings' | transloco">
+          <a
+            routerLink="/settings"
+            routerLinkActive="bg-hover text-text-primary"
+            class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text-primary"
+            [title]="'layout.sidebar.settings' | transloco"
+          >
             <app-icon name="settings" size="16" />
           </a>
 
-          <button type="button" (click)="onLogout()"
-                  class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-ib-red"
-                  [title]="'layout.sidebar.logout' | transloco">
+          <button
+            type="button"
+            (click)="onLogout()"
+            class="flex h-9 w-9 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-ib-red"
+            [title]="'layout.sidebar.logout' | transloco"
+          >
             <app-icon name="log-out" size="16" />
           </button>
         </div>

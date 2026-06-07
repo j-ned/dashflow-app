@@ -2,7 +2,12 @@ import { inject, Injectable } from '@angular/core';
 import { from, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { ApiRow, encryptEntity, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import {
+  ApiRow,
+  encryptEntity,
+  decryptEntities,
+  decryptEntity,
+} from '@core/services/crypto/entity-crypto';
 import { Appointment } from '../domain/models/appointment.model';
 import { AppointmentGateway } from '../domain/gateways/appointment.gateway';
 
@@ -39,7 +44,9 @@ export class HttpAppointmentGateway implements AppointmentGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.post<ApiRow>('/appointments', encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
+      ),
     );
   }
 
@@ -49,7 +56,9 @@ export class HttpAppointmentGateway implements AppointmentGateway {
 
     return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.put<ApiRow>(`/appointments/${id}`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
+      ),
     );
   }
 
@@ -60,7 +69,9 @@ export class HttpAppointmentGateway implements AppointmentGateway {
 
     return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
       switchMap((encrypted) => this.api.patch<ApiRow>(`/appointments/${id}/status`, encrypted)),
-      switchMap((row) => row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment])),
+      switchMap((row) =>
+        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
+      ),
     );
   }
 

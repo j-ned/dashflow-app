@@ -1,4 +1,10 @@
-export type DocumentType = 'compte_rendu' | 'facture' | 'bilan' | 'certificat' | 'courrier' | 'autre';
+export type DocumentType =
+  | 'compte_rendu'
+  | 'facture'
+  | 'bilan'
+  | 'certificat'
+  | 'courrier'
+  | 'autre';
 
 export type MedicalDocument = {
   readonly id: string;

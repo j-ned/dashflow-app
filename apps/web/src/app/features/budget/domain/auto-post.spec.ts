@@ -3,15 +3,35 @@ import { RecurringEntry } from './models/recurring-entry.model';
 import { AccountTransaction } from './models/account-transaction.model';
 
 const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
-  id: 'r1', memberId: null, accountId: 'a', toAccountId: null,
-  label: 'Loyer', amount: 800, type: 'expense', dayOfMonth: 5,
-  date: null, endDate: null, category: null, payslipKey: null,
-  autoPost: true, autoPostSince: '2026-06', ...p,
+  id: 'r1',
+  memberId: null,
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Loyer',
+  amount: 800,
+  type: 'expense',
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  autoPost: true,
+  autoPostSince: '2026-06',
+  ...p,
 });
 
 const tx = (p: Partial<AccountTransaction>): AccountTransaction => ({
-  id: 'x', accountId: 'a', amount: 0, direction: 'expense', toAccountId: null,
-  date: '2026-06-01', category: null, note: null, memberId: null, recurringEntryId: null, ...p,
+  id: 'x',
+  accountId: 'a',
+  amount: 0,
+  direction: 'expense',
+  toAccountId: null,
+  date: '2026-06-01',
+  category: null,
+  note: null,
+  memberId: null,
+  recurringEntryId: null,
+  ...p,
 });
 
 const CTX = { currentMonth: '2026-06', currentDay: 10 };
@@ -20,10 +40,15 @@ describe('duePostings', () => {
   it('poste une échéance du mois courant dont le jour est passé', () => {
     const res = duePostings([entry({ dayOfMonth: 5 })], [], CTX);
     expect(res).toHaveLength(1);
-    expect(res[0]).toMatchObject({ month: '2026-06', date: '2026-06-05', amount: 800, direction: 'expense' });
+    expect(res[0]).toMatchObject({
+      month: '2026-06',
+      date: '2026-06-05',
+      amount: 800,
+      direction: 'expense',
+    });
   });
 
-  it('ne poste pas une échéance du mois courant dont le jour n\'est pas encore passé', () => {
+  it("ne poste pas une échéance du mois courant dont le jour n'est pas encore passé", () => {
     expect(duePostings([entry({ dayOfMonth: 20 })], [], CTX)).toEqual([]);
   });
 
@@ -42,8 +67,12 @@ describe('duePostings', () => {
   });
 
   it('mappe la direction selon le type', () => {
-    expect(duePostings([entry({ type: 'income', dayOfMonth: 5 })], [], CTX)[0].direction).toBe('income');
-    expect(duePostings([entry({ type: 'transfer', dayOfMonth: 5 })], [], CTX)[0].direction).toBe('transfer');
+    expect(duePostings([entry({ type: 'income', dayOfMonth: 5 })], [], CTX)[0].direction).toBe(
+      'income',
+    );
+    expect(duePostings([entry({ type: 'transfer', dayOfMonth: 5 })], [], CTX)[0].direction).toBe(
+      'transfer',
+    );
   });
 
   it('est idempotent : ignore un mois déjà pointé', () => {
@@ -69,7 +98,9 @@ describe('duePostings', () => {
 
   it('respecte endDate : pas de posting après le mois de fin', () => {
     const res = duePostings(
-      [entry({ dayOfMonth: 5, autoPostSince: '2026-04', endDate: '2026-05-31' })], [], CTX,
+      [entry({ dayOfMonth: 5, autoPostSince: '2026-04', endDate: '2026-05-31' })],
+      [],
+      CTX,
     );
     expect(res.map((r) => r.month)).toEqual(['2026-04', '2026-05']);
   });

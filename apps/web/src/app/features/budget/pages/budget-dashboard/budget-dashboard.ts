@@ -1,4 +1,13 @@
-import { afterNextRender, ChangeDetectionStrategy, Component, computed, ElementRef, inject, signal, viewChild } from '@angular/core';
+import {
+  afterNextRender,
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  ElementRef,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
@@ -46,12 +55,16 @@ type MemberSummary = {
   template: `
     <header class="flex items-start justify-between gap-4">
       <div>
-        <h2 class="text-2xl font-bold text-text-primary">{{ 'budget.dashboard.title' | transloco }}</h2>
+        <h2 class="text-2xl font-bold text-text-primary">
+          {{ 'budget.dashboard.title' | transloco }}
+        </h2>
         <p class="mt-1 text-sm text-text-muted">{{ 'budget.dashboard.subtitle' | transloco }}</p>
       </div>
-      <button type="button"
-              class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
-              (click)="memberManager().open()">
+      <button
+        type="button"
+        class="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-border px-3 py-2 text-sm font-medium text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
+        (click)="memberManager().open()"
+      >
         <app-icon name="users" size="16" /> {{ 'budget.members.manage' | transloco }}
       </button>
     </header>
@@ -60,16 +73,35 @@ type MemberSummary = {
     @for (ms of memberSummaries(); track ms.id) {
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
         <div class="flex items-center gap-3 px-5 py-4 border-b border-border/50 bg-raised/30">
-          <div class="flex h-11 w-11 items-center justify-center rounded-full bg-ib-green/10 text-ib-green text-sm font-bold shrink-0 ring-2 ring-ib-green/20">
+          <div
+            class="flex h-11 w-11 items-center justify-center rounded-full bg-ib-green/10 text-ib-green text-sm font-bold shrink-0 ring-2 ring-ib-green/20"
+          >
             {{ ms.initials }}
           </div>
           <div>
             <h3 class="text-lg font-semibold text-text-primary">{{ ms.label }}</h3>
             <p class="text-[11px] text-text-muted">
-              {{ (ms.envelopes.length > 1 ? 'budget.dashboard.envelopesCountPlural' : 'budget.dashboard.envelopesCount') | transloco: { count: ms.envelopes.length } }}
-              · {{ ((ms.lentLoans.length + ms.borrowedLoans.length) > 1 ? 'budget.dashboard.loansCountPlural' : 'budget.dashboard.loansCount') | transloco: { count: ms.lentLoans.length + ms.borrowedLoans.length } }}
+              {{
+                (ms.envelopes.length > 1
+                  ? 'budget.dashboard.envelopesCountPlural'
+                  : 'budget.dashboard.envelopesCount'
+                ) | transloco: { count: ms.envelopes.length }
+              }}
+              ·
+              {{
+                (ms.lentLoans.length + ms.borrowedLoans.length > 1
+                  ? 'budget.dashboard.loansCountPlural'
+                  : 'budget.dashboard.loansCount'
+                ) | transloco: { count: ms.lentLoans.length + ms.borrowedLoans.length }
+              }}
               @if (ms.incomes.length > 0) {
-                · {{ (ms.incomes.length > 1 ? 'budget.dashboard.incomesCountPlural' : 'budget.dashboard.incomesCount') | transloco: { count: ms.incomes.length } }}
+                ·
+                {{
+                  (ms.incomes.length > 1
+                    ? 'budget.dashboard.incomesCountPlural'
+                    : 'budget.dashboard.incomesCount'
+                  ) | transloco: { count: ms.incomes.length }
+                }}
               }
             </p>
           </div>
@@ -78,115 +110,205 @@ type MemberSummary = {
         <div class="p-5 space-y-5">
           <div class="grid grid-cols-2 sm:grid-cols-3 gap-3">
             @if (ms.incomes.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5">
+              <div
+                class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-green/30 hover:shadow-lg hover:shadow-ib-green/5"
+              >
                 <div class="flex items-center gap-1.5 mb-2">
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10">
                     <app-icon name="trending-up" size="12" class="text-ib-green" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.income' | transloco }}</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                    {{ 'budget.dashboard.kpi.income' | transloco }}
+                  </p>
                 </div>
-                <p class="text-lg font-mono font-bold text-ib-green tracking-tight">{{ ms.totalIncome | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
+                <p class="text-lg font-mono font-bold text-ib-green tracking-tight">
+                  {{ ms.totalIncome | number: '1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
+                </p>
               </div>
             }
             @if (ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings > 0) {
-              <div class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5">
+              <div
+                class="group relative overflow-hidden rounded-xl border border-border bg-surface p-4 transition hover:border-ib-orange/30 hover:shadow-lg hover:shadow-ib-orange/5"
+              >
                 <div class="flex items-center gap-1.5 mb-2">
                   <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange/10">
                     <app-icon name="receipt" size="12" class="text-ib-orange" />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.monthlyCharges' | transloco }}</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                    {{ 'budget.dashboard.kpi.monthlyCharges' | transloco }}
+                  </p>
                 </div>
-                <p class="text-lg font-mono font-bold text-ib-orange tracking-tight">{{ ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span></p>
+                <p class="text-lg font-mono font-bold text-ib-orange tracking-tight">
+                  {{
+                    ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings
+                      | number: '1.2-2'
+                  }}<span class="text-xs ml-0.5">&euro;</span>
+                </p>
               </div>
             }
             @if (ms.incomes.length > 0) {
-              <div class="group relative overflow-hidden rounded-xl border bg-surface p-4 transition"
-                   [class.border-ib-green-40]="ms.remaining >= 0"
-                   [class.border-ib-red-40]="ms.remaining < 0"
-                   [class.hover:shadow-lg]="true"
-                   [class.hover:shadow-ib-green-5]="ms.remaining >= 0"
-                   [class.hover:shadow-ib-red-5]="ms.remaining < 0">
+              <div
+                class="group relative overflow-hidden rounded-xl border bg-surface p-4 transition"
+                [class.border-ib-green-40]="ms.remaining >= 0"
+                [class.border-ib-red-40]="ms.remaining < 0"
+                [class.hover:shadow-lg]="true"
+                [class.hover:shadow-ib-green-5]="ms.remaining >= 0"
+                [class.hover:shadow-ib-red-5]="ms.remaining < 0"
+              >
                 <div class="flex items-center gap-1.5 mb-2">
-                  <div class="flex h-6 w-6 items-center justify-center rounded-lg"
-                       [class.bg-ib-green-10]="ms.remaining >= 0"
-                       [class.bg-ib-red-10]="ms.remaining < 0">
-                    <app-icon name="wallet" size="12"
-                              [class.text-ib-green]="ms.remaining >= 0"
-                              [class.text-ib-red]="ms.remaining < 0" />
+                  <div
+                    class="flex h-6 w-6 items-center justify-center rounded-lg"
+                    [class.bg-ib-green-10]="ms.remaining >= 0"
+                    [class.bg-ib-red-10]="ms.remaining < 0"
+                  >
+                    <app-icon
+                      name="wallet"
+                      size="12"
+                      [class.text-ib-green]="ms.remaining >= 0"
+                      [class.text-ib-red]="ms.remaining < 0"
+                    />
                   </div>
-                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.dashboard.kpi.remaining' | transloco }}</p>
+                  <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
+                    {{ 'budget.dashboard.kpi.remaining' | transloco }}
+                  </p>
                 </div>
-                <p class="text-lg font-mono font-bold tracking-tight"
-                   [class.text-ib-green]="ms.remaining >= 0"
-                   [class.text-ib-red]="ms.remaining < 0">
-                  {{ ms.remaining | number:'1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
+                <p
+                  class="text-lg font-mono font-bold tracking-tight"
+                  [class.text-ib-green]="ms.remaining >= 0"
+                  [class.text-ib-red]="ms.remaining < 0"
+                >
+                  {{ ms.remaining | number: '1.2-2' }}<span class="text-xs ml-0.5">&euro;</span>
                 </p>
               </div>
             }
           </div>
 
-          @if (ms.totalIncome > 0 && (ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings) > 0) {
-            @let allCharges = ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings;
+          @if (
+            ms.totalIncome > 0 &&
+            ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings > 0
+          ) {
+            @let allCharges =
+              ms.totalMonthlyExpenses + ms.monthlyAnnualExpenses + ms.totalSpendings;
             @let pctBudget = (allCharges / ms.totalIncome) * 100;
             <div class="rounded-xl border border-border bg-surface p-3">
               <div class="flex items-center justify-between mb-2">
-                <span class="text-[11px] font-medium text-text-muted">{{ 'budget.dashboard.usage.label' | transloco }}</span>
+                <span class="text-[11px] font-medium text-text-muted">{{
+                  'budget.dashboard.usage.label' | transloco
+                }}</span>
                 <span class="inline-flex items-center gap-2">
-                  <span class="rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
-                        [class.bg-ib-green-10]="pctBudget <= 80" [class.text-ib-green]="pctBudget <= 80"
-                        [class.bg-ib-orange-10]="pctBudget > 80 && pctBudget <= 100" [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
-                        [class.bg-ib-red-10]="pctBudget > 100" [class.text-ib-red]="pctBudget > 100">
-                    @if (pctBudget <= 80) { {{ 'budget.dashboard.usage.stateOk' | transloco }} }
-                    @else if (pctBudget <= 100) { {{ 'budget.dashboard.usage.stateTight' | transloco }} }
-                    @else { {{ 'budget.dashboard.usage.stateOver' | transloco }} }
+                  <span
+                    class="rounded-md px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide"
+                    [class.bg-ib-green-10]="pctBudget <= 80"
+                    [class.text-ib-green]="pctBudget <= 80"
+                    [class.bg-ib-orange-10]="pctBudget > 80 && pctBudget <= 100"
+                    [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                    [class.bg-ib-red-10]="pctBudget > 100"
+                    [class.text-ib-red]="pctBudget > 100"
+                  >
+                    @if (pctBudget <= 80) {
+                      {{ 'budget.dashboard.usage.stateOk' | transloco }}
+                    } @else if (pctBudget <= 100) {
+                      {{ 'budget.dashboard.usage.stateTight' | transloco }}
+                    } @else {
+                      {{ 'budget.dashboard.usage.stateOver' | transloco }}
+                    }
                   </span>
-                  <span class="text-sm font-mono font-bold"
-                        [class.text-ib-green]="pctBudget <= 80"
-                        [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
-                        [class.text-ib-red]="pctBudget > 100">
-                    {{ pctBudget | number:'1.0-0' }}%
+                  <span
+                    class="text-sm font-mono font-bold"
+                    [class.text-ib-green]="pctBudget <= 80"
+                    [class.text-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                    [class.text-ib-red]="pctBudget > 100"
+                  >
+                    {{ pctBudget | number: '1.0-0' }}%
                   </span>
                 </span>
               </div>
               <div class="h-2.5 rounded-full bg-hover overflow-hidden">
-                <div class="h-full rounded-full transition duration-500 ease-out"
-                     [style.width.%]="pctBudget > 100 ? 100 : pctBudget"
-                     [class.bg-ib-green]="pctBudget <= 80"
-                     [class.bg-ib-orange]="pctBudget > 80 && pctBudget <= 100"
-                     [class.bg-ib-red]="pctBudget > 100">
-                </div>
+                <div
+                  class="h-full rounded-full transition duration-500 ease-out"
+                  [style.width.%]="pctBudget > 100 ? 100 : pctBudget"
+                  [class.bg-ib-green]="pctBudget <= 80"
+                  [class.bg-ib-orange]="pctBudget > 80 && pctBudget <= 100"
+                  [class.bg-ib-red]="pctBudget > 100"
+                ></div>
               </div>
               <div class="flex items-center gap-4 mt-2 text-[10px] text-text-muted">
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-red"></span> {{ 'budget.dashboard.usage.monthly' | transloco }} {{ ms.totalMonthlyExpenses | number:'1.0-0' }}&euro;</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-orange"></span> {{ 'budget.dashboard.usage.annual' | transloco }} {{ 'budget.dashboard.annualMonthlyApprox' | transloco: { value: (ms.monthlyAnnualExpenses | number:'1.0-0') } }}</span>
-                <span class="flex items-center gap-1"><span class="h-2 w-2 rounded-full bg-ib-yellow"></span> {{ 'budget.dashboard.usage.spendings' | transloco }} {{ ms.totalSpendings | number:'1.0-0' }}&euro;</span>
+                <span class="flex items-center gap-1"
+                  ><span class="h-2 w-2 rounded-full bg-ib-red"></span>
+                  {{ 'budget.dashboard.usage.monthly' | transloco }}
+                  {{ ms.totalMonthlyExpenses | number: '1.0-0' }}&euro;</span
+                >
+                <span class="flex items-center gap-1"
+                  ><span class="h-2 w-2 rounded-full bg-ib-orange"></span>
+                  {{ 'budget.dashboard.usage.annual' | transloco }}
+                  {{
+                    'budget.dashboard.annualMonthlyApprox'
+                      | transloco: { value: (ms.monthlyAnnualExpenses | number: '1.0-0') }
+                  }}</span
+                >
+                <span class="flex items-center gap-1"
+                  ><span class="h-2 w-2 rounded-full bg-ib-yellow"></span>
+                  {{ 'budget.dashboard.usage.spendings' | transloco }}
+                  {{ ms.totalSpendings | number: '1.0-0' }}&euro;</span
+                >
               </div>
             </div>
           }
 
-          @if (ms.monthlyExpenses.length > 0 || ms.annualExpenses.length > 0 || ms.spendings.length > 0) {
+          @if (
+            ms.monthlyExpenses.length > 0 || ms.annualExpenses.length > 0 || ms.spendings.length > 0
+          ) {
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
-
               @if (ms.monthlyExpenses.length > 0) {
-                <a data-dash-ref routerLink="/budget/account" class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition hover:shadow-lg hover:shadow-ib-red/5">
-                  <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50">
+                <a
+                  data-dash-ref
+                  routerLink="/budget/account"
+                  class="rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-red/30 transition hover:shadow-lg hover:shadow-ib-red/5"
+                >
+                  <div
+                    class="flex items-center gap-2 px-4 py-2.5 bg-ib-red/5 border-b border-border/50"
+                  >
                     <app-icon name="receipt" size="13" class="text-ib-red" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">{{ 'budget.dashboard.monthly' | transloco }}</span>
-                    <span class="ml-auto text-sm font-mono font-bold text-ib-red">{{ ms.totalMonthlyExpenses | number:'1.2-2' }}&euro;</span>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-red">{{
+                      'budget.dashboard.monthly' | transloco
+                    }}</span>
+                    <span class="ml-auto text-sm font-mono font-bold text-ib-red"
+                      >{{ ms.totalMonthlyExpenses | number: '1.2-2' }}&euro;</span
+                    >
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1">
                     @for (entry of ms.monthlyExpenses; track entry.id) {
                       @let passed = ms.isExpensePassed(entry);
-                      <div class="flex items-center justify-between py-1.5" [class.opacity-50]="passed">
+                      <div
+                        class="flex items-center justify-between py-1.5"
+                        [class.opacity-50]="passed"
+                      >
                         <div class="flex items-center gap-2 min-w-0">
-                          <div class="flex h-6 w-6 items-center justify-center rounded-lg text-[9px] font-bold shrink-0"
-                               [class.bg-ib-red-10]="!passed" [class.text-ib-red]="!passed"
-                               [class.bg-ib-green-10]="passed" [class.text-ib-green]="passed">
-                            @if (passed) { <app-icon name="check" size="14" /> } @else if (entry.dayOfMonth) { {{ entry.dayOfMonth }} } @else { — }
+                          <div
+                            class="flex h-6 w-6 items-center justify-center rounded-lg text-[9px] font-bold shrink-0"
+                            [class.bg-ib-red-10]="!passed"
+                            [class.text-ib-red]="!passed"
+                            [class.bg-ib-green-10]="passed"
+                            [class.text-ib-green]="passed"
+                          >
+                            @if (passed) {
+                              <app-icon name="check" size="14" />
+                            } @else if (entry.dayOfMonth) {
+                              {{ entry.dayOfMonth }}
+                            } @else {
+                              —
+                            }
                           </div>
-                          <span class="text-[13px] text-text-primary truncate" [class.line-through]="passed">{{ entry.label }}</span>
+                          <span
+                            class="text-[13px] text-text-primary truncate"
+                            [class.line-through]="passed"
+                            >{{ entry.label }}</span
+                          >
                         </div>
-                        <span class="text-[13px] font-mono font-medium text-text-muted shrink-0 ml-2">{{ entry.amount | number:'1.2-2' }}&euro;</span>
+                        <span
+                          class="text-[13px] font-mono font-medium text-text-muted shrink-0 ml-2"
+                          >{{ entry.amount | number: '1.2-2' }}&euro;</span
+                        >
                       </div>
                     }
                   </div>
@@ -194,19 +316,38 @@ type MemberSummary = {
               }
 
               @if (ms.annualExpenses.length > 0) {
-                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition hover:shadow-lg hover:shadow-ib-orange/5" [style.max-height.px]="dashRefCardHeight()">
-                  <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0">
+                <a
+                  routerLink="/budget/account"
+                  class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-orange/30 transition hover:shadow-lg hover:shadow-ib-orange/5"
+                  [style.max-height.px]="dashRefCardHeight()"
+                >
+                  <div
+                    class="flex items-center gap-2 px-4 py-2.5 bg-ib-orange/5 border-b border-border/50 shrink-0"
+                  >
                     <app-icon name="calendar" size="13" class="text-ib-orange" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.dashboard.annual' | transloco }}</span>
-                    <span class="ml-auto text-sm font-mono font-bold text-ib-orange">{{ ms.totalAnnualExpenses | number:'1.2-2' }}{{ 'budget.bankAccount.expenses.annualSuffix' | transloco }}</span>
+                    <span
+                      class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange"
+                      >{{ 'budget.dashboard.annual' | transloco }}</span
+                    >
+                    <span class="ml-auto text-sm font-mono font-bold text-ib-orange"
+                      >{{ ms.totalAnnualExpenses | number: '1.2-2'
+                      }}{{ 'budget.bankAccount.expenses.annualSuffix' | transloco }}</span
+                    >
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1 overflow-y-auto flex-1">
                     @for (entry of ms.annualExpenses; track entry.id) {
                       <div class="flex items-center justify-between py-1.5">
-                        <span class="text-[13px] text-text-primary truncate">{{ entry.label }}</span>
+                        <span class="text-[13px] text-text-primary truncate">{{
+                          entry.label
+                        }}</span>
                         <div class="flex items-center gap-1 shrink-0 ml-2">
-                          <span class="text-[13px] font-mono font-medium text-text-muted">{{ entry.amount | number:'1.2-2' }}&euro;</span>
-                          <span class="text-[10px] text-text-muted">{{ 'budget.dashboard.annualMonthlyApprox' | transloco: { value: (entry.amount / 12 | number:'1.0-0') } }}</span>
+                          <span class="text-[13px] font-mono font-medium text-text-muted"
+                            >{{ entry.amount | number: '1.2-2' }}&euro;</span
+                          >
+                          <span class="text-[10px] text-text-muted">{{
+                            'budget.dashboard.annualMonthlyApprox'
+                              | transloco: { value: (entry.amount / 12 | number: '1.0-0') }
+                          }}</span>
                         </div>
                       </div>
                     }
@@ -215,11 +356,22 @@ type MemberSummary = {
               }
 
               @if (ms.spendings.length > 0) {
-                <a routerLink="/budget/account" class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition hover:shadow-lg hover:shadow-ib-yellow/5" [style.max-height.px]="dashRefCardHeight()">
-                  <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0">
+                <a
+                  routerLink="/budget/account"
+                  class="flex flex-col rounded-xl border border-border bg-surface overflow-hidden hover:border-ib-yellow/30 transition hover:shadow-lg hover:shadow-ib-yellow/5"
+                  [style.max-height.px]="dashRefCardHeight()"
+                >
+                  <div
+                    class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50 shrink-0"
+                  >
                     <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                    <span class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow">{{ 'budget.dashboard.spendings' | transloco }}</span>
-                    <span class="ml-auto text-sm font-mono font-bold text-ib-yellow">{{ ms.totalSpendings | number:'1.2-2' }}&euro;</span>
+                    <span
+                      class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow"
+                      >{{ 'budget.dashboard.spendings' | transloco }}</span
+                    >
+                    <span class="ml-auto text-sm font-mono font-bold text-ib-yellow"
+                      >{{ ms.totalSpendings | number: '1.2-2' }}&euro;</span
+                    >
                   </div>
                   <div class="divide-y divide-border/20 px-3 py-1 overflow-y-auto flex-1">
                     @for (entry of ms.spendings; track entry.id) {
@@ -228,47 +380,66 @@ type MemberSummary = {
                           @if (entry.category) {
                             <span class="text-[10px] text-text-muted">{{ entry.category }}</span>
                           }
-                          <span class="text-[13px] text-text-primary truncate">{{ entry.label }}</span>
+                          <span class="text-[13px] text-text-primary truncate">{{
+                            entry.label
+                          }}</span>
                         </div>
-                        <span class="text-[13px] font-mono font-medium text-text-muted shrink-0 ml-2">{{ entry.amount | number:'1.2-2' }}&euro;</span>
+                        <span
+                          class="text-[13px] font-mono font-medium text-text-muted shrink-0 ml-2"
+                          >{{ entry.amount | number: '1.2-2' }}&euro;</span
+                        >
                       </div>
                     }
                   </div>
                 </a>
               }
-
             </div>
           }
 
           @if (ms.envelopes.length > 0) {
             <div class="rounded-xl border border-border bg-surface overflow-hidden">
-              <div class="flex items-center gap-2 px-4 py-2.5 bg-ib-cyan/5 border-b border-border/50">
+              <div
+                class="flex items-center gap-2 px-4 py-2.5 bg-ib-cyan/5 border-b border-border/50"
+              >
                 <app-icon name="wallet" size="14" class="text-ib-cyan" />
-                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">{{ 'budget.dashboard.envelopes' | transloco }}</h4>
+                <h4 class="text-[11px] font-semibold uppercase tracking-wider text-ib-cyan">
+                  {{ 'budget.dashboard.envelopes' | transloco }}
+                </h4>
               </div>
-              <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 divide-border/20">
+              <div
+                class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 divide-y sm:divide-y-0 divide-border/20"
+              >
                 @for (env of ms.envelopes; track env.id) {
-                  <a routerLink="/budget/envelopes" class="p-4 hover:bg-ib-cyan/3 transition-colors">
+                  <a
+                    routerLink="/budget/envelopes"
+                    class="p-4 hover:bg-ib-cyan/3 transition-colors"
+                  >
                     <div class="flex items-center justify-between mb-1">
                       <p class="text-sm font-medium text-text-primary truncate">{{ env.name }}</p>
-                      <span class="rounded-full px-1.5 py-0.5 text-[9px] font-medium shrink-0"
-                            [style.background-color]="env.color + '20'"
-                            [style.color]="env.color">
+                      <span
+                        class="rounded-full px-1.5 py-0.5 text-[9px] font-medium shrink-0"
+                        [style.background-color]="env.color + '20'"
+                        [style.color]="env.color"
+                      >
                         {{ env.type }}
                       </span>
                     </div>
-                    <p class="text-lg font-mono font-bold text-ib-cyan">{{ env.balance | number:'1.2-2' }}<span class="text-sm ml-0.5">&euro;</span></p>
+                    <p class="text-lg font-mono font-bold text-ib-cyan">
+                      {{ env.balance | number: '1.2-2' }}<span class="text-sm ml-0.5">&euro;</span>
+                    </p>
                     @if (env.target) {
                       @let pct = (env.balance / env.target) * 100;
                       <div class="mt-2">
                         <div class="flex justify-between text-[10px] text-text-muted mb-0.5">
-                          <span>{{ env.target | number:'1.0-0' }}&euro;</span>
-                          <span class="font-mono">{{ pct | number:'1.0-0' }}%</span>
+                          <span>{{ env.target | number: '1.0-0' }}&euro;</span>
+                          <span class="font-mono">{{ pct | number: '1.0-0' }}%</span>
                         </div>
                         <div class="h-1.5 rounded-full bg-hover overflow-hidden">
-                          <div class="h-full rounded-full transition"
-                               [style.width.%]="pct > 100 ? 100 : pct"
-                               [style.background-color]="env.color"></div>
+                          <div
+                            class="h-full rounded-full transition"
+                            [style.width.%]="pct > 100 ? 100 : pct"
+                            [style.background-color]="env.color"
+                          ></div>
                         </div>
                       </div>
                     }
@@ -306,12 +477,16 @@ export class BudgetDashboard {
       const tryObserve = () => {
         const el = host.querySelector('[data-dash-ref]');
         if (!el) return false;
-        const ro = new ResizeObserver(([entry]) => this.dashRefCardHeight.set(entry.borderBoxSize[0].blockSize));
+        const ro = new ResizeObserver(([entry]) =>
+          this.dashRefCardHeight.set(entry.borderBoxSize[0].blockSize),
+        );
         ro.observe(el);
         return true;
       };
       if (!tryObserve()) {
-        const mo = new MutationObserver(() => { if (tryObserve()) mo.disconnect(); });
+        const mo = new MutationObserver(() => {
+          if (tryObserve()) mo.disconnect();
+        });
         mo.observe(host, { childList: true, subtree: true });
       }
     });
@@ -319,7 +494,9 @@ export class BudgetDashboard {
 
   protected readonly memberManager = viewChild.required<MemberManager>('mm');
   private readonly _membersRefresh = signal(0);
-  protected reloadMembers(): void { this._membersRefresh.update(v => v + 1); }
+  protected reloadMembers(): void {
+    this._membersRefresh.update((v) => v + 1);
+  }
 
   protected readonly envelopes = toSignal(this.envelopeGateway.getAll(), { initialValue: [] });
   protected readonly loans = toSignal(this.loanGateway.getAll(), { initialValue: [] });
@@ -346,43 +523,58 @@ export class BudgetDashboard {
     // IDs des entrées sans membre déjà rattachées à un membre via accountId
     const claimedEntryIds = new Set<string>();
 
-    const buildSummary = (id: string | null, label: string, initials: string, claimedIds?: Set<string>): MemberSummary => {
+    const buildSummary = (
+      id: string | null,
+      label: string,
+      initials: string,
+      claimedIds?: Set<string>,
+    ): MemberSummary => {
       // Pour un membre : ses éléments + les non-assignés (1 seul membre → tout lui revient, sinon par accountId)
       let mEnvs: Envelope[];
       let mLoans: Loan[];
       let mEntries: RecurringEntry[];
       const singleMember = mbrs.length === 1;
       if (id) {
-        const own = allEntries.filter(e => e.memberId === id);
+        const own = allEntries.filter((e) => e.memberId === id);
         if (singleMember) {
           // Un seul membre : toutes les entrées sans membre lui reviennent
-          const orphans = allEntries.filter(e => !e.memberId);
-          orphans.forEach(e => claimedIds?.add(e.id));
+          const orphans = allEntries.filter((e) => !e.memberId);
+          orphans.forEach((e) => claimedIds?.add(e.id));
           mEntries = [...own, ...orphans];
         } else {
           // Plusieurs membres : rattacher par accountId partagé
           const accountIds = memberAccountIds.get(id)!;
-          const shared = allEntries.filter(e => !e.memberId && e.accountId && accountIds.has(e.accountId));
-          shared.forEach(e => claimedIds?.add(e.id));
+          const shared = allEntries.filter(
+            (e) => !e.memberId && e.accountId && accountIds.has(e.accountId),
+          );
+          shared.forEach((e) => claimedIds?.add(e.id));
           mEntries = [...own, ...shared];
         }
-        mEnvs = envs.filter(e => e.memberId === id || (singleMember && !e.memberId)) as Envelope[];
-        mLoans = allLoans.filter(l => l.memberId === id || (singleMember && !l.memberId)) as Loan[];
+        mEnvs = envs.filter(
+          (e) => e.memberId === id || (singleMember && !e.memberId),
+        ) as Envelope[];
+        mLoans = allLoans.filter(
+          (l) => l.memberId === id || (singleMember && !l.memberId),
+        ) as Loan[];
       } else {
         // Global : seulement les éléments non réclamés par un membre
-        mEntries = allEntries.filter(e => !e.memberId && !claimedIds?.has(e.id));
-        mEnvs = (singleMember ? [] : envs.filter(e => !e.memberId)) as Envelope[];
-        mLoans = singleMember ? [] : allLoans.filter(l => !l.memberId) as Loan[];
+        mEntries = allEntries.filter((e) => !e.memberId && !claimedIds?.has(e.id));
+        mEnvs = (singleMember ? [] : envs.filter((e) => !e.memberId)) as Envelope[];
+        mLoans = singleMember ? [] : (allLoans.filter((l) => !l.memberId) as Loan[]);
       }
 
-      const lent = mLoans.filter(l => l.direction === 'lent');
-      const borrowed = mLoans.filter(l => l.direction === 'borrowed');
+      const lent = mLoans.filter((l) => l.direction === 'lent');
+      const borrowed = mLoans.filter((l) => l.direction === 'borrowed');
       const currentMonth = new Date().toISOString().slice(0, 7);
       const isActive = (e: RecurringEntry) => !e.endDate || e.endDate.slice(0, 7) >= currentMonth;
-      const incomes = mEntries.filter(e => e.type === 'income' && isActive(e));
-      const monthlyExp = mEntries.filter(e => e.type === 'expense' && isActive(e)).sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32));
-      const annualExp = mEntries.filter(e => e.type === 'annual_expense' && isActive(e));
-      const spendings = mEntries.filter(e => e.type === 'spending' && (!e.date || e.date.startsWith(currentMonth)));
+      const incomes = mEntries.filter((e) => e.type === 'income' && isActive(e));
+      const monthlyExp = mEntries
+        .filter((e) => e.type === 'expense' && isActive(e))
+        .sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32));
+      const annualExp = mEntries.filter((e) => e.type === 'annual_expense' && isActive(e));
+      const spendings = mEntries.filter(
+        (e) => e.type === 'spending' && (!e.date || e.date.startsWith(currentMonth)),
+      );
 
       const totalIncome = incomes.reduce((s, e) => s + Number(e.amount), 0);
       const totalMonthlyExp = monthlyExp.reduce((s, e) => s + Number(e.amount), 0);
@@ -391,7 +583,7 @@ export class BudgetDashboard {
       const totalSpend = spendings.reduce((s, e) => s + Number(e.amount), 0);
 
       // Logique "passé" dans le cycle salaire
-      const salaryDay = incomes.find(e => e.dayOfMonth)?.dayOfMonth ?? 1;
+      const salaryDay = incomes.find((e) => e.dayOfMonth)?.dayOfMonth ?? 1;
       const today = new Date().getDate();
       const isPassed = (entry: RecurringEntry): boolean => {
         const day = entry.dayOfMonth ?? 1;
@@ -427,19 +619,41 @@ export class BudgetDashboard {
 
     // D'abord les membres (pour réclamer les entrées partagées par accountId)
     for (const m of mbrs) {
-      const ms = buildSummary(m.id, `${m.firstName} ${m.lastName}`, `${m.firstName[0]}${m.lastName[0]}`, claimedEntryIds);
-      if (ms.envelopes.length > 0 || ms.lentLoans.length > 0 || ms.borrowedLoans.length > 0
-          || ms.incomes.length > 0 || ms.monthlyExpenses.length > 0
-          || ms.annualExpenses.length > 0 || ms.spendings.length > 0) {
+      const ms = buildSummary(
+        m.id,
+        `${m.firstName} ${m.lastName}`,
+        `${m.firstName[0]}${m.lastName[0]}`,
+        claimedEntryIds,
+      );
+      if (
+        ms.envelopes.length > 0 ||
+        ms.lentLoans.length > 0 ||
+        ms.borrowedLoans.length > 0 ||
+        ms.incomes.length > 0 ||
+        ms.monthlyExpenses.length > 0 ||
+        ms.annualExpenses.length > 0 ||
+        ms.spendings.length > 0
+      ) {
         summaries.push(ms);
       }
     }
 
     // Puis le global (seulement les entrées non réclamées)
-    const global = buildSummary(null, this._i18n.translate('budget.dashboard.globalLabel'), this._i18n.translate('budget.dashboard.globalInitials'), claimedEntryIds);
-    if (global.envelopes.length > 0 || global.lentLoans.length > 0 || global.borrowedLoans.length > 0
-        || global.incomes.length > 0 || global.monthlyExpenses.length > 0
-        || global.annualExpenses.length > 0 || global.spendings.length > 0) {
+    const global = buildSummary(
+      null,
+      this._i18n.translate('budget.dashboard.globalLabel'),
+      this._i18n.translate('budget.dashboard.globalInitials'),
+      claimedEntryIds,
+    );
+    if (
+      global.envelopes.length > 0 ||
+      global.lentLoans.length > 0 ||
+      global.borrowedLoans.length > 0 ||
+      global.incomes.length > 0 ||
+      global.monthlyExpenses.length > 0 ||
+      global.annualExpenses.length > 0 ||
+      global.spendings.length > 0
+    ) {
       summaries.unshift(global);
     }
 

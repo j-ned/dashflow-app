@@ -38,10 +38,7 @@ export async function encryptEntity<T extends Record<string, unknown>>(
  * @param key - The AES-GCM CryptoKey
  * @returns The full entity object with all fields restored
  */
-export async function decryptEntity<T>(
-  row: ApiRow,
-  key: CryptoKey,
-): Promise<T> {
+export async function decryptEntity<T>(row: ApiRow, key: CryptoKey): Promise<T> {
   const { encryptedData, ...cleartext } = row;
   const sensitiveJson = await decryptWithKey(encryptedData!, key);
   const sensitive = JSON.parse(sensitiveJson);
@@ -51,9 +48,6 @@ export async function decryptEntity<T>(
 /**
  * Batch decrypt multiple entities.
  */
-export async function decryptEntities<T>(
-  rows: ApiRow[],
-  key: CryptoKey,
-): Promise<T[]> {
+export async function decryptEntities<T>(rows: ApiRow[], key: CryptoKey): Promise<T[]> {
   return Promise.all(rows.map((row) => decryptEntity<T>(row, key)));
 }

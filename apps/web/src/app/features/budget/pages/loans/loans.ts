@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal, viewChild } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
@@ -25,7 +32,17 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
 @Component({
   selector: 'app-loans',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, ModalDialog, LoanForm, RecordPaymentForm, MemberFilter, LoanCard, Icon, TranslocoPipe],
+  imports: [
+    DatePipe,
+    DecimalPipe,
+    ModalDialog,
+    LoanForm,
+    RecordPaymentForm,
+    MemberFilter,
+    LoanCard,
+    Icon,
+    TranslocoPipe,
+  ],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex flex-wrap items-center justify-between gap-3">
@@ -62,15 +79,21 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
     }
 
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
-      <div class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-blue/5 border-b border-border/50">
+      <div
+        class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-blue/5 border-b border-border/50"
+      >
         <div class="flex items-center gap-2">
           <app-icon name="arrow-up-right" size="16" class="text-ib-blue" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">{{ 'budget.loan.lentSection' | transloco }}</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-blue">
+            {{ 'budget.loan.lentSection' | transloco }}
+          </h3>
         </div>
         @if (lentVMs().length > 0) {
           <p class="text-xs text-text-muted">
             {{ 'budget.loan.toCollect' | transloco }}
-            <span class="ml-1 font-mono font-semibold text-ib-blue">{{ lentTotal() | number: '1.2-2' }}&euro;</span>
+            <span class="ml-1 font-mono font-semibold text-ib-blue"
+              >{{ lentTotal() | number: '1.2-2' }}&euro;</span
+            >
           </p>
         }
       </div>
@@ -103,15 +126,21 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
     </section>
 
     <section class="rounded-xl border border-border bg-surface overflow-hidden">
-      <div class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-orange/5 border-b border-border/50">
+      <div
+        class="flex items-center justify-between gap-3 px-5 py-3 bg-ib-orange/5 border-b border-border/50"
+      >
         <div class="flex items-center gap-2">
           <app-icon name="arrow-down-left" size="16" class="text-ib-orange" />
-          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">{{ 'budget.loan.borrowedSection' | transloco }}</h3>
+          <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-orange">
+            {{ 'budget.loan.borrowedSection' | transloco }}
+          </h3>
         </div>
         @if (borrowedVMs().length > 0) {
           <p class="text-xs text-text-muted">
             {{ 'budget.loan.toRepay' | transloco }}
-            <span class="ml-1 font-mono font-semibold text-ib-red">{{ borrowedTotal() | number: '1.2-2' }}&euro;</span>
+            <span class="ml-1 font-mono font-semibold text-ib-red"
+              >{{ borrowedTotal() | number: '1.2-2' }}&euro;</span
+            >
           </p>
         }
       </div>
@@ -137,7 +166,8 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
             class="inline-flex items-center gap-1.5 rounded-md bg-ib-orange px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-orange/90 transition-colors"
             (click)="openBorrowedModal()"
           >
-            <app-icon name="arrow-down-left" size="14" /> {{ 'budget.loan.borrowButton' | transloco }}
+            <app-icon name="arrow-down-left" size="14" />
+            {{ 'budget.loan.borrowButton' | transloco }}
           </button>
         </div>
       }
@@ -145,28 +175,48 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
 
     @if (lentVMs().length > 0 || borrowedVMs().length > 0) {
       <footer class="rounded-lg border border-border bg-surface overflow-hidden">
-        <div class="grid grid-cols-1 divide-y divide-border/50 sm:grid-cols-3 sm:divide-y-0 sm:divide-x">
+        <div
+          class="grid grid-cols-1 divide-y divide-border/50 sm:grid-cols-3 sm:divide-y-0 sm:divide-x"
+        >
           <div class="px-5 py-4">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.loan.summary.toCollect' | transloco }}</p>
-            <p class="mt-1 font-mono text-lg font-bold text-ib-blue">{{ lentTotal() | number: '1.2-2' }}&euro;</p>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+              {{ 'budget.loan.summary.toCollect' | transloco }}
+            </p>
+            <p class="mt-1 font-mono text-lg font-bold text-ib-blue">
+              {{ lentTotal() | number: '1.2-2' }}&euro;
+            </p>
           </div>
           <div class="px-5 py-4">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.loan.summary.toRepay' | transloco }}</p>
-            <p class="mt-1 font-mono text-lg font-bold text-ib-red">{{ borrowedTotal() | number: '1.2-2' }}&euro;</p>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+              {{ 'budget.loan.summary.toRepay' | transloco }}
+            </p>
+            <p class="mt-1 font-mono text-lg font-bold text-ib-red">
+              {{ borrowedTotal() | number: '1.2-2' }}&euro;
+            </p>
           </div>
           <div class="px-5 py-4">
-            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">{{ 'budget.loan.summary.net' | transloco }}</p>
+            <p class="text-[11px] font-semibold uppercase tracking-wider text-text-muted">
+              {{ 'budget.loan.summary.net' | transloco }}
+            </p>
             <p
               class="mt-1 font-mono text-lg font-bold"
               [class.text-ib-green]="netDirection() === 'positive'"
               [class.text-ib-red]="netDirection() === 'negative'"
               [class.text-text-primary]="netDirection() === 'even'"
-            >{{ netAbs() | number: '1.2-2' }}&euro;</p>
+            >
+              {{ netAbs() | number: '1.2-2' }}&euro;
+            </p>
             <p class="text-[11px] text-text-muted">
               @switch (netDirection()) {
-                @case ('positive') { {{ 'budget.loan.summary.netPositive' | transloco }} }
-                @case ('negative') { {{ 'budget.loan.summary.netNegative' | transloco }} }
-                @case ('even') { {{ 'budget.loan.summary.netEven' | transloco }} }
+                @case ('positive') {
+                  {{ 'budget.loan.summary.netPositive' | transloco }}
+                }
+                @case ('negative') {
+                  {{ 'budget.loan.summary.netNegative' | transloco }}
+                }
+                @case ('even') {
+                  {{ 'budget.loan.summary.netEven' | transloco }}
+                }
               }
             </p>
           </div>
@@ -174,19 +224,41 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       </footer>
     }
 
-    <app-modal-dialog #lentModal [title]="'budget.loan.modal.newLent' | transloco" (closed)="onModalClosed()">
+    <app-modal-dialog
+      #lentModal
+      [title]="'budget.loan.modal.newLent' | transloco"
+      (closed)="onModalClosed()"
+    >
       @if (lentModal.isOpen()) {
-        <app-loan-form direction="lent" [members]="members()" (submitted)="createLoan($event)" (cancelled)="lentModal.close()" />
+        <app-loan-form
+          direction="lent"
+          [members]="members()"
+          (submitted)="createLoan($event)"
+          (cancelled)="lentModal.close()"
+        />
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #borrowedModal [title]="'budget.loan.modal.newBorrowed' | transloco" (closed)="onModalClosed()">
+    <app-modal-dialog
+      #borrowedModal
+      [title]="'budget.loan.modal.newBorrowed' | transloco"
+      (closed)="onModalClosed()"
+    >
       @if (borrowedModal.isOpen()) {
-        <app-loan-form direction="borrowed" [members]="members()" (submitted)="createLoan($event)" (cancelled)="borrowedModal.close()" />
+        <app-loan-form
+          direction="borrowed"
+          [members]="members()"
+          (submitted)="createLoan($event)"
+          (cancelled)="borrowedModal.close()"
+        />
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #editModal [title]="'budget.loan.modal.edit' | transloco" (closed)="onModalClosed()">
+    <app-modal-dialog
+      #editModal
+      [title]="'budget.loan.modal.edit' | transloco"
+      (closed)="onModalClosed()"
+    >
       @if (editModal.isOpen()) {
         <app-loan-form
           [direction]="selectedLoan()?.direction ?? 'lent'"
@@ -198,9 +270,17 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       }
     </app-modal-dialog>
 
-    <app-modal-dialog #paymentModal [title]="'budget.loan.modal.payment' | transloco" (closed)="onModalClosed()">
+    <app-modal-dialog
+      #paymentModal
+      [title]="'budget.loan.modal.payment' | transloco"
+      (closed)="onModalClosed()"
+    >
       @if (paymentModal.isOpen()) {
-        <app-record-payment-form [accounts]="accounts()" (submitted)="recordPayment($event)" (cancelled)="paymentModal.close()" />
+        <app-record-payment-form
+          [accounts]="accounts()"
+          (submitted)="recordPayment($event)"
+          (cancelled)="paymentModal.close()"
+        />
       }
     </app-modal-dialog>
 
@@ -217,26 +297,43 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
           <div class="mb-4 rounded-lg border border-border bg-raised/40 p-4">
             <div class="grid grid-cols-3 gap-3 text-center">
               <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">{{ 'budget.loan.modal.initialAmount' | transloco }}</p>
-                <p class="mt-0.5 font-mono font-semibold text-text-primary">{{ loan.amount | number: '1.2-2' }}&euro;</p>
+                <p class="text-[11px] uppercase tracking-wider text-text-muted">
+                  {{ 'budget.loan.modal.initialAmount' | transloco }}
+                </p>
+                <p class="mt-0.5 font-mono font-semibold text-text-primary">
+                  {{ loan.amount | number: '1.2-2' }}&euro;
+                </p>
               </div>
               <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">{{ 'budget.loan.repaid' | transloco }}</p>
-                <p class="mt-0.5 font-mono font-semibold text-ib-green">{{ repaid | number: '1.2-2' }}&euro;</p>
+                <p class="text-[11px] uppercase tracking-wider text-text-muted">
+                  {{ 'budget.loan.repaid' | transloco }}
+                </p>
+                <p class="mt-0.5 font-mono font-semibold text-ib-green">
+                  {{ repaid | number: '1.2-2' }}&euro;
+                </p>
               </div>
               <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">{{ 'budget.loan.remaining' | transloco }}</p>
+                <p class="text-[11px] uppercase tracking-wider text-text-muted">
+                  {{ 'budget.loan.remaining' | transloco }}
+                </p>
                 <p
                   class="mt-0.5 font-mono font-semibold"
                   [class.text-ib-blue]="loan.direction === 'lent'"
                   [class.text-ib-red]="loan.direction === 'borrowed'"
-                >{{ loan.remaining | number: '1.2-2' }}&euro;</p>
+                >
+                  {{ loan.remaining | number: '1.2-2' }}&euro;
+                </p>
               </div>
             </div>
             <div class="mt-3 h-2 rounded-full bg-hover overflow-hidden">
-              <div class="h-full rounded-full bg-ib-green" [style.width.%]="pct > 100 ? 100 : pct"></div>
+              <div
+                class="h-full rounded-full bg-ib-green"
+                [style.width.%]="pct > 100 ? 100 : pct"
+              ></div>
             </div>
-            <p class="mt-1 text-right text-[11px] text-text-muted">{{ 'budget.loan.modal.progress' | transloco: { pct: (pct | number: '1.0-0') } }}</p>
+            <p class="mt-1 text-right text-[11px] text-text-muted">
+              {{ 'budget.loan.modal.progress' | transloco: { pct: (pct | number: '1.0-0') } }}
+            </p>
           </div>
         }
 
@@ -253,7 +350,9 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
                     <app-icon name="banknote" size="14" class="text-ib-green" />
                   </span>
                   <div class="min-w-0">
-                    <p class="font-mono text-sm font-medium text-ib-green">+{{ entry.tx.amount | number: '1.2-2' }}&euro;</p>
+                    <p class="font-mono text-sm font-medium text-ib-green">
+                      +{{ entry.tx.amount | number: '1.2-2' }}&euro;
+                    </p>
                     @if (entry.tx.note) {
                       <p class="truncate text-xs text-text-muted">{{ entry.tx.note }}</p>
                     }
@@ -262,7 +361,8 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
                 <div class="shrink-0 text-right">
                   <p class="text-xs text-text-muted">{{ entry.tx.date | date: 'dd/MM/yyyy' }}</p>
                   <p class="font-mono text-xs text-text-muted">
-                    {{ 'budget.loan.remainingAfter' | transloco }} {{ entry.balanceAfter | number: '1.2-2' }}&euro;
+                    {{ 'budget.loan.remainingAfter' | transloco }}
+                    {{ entry.balanceAfter | number: '1.2-2' }}&euro;
                   </p>
                 </div>
               </li>
@@ -272,7 +372,9 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
           <div class="text-center py-8">
             <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
             <p class="text-sm text-text-muted">{{ 'budget.loan.modal.noPayments' | transloco }}</p>
-            <p class="text-xs text-text-muted mt-1">{{ 'budget.loan.modal.historyHint' | transloco }}</p>
+            <p class="text-xs text-text-muted mt-1">
+              {{ 'budget.loan.modal.historyHint' | transloco }}
+            </p>
           </div>
         }
       }
@@ -350,8 +452,12 @@ export class Loans {
   protected readonly lentVMs = computed(() => this.buildVMs('lent'));
   protected readonly borrowedVMs = computed(() => this.buildVMs('borrowed'));
 
-  protected readonly lentTotal = computed(() => this.lentVMs().reduce((sum, vm) => sum + vm.loan.remaining, 0));
-  protected readonly borrowedTotal = computed(() => this.borrowedVMs().reduce((sum, vm) => sum + vm.loan.remaining, 0));
+  protected readonly lentTotal = computed(() =>
+    this.lentVMs().reduce((sum, vm) => sum + vm.loan.remaining, 0),
+  );
+  protected readonly borrowedTotal = computed(() =>
+    this.borrowedVMs().reduce((sum, vm) => sum + vm.loan.remaining, 0),
+  );
   protected readonly netBalance = computed(() => this.lentTotal() - this.borrowedTotal());
   protected readonly netAbs = computed(() => Math.abs(this.netBalance()));
   protected readonly netDirection = computed<'positive' | 'negative' | 'even'>(() => {
@@ -390,7 +496,8 @@ export class Loans {
       return { loan, repaid, pct, entries: history.get(loan.id) ?? [], status };
     });
     return vms.sort((a, b) => {
-      if (STATUS_RANK[a.status] !== STATUS_RANK[b.status]) return STATUS_RANK[a.status] - STATUS_RANK[b.status];
+      if (STATUS_RANK[a.status] !== STATUS_RANK[b.status])
+        return STATUS_RANK[a.status] - STATUS_RANK[b.status];
       const ad = a.loan.dueDate ?? '9999-12-31';
       const bd = b.loan.dueDate ?? '9999-12-31';
       if (ad !== bd) return ad.localeCompare(bd);
@@ -430,7 +537,11 @@ export class Loans {
       if (data.direction === 'lent') this.lentModalRef().close();
       else this.borrowedModalRef().close();
       this._refresh.update((v) => v + 1);
-      this.toaster.success(data.direction === 'lent' ? 'budget.loan.messages.lentCreated' : 'budget.loan.messages.borrowedCreated');
+      this.toaster.success(
+        data.direction === 'lent'
+          ? 'budget.loan.messages.lentCreated'
+          : 'budget.loan.messages.borrowedCreated',
+      );
     } catch {
       this.toaster.error('budget.loan.messages.createError');
     }
@@ -449,17 +560,27 @@ export class Loans {
     }
   }
 
-  protected async recordPayment(event: { amount: number; date: string; accountId: string | null; note: string | null }) {
+  protected async recordPayment(event: {
+    amount: number;
+    date: string;
+    accountId: string | null;
+    note: string | null;
+  }) {
     const loan = this.selectedLoan();
     if (!loan) return;
     try {
-      await lastValueFrom(this.loanGateway.recordPayment(loan.id, event.amount, event.date, event.note));
+      await lastValueFrom(
+        this.loanGateway.recordPayment(loan.id, event.amount, event.date, event.note),
+      );
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
       this.toaster.success('budget.loan.messages.paymentRecorded');
 
       if (event.accountId) {
-        const labelKey = loan.direction === 'borrowed' ? 'budget.loan.messages.debtRepaymentLabel' : 'budget.loan.messages.loanRepaymentLabel';
+        const labelKey =
+          loan.direction === 'borrowed'
+            ? 'budget.loan.messages.debtRepaymentLabel'
+            : 'budget.loan.messages.loanRepaymentLabel';
         // Repaying a debt you owe = money out (spending); being repaid on a loan
         // you granted = money in (income). Sign the bank entry accordingly.
         await lastValueFrom(
@@ -486,7 +607,8 @@ export class Loans {
   }
 
   protected async deleteLoan(id: string) {
-    if (!(await this.confirm.delete(this._i18n.translate('budget.loan.messages.deleteTarget')))) return;
+    if (!(await this.confirm.delete(this._i18n.translate('budget.loan.messages.deleteTarget'))))
+      return;
     try {
       await lastValueFrom(this.loanGateway.delete(id));
       this._refresh.update((v) => v + 1);

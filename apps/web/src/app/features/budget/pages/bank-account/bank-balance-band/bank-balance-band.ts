@@ -22,10 +22,13 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
             {{ 'budget.bankAccount.balance.confirmedLabel' | transloco }}
           </p>
-          <p class="mt-2 font-mono text-3xl font-bold tracking-tight"
-             [class.text-ib-blue]="confirmedBalance() >= 0"
-             [class.text-ib-red]="confirmedBalance() < 0">
-            {{ confirmedBalance() | number: '1.2-2' }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
+          <p
+            class="mt-2 font-mono text-3xl font-bold tracking-tight"
+            [class.text-ib-blue]="confirmedBalance() >= 0"
+            [class.text-ib-red]="confirmedBalance() < 0"
+          >
+            {{ confirmedBalance() | number: '1.2-2'
+            }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
           </p>
           <p class="mt-1.5 text-xs text-text-muted">
             {{ 'budget.bankAccount.balance.confirmedHint' | transloco: { date: today() } }}
@@ -33,7 +36,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
         </div>
 
         <!-- Flèche : la trajectoire -->
-        <div class="hidden items-center justify-center bg-surface px-3 text-text-muted sm:flex" aria-hidden="true">
+        <div
+          class="hidden items-center justify-center bg-surface px-3 text-text-muted sm:flex"
+          aria-hidden="true"
+        >
           <app-icon name="arrow-right" size="18" />
         </div>
 
@@ -42,10 +48,13 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
             {{ 'budget.bankAccount.balance.projectedLabel' | transloco }}
           </p>
-          <p class="mt-2 font-mono text-3xl font-bold tracking-tight"
-             [class.text-ib-green]="projectedBalance() >= 0"
-             [class.text-ib-red]="projectedBalance() < 0">
-            {{ projectedBalance() | number: '1.2-2' }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
+          <p
+            class="mt-2 font-mono text-3xl font-bold tracking-tight"
+            [class.text-ib-green]="projectedBalance() >= 0"
+            [class.text-ib-red]="projectedBalance() < 0"
+          >
+            {{ projectedBalance() | number: '1.2-2'
+            }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
           </p>
           <p class="mt-1.5 text-xs text-text-muted">
             {{ 'budget.bankAccount.balance.projectedHint' | transloco }}
@@ -54,17 +63,23 @@ import { TranslocoPipe } from '@jsverse/transloco';
       </div>
 
       <!-- L'écart expliqué + accès au relevé réel -->
-      <div class="flex flex-col gap-2 border-t border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between">
+      <div
+        class="flex flex-col gap-2 border-t border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
+      >
         <p class="text-xs text-text-muted">
-          <span class="font-mono font-semibold"
-                [class.text-ib-red]="delta() < 0"
-                [class.text-ib-green]="delta() >= 0">
+          <span
+            class="font-mono font-semibold"
+            [class.text-ib-red]="delta() < 0"
+            [class.text-ib-green]="delta() >= 0"
+          >
             {{ delta() >= 0 ? '+' : '' }}{{ delta() | number: '1.2-2' }}&euro;
           </span>
           {{ 'budget.bankAccount.balance.deltaHint' | transloco }}
         </p>
-        <a routerLink="/budget/transactions"
-           class="inline-flex min-h-8 items-center gap-1.5 self-start text-xs font-medium text-ib-blue transition-colors hover:underline">
+        <a
+          routerLink="/budget/transactions"
+          class="inline-flex min-h-8 items-center gap-1.5 self-start text-xs font-medium text-ib-blue transition-colors hover:underline"
+        >
           {{ 'budget.bankAccount.balance.seeStatement' | transloco }}
           <app-icon name="arrow-right" size="13" />
         </a>

@@ -1,10 +1,4 @@
-import {
-  ChangeDetectionStrategy,
-  Component,
-  inject,
-  Injectable,
-  signal,
-} from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, Injectable, signal } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 
@@ -75,11 +69,9 @@ export class Toaster {
   }
 
   dismiss(id: number) {
-    this._toasts.update(list =>
-      list.map(t => (t.id === id ? { ...t, leaving: true } : t)),
-    );
+    this._toasts.update((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
     setTimeout(() => {
-      this._toasts.update(list => list.filter(t => t.id !== id));
+      this._toasts.update((list) => list.filter((t) => t.id !== id));
     }, LEAVE_ANIMATION_MS);
   }
 
@@ -87,7 +79,7 @@ export class Toaster {
     const id = this._nextId++;
     const duration = config?.duration ?? DEFAULT_DURATION;
 
-    this._toasts.update(list => [...list, { id, key, params, type, duration, leaving: false }]);
+    this._toasts.update((list) => [...list, { id, key, params, type, duration, leaving: false }]);
 
     if (duration > 0) {
       setTimeout(() => this.dismiss(id), duration);
@@ -103,33 +95,45 @@ export class Toaster {
   imports: [Icon, TranslocoPipe],
   host: { class: 'contents' },
   template: `
-    <div class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
-         aria-live="polite"
-         aria-relevant="additions">
+    <div
+      class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+      aria-live="polite"
+      aria-relevant="additions"
+    >
       @for (toast of toasts(); track toast.id) {
-        <div class="toast-card pointer-events-auto"
-             [class]="style(toast.type).bg"
-             [class.toast-enter]="!toast.leaving"
-             [class.toast-leave]="toast.leaving"
-             role="status">
+        <div
+          class="toast-card pointer-events-auto"
+          [class]="style(toast.type).bg"
+          [class.toast-enter]="!toast.leaving"
+          [class.toast-leave]="toast.leaving"
+          role="status"
+        >
           <div class="flex items-start gap-2.5 px-3.5 pt-3 pb-2.5">
-            <app-icon [name]="icon(toast.type)" size="16"
-                      class="shrink-0 mt-0.5"
-                      [class]="style(toast.type).icon" />
-            <p class="flex-1 text-sm text-text-primary leading-snug">{{ toast.key | transloco: toast.params }}</p>
-            <button type="button"
-                    class="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
-                    [attr.aria-label]="'shared.toast.dismiss' | transloco"
-                    (click)="dismiss(toast.id)">
+            <app-icon
+              [name]="icon(toast.type)"
+              size="16"
+              class="shrink-0 mt-0.5"
+              [class]="style(toast.type).icon"
+            />
+            <p class="flex-1 text-sm text-text-primary leading-snug">
+              {{ toast.key | transloco: toast.params }}
+            </p>
+            <button
+              type="button"
+              class="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
+              [attr.aria-label]="'shared.toast.dismiss' | transloco"
+              (click)="dismiss(toast.id)"
+            >
               <app-icon name="x" size="14" />
             </button>
           </div>
           @if (toast.duration > 0) {
             <div class="h-[2px] w-full overflow-hidden rounded-b">
-              <div class="h-full rounded-full toast-progress"
-                   [class]="style(toast.type).bar"
-                   [style.animation-duration.ms]="toast.duration">
-              </div>
+              <div
+                class="h-full rounded-full toast-progress"
+                [class]="style(toast.type).bar"
+                [style.animation-duration.ms]="toast.duration"
+              ></div>
             </div>
           }
         </div>

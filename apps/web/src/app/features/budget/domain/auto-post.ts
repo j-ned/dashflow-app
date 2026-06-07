@@ -17,7 +17,11 @@ export type DuePostingsContext = {
   readonly currentDay: number; // 1..31
 };
 
-const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set(['income', 'expense', 'transfer']);
+const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set([
+  'income',
+  'expense',
+  'transfer',
+]);
 
 const directionOf = (entry: RecurringEntry): DuePostingDirection =>
   entry.type === 'income' ? 'income' : entry.type === 'transfer' ? 'transfer' : 'expense';
@@ -30,7 +34,10 @@ function monthsBetween(from: string, to: string): string[] {
   while (y < ty || (y === ty && m <= tm)) {
     months.push(`${y}-${String(m).padStart(2, '0')}`);
     m += 1;
-    if (m > 12) { m = 1; y += 1; }
+    if (m > 12) {
+      m = 1;
+      y += 1;
+    }
   }
   return months;
 }

@@ -1,4 +1,11 @@
-import { Component, ChangeDetectionStrategy, input, output, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ChangeDetectionStrategy,
+  input,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 
@@ -8,17 +15,26 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
   imports: [ModalDialog, TranslocoPipe],
   host: { class: 'contents' },
   template: `
-    <app-modal-dialog #modal [title]="'auth.recoveryKey.title' | transloco" size="md" (closed)="closed.emit()">
+    <app-modal-dialog
+      #modal
+      [title]="'auth.recoveryKey.title' | transloco"
+      size="md"
+      (closed)="closed.emit()"
+    >
       <div class="flex flex-col gap-4">
         <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
-          <p class="text-sm font-medium text-ib-amber">{{ 'auth.recoveryKey.importantTitle' | transloco }}</p>
+          <p class="text-sm font-medium text-ib-amber">
+            {{ 'auth.recoveryKey.importantTitle' | transloco }}
+          </p>
           <p class="mt-1 text-sm text-text-primary">
             {{ 'auth.recoveryKey.importantBody' | transloco }}
           </p>
         </div>
 
         <div class="rounded-lg border border-border bg-canvas p-4">
-          <p class="mb-2 text-xs font-medium text-text-muted uppercase tracking-wide">{{ 'auth.recoveryKey.label' | transloco }}</p>
+          <p class="mb-2 text-xs font-medium text-text-muted uppercase tracking-wide">
+            {{ 'auth.recoveryKey.label' | transloco }}
+          </p>
           <p class="font-mono text-sm break-all leading-relaxed text-text-primary select-all">
             {{ formattedKey() }}
           </p>
