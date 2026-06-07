@@ -1,4 +1,4 @@
-import { Injectable, signal, effect, computed } from '@angular/core';
+import { Injectable, signal, effect, computed, DestroyRef, inject } from '@angular/core';
 
 export type ThemePreference = 'system' | 'dark' | 'light';
 export type ResolvedTheme = 'dark' | 'light';
@@ -27,9 +27,11 @@ export class ThemeStore {
   readonly isDark = computed(() => this.resolved() === 'dark');
 
   constructor() {
-    window.matchMedia(SYSTEM_QUERY).addEventListener('change', (e) => {
+    const mql = window.matchMedia(SYSTEM_QUERY);
+    const onSystemThemeChange = (e: MediaQueryListEvent) =>
       this._systemTheme.set(e.matches ? 'light' : 'dark');
-    });
+    mql.addEventListener('change', onSystemThemeChange);
+    inject(DestroyRef).onDestroy(() => mql.removeEventListener('change', onSystemThemeChange));
 
     effect(() => {
       document.documentElement.setAttribute('data-theme', this.resolved());

@@ -1,4 +1,4 @@
-import { Injectable, computed, effect, inject, signal } from '@angular/core';
+import { DestroyRef, Injectable, computed, effect, inject, signal } from '@angular/core';
 import { TranslocoService } from '@jsverse/transloco';
 
 export type LocalePreference = 'system' | 'fr' | 'en';
@@ -33,9 +33,9 @@ export class LocaleStore {
   readonly isFrench = computed(() => this.resolved() === 'fr');
 
   constructor() {
-    window.addEventListener('languagechange', () => {
-      this._systemLocale.set(detectBrowserLocale());
-    });
+    const onLanguageChange = () => this._systemLocale.set(detectBrowserLocale());
+    window.addEventListener('languagechange', onLanguageChange);
+    inject(DestroyRef).onDestroy(() => window.removeEventListener('languagechange', onLanguageChange));
 
     effect(() => {
       const lang = this.resolved();
