@@ -195,7 +195,9 @@ describe('Prescriptions', () => {
     cmp.selectedPrescription.set(PRESCRIPTION);
     const callsBefore = getAll.mock.calls.length;
 
-    await expect(cmp.updatePrescription({ data: SUBMIT_DATA, file: FILE })).resolves.toBeUndefined();
+    await expect(
+      cmp.updatePrescription({ data: SUBMIT_DATA, file: FILE }),
+    ).resolves.toBeUndefined();
     fixture.detectChanges();
     await fixture.whenStable();
 

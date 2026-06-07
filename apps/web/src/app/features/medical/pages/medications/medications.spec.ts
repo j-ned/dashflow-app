@@ -300,7 +300,10 @@ describe('Medications', () => {
     const { cmp } = make({ getAll: vi.fn(() => of([LOW_MED, HEALTHY_MED])) });
 
     expect(cmp.lowStockCount()).toBe(1);
-    const ids = cmp.medicationsWithStock().filter((m) => m.isLow).map((m) => m.id);
+    const ids = cmp
+      .medicationsWithStock()
+      .filter((m) => m.isLow)
+      .map((m) => m.id);
     expect(ids).toEqual(['low']);
   });
 
