@@ -226,7 +226,8 @@
         "prepareFailed": "Erreur lors de la préparation du chiffrement.",
         "passphraseFailed": "Erreur lors de la configuration de la passphrase.",
         "unlockFailed": "Impossible de déverrouiller le chiffrement.",
-        "migrationFailed": "Erreur lors de la migration des données. Réessayez."
+        "migrationFailed": "Erreur lors de la migration des données. Réessayez.",
+        "tablesFailed": "Le chiffrement a échoué pour : {{tables}}. Migration interrompue, aucune donnée n'a été marquée chiffrée. Réessayez."
       }
     },
     "passphraseModal": {
@@ -1216,6 +1217,7 @@
       "toAccount": "Vers le compte",
       "toAccountChoose": "-- Choisir le compte cible --",
       "toAccountHint": "Le montant sera débité du compte actuel et crédité sur ce compte",
+      "toAccountRequired": "Choisis le livret (ou le compte) de destination pour pouvoir enregistrer.",
       "transferDay": "Jour du virement",
       "transferDayPlaceholder": "Ex: 10",
       "transferDayHint": "Jour récurrent chaque mois",

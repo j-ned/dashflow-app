@@ -226,7 +226,8 @@
         "prepareFailed": "Failed to prepare encryption.",
         "passphraseFailed": "Failed to set up passphrase.",
         "unlockFailed": "Unable to unlock encryption.",
-        "migrationFailed": "Data migration failed. Please try again."
+        "migrationFailed": "Data migration failed. Please try again.",
+        "tablesFailed": "Encryption failed for: {{tables}}. Migration aborted, no data was marked as encrypted. Please try again."
       }
     },
     "passphraseModal": {
@@ -1216,6 +1217,7 @@
       "toAccount": "To account",
       "toAccountChoose": "-- Choose target account --",
       "toAccountHint": "The amount will be debited from the current account and credited to this one",
+      "toAccountRequired": "Choose the destination savings account to be able to save.",
       "transferDay": "Transfer day",
       "transferDayPlaceholder": "e.g. 10",
       "transferDayHint": "Recurring day each month",

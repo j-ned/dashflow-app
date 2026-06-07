@@ -1,0 +1,114 @@
+---
+type: intake-audit
+---
+
+# Intake audit — repo entier
+
+## Description
+
+Audit d'entrée du scope **repo** (repo entier, `src/` complet : auth, budget, medical, settings, core, shared).
+Déclenché le 2026-06-07 via `/aak-audit`. Aucun diff : la portée est ce scope.
+
+## Intake audit
+
+**Scope** : repo (`src/` complet — auth, budget, medical, settings, core, shared, layout, pages)
+**Date** : 2026-06-07
+**Outils exécutés** : pnpm audit ✅ | madge ✅ | knip ✅ | depcheck ✅
+**CI auditée** (dim 10, GitHub Actions) : ✅ `.github/workflows/ci.yml`
+**Gates CI locaux** : tests ✅ (23 fichiers / 132 tests, typecheck specs inclus) / lint ✅ (zéro warning) / build : non relancé (`pnpm test` AOT-compile déjà tout le bundle — source de vérité du typecheck ; bundle de prod construit en CI via Docker)
+**Invalidation cache** : non vérifiée — profil déclare « aucun système orchestré » (cache Vite/Vitest local, build incrémental tsc) ; `intake-auditor` trace conformément.
+**Candidats hors-périmètre écartés** : N/A (scope-repo, pas de manifeste figé).
+
+> Taille du périmètre : 177 fichiers `.ts` (dont 23 `*.spec.ts`), ≈ 25,7k LOC. Cible de volume scope-repo < 30k LOC : 20-60 constats actionnables.
+
+### Vue d'ensemble
+
+`dash-flow` est le **frontend Angular 21 (ère zoneless)** d'une application de budget + suivi médical, **chiffrée de bout en bout** (E2EE WebCrypto — aucun montant ni donnée sensible n'est traité côté serveur ; le backend NestJS vit dans un repo séparé, `apiUrl: localhost:3001`). L'architecture suit une **Clean Architecture EAK 3 couches par feature** (`domain/` TS pur → `infra/` HTTP+adapters ; câblage dans `app.config.ts`), avec stores signals maison (pas de NgRx), Transloco i18n (fr/en), TailwindCSS v4 CSS-first, et une discipline de conventions remarquablement tenue : **zéro `any`** (specs incluses), **zéro `*ngIf`/`*ngFor`/`NgModule`/`.component.ts` résiduel**, lint flat-config strict vert, **aucun cycle de dépendance** (madge), **aucune CVE** (audit prod). Les entry points sont `src/main.ts` → `app.config.ts` → `app.routes.ts` (lazy load partout sauf route par défaut). Les features sont **budget** (mature, 81 fichiers, 17 specs, le cœur du produit), **medical** (41 fichiers mais 1 seule spec), **auth** (10 fichiers, sécurité-critique, 1 spec) et **settings** (2 fichiers).
+
+La dette est **concentrée et lisible** : l'intersection volume × churn désigne un hotspot dominant — `bank-account.ts` (1423 LOC, 39 commits sur 6 mois), suivi d'une grappe de **pages smart obèses** (200 LOC est le seuil maison ; user-settings 861, salary-archives 696, budget-dashboard 662, loans 620, envelopes 568, budget-analytics 575, landing 672). Le second axe de dette est la **couverture de tests des pages smart** : le domaine pur et quelques panneaux sont bien testés, mais **presque aucune page smart ne l'est** — toute la feature medical, toutes les pages auth (login/register/unlock, pourtant sécurité-critiques et à fort churn), et 5 des 7 pages budget n'ont pas de spec. Le troisième axe, structurant pour une app E2EE, est l'**absence de validation runtime aux frontières HTTP** : un seul `.adapter.ts` dans tout le repo, et les blobs déchiffrés sont castés (`as T`) sans schéma.
+
+### Pistes d'enquête prioritaires (10 fichiers, nommés)
+
+1. `src/app/features/budget/pages/bank-account/bank-account.ts` — 1423 LOC × 39 commits : le hotspot absolu, god page traversée à chaque évolution budget.
+2. `src/app/features/settings/pages/user-settings/user-settings.ts` — 861 LOC, 6 deps injectées, aucun spec : 2ᵉ plus gros fichier.
+3. `src/app/features/auth/pages/encryption-setup/encryption-setup.ts` — 320 LOC, cœur E2EE, contient un `catch {}` silencieux dans la boucle de chiffrement (perte de données potentielle).
+4. `src/app/core/services/crypto/crypto-transport.ts` — frontière de (dé)chiffrement HTTP, cast `as T` sans validation runtime.
+5. `src/app/features/budget/pages/salary-archives/salary-archives.ts` — 696 LOC, sans spec.
+6. `src/app/features/budget/pages/budget-dashboard/budget-dashboard.ts` — 662 LOC, sans spec, fort churn.
+7. `src/app/features/medical/pages/reminders/reminders.ts` — 520 LOC, feature medical quasi non testée.
+8. `src/app/features/budget/components/recurring-entry-form/recurring-entry-form.ts` — 726 LOC pour un composant de formulaire, fort churn.
+9. `src/app/features/auth/pages/unlock/unlock.ts` & `login.ts` — pages sécurité-critiques, fort churn, sans spec.
+10. `src/app/pages/landing/landing.ts` — 672 LOC pour une page marketing (god page hors feature).
+
+### Synthèse (≤ 10 points, classés par impact)
+
+1. **F001** — `bank-account.ts` (1423 LOC / 39 commits) : god page, point de friction n°1 de toute évolution budget.
+2. **F002** — Pas de validation runtime aux frontières HTTP/E2EE (cast `as T`) : un blob corrompu/altéré entre en données silencieusement.
+3. **F003** — `catch {}` silencieux dans la boucle de migration de chiffrement : échec de chiffrement par-ligne avalé → données en clair non migrées sans trace.
+4. **F004** — Toutes les pages auth (login/register/unlock/encryption-setup) sans spec : régressions sécurité non couvertes.
+5. **F005** — Feature medical (8 pages, ≈ 3k LOC) quasi sans test (1 spec gateway) malgré un churn soutenu.
+6. **F006** — Grappe de 7 pages smart > 560 LOC (user-settings, salary-archives, budget-dashboard, loans, envelopes, budget-analytics, landing) au-dessus du seuil maison 200.
+7. **F007** — `recurring-entry-form.ts` 726 LOC : formulaire monolithique, fort churn.
+8. **F008** — `csv-import-wizard.ts:310` : `.subscribe()` non borné par `takeUntilDestroyed` (fuite si destruction en vol).
+9. **F009** — Blocs JSDoc `/**` multi-lignes narratifs vs politique « 1 ligne WHY intemporel ou rien » (table § Constats).
+10. **F010** — Dérive de doc mineure : `CLAUDE.md` documente un backend NestJS / monorepo `apps/api` absent de ce repo ; `README.md:264` mêle commande backend.
+
+### Légende des catégories (le compte rendu peut être transmis à un tiers sans accès au contrat de l'agent)
+
+**Catégorie** (dimension d'audit) : 1 Délitement architectural · 2 Érosion de la cohérence · 3 Dette de types et contrats · 4 Dette de tests · 5 Dette de dépendances et configuration · 6 Performance et gestion des ressources · 7 Gestion des erreurs et observabilité · 8 Sécurité · 9 Dérive de la documentation · 10 Dette de CI/CD et automatisation.
+**Sévérité** : Critique (casse prod / sécurité / régression silencieuse) · Élevée (ralentit le travail courant) · Moyenne (friction modérée) · Faible (cosmétique / pérennité). **Effort** : S ≤ ½ j · M ≤ 2 j · L > 2 j.
+
+### Constats (problèmes actionnables uniquement)
+
+| ID | Catégorie | fichier:ligne | Sévérité | Effort | Description | Recommandation |
+| --- | --- | --- | --- | --- | --- | --- |
+| F001 | 1 | src/app/features/budget/pages/bank-account/bank-account.ts:1 | Élevée | L | God page : 1423 LOC, 9 deps injectées, 39 commits/6 mois. Concentre solde, import CSV, échéances, orphelines, export — traversée à chaque évolution budget. | Extraire en sous-composants présentationnels + déléguer la logique aux stores/domaine. Déjà amorcé (`bank-expense-columns`, `pending-charges-panel`, `orphan-entries-panel`) : poursuivre le découpage. |
+| F002 | 3+8 | src/app/core/services/crypto/crypto-transport.ts:14 | Élevée | M | Frontière HTTP/E2EE : `identity = row as T` et `decryptEntity<T>` retournent un cast non vérifié. Aucune validation runtime du blob déchiffré (profil : « absence de validation aux frontières ⇒ finding »). En E2EE, un blob altéré/corrompu devient un modèle domaine invalide silencieusement. | Introduire une validation aux frontières (fonctions pures de garde, ou lib type Zod si adoptée) sur les rows déchiffrées avant cast vers le modèle domaine. |
+| F003 | 7+8 | src/app/features/auth/pages/encryption-setup/encryption-setup.ts:298 | Critique | S | `catch {}` totalement silencieux **dans** la boucle de chiffrement par table de la migration E2EE : un échec d'`encryptEntity` ou de récupération de lignes est avalé, `completed++` continue, la table est marquée traitée. Données potentiellement laissées en clair côté serveur sans aucune trace ni erreur remontée à l'utilisateur. | Au minimum logguer + collecter les tables en échec et bloquer le passage à `step('done')` ; remonter une erreur explicite à l'utilisateur (migration partielle = état dangereux pour une app E2EE). |
+| F004 | 4 | src/app/features/auth/pages/login/login.ts:1 | Élevée | M | Aucune des pages auth n'a de spec : `login.ts` (343 LOC), `register.ts` (394), `unlock.ts` (402), `encryption-setup.ts` (320), `forgot-password.ts` (500). Chemins sécurité-critiques (déverrouillage, dérivation de clé, migration) à fort churn, non couverts. | Prioriser des specs composant (TestBed + `provideHttpClientTesting` + fakes crypto déterministes, déjà outillés) sur unlock et encryption-setup d'abord. |
+| F005 | 4 | src/app/features/medical/pages/reminders/reminders.ts:1 | Élevée | L | Feature medical : 41 fichiers, ≈ 3k LOC de pages (reminders 520, medical-dashboard 491, prescriptions 415, medications 385, documents 362, appointments 335), **une seule** spec (`http-medication.gateway.spec.ts`). Churn soutenu (10-12 commits/page). | Extraire la logique métier des pages vers `domain/` testable (le domaine medical est aujourd'hui maigre) puis couvrir ; spécifier au moins les pages à plus fort churn. |
+| F006 | 1 | src/app/features/settings/pages/user-settings/user-settings.ts:1 | Élevée | L | Grappe de pages smart au-dessus du seuil maison 200 LOC : user-settings 861, salary-archives 696, budget-dashboard 662, landing 672, loans 620, budget-analytics 575, envelopes 568. Chaque évolution rouvre un gros fichier. | Découper par sous-composants présentationnels + déplacer calculs vers `domain/`. Traiter par churn décroissant. |
+| F007 | 1 | src/app/features/budget/components/recurring-entry-form/recurring-entry-form.ts:1 | Moyenne | M | Formulaire monolithique de 726 LOC (16 commits) : un seul composant gère tous les types de récurrence (income/expense/transfer/credit) + auto-post. | Décomposer par variante de formulaire ou extraire la construction/validation du FormGroup vers une fonction pure testable. |
+| F008 | 6 | src/app/features/budget/pages/transactions/csv-import-wizard/csv-import-wizard.ts:310 | Moyenne | S | `.subscribe(() => this.imported.emit(...))` sans `takeUntilDestroyed` ni `DestroyRef`, contrairement au reste du repo (bank-account, transactions le font correctement). Fuite si le wizard est détruit pendant l'import en vol. | Ajouter `.pipe(takeUntilDestroyed(this._destroyRef))` ou passer par `firstValueFrom` dans un handler async. |
+| F009 | 2 | src/app/core/services/crypto/entity-crypto.ts:5 | Faible | S | Blocs JSDoc `/**` multi-lignes narratifs (avec `@param`/`@returns`) vs politique projet « 1 ligne WHY intemporel ou rien ». Hits du grep d'archéologie : `entity-crypto.ts:5,34,48`, `file-crypto.ts:3,12`, `crypto-transport.ts:5,44`, `categories.ts:1`, `money.ts:1`, `csrf-store.ts:3`, `form-validators.ts:3,15`. Aucun ne contient de réf ADR/§/n° spec (pas de rationalisation interdite), mais la forme multi-paragraphe / `@param` viole la politique. | Réduire chaque bloc à une ligne de WHY intemporel, ou supprimer si le QUOI est évident. Les WHY denses (money.ts dérive flottante, csrf-store cross-origin, categories matching tolérant) sont à **condenser**, pas à perdre. |
+| F010 | 9 | .claude/CLAUDE.md:1 | Faible | S | `CLAUDE.md` documente abondamment un backend NestJS + monorepo `apps/api/**` (Drizzle, Zod, structure modules) absent de ce repo (frontend seul, backend en repo séparé). `README.md:264` injecte une commande backend (`pnpm start:dev → :3001`) dans la section frontend. Drift entre doc et état réel du dépôt. | Scinder la doc backend hors `CLAUDE.md` de ce repo (ou la marquer « repo séparé »), clarifier les commandes frontend vs backend dans le README. |
+| F011 | 6 | src/app/core/services/theme.store.ts:30 | Faible | S | `ThemeStore` (root) ajoute `matchMedia(...).addEventListener('change', …)` sans cleanup ; idem `LocaleStore` (`locale.store.ts:36`, `languagechange`). Singletons `providedIn: 'root'` → vivent toute l'app, donc fuite bornée et tolérable, mais le listener anonyme empêche tout removeEventListener et n'est pas SSR-safe par construction. | Si SSR un jour visé : garder une référence + `DestroyRef.onDestroy`. Sinon documenter le choix (lifetime app assumé). Sévérité faible car singleton. |
+| F012 | 1 | src/app/features/budget/domain/auto-post.ts:5 | Faible | S | `export type DuePostingDirection` n'est consommé que dans son propre fichier (knip : « unused exported type »). Export spéculatif. | Retirer le mot-clé `export` (type interne au module). |
+
+### Priorités absolues (« si tu ne corriges rien d'autre »)
+
+1. **F003** — Le `catch {}` silencieux de la migration E2EE est le seul constat **Critique** : dans une app dont la promesse est le chiffrement de bout en bout, avaler un échec de chiffrement par table peut laisser des données en clair côté serveur sans que personne ne le sache. Fix S : collecter les échecs, bloquer `step('done')`, remonter l'erreur. À traiter en premier.
+2. **F002** — Pas de validation runtime aux frontières : structurant pour la fiabilité E2EE. Esquisse : interposer une garde (fonction pure ou schéma) entre `decryptEntity` et le modèle domaine.
+3. **F004 + F005** — La couverture de tests des chemins auth (sécurité) et medical (churn) est le risque de régression silencieuse le plus large ; l'outillage de test (fakes crypto/HTTP déterministes) existe déjà.
+
+### Gains rapides (effort faible × sévérité moyenne+)
+
+- [ ] **F003** — Remplacer `catch {}` par collecte d'échecs + blocage de `step('done')` (< 30 min, sévérité Critique).
+- [ ] **F008** — Ajouter `takeUntilDestroyed` au `.subscribe()` du csv-import-wizard (< 10 min).
+- [ ] **F012** — Dé-exporter `DuePostingDirection` (< 5 min).
+
+### Bonnes pratiques notables (informatif)
+
+- **Discipline de conventions exemplaire** : zéro `any` (specs incluses), zéro `*ngIf`/`*ngFor`/`NgModule`/`.component.ts`, lint strict vert, aucun cycle madge, aucune CVE prod. Rare à ce niveau de propreté.
+- **Domaine budget bien isolé et testé** : `domain/` TS pur (money, account-balance, categories, csv-import, auto-post) couvert par 17 specs sans TestBed — exactement le carve-out unitaire visé par le profil. À reproduire pour medical.
+- **Gestion RxJS correcte là où elle compte** : `bank-account.ts` et `transactions.ts` bornent systématiquement leurs `subscribe` avec `takeUntilDestroyed(this._destroyRef)` (F008 est l'exception isolée).
+- **Arithmétique monétaire en centimes entiers** (`money.ts`) : évite la dérive flottante sur des soldes re-chiffrés — décision juste, bien justifiée.
+- **CI GitHub Actions saine** : `concurrency` + `cancel-in-progress`, cache pnpm, gates `lint`/`format:check`/`test` en parité avec le local, build Docker en job dépendant avec cache gha.
+
+### Faux positifs assumés (≥ 1 entrée — anti-pattern-matching)
+
+- **`as T` / `as string` partout dans la couche crypto** — castera l'œil naïf en « type safety brisée ». En réalité légitime : à la frontière d'un blob déchiffré, le runtime ne *peut pas* connaître la forme statiquement ; le cast est inévitable. Le vrai manque n'est pas le cast mais l'absence de **garde runtime** en amont (capturé en F002, pas un finding de cast).
+- **`.then((m) => m.X)` sans `.catch` dans `app.routes.ts` / `*.routes.ts`** — pattern de lazy-loading Angular standard ; les erreurs de chargement de chunk sont gérées par le routeur, pas par un `.catch` manuel. Ne pas flagger (≈ 15 occurrences toutes légitimes).
+- **`setTimeout(() => URL.revokeObjectURL(url), 60_000)`** (bank-account:1399, documents:288, medical-dashboard:478, prescriptions:322, salary-archives:580) — paraît un timer non nettoyé ; en réalité cleanup différé volontaire d'un objet URL de téléchargement, fire-and-forget borné, aucun handle à conserver. Conforme.
+- **`setTimeout` dans `toast.ts`** (root singleton, auto-dismiss) — cycle de vie transitoire du toast, pas une fuite ; le timer se résout en `LEAVE_ANIMATION_MS`/`duration`. Conforme.
+- **knip « unused file `src/styles.css` » et « unused deps `@fontsource-variable/*` »** — faux positifs : `styles.css` est l'entrée styles déclarée dans `angular.json` (build), les fontsource sont importées via CSS `@theme`/`@import` que knip ne suit pas. Ne pas supprimer.
+- **depcheck « missing `@core/*` `@features/*` `@shared/*` »** — faux positifs : ce sont les path alias `tsconfig.json` que depcheck ne résout pas. Aucune dépendance manquante réelle.
+- **`httpResource()`/`rxResource()` quasi absents** alors que le profil les privilégie pour les GET — pourrait sembler une dette ; en réalité les gateways exposent des `Observable` consommés via `firstValueFrom` dans des stores signals, choix cohérent avec l'E2EE (déchiffrement dans le pipe). À conserver tel quel tant que les nouveaux GET simples adoptent `httpResource`.
+
+### Questions ouvertes pour l'équipe
+
+- **Validation aux frontières (F002)** : choix intentionnel (YAGNI, backend de confiance + E2EE = intégrité supposée) ou dette à combler ? Le profil déclare « aucune lib de validation » comme un choix — confirmer que l'absence de garde runtime sur les blobs déchiffrés est assumée.
+- **F003** : le `catch {}` est-il un oubli ou un best-effort volontaire (« migrer ce qu'on peut, réessayer plus tard ») ? Si volontaire, il manque la persistance de l'état « table non migrée » — à clarifier avec l'intention produit.
+- **Découpe des god pages (F001/F006)** : l'équipe préfère-t-elle un refactor incrémental piloté par le churn (découper quand on touche) ou un chantier dédié ? Cela relève d'une décision d'architecture (ressort `architect`, signalé ici sans plan réécrit).
+- **Feature medical (F005)** : le domaine medical est volontairement maigre (logique dans les pages) — est-ce un choix de maturité (feature plus jeune) ou une dette à rattraper au niveau de budget ?
+
