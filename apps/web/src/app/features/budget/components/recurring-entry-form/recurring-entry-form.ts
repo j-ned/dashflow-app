@@ -10,7 +10,6 @@ import {
   signal,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { DecimalPipe } from '@angular/common';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { map } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -18,7 +17,19 @@ import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurrin
 import { BankAccount } from '../../domain/models/bank-account.model';
 import { Member } from '../../domain/models/member.model';
 import { BUDGET_CATEGORIES } from '../../domain/categories';
-import { Icon } from '@shared/components/icon/icon';
+import { buildRecurringEntryPayload } from '../../domain/recurring-entry-payload';
+import {
+  Destination,
+  TransferMode,
+  defaultDestination,
+  defaultTransferMode,
+  deriveActiveType,
+  destinationToggleVisible,
+  payslipZoneVisible,
+  targetAccountsFor,
+  transferModeToggleVisible,
+} from '../../domain/recurring-entry-type';
+import { PayslipDropzone } from '../payslip-dropzone/payslip-dropzone';
 
 type RecurringEntryFormShape = {
   label: FormControl<string>;
@@ -35,7 +46,7 @@ type RecurringEntryFormShape = {
 @Component({
   selector: 'app-recurring-entry-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, DecimalPipe, Icon, TranslocoPipe],
+  imports: [ReactiveFormsModule, TranslocoPipe, PayslipDropzone],
   host: { class: 'block' },
   template: `
     <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
@@ -430,77 +441,12 @@ type RecurringEntryFormShape = {
 
         <!-- Drag & drop fiche de paie (income only, edit mode) -->
         @if (showPayslipZone()) {
-          <div role="group" aria-labelledby="recurring-payslip-label">
-            <span
-              id="recurring-payslip-label"
-              class="block text-sm font-medium text-text-muted mb-1"
-              >{{ 'budget.recurringForm.payslip' | transloco }}</span
-            >
-
-            @if (hasExistingPayslip() && !_pendingFile()) {
-              <div
-                class="flex items-center justify-between rounded-lg border border-ib-green/30 bg-ib-green/5 px-3 py-2"
-              >
-                <div class="flex items-center gap-2 text-sm text-ib-green">
-                  <app-icon name="file-text" size="16" />
-                  <span>{{ 'budget.recurringForm.payslipAttached' | transloco }}</span>
-                </div>
-                <div class="flex gap-2">
-                  <button
-                    type="button"
-                    class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-                    (click)="viewPayslip.emit()"
-                  >
-                    {{ 'budget.recurringForm.payslipView' | transloco }}
-                  </button>
-                  <button
-                    type="button"
-                    class="rounded border border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                    (click)="removePayslip.emit()"
-                  >
-                    {{ 'budget.recurringForm.payslipRemove' | transloco }}
-                  </button>
-                </div>
-              </div>
-            } @else {
-              <div
-                class="relative rounded-lg border-2 border-dashed transition-colors"
-                [class.border-ib-cyan]="isDragging()"
-                [class.bg-ib-cyan-5]="isDragging()"
-                [class.border-border]="!isDragging()"
-                (dragover)="onDragOver($event)"
-                (dragleave)="onDragLeave()"
-                (drop)="onDrop($event)"
-              >
-                <input
-                  type="file"
-                  accept=".pdf,.jpg,.jpeg,.png,.webp"
-                  class="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-                  (change)="onFileInput($event)"
-                />
-                <div class="flex flex-col items-center py-6 pointer-events-none">
-                  @if (_pendingFile()) {
-                    <app-icon name="file-text" size="24" class="text-ib-green mb-1" />
-                    <p class="text-sm font-medium text-ib-green">{{ _pendingFile()!.name }}</p>
-                    <p class="text-xs text-text-muted mt-0.5">
-                      {{
-                        'budget.recurringForm.fileSizeKb'
-                          | transloco: { size: (_pendingFile()!.size / 1024 | number: '1.0-0') }
-                      }}
-                    </p>
-                  } @else {
-                    <app-icon name="file-text" size="24" class="text-text-muted mb-1" />
-                    <p class="text-sm text-text-muted">
-                      {{ 'budget.recurringForm.payslipDropHint' | transloco }}
-                    </p>
-                    <p class="text-xs text-text-muted mt-0.5">
-                      {{ 'budget.recurringForm.payslipBrowseHint' | transloco }}
-                    </p>
-                  }
-                </div>
-              </div>
-            }
-          </div>
+          <app-payslip-dropzone
+            [hasExisting]="hasExistingPayslip()"
+            [(pendingFile)]="pendingFile"
+            (view)="viewPayslip.emit()"
+            (remove)="removePayslip.emit()"
+          />
         }
       </fieldset>
 
@@ -540,52 +486,43 @@ export class RecurringEntryForm {
   readonly removePayslip = output<void>();
   readonly cancelled = output<void>();
 
-  protected readonly isDragging = signal(false);
-  protected readonly _pendingFile = signal<File | null>(null);
+  protected readonly pendingFile = signal<File | null>(null);
 
   // Contexte prélèvement : un toggle Destination fait basculer expense ↔ transfer.
-  protected readonly showDestinationToggle = computed(() => {
-    const t = this.forcedType() ?? this.initial()?.type;
-    return t === 'expense' || t === 'transfer';
-  });
+  protected readonly showDestinationToggle = computed(() =>
+    destinationToggleVisible(this.forcedType() ?? this.initial()?.type),
+  );
 
   // Sous-toggle récurrent/ponctuel : visible seulement pour le flux virement explicite
   // (bouton ponctuel du panneau, ou édition d'un virement) — masqué dans le flux prélèvement.
-  protected readonly showTransferModeToggle = computed(
-    () => (this.forcedType() ?? this.initial()?.type) === 'transfer',
+  protected readonly showTransferModeToggle = computed(() =>
+    transferModeToggleVisible(this.forcedType() ?? this.initial()?.type),
   );
 
-  protected readonly destination = linkedSignal<'third_party' | 'my_account'>(() => {
-    const t = this.forcedType() ?? this.initial()?.type ?? 'expense';
-    return t === 'transfer' ? 'my_account' : 'third_party';
-  });
+  protected readonly destination = linkedSignal<Destination>(() =>
+    defaultDestination(this.forcedType() ?? this.initial()?.type),
+  );
 
-  protected readonly activeType = computed<RecurringEntryType>(() => {
-    if (this.showDestinationToggle()) {
-      return this.destination() === 'my_account' ? 'transfer' : 'expense';
-    }
-    return this.forcedType() ?? this.initial()?.type ?? 'expense';
-  });
+  protected readonly activeType = computed<RecurringEntryType>(() =>
+    deriveActiveType({
+      baseType: this.forcedType() ?? this.initial()?.type,
+      destination: this.destination(),
+    }),
+  );
 
   // Mode virement : détecté depuis les données initiales, overridable par l'utilisateur
-  protected readonly transferMode = linkedSignal<'recurring' | 'one_time'>(() => {
-    const initial = this.initial();
-    if (initial?.type === 'transfer') {
-      return initial.dayOfMonth != null ? 'recurring' : 'one_time';
-    }
-    return this.initialTransferMode();
-  });
+  protected readonly transferMode = linkedSignal<TransferMode>(() =>
+    defaultTransferMode(this.initial(), this.initialTransferMode()),
+  );
 
   // Comptes cibles pour les virements (exclut le compte source)
-  protected readonly targetAccounts = computed(() => {
-    const sourceId = this.forcedAccountId() ?? this.initial()?.accountId;
-    return this.accounts().filter((a) => a.id !== sourceId);
-  });
+  protected readonly targetAccounts = computed(() =>
+    targetAccountsFor(this.accounts(), this.forcedAccountId() ?? this.initial()?.accountId),
+  );
 
-  protected readonly showPayslipZone = computed(() => {
-    const type = this.forcedType() ?? this.initial()?.type;
-    return type === 'income' && this.initial() !== null;
-  });
+  protected readonly showPayslipZone = computed(() =>
+    payslipZoneVisible(this.forcedType() ?? this.initial()?.type, this.initial() !== null),
+  );
 
   protected readonly hasExistingPayslip = computed(() => !!this.initial()?.payslipKey);
 
@@ -650,7 +587,7 @@ export class RecurringEntryForm {
       } else {
         this.form.reset();
       }
-      this._pendingFile.set(null);
+      this.pendingFile.set(null);
     });
 
     effect(() => {
@@ -674,61 +611,22 @@ export class RecurringEntryForm {
     }
   }
 
-  protected onDragOver(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(true);
-  }
-
-  protected onDragLeave() {
-    this.isDragging.set(false);
-  }
-
-  protected onDrop(event: DragEvent) {
-    event.preventDefault();
-    event.stopPropagation();
-    this.isDragging.set(false);
-
-    const file = event.dataTransfer?.files[0];
-    if (file) {
-      this._pendingFile.set(file);
-    }
-  }
-
-  protected onFileInput(event: Event) {
-    const input = event.target as HTMLInputElement;
-    const file = input.files?.[0];
-    if (file) {
-      this._pendingFile.set(file);
-    }
-  }
-
   protected submit() {
     if (this.form.invalid) return;
 
-    const pending = this._pendingFile();
+    const pending = this.pendingFile();
     if (pending) {
       this.fileAttached.emit(pending);
     }
 
-    const v = this.form.getRawValue();
-    const type = this.activeType();
     const month = new Date().toISOString().slice(0, 7);
-    const autoPostSince = v.autoPost ? (this.initial()?.autoPostSince ?? month) : null;
-    this.submitted.emit({
-      label: v.label,
-      amount: v.amount,
-      type,
-      dayOfMonth: v.dayOfMonth || null,
-      date: v.date || null,
-      endDate: v.endDate || null,
-      toAccountId: type === 'transfer' ? v.toAccountId || null : null,
-      category: v.category || null,
-      memberId: v.memberId || null,
-      accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,
-      payslipKey: this.initial()?.payslipKey ?? null,
-      autoPost: v.autoPost,
-      autoPostSince,
-    });
+    this.submitted.emit(
+      buildRecurringEntryPayload(this.form.getRawValue(), {
+        type: this.activeType(),
+        initial: this.initial(),
+        forcedAccountId: this.forcedAccountId(),
+        currentMonth: month,
+      }),
+    );
   }
 }

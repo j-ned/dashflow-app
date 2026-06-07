@@ -261,3 +261,74 @@ describe('RecurringEntryForm — ÉDITION prélèvement → livret (repro bug)',
     expect(requiredMsg).not.toBeNull(); // sans message, l’utilisateur croit que « rien ne se passe »
   });
 });
+
+type ModeCmp = {
+  form: {
+    controls: {
+      label: { setValue: (v: string) => void; value: string };
+      amount: { setValue: (v: number) => void };
+      dayOfMonth: { setValue: (v: number | null) => void; value: number | null };
+      date: { setValue: (v: string) => void; value: string };
+      endDate: { setValue: (v: string) => void; value: string };
+    };
+  };
+  setTransferMode: (m: 'recurring' | 'one_time') => void;
+  pendingFile: { set: (f: File | null) => void };
+  submit: () => void;
+};
+
+function mountTransfer() {
+  TestBed.configureTestingModule({
+    imports: [
+      RecurringEntryForm,
+      TranslocoTestingModule.forRoot({
+        langs: {},
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+      }),
+    ],
+  });
+  const fixture = TestBed.createComponent(RecurringEntryForm);
+  fixture.componentRef.setInput('forcedType', 'transfer');
+  fixture.componentRef.setInput('accounts', [COURANT, SAVINGS]);
+  fixture.detectChanges();
+  return fixture;
+}
+
+describe('RecurringEntryForm — mode virement, patch & fichier', () => {
+  it('setTransferMode vide les champs du mode opposé', () => {
+    const fixture = mountTransfer();
+    const cmp = fixture.componentInstance as unknown as ModeCmp;
+
+    cmp.form.controls.dayOfMonth.setValue(5);
+    cmp.form.controls.endDate.setValue('2026-12-31');
+    cmp.setTransferMode('one_time');
+    expect(cmp.form.controls.dayOfMonth.value).toBeNull();
+    expect(cmp.form.controls.endDate.value).toBe('');
+
+    cmp.form.controls.date.setValue('2026-06-01');
+    cmp.setTransferMode('recurring');
+    expect(cmp.form.controls.date.value).toBe('');
+  });
+
+  it("initial patche le formulaire à l'édition", () => {
+    const fixture = mountEdit(EXPENSE_ENTRY);
+    const cmp = fixture.componentInstance as unknown as ModeCmp;
+    expect(cmp.form.controls.label.value).toBe('Netflix');
+  });
+
+  it('fichier en attente → fileAttached émis au submit', () => {
+    const fixture = mountExpense();
+    const cmp = fixture.componentInstance as unknown as ModeCmp;
+    cmp.form.controls.label.setValue('Bulletin');
+    cmp.form.controls.amount.setValue(10);
+    cmp.form.controls.dayOfMonth.setValue(5);
+
+    const file = new File(['x'], 'p.pdf', { type: 'application/pdf' });
+    cmp.pendingFile.set(file);
+    let attached: File | undefined;
+    fixture.componentInstance.fileAttached.subscribe((f) => (attached = f));
+    cmp.submit();
+
+    expect(attached).toBe(file);
+  });
+});
