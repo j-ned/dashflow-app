@@ -11,7 +11,7 @@ type BudgetCategoryKey =
   | 'housing' | 'transport' | 'food' | 'health' | 'leisure'
   | 'subscription' | 'insurance' | 'envelope' | 'repayment' | 'other';
 
-export interface BudgetCategory {
+export type BudgetCategory = {
   readonly key: BudgetCategoryKey;
   /** Libellé FR canonique = valeur historiquement stockée en base. */
   readonly label: string;
@@ -53,7 +53,7 @@ export function normalizeCategory(raw: string | null | undefined): BudgetCategor
 // Taxonomie groupée
 // ---------------------------------------------------------------------------
 
-export interface CategoryGroup {
+export type CategoryGroup = {
   readonly key: string;
   readonly label: string;
   readonly categories: readonly BudgetCategory[];

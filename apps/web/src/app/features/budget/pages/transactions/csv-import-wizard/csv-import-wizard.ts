@@ -21,10 +21,11 @@ type ReviewRow = { date: string; label: string; amount: number; direction: 'inco
       <div class="space-y-4">
         <p class="text-sm text-text-muted">{{ 'budget.transactions.import.step1' | transloco }}</p>
         <div>
-          <label class="block text-sm font-medium text-text-primary mb-2">
+          <label for="csv-import-file" class="block text-sm font-medium text-text-primary mb-2">
             {{ 'budget.transactions.import.fileLabel' | transloco }}
           </label>
           <input
+            id="csv-import-file"
             type="file"
             accept=".csv"
             class="block w-full text-sm text-text-muted file:mr-3 file:rounded-lg file:border-0 file:bg-raised file:px-4 file:py-2 file:text-sm file:font-medium file:text-text-primary hover:file:bg-hover file:cursor-pointer cursor-pointer"
@@ -42,8 +43,9 @@ type ReviewRow = { date: string; label: string; amount: number; direction: 'inco
 
         <div class="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <div>
-            <label class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.date' | transloco }}</label>
+            <label for="csv-import-date" class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.date' | transloco }}</label>
             <select
+              id="csv-import-date"
               class="w-full rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm text-text-primary"
               [ngModel]="mapping().dateCol"
               (ngModelChange)="setMapping({ dateCol: +$event })">
@@ -54,8 +56,9 @@ type ReviewRow = { date: string; label: string; amount: number; direction: 'inco
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.label' | transloco }}</label>
+            <label for="csv-import-label" class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.label' | transloco }}</label>
             <select
+              id="csv-import-label"
               class="w-full rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm text-text-primary"
               [ngModel]="mapping().labelCol"
               (ngModelChange)="setMapping({ labelCol: +$event })">
@@ -66,8 +69,9 @@ type ReviewRow = { date: string; label: string; amount: number; direction: 'inco
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.amount' | transloco }}</label>
+            <label for="csv-import-amount" class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.amount' | transloco }}</label>
             <select
+              id="csv-import-amount"
               class="w-full rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm text-text-primary"
               [ngModel]="amountSignedCol()"
               (ngModelChange)="setSignedCol(+$event)">
@@ -78,8 +82,9 @@ type ReviewRow = { date: string; label: string; amount: number; direction: 'inco
           </div>
 
           <div>
-            <label class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.dateFormat' | transloco }}</label>
+            <label for="csv-import-date-format" class="block text-xs font-medium text-text-muted mb-1">{{ 'budget.transactions.import.dateFormat' | transloco }}</label>
             <select
+              id="csv-import-date-format"
               class="w-full rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm text-text-primary"
               [ngModel]="mapping().dateFormat"
               (ngModelChange)="setMapping({ dateFormat: $event })">

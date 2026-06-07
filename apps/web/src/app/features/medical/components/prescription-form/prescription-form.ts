@@ -96,8 +96,9 @@ export type PrescriptionSubmitData = {
 
         <!-- Drag & drop document -->
         <div>
-          <label class="form-label">{{ 'medical.prescription.form.documentLabel' | transloco }}</label>
-          <div class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
+          <span class="form-label" id="prescription-document-label">{{ 'medical.prescription.form.documentLabel' | transloco }}</span>
+          <div role="group" aria-labelledby="prescription-document-label"
+               class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
                [class.border-ib-purple]="isDragging()"
                [class.bg-ib-purple-5]="isDragging()"
                [class.border-border]="!isDragging()"

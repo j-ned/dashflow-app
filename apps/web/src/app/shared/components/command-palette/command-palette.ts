@@ -73,10 +73,12 @@ function fuzzyScore(query: string, target: string): number {
     '(document:keydown)': 'onGlobalKey($event)',
   },
   template: `
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native <dialog>: Échap et focus-trap gérés par showModal(), le click ne fait que backdrop-close -->
     <dialog #dialog
             class="command-palette"
             (click)="onBackdropClick($event)"
             (close)="onDialogClose()">
+      <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- stopPropagation seul, pas un contrôle interactif -->
       <div class="command-panel" (click)="$event.stopPropagation()">
 
         <div class="flex items-center gap-3 px-4 py-3 border-b border-border">
@@ -297,7 +299,11 @@ export class CommandPalette {
   protected onGlobalKey(e: KeyboardEvent) {
     if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
       e.preventDefault();
-      this._open() ? this.close() : this.open();
+      if (this._open()) {
+        this.close();
+      } else {
+        this.open();
+      }
     }
   }
 

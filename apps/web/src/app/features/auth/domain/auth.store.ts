@@ -325,7 +325,7 @@ export class AuthStore {
     if (user) this._user.set({ ...user, encryptionVersion: 1 });
   }
 
-  async migrateEncryption(data: Record<string, Array<{ id: string; encryptedData: string }>>): Promise<void> {
+  async migrateEncryption(data: Record<string, { id: string; encryptedData: string }[]>): Promise<void> {
     if (!this._keyMaterial) throw new Error('No key material');
     await firstValueFrom(
       this.api.post('/auth/me/migrate-encryption', {

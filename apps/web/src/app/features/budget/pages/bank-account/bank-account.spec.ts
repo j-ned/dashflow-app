@@ -36,7 +36,7 @@ function makeComponent(opts: {
       { provide: MemberGateway, useValue: { getAll: () => of([]) } },
       { provide: SalaryArchiveGateway, useValue: { getAll: () => of([]) } },
       { provide: AccountTransactionGateway, useValue: { getAll: () => of(opts.txs ?? []), create: opts.createImpl ?? (() => of({})) } },
-      { provide: Toaster, useValue: opts.toaster ?? { success: () => {}, error: () => {}, info: () => {} } },
+      { provide: Toaster, useValue: opts.toaster ?? { success: vi.fn(), error: vi.fn(), info: vi.fn() } },
       { provide: ConfirmService, useValue: { ask: () => of(true), confirm: () => Promise.resolve(true), delete: () => Promise.resolve(true), choose: opts.choose ?? (() => Promise.resolve('cancel')) } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k, getActiveLang: () => 'fr', events$: of({ type: 'translationLoadSuccess' }) } },
     ],
@@ -111,7 +111,7 @@ describe('BankAccount — échéances à confirmer', () => {
     const cmp = makeComponent({
       entries: [RENT],
       createImpl: () => throwError(() => ({ status: 500 })),
-      toaster: { success: () => {}, error: () => { errored = true; }, info: () => {} },
+      toaster: { success: vi.fn(), error: () => { errored = true; }, info: vi.fn() },
     }) as unknown as { confirmCharge: (id: string, amount: number) => void };
     cmp.confirmCharge('r1', 800);
     expect(errored).toBe(true);
@@ -143,7 +143,7 @@ describe('BankAccount — récurrences orphelines', () => {
     const cmp = makeComponent({
       entries: [ORPHAN],
       updateImpl: (id: string, data: { accountId: string }) => { updatedWith = { id, accountId: data.accountId }; return of({}); },
-      toaster: { success: () => { ok = true; }, error: () => {}, info: () => {} },
+      toaster: { success: () => { ok = true; }, error: vi.fn(), info: vi.fn() },
     }) as unknown as { reassignEntry: (id: string, accountId: string) => void };
     cmp.reassignEntry('o1', 'a');
     expect(updatedWith).toEqual({ id: 'o1', accountId: 'a' });
@@ -155,7 +155,7 @@ describe('BankAccount — récurrences orphelines', () => {
     const cmp = makeComponent({
       entries: [ORPHAN],
       updateImpl: () => throwError(() => ({ status: 500 })),
-      toaster: { success: () => {}, error: () => { errored = true; }, info: () => {} },
+      toaster: { success: vi.fn(), error: () => { errored = true; }, info: vi.fn() },
     }) as unknown as { reassignEntry: (id: string, accountId: string) => void };
     cmp.reassignEntry('o1', 'a');
     expect(errored).toBe(true);
@@ -220,14 +220,14 @@ describe('BankAccount — échéances manuelles', () => {
     const cmp = makeComponent({
       entries: [auto],
       accounts: [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }],
-    }) as unknown as { pendingCharges: () => Array<{ entry: { id: string } }> };
+    }) as unknown as { pendingCharges: () => { entry: { id: string } }[] };
     expect(cmp.pendingCharges().some((c) => c.entry.id === 'r9')).toBe(false);
   });
 });
 
 describe('BankAccount — auto-pointage à l\'ouverture', () => {
   it('crée la transaction d\'une échéance auto échue et non pointée', () => {
-    const created: Array<{ accountId: string; body: Record<string, unknown> }> = [];
+    const created: { accountId: string; body: Record<string, unknown> }[] = [];
     const auto = { id: 'r1', accountId: 'a', label: 'Loyer', amount: 800, type: 'expense' as const,
       dayOfMonth: 1, date: null, endDate: null, toAccountId: null, category: null, memberId: null,
       payslipKey: null, autoPost: true, autoPostSince: new Date().toISOString().slice(0, 7) };

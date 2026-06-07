@@ -10,11 +10,13 @@ export type ModalSize = 'sm' | 'md' | 'lg' | 'xl';
   imports: [Icon, TranslocoPipe],
   host: { class: 'contents' },
   template: `
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native <dialog>: Échap et focus-trap gérés par showModal(), le click ne fait que backdrop-close -->
     <dialog #dialog
             class="modal-dialog"
             (click)="onBackdropClick($event)"
             (close)="onDialogClose()">
       @if (isOpen()) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- stopPropagation seul, pas un contrôle interactif -->
         <div class="modal-content" [class]="sizeClass()" (click)="$event.stopPropagation()">
           <header class="flex items-center justify-between pb-3 mb-3 border-b border-border shrink-0">
             <h3 class="text-base font-semibold text-text-primary">{{ title() }}</h3>

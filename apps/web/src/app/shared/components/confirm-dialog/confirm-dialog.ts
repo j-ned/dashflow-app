@@ -92,11 +92,13 @@ export class ConfirmService {
   imports: [Icon],
   host: { class: 'contents' },
   template: `
+    <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- native <dialog>: Échap et focus-trap gérés par showModal(), le click ne fait que backdrop-close -->
     <dialog #dialog
             class="confirm-dialog"
             (click)="onBackdropClick($event)"
             (close)="onDialogClose()">
       @if (pending(); as p) {
+        <!-- eslint-disable-next-line @angular-eslint/template/click-events-have-key-events, @angular-eslint/template/interactive-supports-focus -- stopPropagation seul, pas un contrôle interactif -->
         <div class="confirm-panel" (click)="$event.stopPropagation()">
           <div class="flex gap-4 p-5">
             <div class="shrink-0 flex h-10 w-10 items-center justify-center rounded-xl"

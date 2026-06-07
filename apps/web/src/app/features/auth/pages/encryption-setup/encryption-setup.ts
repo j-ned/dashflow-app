@@ -124,12 +124,10 @@ const API_PATHS: Record<string, string> = {
     <app-recovery-key-modal
       [recoveryKey]="recoveryKey()"
       (confirmed$)="onRecoveryKeyConfirmed()"
-      (closed)="onRecoveryModalClosed()"
     />
 
     <app-encryption-passphrase-modal
       (passphraseSet)="onPassphraseSet($event)"
-      (closed)="onPassphraseModalClosed()"
     />
     </main>
   `,
@@ -194,8 +192,6 @@ export class EncryptionSetup {
     this.startEncryptionWithPassword(passphrase);
   }
 
-  protected onPassphraseModalClosed(): void {}
-
   private async startEncryptionWithPassword(password: string): Promise<void> {
     this.loading.set(true);
     this.error.set('');
@@ -221,8 +217,6 @@ export class EncryptionSetup {
     await this.migrateData();
   }
 
-  protected onRecoveryModalClosed(): void {}
-
   private async migrateData(): Promise<void> {
     try {
       const keyMaterial = this.auth.getKeyMaterial();
@@ -238,7 +232,7 @@ export class EncryptionSetup {
       }
 
       const tableNames = Object.keys(API_PATHS);
-      const encryptedData: Record<string, Array<{ id: string; encryptedData: string }>> = {};
+      const encryptedData: Record<string, { id: string; encryptedData: string }[]> = {};
 
       let completed = 0;
       const total = tableNames.length;
@@ -249,11 +243,11 @@ export class EncryptionSetup {
 
         try {
           const rows = await firstValueFrom(
-            this.api.get<Array<Record<string, unknown>>>(API_PATHS[tableName]),
+            this.api.get<Record<string, unknown>[]>(API_PATHS[tableName]),
           );
 
           if (rows.length > 0) {
-            const encrypted: Array<{ id: string; encryptedData: string }> = [];
+            const encrypted: { id: string; encryptedData: string }[] = [];
             for (const row of rows) {
               const result = await encryptEntity(row, CLEARTEXT_KEYS[tableName], masterKey);
               encrypted.push({ id: row['id'] as string, encryptedData: result.encryptedData });

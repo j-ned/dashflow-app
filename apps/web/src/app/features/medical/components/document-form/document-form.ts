@@ -104,8 +104,9 @@ const DOCUMENT_TYPES: DocumentType[] = ['compte_rendu', 'facture', 'bilan', 'cer
 
         <!-- Drag & drop file -->
         <div>
-          <label class="form-label">{{ 'medical.document.form.fileLabel' | transloco }}</label>
-          <div class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
+          <span class="form-label" id="document-file-label">{{ 'medical.document.form.fileLabel' | transloco }}</span>
+          <div role="group" aria-labelledby="document-file-label"
+               class="relative rounded-lg border-2 border-dashed p-4 text-center transition-colors"
                [class.border-ib-purple]="isDragging()"
                [class.bg-ib-purple-5]="isDragging()"
                [class.border-border]="!isDragging()"

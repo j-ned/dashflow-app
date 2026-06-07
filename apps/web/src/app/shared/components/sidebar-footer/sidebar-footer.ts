@@ -17,6 +17,7 @@ import { Toaster } from '@shared/components/toast/toast';
         <!-- User info (expanded) -->
         <div class="flex items-center gap-3 px-3 py-2 mb-1">
           @if (auth.avatarUrl()) {
+            <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
             <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border shrink-0" />
           } @else {
             <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas shrink-0">
@@ -45,6 +46,7 @@ import { Toaster } from '@shared/components/toast/toast';
         <div class="flex flex-col items-center gap-0.5">
           <div class="mb-1" [title]="auth.displayName()">
             @if (auth.avatarUrl()) {
+              <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
               <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
             } @else {
               <div class="w-8 h-8 rounded-full bg-ib-purple flex items-center justify-center text-xs font-semibold text-canvas">

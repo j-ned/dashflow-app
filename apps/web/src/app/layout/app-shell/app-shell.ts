@@ -62,6 +62,7 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
            class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
            [attr.aria-label]="'common.settings' | transloco">
           @if (auth.avatarUrl()) {
+            <!-- eslint-disable-next-line @angular-eslint/template/prefer-ngsrc -- avatar distant de dimensions intrinsèques inconnues, sans IMAGE_LOADER : NgOptimizedImage inadapté -->
             <img [src]="auth.avatarUrl()" [alt]="auth.displayName()" class="w-8 h-8 rounded-full object-cover border border-border" />
           } @else {
             <div class="w-8 h-8 rounded-full bg-ib-purple border border-border flex items-center justify-center text-xs font-semibold text-canvas">

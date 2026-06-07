@@ -54,11 +54,13 @@ type PasswordFormShape = {
               class="group relative rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue transition-transform hover:scale-105"
             >
               @if (avatarPreview() || auth.avatarUrl()) {
+                <!-- eslint-disable @angular-eslint/template/prefer-ngsrc -- avatar dynamique : la preview est une data: URL, non supportée par NgOptimizedImage -->
                 <img
                   [src]="avatarPreview() || auth.avatarUrl()"
                   [alt]="'settings.profile.avatarAlt' | transloco"
                   class="w-24 h-24 rounded-full object-cover border-4 border-surface shadow-sm"
                 />
+                <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
               } @else {
                 <div
                   class="w-24 h-24 rounded-full bg-linear-to-br from-ib-purple to-ib-blue flex items-center justify-center text-3xl font-bold text-canvas shadow-sm border-4 border-surface"
@@ -322,11 +324,13 @@ type PasswordFormShape = {
 
               <div class="flex justify-center">
                 <!-- bg-white intentional: QR scanners require white background regardless of theme -->
+                <!-- eslint-disable @angular-eslint/template/prefer-ngsrc -- QR code en data: URL, non supportée par NgOptimizedImage -->
                 <img
                   [src]="totpSetup()!.qrCode"
                   [alt]="'settings.twoFactor.qrAlt' | transloco"
                   class="w-48 h-48 rounded-lg border border-border bg-white p-2"
                 />
+                <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
               </div>
 
               <details class="text-sm">

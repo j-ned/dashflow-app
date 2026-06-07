@@ -202,16 +202,16 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
                       </button>
                     </div>
                     <div class="flex items-center gap-2 pl-10">
-                      <label class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.currentBalance' | transloco }}</label>
-                      <input type="number" step="0.01"
+                      <label [for]="'acct-balance-' + da.account.id" class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.currentBalance' | transloco }}</label>
+                      <input [id]="'acct-balance-' + da.account.id" type="number" step="0.01"
                              class="w-32 rounded-lg border border-border bg-raised px-2 py-1 text-xs font-mono text-text-primary text-right"
                              [value]="da.account.initialBalance"
                              (change)="updateAccountBalance(da.account, $event)" />
                       <span class="text-[11px] text-text-muted">&euro;</span>
                     </div>
                     <div class="flex items-center gap-2 pl-10">
-                      <label class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.type' | transloco }}</label>
-                      <select class="rounded-lg border border-border bg-raised px-2 py-1 text-xs text-text-primary"
+                      <label [for]="'acct-type-' + da.account.id" class="text-[11px] text-text-muted whitespace-nowrap">{{ 'budget.bankAccount.accountModal.type' | transloco }}</label>
+                      <select [id]="'acct-type-' + da.account.id" class="rounded-lg border border-border bg-raised px-2 py-1 text-xs text-text-primary"
                               [value]="da.account.type" (change)="updateAccountType(da.account, $event)"
                               [attr.aria-label]="'budget.bankAccount.accountModal.typeAria' | transloco: { name: da.account.name }">
                         @for (t of ACCOUNT_TYPES; track t) {

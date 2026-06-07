@@ -223,8 +223,8 @@ type RecurringEntryFormShape = {
 
         <!-- Drag & drop fiche de paie (income only, edit mode) -->
         @if (showPayslipZone()) {
-          <div>
-            <label class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.payslip' | transloco }}</label>
+          <div role="group" aria-labelledby="recurring-payslip-label">
+            <span id="recurring-payslip-label" class="block text-sm font-medium text-text-muted mb-1">{{ 'budget.recurringForm.payslip' | transloco }}</span>
 
             @if (hasExistingPayslip() && !_pendingFile()) {
               <div class="flex items-center justify-between rounded-lg border border-ib-green/30 bg-ib-green/5 px-3 py-2">

@@ -88,8 +88,8 @@ const ENVELOPE_COLORS = [
         </div>
 
         <div>
-          <label class="form-label">{{ 'budget.envelope.form.color' | transloco }}</label>
-          <div class="flex gap-2 flex-wrap">
+          <span class="form-label" id="envelope-color-label">{{ 'budget.envelope.form.color' | transloco }}</span>
+          <div role="group" aria-labelledby="envelope-color-label" class="flex gap-2 flex-wrap">
             @for (c of colors; track c) {
               <button type="button"
                       class="h-8 w-8 rounded-full border-2 transition"
