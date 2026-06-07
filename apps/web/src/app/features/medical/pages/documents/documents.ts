@@ -305,20 +305,21 @@ export class Documents {
   protected async createDoc({ data, file }: DocumentSubmitData) {
     try {
       const created = await lastValueFrom(this.documentGw.create(data));
+      let fileFailed = false;
       if (file) {
         try {
           await lastValueFrom(this.documentGw.uploadFile(created.id, file));
-          this.toaster.success('medical.document.feedback.created');
-          this.createModalRef().close();
-          this._refresh.update((v) => v + 1);
         } catch {
-          this.toaster.error('medical.document.feedback.fileAddFailed');
+          fileFailed = true;
         }
+      }
+      if (fileFailed) {
+        this.toaster.error('medical.document.feedback.fileAddFailed');
       } else {
         this.toaster.success('medical.document.feedback.created');
-        this.createModalRef().close();
-        this._refresh.update((v) => v + 1);
       }
+      this.createModalRef().close();
+      this._refresh.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.document.feedback.createFailed');
     }
@@ -329,20 +330,21 @@ export class Documents {
     if (!id) return;
     try {
       await lastValueFrom(this.documentGw.update(id, data));
+      let fileFailed = false;
       if (file) {
         try {
           await lastValueFrom(this.documentGw.uploadFile(id, file));
-          this.toaster.success('medical.document.feedback.updated');
-          this.editModalRef().close();
-          this._refresh.update((v) => v + 1);
         } catch {
-          this.toaster.error('medical.document.feedback.fileAddFailed');
+          fileFailed = true;
         }
+      }
+      if (fileFailed) {
+        this.toaster.error('medical.document.feedback.fileAddFailed');
       } else {
         this.toaster.success('medical.document.feedback.updated');
-        this.editModalRef().close();
-        this._refresh.update((v) => v + 1);
       }
+      this.editModalRef().close();
+      this._refresh.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.document.feedback.updateFailed');
     }

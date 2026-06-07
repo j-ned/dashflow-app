@@ -358,20 +358,21 @@ export class Prescriptions {
   protected async createPrescription({ data, file }: PrescriptionSubmitData) {
     try {
       const created = await lastValueFrom(this.prescriptionGw.create(data));
+      let fileFailed = false;
       if (file) {
         try {
           await lastValueFrom(this.prescriptionGw.uploadDocument(created.id, file));
-          this.toaster.success('medical.prescription.feedback.created');
-          this.createModalRef().close();
-          this._refresh.update((v) => v + 1);
         } catch {
-          this.toaster.error('medical.prescription.feedback.documentAddFailed');
+          fileFailed = true;
         }
+      }
+      if (fileFailed) {
+        this.toaster.error('medical.prescription.feedback.documentAddFailed');
       } else {
         this.toaster.success('medical.prescription.feedback.created');
-        this.createModalRef().close();
-        this._refresh.update((v) => v + 1);
       }
+      this.createModalRef().close();
+      this._refresh.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.prescription.feedback.createFailed');
     }
@@ -382,20 +383,21 @@ export class Prescriptions {
     if (!id) return;
     try {
       await lastValueFrom(this.prescriptionGw.update(id, data));
+      let fileFailed = false;
       if (file) {
         try {
           await lastValueFrom(this.prescriptionGw.uploadDocument(id, file));
-          this.toaster.success('medical.prescription.feedback.updated');
-          this.editModalRef().close();
-          this._refresh.update((v) => v + 1);
         } catch {
-          this.toaster.error('medical.prescription.feedback.documentAddFailed');
+          fileFailed = true;
         }
+      }
+      if (fileFailed) {
+        this.toaster.error('medical.prescription.feedback.documentAddFailed');
       } else {
         this.toaster.success('medical.prescription.feedback.updated');
-        this.editModalRef().close();
-        this._refresh.update((v) => v + 1);
       }
+      this.editModalRef().close();
+      this._refresh.update((v) => v + 1);
     } catch {
       this.toaster.error('medical.prescription.feedback.updateFailed');
     }

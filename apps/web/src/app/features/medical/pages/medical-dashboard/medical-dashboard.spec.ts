@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { TranslocoService } from '@jsverse/transloco';
 import { PatientGateway } from '../../domain/gateways/patient.gateway';
 import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
@@ -30,8 +30,7 @@ type Cmp = {
   totalActivePrescriptions: () => number;
   totalLowStock: () => number;
   getPractitionerName: (id: string) => string;
-  computeAge: (birthDate: string) => number;
-  today: string;
+  _today: () => string;
 };
 
 // Dates chosen far in the past / future so they stay on the correct side of
@@ -160,6 +159,26 @@ function make(
 }
 
 describe('MedicalDashboard', () => {
+  it('recalcule patientSummaries quand le jour bascule (today réactif à minuit UTC)', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-06-07T12:00:00.000Z'));
+    try {
+      const { cmp } = make({
+        patients: [patient()],
+        appointments: [appointment({ id: 'todayAppt', date: '2026-06-07' })],
+      });
+
+      // Aujourd'hui = 2026-06-07 : le RDV du jour passe le filtre `date >= today`.
+      expect(cmp.patientSummaries()[0].nextAppointments.map((a) => a.id)).toEqual(['todayAppt']);
+
+      // Franchit minuit UTC -> today devient 2026-06-08, le RDV d'hier sort (sans refetch ni CD manuel).
+      vi.advanceTimersByTime(13 * 60 * 60 * 1000);
+      expect(cmp.patientSummaries()[0].nextAppointments).toHaveLength(0);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   describe('patientSummaries — nextAppointments', () => {
     it('ne garde que les RDV futurs, planifiés, triés par date+heure et capés à 3', () => {
       const { cmp } = make({
@@ -274,29 +293,6 @@ describe('MedicalDashboard', () => {
     it('retourne la clé i18n de fallback pour un id inconnu', () => {
       const { cmp } = make({ practitioners: [practitioner({ id: 'pr1' })] });
       expect(cmp.getPractitionerName('unknown')).toBe('medical.dashboard.unknownPractitioner');
-    });
-  });
-
-  describe('computeAge', () => {
-    it('retourne un entier >= 0 et croît avec l’ancienneté de la naissance', () => {
-      const { cmp } = make();
-      const young = cmp.computeAge('2010-01-01');
-      const old = cmp.computeAge('1950-01-01');
-      expect(Number.isInteger(young)).toBe(true);
-      expect(young).toBeGreaterThanOrEqual(0);
-      expect(old).toBeGreaterThan(young);
-    });
-
-    it('décrémente d’un an quand l’anniversaire n’est pas encore passé cette année', () => {
-      const { cmp } = make();
-      const ref = new Date();
-      // Anniversaire demain -> pas encore atteint cette année.
-      const tomorrow = new Date(ref.getFullYear(), ref.getMonth(), ref.getDate() + 1);
-      const birth = `${ref.getFullYear() - 30}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-      // Si demain bascule sur l'année suivante (31 déc), ce cas n'est pas valable.
-      if (tomorrow.getFullYear() === ref.getFullYear()) {
-        expect(cmp.computeAge(birth)).toBe(29);
-      }
     });
   });
 });

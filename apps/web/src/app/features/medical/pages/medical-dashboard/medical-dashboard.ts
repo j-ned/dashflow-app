@@ -1,30 +1,25 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { lastValueFrom } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { Patient } from '../../domain/models/patient.model';
-import { Appointment } from '../../domain/models/appointment.model';
-import { Prescription } from '../../domain/models/prescription.model';
-import { MedicationWithStock } from '../../domain/models/medication.model';
 import { PatientGateway } from '../../domain/gateways/patient.gateway';
 import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
 import { PrescriptionGateway } from '../../domain/gateways/prescription.gateway';
 import { MedicationGateway } from '../../domain/gateways/medication.gateway';
 import { computeMedicationStock } from '../../domain/medication-calculator';
+import { PatientSummary, buildPatientSummary } from '../../domain/patient-summary';
 import { MedicationStockBar } from '../../components/medication-stock-bar/medication-stock-bar';
 import { Icon } from '@shared/components/icon/icon';
-
-type PatientSummary = {
-  patient: Patient;
-  age: number;
-  nextAppointments: Appointment[];
-  activePrescriptions: Prescription[];
-  medications: MedicationWithStock[];
-  lowStockCount: number;
-};
 
 const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
 
@@ -394,6 +389,7 @@ export class MedicalDashboard {
   private readonly prescriptionGw = inject(PrescriptionGateway);
   private readonly medicationGw = inject(MedicationGateway);
   private readonly _i18n = inject(TranslocoService);
+  private readonly _destroyRef = inject(DestroyRef);
 
   protected readonly patients = toSignal(this.patientGw.getAll(), { initialValue: [] });
   protected readonly practitioners = toSignal(this.practitionerGw.getAll(), { initialValue: [] });
@@ -407,41 +403,23 @@ export class MedicalDashboard {
     this.medications().map((m) => computeMedicationStock(m)),
   );
 
-  private readonly today = new Date().toISOString().slice(0, 10);
+  // Reactive so open tabs stay current: rolls over at UTC midnight, re-running patientSummaries.
+  private readonly _today = signal(this.currentDay());
+  private _rolloverTimer = 0;
+
+  constructor() {
+    this.scheduleDayRollover();
+    this._destroyRef.onDestroy(() => clearTimeout(this._rolloverTimer));
+  }
 
   protected readonly patientSummaries = computed((): PatientSummary[] => {
-    const allAppointments = this.appointments();
-    const allPrescriptions = this.prescriptions();
-    const allMeds = this.medicationsWithStock();
-
-    return this.patients().map((patient) => {
-      const nextAppointments = allAppointments
-        .filter(
-          (a) => a.patientId === patient.id && a.date >= this.today && a.status === 'scheduled',
-        )
-        .sort((a, b) => a.date.localeCompare(b.date) || a.time.localeCompare(b.time))
-        .slice(0, 3);
-
-      const activePrescriptions = allPrescriptions
-        .filter((p) => p.patientId === patient.id && (!p.validUntil || p.validUntil >= this.today))
-        .sort((a, b) => b.issuedDate.localeCompare(a.issuedDate))
-        .slice(0, 3);
-
-      const medications = allMeds
-        .filter((m) => m.patientId === patient.id)
-        .sort((a, b) => a.daysRemaining - b.daysRemaining);
-
-      const age = this.computeAge(patient.birthDate);
-
-      return {
-        patient,
-        age,
-        nextAppointments,
-        activePrescriptions,
-        medications,
-        lowStockCount: medications.filter((m) => m.isLow).length,
-      };
-    });
+    const today = this._today();
+    const data = {
+      appointments: this.appointments(),
+      prescriptions: this.prescriptions(),
+      medications: this.medicationsWithStock(),
+    };
+    return this.patients().map((patient) => buildPatientSummary(patient, data, today));
   });
 
   protected readonly totalUpcomingAppointments = computed(() =>
@@ -478,14 +456,17 @@ export class MedicalDashboard {
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   }
 
-  private computeAge(birthDate: string): number {
-    const birth = new Date(birthDate);
+  private currentDay(): string {
+    return new Date().toISOString().slice(0, 10);
+  }
+
+  private scheduleDayRollover(): void {
     const now = new Date();
-    let age = now.getFullYear() - birth.getFullYear();
-    const monthDiff = now.getMonth() - birth.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) {
-      age--;
-    }
-    return age;
+    const nextUtcMidnight = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() + 1);
+    const delay = nextUtcMidnight - now.getTime();
+    this._rolloverTimer = window.setTimeout(() => {
+      this._today.set(this.currentDay());
+      this.scheduleDayRollover();
+    }, delay);
   }
 }

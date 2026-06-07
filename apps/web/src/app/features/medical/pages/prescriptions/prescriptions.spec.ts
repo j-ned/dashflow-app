@@ -157,19 +157,23 @@ describe('Prescriptions', () => {
     expect(createModalClose).not.toHaveBeenCalled();
   });
 
-  it('createPrescription : upload échoue après create OK → toast documentAddFailed, modal NON fermée (succès partiel)', async () => {
-    const { cmp, create, success, error, createModalClose } = make({
+  it('createPrescription : upload échoue après create OK → toast documentAddFailed, modal fermée + refetch (succès partiel)', async () => {
+    const { fixture, cmp, create, success, error, createModalClose, getAll } = make({
       uploadDocument: vi.fn(() => throwError(() => new Error('boom'))),
     });
+    const callsBefore = getAll.mock.calls.length;
 
     await expect(
       cmp.createPrescription({ data: SUBMIT_DATA, file: FILE }),
     ).resolves.toBeUndefined();
+    fixture.detectChanges();
+    await fixture.whenStable();
 
     expect(create).toHaveBeenCalledWith(SUBMIT_DATA);
     expect(error).toHaveBeenCalledWith('medical.prescription.feedback.documentAddFailed');
     expect(success).not.toHaveBeenCalled();
-    expect(createModalClose).not.toHaveBeenCalled();
+    expect(createModalClose).toHaveBeenCalledTimes(1);
+    expect(getAll.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
   it('updatePrescription : sélectionnée + sans fichier → update(id, data), toast success, modal fermée', async () => {
@@ -182,6 +186,24 @@ describe('Prescriptions', () => {
     expect(uploadDocument).not.toHaveBeenCalled();
     expect(success).toHaveBeenCalledWith('medical.prescription.feedback.updated');
     expect(editModalClose).toHaveBeenCalledTimes(1);
+  });
+
+  it('updatePrescription : upload échoue après update OK → toast documentAddFailed, modal fermée + refetch (succès partiel)', async () => {
+    const { fixture, cmp, update, success, error, editModalClose, getAll } = make({
+      uploadDocument: vi.fn(() => throwError(() => new Error('boom'))),
+    });
+    cmp.selectedPrescription.set(PRESCRIPTION);
+    const callsBefore = getAll.mock.calls.length;
+
+    await expect(cmp.updatePrescription({ data: SUBMIT_DATA, file: FILE })).resolves.toBeUndefined();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(update).toHaveBeenCalledWith('p1', SUBMIT_DATA);
+    expect(error).toHaveBeenCalledWith('medical.prescription.feedback.documentAddFailed');
+    expect(success).not.toHaveBeenCalled();
+    expect(editModalClose).toHaveBeenCalledTimes(1);
+    expect(getAll.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
   it('updatePrescription : aucune sélection → ne fait rien', async () => {
