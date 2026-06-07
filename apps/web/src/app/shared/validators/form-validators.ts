@@ -1,9 +1,6 @@
 import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 
-/**
- * Cross-field validator: checks that two fields have matching values.
- * Attach to the FormGroup, not individual controls.
- */
+// Attach to the FormGroup, not individual controls — needs access to both fields.
 export function passwordMatchValidator(passwordField: string, confirmField: string): ValidatorFn {
   return (group: AbstractControl): ValidationErrors | null => {
     const password = group.get(passwordField)?.value;
@@ -12,10 +9,7 @@ export function passwordMatchValidator(passwordField: string, confirmField: stri
   };
 }
 
-/**
- * Cross-field validator: requires `requiredField` when `targetField` has value `targetValue`.
- * Attach to the FormGroup.
- */
+// Attach to the FormGroup — requires cross-field read to enforce conditional presence.
 export function conditionalRequiredValidator(
   targetField: string,
   targetValue: string,
