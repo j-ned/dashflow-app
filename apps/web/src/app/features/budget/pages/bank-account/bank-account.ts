@@ -183,7 +183,9 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 
     <!-- ═══ 3 colonnes : Prélèvements / Annuels / Dépenses ═══ -->
     <app-bank-expense-columns
-      [monthlyExpenses]="sortedMonthlyExpenses()"
+      [monthlyExpenses]="monthlyOutflowRows()"
+      [savingsSubtotal]="savingsTransfersTotal()"
+      [accountNameById]="accountNameByIdFn"
       [annualExpenses]="annualExpenses()"
       [monthSpendings]="monthSpendings()"
       [totalMonthlyExpenses]="totalMonthlyExpenses()"
@@ -204,7 +206,7 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
 
     <!-- ═══ Virements ═══ -->
     <app-bank-transfers-panel
-      [recurringTransfers]="recurringTransfers()"
+      [recurringTransfers]="incomingTransfers()"
       [monthOneTimeTransfers]="monthOneTimeTransfers()"
       [totalOneTimeOutgoing]="totalOneTimeOutgoing()"
       [totalOneTimeIncoming]="totalOneTimeIncoming()"
@@ -214,7 +216,6 @@ const sumAmount = (entries: readonly RecurringEntry[]): number =>
       [isExpensePassed]="isExpensePassedFn"
       [spendingMonthLabel]="spendingMonthLabel()"
       [accountsCount]="accounts().length"
-      (createRecurring)="openCreateModal('transfer', 'recurring')"
       (createOneTime)="openCreateModal('transfer', 'one_time')"
       (edit)="openEditModal($event)"
       (delete)="deleteEntry($event)"
@@ -564,9 +565,31 @@ export class BankAccount {
     return this.recurringTransfers().filter((e) => e.accountId === accountId);
   });
 
-  private readonly incomingTransfers = computed(() => {
+  protected readonly incomingTransfers = computed(() => {
     const accountId = this.selectedAccountId();
     return this.recurringTransfers().filter((e) => e.toAccountId === accountId);
+  });
+
+  private readonly accountTypeById = computed(() => {
+    const map = new Map<string, BankAccountType>();
+    for (const a of this.accounts()) map.set(a.id, a.type);
+    return map;
+  });
+
+  // Lignes affichées dans la colonne Prélèvements : dépenses mensuelles + virements
+  // récurrents sortants, triées par jour. Les totaux de dépenses NE changent pas.
+  protected readonly monthlyOutflowRows = computed(() =>
+    [...this.monthlyExpenses(), ...this.outgoingTransfers()].sort(
+      (a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32),
+    ),
+  );
+
+  // Sous-total « dont épargne » : virements récurrents sortants vers un compte type='épargne'.
+  protected readonly savingsTransfersTotal = computed(() => {
+    const types = this.accountTypeById();
+    return sumAmount(
+      this.outgoingTransfers().filter((e) => types.get(e.toAccountId ?? '') === 'épargne'),
+    );
   });
 
   protected readonly spendingMonth = signal(new Date().toISOString().slice(0, 7));
@@ -612,10 +635,6 @@ export class BankAccount {
       })
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
-
-  protected readonly sortedMonthlyExpenses = computed(() =>
-    [...this.monthlyExpenses()].sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32)),
-  );
 
   protected readonly today = new Date().toLocaleDateString(
     this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR',

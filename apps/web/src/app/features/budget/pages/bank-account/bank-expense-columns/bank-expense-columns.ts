@@ -82,6 +82,15 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                           {{ 'budget.recurringForm.autoBadge' | transloco }}
                         </span>
                       }
+                      @if (entry.type === 'transfer' && accountNameById()(entry.toAccountId); as toName) {
+                        <span
+                          data-testid="savings-badge"
+                          class="ml-1.5 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-ib-purple bg-ib-purple/10"
+                        >
+                          <app-icon name="arrow-right" size="9" />
+                          {{ toName }}
+                        </span>
+                      }
                     </p>
                     <div class="flex items-center gap-1 flex-wrap">
                       @if (entry.category) {
@@ -140,6 +149,19 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               >{{ totalMonthlyExpenses() | number: '1.2-2' }} &euro;</span
             >
           </div>
+          @if (savingsSubtotal() > 0) {
+            <div
+              data-testid="savings-subtotal"
+              class="px-4 py-2 border-t border-border/50 bg-canvas/30 flex justify-between items-center"
+            >
+              <span class="text-[10px] font-medium text-ib-purple uppercase tracking-wider">{{
+                'budget.bankAccount.expenses.savingsSubtotal' | transloco
+              }}</span>
+              <span class="text-sm font-mono font-bold text-ib-purple"
+                >{{ savingsSubtotal() | number: '1.2-2' }} &euro;</span
+              >
+            </div>
+          }
         } @else {
           <div class="flex items-center justify-center py-8 px-4">
             <p class="text-xs text-text-muted text-center">
@@ -377,6 +399,8 @@ export class BankExpenseColumns {
   readonly spendingMonthLabel = input.required<string>();
   readonly memberMap = input.required<Map<string, { name: string; color: string }>>();
   readonly isExpensePassed = input.required<(entry: RecurringEntry) => boolean>();
+  readonly savingsSubtotal = input.required<number>();
+  readonly accountNameById = input.required<(id: string | null) => string | null>();
 
   readonly createMonthly = output<void>();
   readonly createAnnual = output<void>();

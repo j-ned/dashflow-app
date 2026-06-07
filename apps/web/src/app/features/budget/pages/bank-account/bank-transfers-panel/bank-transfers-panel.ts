@@ -23,17 +23,9 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           <div class="flex items-center gap-2">
             <app-icon name="credit-card" size="16" class="text-ib-purple" />
             <h3 class="text-xs font-semibold uppercase tracking-wider text-ib-purple">
-              {{ 'budget.bankAccount.transfers.automaticTitle' | transloco }}
+              {{ 'budget.bankAccount.transfers.incomingTitle' | transloco }}
             </h3>
           </div>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 rounded-lg bg-ib-purple min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-purple/90 transition-colors shadow-sm"
-            (click)="createRecurring.emit()"
-          >
-            <app-icon name="plus" size="12" />
-            {{ 'budget.bankAccount.transfers.addRecurring' | transloco }}
-          </button>
         </div>
         @if (recurringTransfers().length > 0) {
           <div class="divide-y divide-border/30">
@@ -114,7 +106,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
           <div class="px-5 py-8 text-center">
             <app-icon name="credit-card" size="32" class="text-text-muted/20 mx-auto mb-2" />
             <p class="text-sm text-text-muted">
-              {{ 'budget.bankAccount.transfers.automaticEmpty' | transloco }}
+              {{ 'budget.bankAccount.transfers.incomingEmpty' | transloco }}
             </p>
           </div>
         }
@@ -255,7 +247,6 @@ export class BankTransfersPanel {
   readonly spendingMonthLabel = input.required<string>();
   readonly accountsCount = input.required<number>();
 
-  readonly createRecurring = output<void>();
   readonly createOneTime = output<void>();
   readonly edit = output<RecurringEntry>();
   readonly delete = output<string>();

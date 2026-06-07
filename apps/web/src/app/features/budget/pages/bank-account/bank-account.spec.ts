@@ -11,7 +11,14 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { TranslocoService } from '@jsverse/transloco';
 import { BankAccount } from './bank-account';
 
-type Cmp = { confirmedBalance: () => number; projectedBalance: () => number };
+type Cmp = {
+  confirmedBalance: () => number;
+  projectedBalance: () => number;
+  monthlyOutflowRows: () => { id: string; type: string }[];
+  savingsTransfersTotal: () => number;
+  totalMonthlyExpenses: () => number;
+  incomingTransfers: () => { id: string }[];
+};
 
 const ACCOUNTS = [
   { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
@@ -82,6 +89,51 @@ function makeComponent(
   fixture.detectChanges();
   return fixture.componentInstance as unknown as Cmp;
 }
+
+describe('BankAccount — prélèvement vers livret', () => {
+  const ACCS = [
+    { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
+    { id: 'liv', name: 'Livret A', type: 'épargne', initialBalance: 0, color: null, dotColor: null },
+  ];
+  const EXPENSE = {
+    id: 'e1', accountId: 'a', toAccountId: null, label: 'Netflix', amount: 16,
+    type: 'expense', dayOfMonth: 10, date: null, endDate: null, category: null,
+    payslipKey: null, memberId: null, autoPost: false, autoPostSince: null,
+  };
+  const SAVING = {
+    id: 't1', accountId: 'a', toAccountId: 'liv', label: 'Épargne', amount: 200,
+    type: 'transfer', dayOfMonth: 5, date: null, endDate: null, category: null,
+    payslipKey: null, memberId: null, autoPost: false, autoPostSince: null,
+  };
+  const OUT_COURANT = {
+    id: 't2', accountId: 'a', toAccountId: 'b2', label: 'Vers courant 2', amount: 50,
+    type: 'transfer', dayOfMonth: 8, date: null, endDate: null, category: null,
+    payslipKey: null, memberId: null, autoPost: false, autoPostSince: null,
+  };
+
+  it('inclut les virements récurrents sortants dans les lignes de la colonne', () => {
+    const cmp = makeComponent({ entries: [EXPENSE, SAVING], accounts: ACCS });
+    const ids = cmp.monthlyOutflowRows().map((r) => r.id);
+    expect(ids).toContain('e1');
+    expect(ids).toContain('t1');
+  });
+
+  it('exclut les virements du total des dépenses (consommation seule)', () => {
+    const cmp = makeComponent({ entries: [EXPENSE, SAVING], accounts: ACCS });
+    expect(cmp.totalMonthlyExpenses()).toBe(16);
+  });
+
+  it("somme dans 'dont épargne' uniquement les virements vers un compte épargne", () => {
+    const cmp = makeComponent({ entries: [EXPENSE, SAVING, OUT_COURANT], accounts: ACCS });
+    expect(cmp.savingsTransfersTotal()).toBe(200);
+  });
+
+  it('expose les virements entrants pour le panneau quand on consulte le livret', () => {
+    const cmp = makeComponent({ entries: [SAVING], accounts: ACCS });
+    (cmp as unknown as { selectAccount: (id: string) => void }).selectAccount('liv');
+    expect(cmp.incomingTransfers().map((e) => e.id)).toEqual(['t1']);
+  });
+});
 
 describe('BankAccount — solde projeté', () => {
   const RENT = {

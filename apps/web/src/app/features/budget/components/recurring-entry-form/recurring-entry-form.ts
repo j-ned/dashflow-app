@@ -23,7 +23,6 @@ import { Icon } from '@shared/components/icon/icon';
 type RecurringEntryFormShape = {
   label: FormControl<string>;
   amount: FormControl<number>;
-  type: FormControl<RecurringEntryType>;
   dayOfMonth: FormControl<number | null>;
   date: FormControl<string>;
   endDate: FormControl<string>;
@@ -89,6 +88,26 @@ type RecurringEntryFormShape = {
             }
           }
         </div>
+
+        @if (showDestinationToggle()) {
+          <div>
+            <p id="re-destination-label" class="text-xs font-medium text-text-muted mb-2">{{ 'budget.recurringForm.destination' | transloco }}</p>
+            <div class="space-y-2" role="radiogroup" aria-labelledby="re-destination-label">
+              <label class="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                <input type="radio" name="destination" class="accent-ib-red"
+                       [checked]="destination() === 'third_party'"
+                       (change)="destination.set('third_party')" />
+                {{ 'budget.recurringForm.toThirdParty' | transloco }}
+              </label>
+              <label class="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
+                <input type="radio" name="destination" class="accent-ib-purple"
+                       [checked]="destination() === 'my_account'"
+                       (change)="destination.set('my_account')" />
+                {{ 'budget.recurringForm.toMyAccount' | transloco }}
+              </label>
+            </div>
+          </div>
+        }
 
         <!-- Champs conditionnels selon le type -->
         @switch (activeType()) {
@@ -215,39 +234,41 @@ type RecurringEntryFormShape = {
           @case ('transfer') {
             <div class="space-y-4">
               <!-- Toggle récurrent / ponctuel -->
-              <div>
-                <p class="text-xs font-medium text-text-muted mb-2">
-                  {{ 'budget.recurringForm.transferType' | transloco }}
-                </p>
-                <div
-                  class="flex rounded-lg border border-border overflow-hidden"
-                  role="group"
-                  [attr.aria-label]="'budget.recurringForm.transferTypeAria' | transloco"
-                >
-                  <button
-                    type="button"
-                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
-                    [class.bg-ib-purple]="transferMode() === 'recurring'"
-                    [class.text-canvas]="transferMode() === 'recurring'"
-                    [class.text-text-muted]="transferMode() !== 'recurring'"
-                    [attr.aria-pressed]="transferMode() === 'recurring'"
-                    (click)="setTransferMode('recurring')"
+              @if (showTransferModeToggle()) {
+                <div>
+                  <p class="text-xs font-medium text-text-muted mb-2">
+                    {{ 'budget.recurringForm.transferType' | transloco }}
+                  </p>
+                  <div
+                    class="flex rounded-lg border border-border overflow-hidden"
+                    role="group"
+                    [attr.aria-label]="'budget.recurringForm.transferTypeAria' | transloco"
                   >
-                    {{ 'budget.recurringForm.transferRecurring' | transloco }}
-                  </button>
-                  <button
-                    type="button"
-                    class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
-                    [class.bg-ib-purple]="transferMode() === 'one_time'"
-                    [class.text-canvas]="transferMode() === 'one_time'"
-                    [class.text-text-muted]="transferMode() !== 'one_time'"
-                    [attr.aria-pressed]="transferMode() === 'one_time'"
-                    (click)="setTransferMode('one_time')"
-                  >
-                    {{ 'budget.recurringForm.transferOneTime' | transloco }}
-                  </button>
+                    <button
+                      type="button"
+                      class="flex-1 px-3 py-2 text-xs font-medium transition-colors"
+                      [class.bg-ib-purple]="transferMode() === 'recurring'"
+                      [class.text-canvas]="transferMode() === 'recurring'"
+                      [class.text-text-muted]="transferMode() !== 'recurring'"
+                      [attr.aria-pressed]="transferMode() === 'recurring'"
+                      (click)="setTransferMode('recurring')"
+                    >
+                      {{ 'budget.recurringForm.transferRecurring' | transloco }}
+                    </button>
+                    <button
+                      type="button"
+                      class="flex-1 px-3 py-2 text-xs font-medium transition-colors border-l border-border"
+                      [class.bg-ib-purple]="transferMode() === 'one_time'"
+                      [class.text-canvas]="transferMode() === 'one_time'"
+                      [class.text-text-muted]="transferMode() !== 'one_time'"
+                      [attr.aria-pressed]="transferMode() === 'one_time'"
+                      (click)="setTransferMode('one_time')"
+                    >
+                      {{ 'budget.recurringForm.transferOneTime' | transloco }}
+                    </button>
+                  </div>
                 </div>
-              </div>
+              }
 
               @if (accounts().length > 0) {
                 <div>
@@ -504,9 +525,29 @@ export class RecurringEntryForm {
   protected readonly isDragging = signal(false);
   protected readonly _pendingFile = signal<File | null>(null);
 
-  protected readonly activeType = computed(
-    () => this.forcedType() ?? this.initial()?.type ?? 'expense',
+  // Contexte prélèvement : un toggle Destination fait basculer expense ↔ transfer.
+  protected readonly showDestinationToggle = computed(() => {
+    const t = this.forcedType() ?? this.initial()?.type;
+    return t === 'expense' || t === 'transfer';
+  });
+
+  // Sous-toggle récurrent/ponctuel : visible seulement pour le flux virement explicite
+  // (bouton ponctuel du panneau, ou édition d'un virement) — masqué dans le flux prélèvement.
+  protected readonly showTransferModeToggle = computed(
+    () => (this.forcedType() ?? this.initial()?.type) === 'transfer',
   );
+
+  protected readonly destination = linkedSignal<'third_party' | 'my_account'>(() => {
+    const t = this.forcedType() ?? this.initial()?.type ?? 'expense';
+    return t === 'transfer' ? 'my_account' : 'third_party';
+  });
+
+  protected readonly activeType = computed<RecurringEntryType>(() => {
+    if (this.showDestinationToggle()) {
+      return this.destination() === 'my_account' ? 'transfer' : 'expense';
+    }
+    return this.forcedType() ?? this.initial()?.type ?? 'expense';
+  });
 
   // Mode virement : détecté depuis les données initiales, overridable par l'utilisateur
   protected readonly transferMode = linkedSignal<'recurring' | 'one_time'>(() => {
@@ -559,7 +600,6 @@ export class RecurringEntryForm {
       nonNullable: true,
       validators: [Validators.required, Validators.min(0.01)],
     }),
-    type: new FormControl<RecurringEntryType>('expense', { nonNullable: true }),
     dayOfMonth: new FormControl<number | null>(null),
     date: new FormControl('', { nonNullable: true }),
     endDate: new FormControl('', { nonNullable: true }),
@@ -581,7 +621,6 @@ export class RecurringEntryForm {
         this.form.patchValue({
           label: data.label,
           amount: data.amount,
-          type: data.type,
           dayOfMonth: data.dayOfMonth,
           date: data.date ?? '',
           endDate: data.endDate ?? '',
@@ -592,12 +631,18 @@ export class RecurringEntryForm {
         });
       } else {
         this.form.reset();
-        const ft = this.forcedType();
-        if (ft) {
-          this.form.controls.type.setValue(ft);
-        }
       }
       this._pendingFile.set(null);
+    });
+
+    effect(() => {
+      const ctrl = this.form.controls.toAccountId;
+      if (this.activeType() === 'transfer') {
+        ctrl.addValidators(Validators.required);
+      } else {
+        ctrl.removeValidators(Validators.required);
+      }
+      ctrl.updateValueAndValidity();
     });
   }
 
@@ -649,16 +694,17 @@ export class RecurringEntryForm {
     }
 
     const v = this.form.getRawValue();
+    const type = this.activeType();
     const month = new Date().toISOString().slice(0, 7);
     const autoPostSince = v.autoPost ? (this.initial()?.autoPostSince ?? month) : null;
     this.submitted.emit({
       label: v.label,
       amount: v.amount,
-      type: v.type,
+      type,
       dayOfMonth: v.dayOfMonth || null,
       date: v.date || null,
       endDate: v.endDate || null,
-      toAccountId: v.toAccountId || null,
+      toAccountId: type === 'transfer' ? (v.toAccountId || null) : null,
       category: v.category || null,
       memberId: v.memberId || null,
       accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,
