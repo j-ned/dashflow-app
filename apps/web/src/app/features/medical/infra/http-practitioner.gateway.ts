@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import {
@@ -8,8 +8,10 @@ import {
   decryptEntities,
   decryptEntity,
 } from '@core/services/crypto/entity-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Practitioner } from '../domain/models/practitioner.model';
 import { PractitionerGateway } from '../domain/gateways/practitioner.gateway';
+import { PractitionerSchema } from './schemas/practitioner.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
@@ -23,7 +25,9 @@ export class HttpPractitionerGateway implements PractitionerGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Practitioner[]]);
-        return from(decryptEntities<Practitioner>(rows, key));
+        return from(decryptEntities<Practitioner>(rows, key)).pipe(
+          map((list) => validateList(PractitionerSchema, list, { entity: 'Practitioner' })),
+        );
       }),
     );
   }
@@ -33,7 +37,9 @@ export class HttpPractitionerGateway implements PractitionerGateway {
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Practitioner]);
-        return from(decryptEntity<Practitioner>(row, key));
+        return from(decryptEntity<Practitioner>(row, key)).pipe(
+          map((p) => validateOne(PractitionerSchema, p, { entity: 'Practitioner' })),
+        );
       }),
     );
   }

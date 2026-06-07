@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import {
@@ -8,8 +8,10 @@ import {
   decryptEntities,
   decryptEntity,
 } from '@core/services/crypto/entity-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Medication, MedicationWithStock } from '../domain/models/medication.model';
 import { MedicationGateway } from '../domain/gateways/medication.gateway';
+import { MedicationSchema } from './schemas/medication.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'prescriptionId', 'patientId', 'createdAt'] as const;
 
@@ -23,7 +25,9 @@ export class HttpMedicationGateway implements MedicationGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Medication[]]);
-        return from(decryptEntities<Medication>(rows, key));
+        return from(decryptEntities<Medication>(rows, key)).pipe(
+          map((list) => validateList(MedicationSchema, list, { entity: 'Medication' })),
+        );
       }),
     );
   }
@@ -33,7 +37,9 @@ export class HttpMedicationGateway implements MedicationGateway {
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Medication]);
-        return from(decryptEntity<Medication>(row, key));
+        return from(decryptEntity<Medication>(row, key)).pipe(
+          map((m) => validateOne(MedicationSchema, m, { entity: 'Medication' })),
+        );
       }),
     );
   }

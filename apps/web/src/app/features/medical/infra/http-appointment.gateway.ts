@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import {
@@ -8,8 +8,10 @@ import {
   decryptEntities,
   decryptEntity,
 } from '@core/services/crypto/entity-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Appointment } from '../domain/models/appointment.model';
 import { AppointmentGateway } from '../domain/gateways/appointment.gateway';
+import { AppointmentSchema } from './schemas/appointment.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'] as const;
 
@@ -23,7 +25,9 @@ export class HttpAppointmentGateway implements AppointmentGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Appointment[]]);
-        return from(decryptEntities<Appointment>(rows, key));
+        return from(decryptEntities<Appointment>(rows, key)).pipe(
+          map((list) => validateList(AppointmentSchema, list, { entity: 'Appointment' })),
+        );
       }),
     );
   }
@@ -33,7 +37,9 @@ export class HttpAppointmentGateway implements AppointmentGateway {
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Appointment]);
-        return from(decryptEntity<Appointment>(row, key));
+        return from(decryptEntity<Appointment>(row, key)).pipe(
+          map((a) => validateOne(AppointmentSchema, a, { entity: 'Appointment' })),
+        );
       }),
     );
   }

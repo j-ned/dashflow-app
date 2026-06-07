@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import {
@@ -9,8 +9,10 @@ import {
   decryptEntity,
 } from '@core/services/crypto/entity-crypto';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { MedicalDocument } from '../domain/models/document.model';
 import { DocumentGateway } from '../domain/gateways/document.gateway';
+import { MedicalDocumentSchema } from './schemas/document.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'] as const;
 
@@ -24,7 +26,9 @@ export class HttpDocumentGateway implements DocumentGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as MedicalDocument[]]);
-        return from(decryptEntities<MedicalDocument>(rows, key));
+        return from(decryptEntities<MedicalDocument>(rows, key)).pipe(
+          map((list) => validateList(MedicalDocumentSchema, list, { entity: 'MedicalDocument' })),
+        );
       }),
     );
   }
@@ -34,7 +38,9 @@ export class HttpDocumentGateway implements DocumentGateway {
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as MedicalDocument]);
-        return from(decryptEntity<MedicalDocument>(row, key));
+        return from(decryptEntity<MedicalDocument>(row, key)).pipe(
+          map((d) => validateOne(MedicalDocumentSchema, d, { entity: 'MedicalDocument' })),
+        );
       }),
     );
   }
@@ -44,7 +50,9 @@ export class HttpDocumentGateway implements DocumentGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as MedicalDocument[]]);
-        return from(decryptEntities<MedicalDocument>(rows, key));
+        return from(decryptEntities<MedicalDocument>(rows, key)).pipe(
+          map((list) => validateList(MedicalDocumentSchema, list, { entity: 'MedicalDocument' })),
+        );
       }),
     );
   }

@@ -1,5 +1,5 @@
 import { inject, Injectable } from '@angular/core';
-import { from, Observable, switchMap } from 'rxjs';
+import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import {
@@ -9,8 +9,10 @@ import {
   decryptEntity,
 } from '@core/services/crypto/entity-crypto';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Prescription } from '../domain/models/prescription.model';
 import { PrescriptionGateway } from '../domain/gateways/prescription.gateway';
+import { PrescriptionSchema } from './schemas/prescription.schema';
 
 const CLEARTEXT_KEYS = [
   'id',
@@ -31,7 +33,9 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Prescription[]]);
-        return from(decryptEntities<Prescription>(rows, key));
+        return from(decryptEntities<Prescription>(rows, key)).pipe(
+          map((list) => validateList(PrescriptionSchema, list, { entity: 'Prescription' })),
+        );
       }),
     );
   }
@@ -41,7 +45,9 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
         if (!key || !row.encryptedData) return from([row as Prescription]);
-        return from(decryptEntity<Prescription>(row, key));
+        return from(decryptEntity<Prescription>(row, key)).pipe(
+          map((p) => validateOne(PrescriptionSchema, p, { entity: 'Prescription' })),
+        );
       }),
     );
   }
@@ -51,7 +57,9 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Prescription[]]);
-        return from(decryptEntities<Prescription>(rows, key));
+        return from(decryptEntities<Prescription>(rows, key)).pipe(
+          map((list) => validateList(PrescriptionSchema, list, { entity: 'Prescription' })),
+        );
       }),
     );
   }
