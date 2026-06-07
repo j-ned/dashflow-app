@@ -72,7 +72,12 @@ describe('RecurringEntryForm — autoPost', () => {
 });
 
 const SAVINGS: BankAccount = {
-  id: 'liv', name: 'Livret A', type: 'épargne', initialBalance: 0, color: null, dotColor: null,
+  id: 'liv',
+  name: 'Livret A',
+  type: 'épargne',
+  initialBalance: 0,
+  color: null,
+  dotColor: null,
 };
 
 type FormCmp = {
@@ -94,7 +99,8 @@ function mountExpense() {
     imports: [
       RecurringEntryForm,
       TranslocoTestingModule.forRoot({
-        langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        langs: {},
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
       }),
     ],
   });

@@ -4,14 +4,36 @@ import { BankExpenseColumns } from './bank-expense-columns';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 
 const EXPENSE: RecurringEntry = {
-  id: 'e1', accountId: 'a', toAccountId: null, label: 'Netflix', amount: 16,
-  type: 'expense', dayOfMonth: 10, date: null, endDate: null, category: null,
-  payslipKey: null, memberId: null, autoPost: false, autoPostSince: null,
+  id: 'e1',
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Netflix',
+  amount: 16,
+  type: 'expense',
+  dayOfMonth: 10,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  memberId: null,
+  autoPost: false,
+  autoPostSince: null,
 };
 const SAVING: RecurringEntry = {
-  id: 't1', accountId: 'a', toAccountId: 'liv', label: 'Épargne', amount: 200,
-  type: 'transfer', dayOfMonth: 5, date: null, endDate: null, category: null,
-  payslipKey: null, memberId: null, autoPost: false, autoPostSince: null,
+  id: 't1',
+  accountId: 'a',
+  toAccountId: 'liv',
+  label: 'Épargne',
+  amount: 200,
+  type: 'transfer',
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  memberId: null,
+  autoPost: false,
+  autoPostSince: null,
 };
 
 function mount(rows: RecurringEntry[], savingsSubtotal: number) {
@@ -19,7 +41,8 @@ function mount(rows: RecurringEntry[], savingsSubtotal: number) {
     imports: [
       BankExpenseColumns,
       TranslocoTestingModule.forRoot({
-        langs: {}, translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        langs: {},
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
       }),
     ],
   });

@@ -82,7 +82,10 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                           {{ 'budget.recurringForm.autoBadge' | transloco }}
                         </span>
                       }
-                      @if (entry.type === 'transfer' && accountNameById()(entry.toAccountId); as toName) {
+                      @if (
+                        entry.type === 'transfer' && accountNameById()(entry.toAccountId);
+                        as toName
+                      ) {
                         <span
                           data-testid="savings-badge"
                           class="ml-1.5 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium text-ib-purple bg-ib-purple/10"

@@ -91,18 +91,28 @@ type RecurringEntryFormShape = {
 
         @if (showDestinationToggle()) {
           <div>
-            <p id="re-destination-label" class="text-xs font-medium text-text-muted mb-2">{{ 'budget.recurringForm.destination' | transloco }}</p>
+            <p id="re-destination-label" class="text-xs font-medium text-text-muted mb-2">
+              {{ 'budget.recurringForm.destination' | transloco }}
+            </p>
             <div class="space-y-2" role="radiogroup" aria-labelledby="re-destination-label">
               <label class="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                <input type="radio" name="destination" class="accent-ib-red"
-                       [checked]="destination() === 'third_party'"
-                       (change)="destination.set('third_party')" />
+                <input
+                  type="radio"
+                  name="destination"
+                  class="accent-ib-red"
+                  [checked]="destination() === 'third_party'"
+                  (change)="destination.set('third_party')"
+                />
                 {{ 'budget.recurringForm.toThirdParty' | transloco }}
               </label>
               <label class="flex items-center gap-2 text-sm text-text-primary cursor-pointer">
-                <input type="radio" name="destination" class="accent-ib-purple"
-                       [checked]="destination() === 'my_account'"
-                       (change)="destination.set('my_account')" />
+                <input
+                  type="radio"
+                  name="destination"
+                  class="accent-ib-purple"
+                  [checked]="destination() === 'my_account'"
+                  (change)="destination.set('my_account')"
+                />
                 {{ 'budget.recurringForm.toMyAccount' | transloco }}
               </label>
             </div>
@@ -704,7 +714,7 @@ export class RecurringEntryForm {
       dayOfMonth: v.dayOfMonth || null,
       date: v.date || null,
       endDate: v.endDate || null,
-      toAccountId: type === 'transfer' ? (v.toAccountId || null) : null,
+      toAccountId: type === 'transfer' ? v.toAccountId || null : null,
       category: v.category || null,
       memberId: v.memberId || null,
       accountId: this.initial()?.accountId ?? this.forcedAccountId() ?? null,
