@@ -6,13 +6,14 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DatePipe, DecimalPipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Loan } from '../../domain/models/loan.model';
-import { LoanTransaction } from '../../domain/models/loan-transaction.model';
-import { HistoryEntry, LoanStatus, LoanVM } from '../../domain/loan-vm';
+import { buildLoanHistories, buildLoanVMs, HistoryEntry, LoanVM } from '../../domain/loan-vm';
+import { buildLoanRepaymentEntry } from '../../domain/loan-repayment-entry';
+import { LoanHistoryDetail } from '../../components/loan-history-detail/loan-history-detail';
 import { buildMemberMap } from '../../domain/member-map';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
@@ -27,19 +28,17 @@ import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
 
-const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoing: 2, settled: 3 };
-
 @Component({
   selector: 'app-loans',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
-    DatePipe,
     DecimalPipe,
     ModalDialog,
     LoanForm,
     RecordPaymentForm,
     MemberFilter,
     LoanCard,
+    LoanHistoryDetail,
     Icon,
     TranslocoPipe,
   ],
@@ -290,93 +289,7 @@ const STATUS_RANK: Record<LoanStatus, number> = { overdue: 0, dueSoon: 1, ongoin
       (closed)="onModalClosed()"
     >
       @if (historyModal.isOpen()) {
-        @let loan = selectedLoanFresh();
-        @if (loan) {
-          @let repaid = loan.amount - loan.remaining;
-          @let pct = loan.amount > 0 ? (repaid / loan.amount) * 100 : 0;
-          <div class="mb-4 rounded-lg border border-border bg-raised/40 p-4">
-            <div class="grid grid-cols-3 gap-3 text-center">
-              <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">
-                  {{ 'budget.loan.modal.initialAmount' | transloco }}
-                </p>
-                <p class="mt-0.5 font-mono font-semibold text-text-primary">
-                  {{ loan.amount | number: '1.2-2' }}&euro;
-                </p>
-              </div>
-              <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">
-                  {{ 'budget.loan.repaid' | transloco }}
-                </p>
-                <p class="mt-0.5 font-mono font-semibold text-ib-green">
-                  {{ repaid | number: '1.2-2' }}&euro;
-                </p>
-              </div>
-              <div>
-                <p class="text-[11px] uppercase tracking-wider text-text-muted">
-                  {{ 'budget.loan.remaining' | transloco }}
-                </p>
-                <p
-                  class="mt-0.5 font-mono font-semibold"
-                  [class.text-ib-blue]="loan.direction === 'lent'"
-                  [class.text-ib-red]="loan.direction === 'borrowed'"
-                >
-                  {{ loan.remaining | number: '1.2-2' }}&euro;
-                </p>
-              </div>
-            </div>
-            <div class="mt-3 h-2 rounded-full bg-hover overflow-hidden">
-              <div
-                class="h-full rounded-full bg-ib-green"
-                [style.width.%]="pct > 100 ? 100 : pct"
-              ></div>
-            </div>
-            <p class="mt-1 text-right text-[11px] text-text-muted">
-              {{ 'budget.loan.modal.progress' | transloco: { pct: (pct | number: '1.0-0') } }}
-            </p>
-          </div>
-        }
-
-        @let history = selectedHistory();
-        @if (history.length > 0) {
-          <ul class="divide-y divide-border/40 rounded-lg border border-border overflow-hidden">
-            @for (entry of history; track entry.tx.id) {
-              <li class="flex items-center justify-between gap-3 px-4 py-3">
-                <div class="flex min-w-0 items-center gap-3">
-                  <span
-                    class="flex h-8 w-8 shrink-0 items-center justify-center rounded-full"
-                    [style.background-color]="'color-mix(in srgb, var(--color-ib-green) 12%, transparent)'"
-                  >
-                    <app-icon name="banknote" size="14" class="text-ib-green" />
-                  </span>
-                  <div class="min-w-0">
-                    <p class="font-mono text-sm font-medium text-ib-green">
-                      +{{ entry.tx.amount | number: '1.2-2' }}&euro;
-                    </p>
-                    @if (entry.tx.note) {
-                      <p class="truncate text-xs text-text-muted">{{ entry.tx.note }}</p>
-                    }
-                  </div>
-                </div>
-                <div class="shrink-0 text-right">
-                  <p class="text-xs text-text-muted">{{ entry.tx.date | date: 'dd/MM/yyyy' }}</p>
-                  <p class="font-mono text-xs text-text-muted">
-                    {{ 'budget.loan.remainingAfter' | transloco }}
-                    {{ entry.balanceAfter | number: '1.2-2' }}&euro;
-                  </p>
-                </div>
-              </li>
-            }
-          </ul>
-        } @else {
-          <div class="text-center py-8">
-            <app-icon name="clock" size="32" class="text-text-muted/20 mx-auto mb-2" />
-            <p class="text-sm text-text-muted">{{ 'budget.loan.modal.noPayments' | transloco }}</p>
-            <p class="text-xs text-text-muted mt-1">
-              {{ 'budget.loan.modal.historyHint' | transloco }}
-            </p>
-          </div>
-        }
+        <app-loan-history-detail [loan]="selectedLoanFresh()" [history]="selectedHistory()" />
       }
     </app-modal-dialog>
   `,
@@ -427,30 +340,21 @@ export class Loans {
 
   // Real repayment history per loan, with capital remaining due after each operation.
   // Zero-amount rows (legacy E2EE balance snapshots) are filtered out.
-  protected readonly historyByLoan = computed(() => {
-    const byLoan = new Map<string, LoanTransaction[]>();
-    for (const tx of this.allTransactions()) {
-      if (Number(tx.amount) === 0) continue;
-      const list = byLoan.get(tx.loanId);
-      if (list) list.push(tx);
-      else byLoan.set(tx.loanId, [tx]);
-    }
-    const result = new Map<string, HistoryEntry[]>();
-    for (const loan of this.loans()) {
-      const txs = (byLoan.get(loan.id) ?? []).slice().sort((a, b) => b.date.localeCompare(a.date));
-      let remaining = Number(loan.remaining);
-      const entries: HistoryEntry[] = txs.map((tx) => {
-        const entry: HistoryEntry = { tx, balanceAfter: remaining };
-        remaining += Number(tx.amount); // reverse chronologically: before this repayment, more was owed
-        return entry;
-      });
-      result.set(loan.id, entries);
-    }
-    return result;
-  });
+  protected readonly historyByLoan = computed(() =>
+    buildLoanHistories(this.loans(), this.allTransactions()),
+  );
 
-  protected readonly lentVMs = computed(() => this.buildVMs('lent'));
-  protected readonly borrowedVMs = computed(() => this.buildVMs('borrowed'));
+  private buildVMsFor(direction: Loan['direction']): LoanVM[] {
+    return buildLoanVMs(this.loans(), this.historyByLoan(), {
+      direction,
+      filterMemberId: this.filterMemberId(),
+      today: this._today,
+      dueSoonLimit: this._dueSoonLimit,
+    });
+  }
+
+  protected readonly lentVMs = computed(() => this.buildVMsFor('lent'));
+  protected readonly borrowedVMs = computed(() => this.buildVMsFor('borrowed'));
 
   protected readonly lentTotal = computed(() =>
     this.lentVMs().reduce((sum, vm) => sum + vm.loan.remaining, 0),
@@ -478,32 +382,6 @@ export class Loans {
   });
 
   protected readonly memberMap = computed(() => buildMemberMap(this.members()));
-
-  private buildVMs(direction: Loan['direction']): LoanVM[] {
-    const fid = this.filterMemberId();
-    const history = this.historyByLoan();
-    const filtered = this.loans().filter(
-      (l) => l.direction === direction && (!fid || l.memberId === fid),
-    );
-    const vms = filtered.map<LoanVM>((loan) => {
-      const repaid = loan.amount - loan.remaining;
-      const pct = loan.amount > 0 ? (repaid / loan.amount) * 100 : 0;
-      let status: LoanStatus;
-      if (loan.remaining <= 0) status = 'settled';
-      else if (loan.dueDate && loan.dueDate < this._today) status = 'overdue';
-      else if (loan.dueDate && loan.dueDate <= this._dueSoonLimit) status = 'dueSoon';
-      else status = 'ongoing';
-      return { loan, repaid, pct, entries: history.get(loan.id) ?? [], status };
-    });
-    return vms.sort((a, b) => {
-      if (STATUS_RANK[a.status] !== STATUS_RANK[b.status])
-        return STATUS_RANK[a.status] - STATUS_RANK[b.status];
-      const ad = a.loan.dueDate ?? '9999-12-31';
-      const bd = b.loan.dueDate ?? '9999-12-31';
-      if (ad !== bd) return ad.localeCompare(bd);
-      return b.loan.remaining - a.loan.remaining;
-    });
-  }
 
   protected openLentModal() {
     this.lentModalRef().open();
@@ -581,24 +459,13 @@ export class Loans {
           loan.direction === 'borrowed'
             ? 'budget.loan.messages.debtRepaymentLabel'
             : 'budget.loan.messages.loanRepaymentLabel';
-        // Repaying a debt you owe = money out (spending); being repaid on a loan
-        // you granted = money in (income). Sign the bank entry accordingly.
         await lastValueFrom(
-          this.recurringEntryGateway.create({
-            label: this._i18n.translate(labelKey, { person: loan.person }),
-            amount: event.amount,
-            type: loan.direction === 'lent' ? 'income' : 'spending',
-            accountId: event.accountId,
-            memberId: loan.memberId,
-            dayOfMonth: null,
-            date: event.date || null,
-            endDate: null,
-            toAccountId: null,
-            category: this._i18n.translate('budget.loan.messages.repaymentCategory'),
-            payslipKey: null,
-            autoPost: false,
-            autoPostSince: null,
-          }),
+          this.recurringEntryGateway.create(
+            buildLoanRepaymentEntry(loan, event, {
+              label: this._i18n.translate(labelKey, { person: loan.person }),
+              category: this._i18n.translate('budget.loan.messages.repaymentCategory'),
+            }),
+          ),
         );
       }
     } catch {
