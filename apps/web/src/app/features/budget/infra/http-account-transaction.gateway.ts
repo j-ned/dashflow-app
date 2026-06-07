@@ -35,7 +35,9 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       this.api.get<ApiRow[]>(`/bank-accounts/${accountId}/transactions`),
       this.crypto.getMasterKey(),
       coerceTransaction,
-    ).pipe(map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })));
+    ).pipe(
+      map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })),
+    );
   }
 
   getAll(): Observable<AccountTransaction[]> {
@@ -43,7 +45,9 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       this.api.get<ApiRow[]>('/transactions/all'),
       this.crypto.getMasterKey(),
       coerceTransaction,
-    ).pipe(map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })));
+    ).pipe(
+      map((txs) => validateList(AccountTransactionSchema, txs, { entity: 'AccountTransaction' })),
+    );
   }
 
   create(

@@ -3,9 +3,20 @@ import * as z from 'zod/mini';
 import { RecurringEntrySchema } from './recurring-entry.schema';
 
 const VALID = {
-  id: 'r1', memberId: null, accountId: 'a', toAccountId: null, label: 'Loyer',
-  amount: 800, type: 'expense', dayOfMonth: 5, date: null, endDate: null,
-  category: null, payslipKey: null, autoPost: false, autoPostSince: null,
+  id: 'r1',
+  memberId: null,
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Loyer',
+  amount: 800,
+  type: 'expense',
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  autoPost: false,
+  autoPostSince: null,
 };
 
 describe('RecurringEntrySchema', () => {

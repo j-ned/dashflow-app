@@ -32,9 +32,11 @@ export class HttpLoanGateway implements LoanGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Loan[]> {
-    return decryptList(this.api.get<ApiRow[]>('/loans'), this.crypto.getMasterKey(), coerceLoan).pipe(
-      map((loans) => validateList(LoanSchema, loans, { entity: 'Loan' })),
-    );
+    return decryptList(
+      this.api.get<ApiRow[]>('/loans'),
+      this.crypto.getMasterKey(),
+      coerceLoan,
+    ).pipe(map((loans) => validateList(LoanSchema, loans, { entity: 'Loan' })));
   }
 
   getById(id: string): Observable<Loan> {

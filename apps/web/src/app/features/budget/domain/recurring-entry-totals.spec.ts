@@ -4,9 +4,20 @@ import { sumAmount } from './recurring-entry-totals';
 
 function e(amount: number): RecurringEntry {
   return {
-    id: 'x', memberId: null, accountId: 'a', toAccountId: null, label: 'l', amount,
-    type: 'expense', dayOfMonth: 1, date: null, endDate: null, category: null,
-    payslipKey: null, autoPost: false, autoPostSince: null,
+    id: 'x',
+    memberId: null,
+    accountId: 'a',
+    toAccountId: null,
+    label: 'l',
+    amount,
+    type: 'expense',
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    category: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
   };
 }
 

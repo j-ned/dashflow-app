@@ -29,28 +29,46 @@ export function buildTimelineEvents(p: TimelineInput): TimelineEvent[] {
   for (const e of p.incomes) {
     if (e.dayOfMonth)
       events.push({
-        id: e.id, day: e.dayOfMonth, label: e.label, amount: Number(e.amount),
-        sign: '+', type: 'income', passed: passed(e),
+        id: e.id,
+        day: e.dayOfMonth,
+        label: e.label,
+        amount: Number(e.amount),
+        sign: '+',
+        type: 'income',
+        passed: passed(e),
       });
   }
   for (const e of p.monthlyExpenses) {
     events.push({
-      id: e.id, day: e.dayOfMonth ?? 1, label: e.label, amount: Number(e.amount),
-      sign: '-', type: 'expense', passed: passed(e),
+      id: e.id,
+      day: e.dayOfMonth ?? 1,
+      label: e.label,
+      amount: Number(e.amount),
+      sign: '-',
+      type: 'expense',
+      passed: passed(e),
     });
   }
   for (const e of p.outgoingTransfers) {
     events.push({
-      id: e.id, day: e.dayOfMonth ?? 1,
+      id: e.id,
+      day: e.dayOfMonth ?? 1,
       label: `→ ${p.accountName(e.toAccountId) ?? p.fallbackLabel} — ${e.label}`,
-      amount: Number(e.amount), sign: '-', type: 'transfer', passed: passed(e),
+      amount: Number(e.amount),
+      sign: '-',
+      type: 'transfer',
+      passed: passed(e),
     });
   }
   for (const e of p.incomingTransfers) {
     events.push({
-      id: e.id + '-in', day: e.dayOfMonth ?? 1,
+      id: e.id + '-in',
+      day: e.dayOfMonth ?? 1,
       label: `← ${p.accountName(e.accountId) ?? p.fallbackLabel} — ${e.label}`,
-      amount: Number(e.amount), sign: '+', type: 'transfer', passed: passed(e),
+      amount: Number(e.amount),
+      sign: '+',
+      type: 'transfer',
+      passed: passed(e),
     });
   }
 

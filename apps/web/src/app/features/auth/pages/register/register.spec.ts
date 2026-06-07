@@ -78,7 +78,7 @@ const VALID_FORM = {
 
 describe('Register — inscription 2 étapes (sécurité)', () => {
   describe('Validateur passwordMatch', () => {
-    it('mots de passe identiques → formulaire valide (pas d\'erreur mismatch)', () => {
+    it("mots de passe identiques → formulaire valide (pas d'erreur mismatch)", () => {
       const { cmp } = makeComponent();
       cmp.registerForm.setValue(VALID_FORM);
 
@@ -96,7 +96,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
   });
 
   describe('submitRegister', () => {
-    it('inscription réussie → passe à l\'étape verify et mémorise l\'email', async () => {
+    it("inscription réussie → passe à l'étape verify et mémorise l'email", async () => {
       const { cmp, auth, navigate } = makeComponent();
       cmp.registerForm.setValue(VALID_FORM);
 
@@ -154,7 +154,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.loading()).toBe(false);
     });
 
-    it('formulaire invalide (email vide) → ne tente pas d\'appeler register', async () => {
+    it("formulaire invalide (email vide) → ne tente pas d'appeler register", async () => {
       const { cmp, auth, navigate } = makeComponent();
       cmp.registerForm.setValue({ ...VALID_FORM, email: '' });
 
@@ -165,7 +165,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.loading()).toBe(false);
     });
 
-    it('formulaire invalide (mots de passe différents) → ne tente pas d\'appeler register', async () => {
+    it("formulaire invalide (mots de passe différents) → ne tente pas d'appeler register", async () => {
       const { cmp, auth } = makeComponent();
       cmp.registerForm.setValue({ ...VALID_FORM, confirmPassword: 'wrongpassword123' });
 
@@ -194,8 +194,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
 
     it('code invalide → erreur définie, pas de navigation, loading reset', async () => {
       const { cmp, navigate } = makeComponent({
-        verifyCode: () =>
-          Promise.reject({ error: { error: 'INVALID_CODE' } } as unknown as Error),
+        verifyCode: () => Promise.reject({ error: { error: 'INVALID_CODE' } } as unknown as Error),
       });
       cmp.registerForm.setValue(VALID_FORM);
       await cmp.submitRegister();
@@ -259,7 +258,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
   });
 
   describe('backToRegister', () => {
-    it('revient à l\'étape register et réinitialise error, success et codeValue', async () => {
+    it("revient à l'étape register et réinitialise error, success et codeValue", async () => {
       const { cmp } = makeComponent();
       cmp.registerForm.setValue(VALID_FORM);
       await cmp.submitRegister(); // passe en step verify
@@ -274,10 +273,8 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
   });
 
   describe('constructeur — query param verify=true', () => {
-    it('verify=true + email présents → passe directement à l\'étape verify et appelle resendCode', () => {
-      const consoleError = vi
-        .spyOn(console, 'error')
-        .mockImplementation(() => undefined);
+    it("verify=true + email présents → passe directement à l'étape verify et appelle resendCode", () => {
+      const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
       const { cmp, auth } = makeComponent({
         queryParams: { email: 'bob@dash.flow', verify: 'true' },
@@ -291,14 +288,14 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       consoleError.mockRestore();
     });
 
-    it('sans query param verify → reste à l\'étape register, resendCode non appelé', () => {
+    it("sans query param verify → reste à l'étape register, resendCode non appelé", () => {
       const { cmp, auth } = makeComponent();
 
       expect(cmp.step()).toBe('register');
       expect(auth.resendCode).not.toHaveBeenCalled();
     });
 
-    it('verify=true sans email → reste à l\'étape register, resendCode non appelé', () => {
+    it("verify=true sans email → reste à l'étape register, resendCode non appelé", () => {
       const { cmp, auth } = makeComponent({
         queryParams: { verify: 'true' },
       });

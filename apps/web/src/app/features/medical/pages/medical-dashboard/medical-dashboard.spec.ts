@@ -40,7 +40,14 @@ const PAST = '2000-01-01';
 const FUTURE = '2999-12-31';
 
 function patient(over: Partial<Patient> = {}): Patient {
-  return { id: 'p1', firstName: 'Ada', lastName: 'Lovelace', birthDate: PAST, notes: null, ...over };
+  return {
+    id: 'p1',
+    firstName: 'Ada',
+    lastName: 'Lovelace',
+    birthDate: PAST,
+    notes: null,
+    ...over,
+  };
 }
 
 function appointment(over: Partial<Appointment> = {}): Appointment {
@@ -121,13 +128,15 @@ function practitioner(over: Partial<Practitioner> = {}): Practitioner {
   };
 }
 
-function make(data: {
-  patients?: Patient[];
-  practitioners?: Practitioner[];
-  appointments?: Appointment[];
-  prescriptions?: Prescription[];
-  medications?: Medication[];
-} = {}) {
+function make(
+  data: {
+    patients?: Patient[];
+    practitioners?: Practitioner[];
+    appointments?: Appointment[];
+    prescriptions?: Prescription[];
+    medications?: Medication[];
+  } = {},
+) {
   TestBed.configureTestingModule({
     providers: [
       { provide: PatientGateway, useValue: { getAll: () => of(data.patients ?? []) } },
@@ -135,7 +144,10 @@ function make(data: {
       { provide: AppointmentGateway, useValue: { getAll: () => of(data.appointments ?? []) } },
       {
         provide: PrescriptionGateway,
-        useValue: { getAll: () => of(data.prescriptions ?? []), downloadDocument: () => of(new Blob()) },
+        useValue: {
+          getAll: () => of(data.prescriptions ?? []),
+          downloadDocument: () => of(new Blob()),
+        },
       },
       { provide: MedicationGateway, useValue: { getAll: () => of(data.medications ?? []) } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
@@ -176,7 +188,10 @@ describe('MedicalDashboard', () => {
         ],
       });
 
-      expect(cmp.patientSummaries()[0].nextAppointments.map((a) => a.id)).toEqual(['early', 'late']);
+      expect(cmp.patientSummaries()[0].nextAppointments.map((a) => a.id)).toEqual([
+        'early',
+        'late',
+      ]);
     });
 
     it("n'inclut pas les RDV d'un autre patient", () => {

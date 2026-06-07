@@ -207,7 +207,7 @@ describe('Login — authentification 2 étapes (sécurité)', () => {
     expect(cmp.loading()).toBe(false);
   });
 
-  it('backToCredentials → revient à credentials et réinitialise le code et l\'erreur', async () => {
+  it("backToCredentials → revient à credentials et réinitialise le code et l'erreur", async () => {
     const { cmp } = makeComponent({
       login: () => Promise.resolve('mfa_required'),
     });

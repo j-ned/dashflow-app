@@ -12,9 +12,20 @@ const ACCS = [
   { id: 'b', name: 'Livret', type: 'épargne', initialBalance: 0, color: null, dotColor: null },
 ];
 const ENTRY = {
-  id: 'e', accountId: 'a', toAccountId: null, label: 'l', amount: 1, type: 'expense',
-  dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null,
-  memberId: null, autoPost: false, autoPostSince: null,
+  id: 'e',
+  accountId: 'a',
+  toAccountId: null,
+  label: 'l',
+  amount: 1,
+  type: 'expense',
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  memberId: null,
+  autoPost: false,
+  autoPostSince: null,
 };
 
 function makeStore(entryGetAll = vi.fn(() => of([ENTRY])), txGetAll = vi.fn(() => of([]))) {
@@ -23,7 +34,10 @@ function makeStore(entryGetAll = vi.fn(() => of([ENTRY])), txGetAll = vi.fn(() =
       BudgetDataStore,
       { provide: RecurringEntryGateway, useValue: { getAll: entryGetAll } },
       { provide: BankAccountGateway, useValue: { getAll: () => of(ACCS) } },
-      { provide: MemberGateway, useValue: { getAll: () => of([{ id: 'm', firstName: 'A', lastName: 'B', color: null }]) } },
+      {
+        provide: MemberGateway,
+        useValue: { getAll: () => of([{ id: 'm', firstName: 'A', lastName: 'B', color: null }]) },
+      },
       { provide: AccountTransactionGateway, useValue: { getAll: txGetAll } },
     ],
   });
@@ -66,7 +80,10 @@ describe('BudgetDataStore', () => {
 
   it('refreshTransactions re-déclenche le chargement des transactions', () => {
     const txGetAll = vi.fn(() => of([]));
-    const { store } = makeStore(vi.fn(() => of([ENTRY])), txGetAll);
+    const { store } = makeStore(
+      vi.fn(() => of([ENTRY])),
+      txGetAll,
+    );
     expect(txGetAll).toHaveBeenCalledTimes(1);
     store.refreshTransactions();
     TestBed.tick();

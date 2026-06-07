@@ -75,7 +75,7 @@ describe('Unlock — déverrouillage E2EE (sécurité)', () => {
     expect(cmp.loading()).toBe(false);
   });
 
-  it('signale l\'échec sans throw et ne navigue PAS quand le mot de passe est faux', async () => {
+  it("signale l'échec sans throw et ne navigue PAS quand le mot de passe est faux", async () => {
     const { cmp, auth, navigate } = makeComponent({
       unlockWithPassword: () => Promise.reject(new Error('bad key')),
     });
@@ -112,7 +112,7 @@ describe('Unlock — déverrouillage E2EE (sécurité)', () => {
     expect(cmp.error()).toBe('');
   });
 
-  it('affiche une erreur de clé de récupération invalide sans naviguer en cas d\'échec', async () => {
+  it("affiche une erreur de clé de récupération invalide sans naviguer en cas d'échec", async () => {
     const { cmp, auth, navigate } = makeComponent({
       unlockWithRecovery: () => Promise.reject(new Error('invalid')),
     });
@@ -150,7 +150,7 @@ describe('Unlock — déverrouillage E2EE (sécurité)', () => {
     expect(cmp.loading()).toBe(false);
   });
 
-  it('setMode bascule le mode et réinitialise l\'erreur affichée', async () => {
+  it("setMode bascule le mode et réinitialise l'erreur affichée", async () => {
     const { cmp } = makeComponent({
       unlockWithPassword: () => Promise.reject(new Error('bad')),
     });

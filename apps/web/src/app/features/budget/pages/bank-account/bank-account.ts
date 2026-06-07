@@ -283,7 +283,11 @@ export class BankAccount {
 
   constructor() {
     effect(() => {
-      if (!this.store.entriesLoaded() || !this.store.transactionsLoaded() || this._autoPostAttempted())
+      if (
+        !this.store.entriesLoaded() ||
+        !this.store.transactionsLoaded() ||
+        this._autoPostAttempted()
+      )
         return;
       this._autoPostAttempted.set(true);
       const entries = untracked(this.store.entries);

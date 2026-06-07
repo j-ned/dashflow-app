@@ -3,8 +3,16 @@ import * as z from 'zod/mini';
 import { LoanSchema } from './loan.schema';
 
 const VALID = {
-  id: 'l1', memberId: null, person: 'Paul', direction: 'lent', amount: 100,
-  remaining: 50, description: 'x', date: '2026-01-01', dueDate: null, dueDay: null,
+  id: 'l1',
+  memberId: null,
+  person: 'Paul',
+  direction: 'lent',
+  amount: 100,
+  remaining: 50,
+  description: 'x',
+  date: '2026-01-01',
+  dueDate: null,
+  dueDay: null,
 };
 
 describe('LoanSchema', () => {

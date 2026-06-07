@@ -123,7 +123,7 @@ function setRecoveryKey(cmp: Cmp, value: string): void {
 
 describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)', () => {
   describe('submitEmail — demande de code', () => {
-    it('succès → mémorise l\'email et passe à l\'étape reset', async () => {
+    it("succès → mémorise l'email et passe à l'étape reset", async () => {
       const { cmp, auth } = makeComponent();
       cmp.emailForm.setValue(VALID_EMAIL);
 
@@ -137,7 +137,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it('échec gateway avec body structuré → erreur du serveur, reste à l\'étape email', async () => {
+    it("échec gateway avec body structuré → erreur du serveur, reste à l'étape email", async () => {
       const { cmp, auth } = makeComponent({
         forgotPassword: () =>
           Promise.reject({ error: { error: 'RATE_LIMITED' } } as unknown as Error),
@@ -165,7 +165,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it('formulaire invalide (email vide) → n\'appelle pas la gateway', async () => {
+    it("formulaire invalide (email vide) → n'appelle pas la gateway", async () => {
       const { cmp, auth } = makeComponent();
       cmp.emailForm.setValue({ email: '' });
 
@@ -198,7 +198,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it('reset OK, compte chiffré (encryptionVersion 1) → passe à l\'étape recovery, pas de logout', async () => {
+    it("reset OK, compte chiffré (encryptionVersion 1) → passe à l'étape recovery, pas de logout", async () => {
       const { cmp, auth } = makeComponent({ user: { encryptionVersion: 1 } });
       cmp.emailForm.setValue(VALID_EMAIL);
       await cmp.submitEmail();
@@ -229,7 +229,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it('resetPassword échoue → erreur codeInvalid, reste à l\'étape reset', async () => {
+    it("resetPassword échoue → erreur codeInvalid, reste à l'étape reset", async () => {
       const { cmp, auth } = makeComponent({
         resetPassword: () => Promise.reject(new Error('bad code')),
       });
@@ -245,7 +245,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it('formulaire reset invalide (mots de passe différents) → n\'appelle pas resetPassword', async () => {
+    it("formulaire reset invalide (mots de passe différents) → n'appelle pas resetPassword", async () => {
       const { cmp, auth } = makeComponent();
       cmp.emailForm.setValue(VALID_EMAIL);
       await cmp.submitEmail();
@@ -288,7 +288,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
   });
 
   describe('backToEmail', () => {
-    it('revient à l\'étape email et réinitialise erreur, succès et formulaire reset', async () => {
+    it("revient à l'étape email et réinitialise erreur, succès et formulaire reset", async () => {
       const { cmp } = makeComponent({
         resetPassword: () => Promise.reject(new Error('bad code')),
       });

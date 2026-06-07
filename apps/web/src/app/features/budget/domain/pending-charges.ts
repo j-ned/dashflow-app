@@ -27,11 +27,12 @@ export function buildPendingCharges(p: PendingChargesInput): PendingCharge[] {
         !isRecurrencePosted(e.id, p.currentMonth, p.txs) &&
         !p.ignored.has(e.id),
     )
-    .map((e): PendingCharge => ({
-      entry: e,
-      direction:
-        e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
-      suggestedDate: `${p.currentMonth}-${String(e.dayOfMonth).padStart(2, '0')}`,
-      suggestedAmount: Number(e.amount),
-    }));
+    .map(
+      (e): PendingCharge => ({
+        entry: e,
+        direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
+        suggestedDate: `${p.currentMonth}-${String(e.dayOfMonth).padStart(2, '0')}`,
+        suggestedAmount: Number(e.amount),
+      }),
+    );
 }

@@ -19,8 +19,7 @@ export type ForecastDeltaInput = {
 // Delta des récurrences (formule de endOfMonthBalance sans le solde initial),
 // chaque somme excluant les récurrences déjà postées (réconciliées).
 export function computeForecastDelta(p: ForecastDeltaInput): number {
-  const unposted = (e: RecurringEntry): boolean =>
-    !isRecurrencePosted(e.id, p.currentMonth, p.txs);
+  const unposted = (e: RecurringEntry): boolean => !isRecurrencePosted(e.id, p.currentMonth, p.txs);
   const inc = sumAmount(p.incomes.filter(unposted));
   const exp = sumAmount(p.monthlyExpenses.filter(unposted));
   const ann = sumAmount(p.annualExpenses.filter(unposted)) / 12;

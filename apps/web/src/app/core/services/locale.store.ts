@@ -35,7 +35,9 @@ export class LocaleStore {
   constructor() {
     const onLanguageChange = () => this._systemLocale.set(detectBrowserLocale());
     window.addEventListener('languagechange', onLanguageChange);
-    inject(DestroyRef).onDestroy(() => window.removeEventListener('languagechange', onLanguageChange));
+    inject(DestroyRef).onDestroy(() =>
+      window.removeEventListener('languagechange', onLanguageChange),
+    );
 
     effect(() => {
       const lang = this.resolved();

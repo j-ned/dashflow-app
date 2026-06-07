@@ -8,8 +8,22 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { TranslocoService } from '@jsverse/transloco';
 import { AccountManager } from './account-manager';
 
-const ACC = { id: 'a', name: 'Courant', type: 'courant', initialBalance: 100, color: '#1', dotColor: '#2' };
-const LIV = { id: 'liv', name: 'Livret', type: 'épargne', initialBalance: 0, color: '#3', dotColor: '#4' };
+const ACC = {
+  id: 'a',
+  name: 'Courant',
+  type: 'courant',
+  initialBalance: 100,
+  color: '#1',
+  dotColor: '#2',
+};
+const LIV = {
+  id: 'liv',
+  name: 'Livret',
+  type: 'épargne',
+  initialBalance: 0,
+  color: '#3',
+  dotColor: '#4',
+};
 const DECO = [
   { account: ACC, color: '#1', dot: '#2' },
   { account: LIV, color: '#3', dot: '#4' },
@@ -30,16 +44,18 @@ function inputEvent(value: string): Event {
   return { target: { value } } as unknown as Event;
 }
 
-function make(opts: {
-  create?: ReturnType<typeof vi.fn>;
-  update?: ReturnType<typeof vi.fn>;
-  del?: ReturnType<typeof vi.fn>;
-  entryUpdate?: ReturnType<typeof vi.fn>;
-  entryDelete?: ReturnType<typeof vi.fn>;
-  choose?: () => Promise<'confirm' | 'alternative' | 'cancel'>;
-  confirm?: () => Promise<boolean>;
-  entries?: unknown[];
-} = {}) {
+function make(
+  opts: {
+    create?: ReturnType<typeof vi.fn>;
+    update?: ReturnType<typeof vi.fn>;
+    del?: ReturnType<typeof vi.fn>;
+    entryUpdate?: ReturnType<typeof vi.fn>;
+    entryDelete?: ReturnType<typeof vi.fn>;
+    choose?: () => Promise<'confirm' | 'alternative' | 'cancel'>;
+    confirm?: () => Promise<boolean>;
+    entries?: unknown[];
+  } = {},
+) {
   const create = opts.create ?? vi.fn(() => of(ACC));
   const update = opts.update ?? vi.fn(() => of(ACC));
   const del = opts.del ?? vi.fn(() => of(undefined));
@@ -65,7 +81,15 @@ function make(opts: {
   fixture.componentRef.setInput('decoratedAccounts', DECO);
   fixture.componentRef.setInput('entries', opts.entries ?? []);
   fixture.detectChanges();
-  return { fixture, cmp: fixture.componentInstance as unknown as Cmp, create, update, del, entryUpdate, entryDelete };
+  return {
+    fixture,
+    cmp: fixture.componentInstance as unknown as Cmp,
+    create,
+    update,
+    del,
+    entryUpdate,
+    entryDelete,
+  };
 }
 
 describe('AccountManager', () => {
@@ -77,7 +101,13 @@ describe('AccountManager', () => {
     cmp.newAccountType.set('épargne');
     cmp.newAccountBalance.set(50);
     await cmp.createAccount();
-    expect(create).toHaveBeenCalledWith({ name: 'Vacances', type: 'épargne', initialBalance: 50, color: null, dotColor: null });
+    expect(create).toHaveBeenCalledWith({
+      name: 'Vacances',
+      type: 'épargne',
+      initialBalance: 50,
+      color: null,
+      dotColor: null,
+    });
     expect(spy).toHaveBeenCalledTimes(1);
   });
 
@@ -94,7 +124,11 @@ describe('AccountManager', () => {
     fixture.componentInstance.accountsChanged.subscribe(spy);
     await cmp.updateAccountName(ACC, inputEvent('Renommé'));
     expect(update).toHaveBeenCalledWith('a', {
-      name: 'Renommé', type: 'courant', initialBalance: 100, color: '#1', dotColor: '#2',
+      name: 'Renommé',
+      type: 'courant',
+      initialBalance: 100,
+      color: '#1',
+      dotColor: '#2',
     });
     expect(spy).toHaveBeenCalledTimes(1);
   });
@@ -110,7 +144,8 @@ describe('AccountManager', () => {
 
   it('deleteAccount sans entrées → confirm puis delete + les deux events (comme l’original)', async () => {
     const { fixture, cmp, del } = make({ entries: [], confirm: () => Promise.resolve(true) });
-    const accSpy = vi.fn(); const entSpy = vi.fn();
+    const accSpy = vi.fn();
+    const entSpy = vi.fn();
     fixture.componentInstance.accountsChanged.subscribe(accSpy);
     fixture.componentInstance.entriesChanged.subscribe(entSpy);
     await cmp.deleteAccount(LIV);
@@ -120,9 +155,30 @@ describe('AccountManager', () => {
   });
 
   it('deleteAccount avec entrées + réassignation → entryGateway.update ×N, delete, les deux events', async () => {
-    const entries = [{ id: 'e1', accountId: 'liv', label: 'x', amount: 1, type: 'expense', dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null, memberId: null, toAccountId: null, autoPost: false, autoPostSince: null }];
-    const { fixture, cmp, del, entryUpdate } = make({ entries, choose: () => Promise.resolve('confirm') });
-    const accSpy = vi.fn(); const entSpy = vi.fn();
+    const entries = [
+      {
+        id: 'e1',
+        accountId: 'liv',
+        label: 'x',
+        amount: 1,
+        type: 'expense',
+        dayOfMonth: 5,
+        date: null,
+        endDate: null,
+        category: null,
+        payslipKey: null,
+        memberId: null,
+        toAccountId: null,
+        autoPost: false,
+        autoPostSince: null,
+      },
+    ];
+    const { fixture, cmp, del, entryUpdate } = make({
+      entries,
+      choose: () => Promise.resolve('confirm'),
+    });
+    const accSpy = vi.fn();
+    const entSpy = vi.fn();
     fixture.componentInstance.accountsChanged.subscribe(accSpy);
     fixture.componentInstance.entriesChanged.subscribe(entSpy);
     await cmp.deleteAccount(LIV);
@@ -133,8 +189,28 @@ describe('AccountManager', () => {
   });
 
   it('deleteAccount avec entrées + suppression → entryGateway.delete ×N + les deux events', async () => {
-    const entries = [{ id: 'e1', accountId: 'liv', label: 'x', amount: 1, type: 'expense', dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null, memberId: null, toAccountId: null, autoPost: false, autoPostSince: null }];
-    const { fixture, cmp, del, entryDelete } = make({ entries, choose: () => Promise.resolve('alternative') });
+    const entries = [
+      {
+        id: 'e1',
+        accountId: 'liv',
+        label: 'x',
+        amount: 1,
+        type: 'expense',
+        dayOfMonth: 5,
+        date: null,
+        endDate: null,
+        category: null,
+        payslipKey: null,
+        memberId: null,
+        toAccountId: null,
+        autoPost: false,
+        autoPostSince: null,
+      },
+    ];
+    const { fixture, cmp, del, entryDelete } = make({
+      entries,
+      choose: () => Promise.resolve('alternative'),
+    });
     const entSpy = vi.fn();
     fixture.componentInstance.entriesChanged.subscribe(entSpy);
     await cmp.deleteAccount(LIV);
@@ -144,8 +220,29 @@ describe('AccountManager', () => {
   });
 
   it('deleteAccount : échec d’op entrée → toaster.error, compte NON supprimé', async () => {
-    const entries = [{ id: 'e1', accountId: 'liv', label: 'x', amount: 1, type: 'expense', dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null, memberId: null, toAccountId: null, autoPost: false, autoPostSince: null }];
-    const { cmp, del } = make({ entries, choose: () => Promise.resolve('confirm'), entryUpdate: vi.fn(() => throwError(() => new Error('boom'))) });
+    const entries = [
+      {
+        id: 'e1',
+        accountId: 'liv',
+        label: 'x',
+        amount: 1,
+        type: 'expense',
+        dayOfMonth: 5,
+        date: null,
+        endDate: null,
+        category: null,
+        payslipKey: null,
+        memberId: null,
+        toAccountId: null,
+        autoPost: false,
+        autoPostSince: null,
+      },
+    ];
+    const { cmp, del } = make({
+      entries,
+      choose: () => Promise.resolve('confirm'),
+      entryUpdate: vi.fn(() => throwError(() => new Error('boom'))),
+    });
     await cmp.deleteAccount(LIV);
     expect(del).not.toHaveBeenCalled();
   });
@@ -157,8 +254,28 @@ describe('AccountManager', () => {
   });
 
   it('deleteAccount AVEC entrées annulé (choose=cancel) → ni entrée ni compte touchés', async () => {
-    const entries = [{ id: 'e1', accountId: 'liv', label: 'x', amount: 1, type: 'expense', dayOfMonth: 5, date: null, endDate: null, category: null, payslipKey: null, memberId: null, toAccountId: null, autoPost: false, autoPostSince: null }];
-    const { cmp, del, entryUpdate, entryDelete } = make({ entries, choose: () => Promise.resolve('cancel') });
+    const entries = [
+      {
+        id: 'e1',
+        accountId: 'liv',
+        label: 'x',
+        amount: 1,
+        type: 'expense',
+        dayOfMonth: 5,
+        date: null,
+        endDate: null,
+        category: null,
+        payslipKey: null,
+        memberId: null,
+        toAccountId: null,
+        autoPost: false,
+        autoPostSince: null,
+      },
+    ];
+    const { cmp, del, entryUpdate, entryDelete } = make({
+      entries,
+      choose: () => Promise.resolve('cancel'),
+    });
     await cmp.deleteAccount(LIV);
     expect(del).not.toHaveBeenCalled();
     expect(entryUpdate).not.toHaveBeenCalled();

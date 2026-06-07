@@ -4,9 +4,20 @@ import { isExpensePassed } from './salary-cycle';
 
 function entry(dayOfMonth: number | null): RecurringEntry {
   return {
-    id: 'x', memberId: null, accountId: 'a', toAccountId: null, label: 'l', amount: 1,
-    type: 'expense', dayOfMonth, date: null, endDate: null, category: null,
-    payslipKey: null, autoPost: false, autoPostSince: null,
+    id: 'x',
+    memberId: null,
+    accountId: 'a',
+    toAccountId: null,
+    label: 'l',
+    amount: 1,
+    type: 'expense',
+    dayOfMonth,
+    date: null,
+    endDate: null,
+    category: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
   };
 }
 

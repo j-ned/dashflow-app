@@ -5,16 +5,34 @@ import { computeForecastDelta } from './forecast-delta';
 
 function re(id: string, amount: number): RecurringEntry {
   return {
-    id, memberId: null, accountId: 'a', toAccountId: null, label: 'l', amount,
-    type: 'expense', dayOfMonth: 5, date: null, endDate: null, category: null,
-    payslipKey: null, autoPost: false, autoPostSince: null,
+    id,
+    memberId: null,
+    accountId: 'a',
+    toAccountId: null,
+    label: 'l',
+    amount,
+    type: 'expense',
+    dayOfMonth: 5,
+    date: null,
+    endDate: null,
+    category: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
   };
 }
 
 const EMPTY = {
-  incomes: [], monthlyExpenses: [], annualExpenses: [], monthSpendings: [],
-  incomingTransfers: [], outgoingTransfers: [], oneTimeIncoming: 0, oneTimeOutgoing: 0,
-  txs: [] as AccountTransaction[], currentMonth: '2026-06',
+  incomes: [],
+  monthlyExpenses: [],
+  annualExpenses: [],
+  monthSpendings: [],
+  incomingTransfers: [],
+  outgoingTransfers: [],
+  oneTimeIncoming: 0,
+  oneTimeOutgoing: 0,
+  txs: [] as AccountTransaction[],
+  currentMonth: '2026-06',
 };
 
 describe('computeForecastDelta', () => {
@@ -40,11 +58,22 @@ describe('computeForecastDelta', () => {
 
   it('exclut une entrée déjà postée (tx réconciliée ce mois)', () => {
     const tx: AccountTransaction = {
-      id: 't', accountId: 'a', amount: 800, direction: 'expense', toAccountId: null,
-      date: '2026-06-05', category: null, note: null, memberId: null, recurringEntryId: 'e',
+      id: 't',
+      accountId: 'a',
+      amount: 800,
+      direction: 'expense',
+      toAccountId: null,
+      date: '2026-06-05',
+      category: null,
+      note: null,
+      memberId: null,
+      recurringEntryId: 'e',
     };
     const delta = computeForecastDelta({
-      ...EMPTY, monthlyExpenses: [re('e', 800)], txs: [tx], currentMonth: '2026-06',
+      ...EMPTY,
+      monthlyExpenses: [re('e', 800)],
+      txs: [tx],
+      currentMonth: '2026-06',
     });
     expect(delta).toBe(0);
   });

@@ -177,7 +177,9 @@ describe('BankAccount — prélèvement vers livret', () => {
 
   it('expose les virements entrants pour le panneau quand on consulte le livret', () => {
     const cmp = makeComponent({ entries: [SAVING], accounts: ACCS });
-    (cmp as unknown as { store: { selectAccount: (id: string | null) => void } }).store.selectAccount('liv');
+    (
+      cmp as unknown as { store: { selectAccount: (id: string | null) => void } }
+    ).store.selectAccount('liv');
     expect(cmp.incomingTransfers().map((e) => e.id)).toEqual(['t1']);
   });
 });

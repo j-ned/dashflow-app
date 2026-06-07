@@ -3,8 +3,14 @@ import * as z from 'zod/mini';
 import { EnvelopeSchema } from './envelope.schema';
 
 const VALID = {
-  id: 'e1', memberId: null, name: 'Vacances', type: 'vacances',
-  balance: 0, target: 500, color: '#fff', dueDay: null,
+  id: 'e1',
+  memberId: null,
+  name: 'Vacances',
+  type: 'vacances',
+  balance: 0,
+  target: 500,
+  color: '#fff',
+  dueDay: null,
 };
 
 describe('EnvelopeSchema', () => {

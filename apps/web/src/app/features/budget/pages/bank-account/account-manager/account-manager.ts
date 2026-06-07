@@ -1,11 +1,20 @@
 import {
-  ChangeDetectionStrategy, Component, inject, input, model, output, signal, viewChild,
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  model,
+  output,
+  signal,
+  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { lastValueFrom } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import {
-  BankAccount, BankAccountType, BANK_ACCOUNT_TYPES,
+  BankAccount,
+  BankAccountType,
+  BANK_ACCOUNT_TYPES,
 } from '../../../domain/models/bank-account.model';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
 import { BankAccountGateway } from '../../../domain/gateways/bank-account.gateway';
@@ -245,8 +254,11 @@ export class AccountManager {
     try {
       await lastValueFrom(
         this.accountGateway.create({
-          name, type: this.newAccountType(), initialBalance: this.newAccountBalance(),
-          color: null, dotColor: null,
+          name,
+          type: this.newAccountType(),
+          initialBalance: this.newAccountBalance(),
+          color: null,
+          dotColor: null,
         }),
       );
       this.toaster.success('budget.bankAccount.messages.accountCreated');
@@ -267,8 +279,12 @@ export class AccountManager {
     try {
       await lastValueFrom(
         this.accountGateway.update(account.id, {
-          name: account.name, type: account.type, initialBalance: account.initialBalance,
-          color: account.color, dotColor: account.dotColor, ...changes,
+          name: account.name,
+          type: account.type,
+          initialBalance: account.initialBalance,
+          color: account.color,
+          dotColor: account.dotColor,
+          ...changes,
         }),
       );
       this.toaster.success(successKey);
@@ -280,8 +296,12 @@ export class AccountManager {
 
   protected updateAccountBalance(account: BankAccount, event: Event) {
     const value = Number((event.target as HTMLInputElement).value);
-    return this.persistAccount(account, { initialBalance: value },
-      'budget.bankAccount.messages.balanceUpdated', 'budget.bankAccount.messages.balanceUpdateError');
+    return this.persistAccount(
+      account,
+      { initialBalance: value },
+      'budget.bankAccount.messages.balanceUpdated',
+      'budget.bankAccount.messages.balanceUpdateError',
+    );
   }
 
   protected updateAccountName(account: BankAccount, event: Event) {
@@ -290,14 +310,22 @@ export class AccountManager {
       this.accountsChanged.emit(); // annule la saisie vide
       return;
     }
-    return this.persistAccount(account, { name },
-      'budget.bankAccount.messages.nameUpdated', 'budget.bankAccount.messages.nameUpdateError');
+    return this.persistAccount(
+      account,
+      { name },
+      'budget.bankAccount.messages.nameUpdated',
+      'budget.bankAccount.messages.nameUpdateError',
+    );
   }
 
   protected updateAccountType(account: BankAccount, event: Event) {
     const type = (event.target as HTMLSelectElement).value as BankAccountType;
-    return this.persistAccount(account, { type },
-      'budget.bankAccount.messages.typeUpdated', 'budget.bankAccount.messages.typeUpdateError');
+    return this.persistAccount(
+      account,
+      { type },
+      'budget.bankAccount.messages.typeUpdated',
+      'budget.bankAccount.messages.typeUpdateError',
+    );
   }
 
   protected async deleteAccount(account: BankAccount) {
@@ -312,9 +340,15 @@ export class AccountManager {
       if (target) {
         const choice = await this.confirm.choose({
           title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
-          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.message', { count: entries.length }),
-          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.reassignTo', { name: target.name }),
-          alternativeLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.deleteEntries'),
+          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.message', {
+            count: entries.length,
+          }),
+          confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.reassignTo', {
+            name: target.name,
+          }),
+          alternativeLabel: this._i18n.translate(
+            'budget.bankAccount.deleteWithEntries.deleteEntries',
+          ),
           cancelLabel: this._i18n.translate('common.cancel'),
           variant: 'danger',
         });
@@ -323,7 +357,9 @@ export class AccountManager {
       } else {
         const ok = await this.confirm.confirm({
           title: this._i18n.translate('budget.bankAccount.deleteWithEntries.title'),
-          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.onlyDeleteMessage', { count: entries.length }),
+          message: this._i18n.translate('budget.bankAccount.deleteWithEntries.onlyDeleteMessage', {
+            count: entries.length,
+          }),
           confirmLabel: this._i18n.translate('budget.bankAccount.deleteWithEntries.deleteEntries'),
           variant: 'danger',
         });
@@ -350,7 +386,9 @@ export class AccountManager {
       if (
         !(await this.confirm.confirm({
           title: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmTitle'),
-          message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', { name: account.name }),
+          message: this._i18n.translate('budget.bankAccount.messages.accountDeleteConfirmMessage', {
+            name: account.name,
+          }),
           confirmLabel: this._i18n.translate('budget.actions.delete'),
           variant: 'danger',
         }))

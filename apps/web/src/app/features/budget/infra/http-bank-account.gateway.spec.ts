@@ -32,7 +32,14 @@ describe('HttpBankAccountGateway — validation (F002)', () => {
 
     const req = httpMock.expectOne(`${BASE}/bank-accounts`);
     req.flush([
-      { id: 'a', name: 'Courant', type: 'courant', initialBalance: '100', color: null, dotColor: null },
+      {
+        id: 'a',
+        name: 'Courant',
+        type: 'courant',
+        initialBalance: '100',
+        color: null,
+        dotColor: null,
+      },
       { id: 'b', name: 42, type: 'courant', initialBalance: '0', color: null, dotColor: null },
     ]);
     httpMock.verify();
