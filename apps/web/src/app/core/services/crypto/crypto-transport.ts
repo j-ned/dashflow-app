@@ -2,14 +2,7 @@ import { from, Observable, switchMap } from 'rxjs';
 import { ApiRow, encryptEntity, decryptEntity, decryptEntities } from './entity-crypto';
 import { decryptFile } from './file-crypto';
 
-/**
- * Transport helpers shared by the HTTP gateways. They centralise the
- * "encrypt-on-write / decrypt-on-read when a master key is present" branching
- * (E2EE) versus the plaintext path (demo / non-encrypted accounts).
- *
- * `mapPlain` coerces a plaintext row (postgres returns numerics as strings);
- * the decrypted path already yields parsed JSON values, so it is not applied there.
- */
+// E2EE branching: mapPlain coerces plaintext rows (postgres returns numerics as strings); decrypted path skips it because JSON.parse already yields the right types.
 
 const identity = <T>(row: ApiRow): T => row as T;
 
@@ -41,10 +34,7 @@ export function decryptOne<T>(
   );
 }
 
-/**
- * Encrypt an entity's sensitive fields (when E2EE is on), send it through `call`
- * (POST/PUT/PATCH), then decrypt the returned row. With E2EE off, sends as-is.
- */
+// Encrypt before sending and decrypt the response when E2EE is on; pass through unchanged when off.
 export function mutateEncrypted<T>(
   data: Record<string, unknown>,
   cleartextKeys: readonly string[],
