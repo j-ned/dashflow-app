@@ -275,6 +275,7 @@ export class EncryptionSetup {
 
       let completed = 0;
       const total = tableNames.length;
+      const failedTables: string[] = [];
 
       for (const tableName of tableNames) {
         this.progressMessage.set(
@@ -295,9 +296,24 @@ export class EncryptionSetup {
             }
             encryptedData[tableName] = encrypted;
           }
-        } catch {}
+        } catch (e) {
+          // E2EE : une table non chiffrée resterait en clair côté serveur. On ne
+          // marque jamais la migration terminée sur un succès partiel.
+          console.error(`Encryption migration failed for table "${tableName}":`, e);
+          failedTables.push(tableName);
+        }
 
         completed++;
+      }
+
+      if (failedTables.length > 0) {
+        this.step.set('init');
+        this.error.set(
+          this._i18n.translate('auth.encryptionSetup.errors.tablesFailed', {
+            tables: failedTables.join(', '),
+          }),
+        );
+        return;
       }
 
       this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.sendingEncrypted'));
