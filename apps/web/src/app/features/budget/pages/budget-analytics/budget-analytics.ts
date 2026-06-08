@@ -1,5 +1,4 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
-import { DecimalPipe } from '@angular/common';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { forkJoin } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -7,26 +6,36 @@ import { Icon, type IconName } from '@shared/components/icon/icon';
 import { AreaChart, type AreaChartPoint } from '@shared/components/charts/area-chart';
 import { DonutChart, type DonutSlice } from '@shared/components/charts/donut-chart';
 import { BarChart, type BarGroup } from '@shared/components/charts/bar-chart';
-import { salaryArchiveRemaining } from '@features/budget/domain/salary-archive-remaining';
 import { SalaryArchiveGateway } from '@features/budget/domain/gateways/salary-archive.gateway';
 import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
-import { normalizeCategory } from '@features/budget/domain/categories';
-
-type Forecast = {
-  readonly label: string;
-  readonly icon: IconName;
-  readonly color: string;
-  readonly message: string;
-  readonly detail: string;
-  readonly type: 'envelope' | 'loan' | 'balance';
-};
+import { monthlyBreakdown } from '@features/budget/domain/analytics-monthly';
+import {
+  balanceHistorySeries,
+  incomeVsExpensesSeries,
+  expenseCategoryBreakdown,
+  envelopeForecastSeries,
+} from '@features/budget/domain/analytics-charts';
+import { buildForecasts, type ForecastResult } from '@features/budget/domain/analytics-forecasts';
+import { AnalyticsKpiGrid, type KpiCard } from './analytics-kpi-grid/analytics-kpi-grid';
+import {
+  AnalyticsForecastList,
+  type ForecastView,
+} from './analytics-forecast-list/analytics-forecast-list';
 
 @Component({
   selector: 'app-budget-analytics',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, Icon, AreaChart, DonutChart, BarChart, TranslocoPipe],
+  imports: [
+    Icon,
+    AreaChart,
+    DonutChart,
+    BarChart,
+    TranslocoPipe,
+    AnalyticsKpiGrid,
+    AnalyticsForecastList,
+  ],
   host: { class: 'block space-y-6' },
   template: `
     <header>
@@ -36,29 +45,10 @@ type Forecast = {
       <p class="mt-1 text-sm text-text-muted">{{ 'budget.analytics.subtitle' | transloco }}</p>
     </header>
 
-    <section
-      class="grid grid-cols-2 lg:grid-cols-4 gap-4"
-      [attr.aria-label]="'budget.analytics.kpiAriaLabel' | transloco"
-    >
-      @for (kpi of kpis(); track kpi.label) {
-        <div class="rounded-xl border border-border bg-surface p-4">
-          <div class="flex items-center gap-2 mb-2">
-            <div class="flex h-8 w-8 items-center justify-center rounded-lg" [class]="kpi.iconBg">
-              <app-icon [name]="kpi.icon" size="16" [class]="kpi.iconColor" />
-            </div>
-            <span class="text-[11px] text-text-muted uppercase tracking-wider">{{
-              kpi.label
-            }}</span>
-          </div>
-          <p class="text-xl font-mono font-bold" [class]="kpi.valueColor">
-            {{ kpi.value | number: '1.0-0' }}<span class="text-sm ml-0.5">&euro;</span>
-          </p>
-          @if (kpi.sub) {
-            <p class="text-[10px] text-text-muted mt-1">{{ kpi.sub }}</p>
-          }
-        </div>
-      }
-    </section>
+    <app-analytics-kpi-grid
+      [kpis]="kpis()"
+      [ariaLabel]="'budget.analytics.kpiAriaLabel' | transloco"
+    />
 
     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <section class="rounded-xl border border-border bg-surface overflow-hidden">
@@ -148,41 +138,12 @@ type Forecast = {
       </section>
     </div>
 
-    <section class="rounded-xl border border-border bg-surface overflow-hidden">
-      <div class="flex items-center gap-2 px-5 py-3 bg-ib-purple/5 border-b border-border/50">
-        <app-icon name="trending-up" size="16" class="text-ib-purple" />
-        <h3 class="text-[11px] font-semibold uppercase tracking-wider text-ib-purple">
-          {{ 'budget.analytics.forecastsTitle' | transloco }}
-        </h3>
-      </div>
-      @if (forecasts().length > 0) {
-        <div class="divide-y divide-border/30">
-          @for (f of forecasts(); track f.label) {
-            <div class="flex items-start gap-4 px-5 py-4 hover:bg-hover/30 transition-colors">
-              <div
-                class="flex h-10 w-10 items-center justify-center rounded-xl shrink-0"
-                [style.background-color]="f.color + '15'"
-              >
-                <app-icon [name]="f.icon" size="18" [style.color]="f.color" />
-              </div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-semibold text-text-primary">{{ f.label }}</p>
-                <p class="text-sm text-text-muted mt-0.5">{{ f.message }}</p>
-                <p class="text-[11px] text-text-muted mt-1">{{ f.detail }}</p>
-              </div>
-            </div>
-          }
-        </div>
-      } @else {
-        <div class="text-center py-12">
-          <app-icon name="trending-up" size="32" class="text-text-muted/20 mx-auto mb-2" />
-          <p class="text-sm text-text-muted">{{ 'budget.analytics.forecastsEmpty' | transloco }}</p>
-          <p class="text-xs text-text-muted mt-1">
-            {{ 'budget.analytics.forecastsEmptyHint' | transloco }}
-          </p>
-        </div>
-      }
-    </section>
+    <app-analytics-forecast-list
+      [forecasts]="forecasts()"
+      [title]="'budget.analytics.forecastsTitle' | transloco"
+      [emptyText]="'budget.analytics.forecastsEmpty' | transloco"
+      [emptyHint]="'budget.analytics.forecastsEmptyHint' | transloco"
+    />
   `,
 })
 export class BudgetAnalytics {
@@ -216,57 +177,23 @@ export class BudgetAnalytics {
   private readonly envelopes = computed(() => this.allData().envelopes);
   private readonly loans = computed(() => this.allData().loans);
 
-  private readonly monthlyIncome = computed(() =>
-    this.entries()
-      .filter((e) => e.type === 'income')
-      .reduce((s, e) => s + Number(e.amount), 0),
+  protected readonly currentMonth = computed(() => new Date().toISOString().slice(0, 7));
+  private readonly breakdown = computed(() =>
+    monthlyBreakdown(this.entries(), this.currentMonth()),
   );
-
-  private readonly monthlyExpenses = computed(() =>
-    this.entries()
-      .filter((e) => e.type === 'expense')
-      .reduce((s, e) => s + Number(e.amount), 0),
-  );
-
-  private readonly monthlyAnnual = computed(
-    () =>
-      this.entries()
-        .filter((e) => e.type === 'annual_expense')
-        .reduce((s, e) => s + Number(e.amount), 0) / 12,
-  );
-
-  private readonly monthlySpendings = computed(() =>
-    this.entries()
-      .filter((e) => e.type === 'spending')
-      .reduce((s, e) => s + Number(e.amount), 0),
-  );
-
-  private readonly monthlyEnvelopeCredits = computed(() =>
-    this.entries()
-      .filter((e) => e.type === 'spending' && normalizeCategory(e.category).key === 'envelope')
-      .reduce((s, e) => s + Number(e.amount), 0),
-  );
-
-  private readonly monthlyLoanPayments = computed(() =>
-    this.entries()
-      .filter((e) => e.type === 'spending' && normalizeCategory(e.category).key === 'repayment')
-      .reduce((s, e) => s + Number(e.amount), 0),
-  );
-
   private readonly totalEnvelopeBalance = computed(() =>
     this.envelopes().reduce((s, e) => s + Number(e.balance), 0),
   );
 
-  protected readonly kpis = computed(() => {
-    const income = this.monthlyIncome();
-    const expenses = this.monthlyExpenses();
-    const annual = this.monthlyAnnual();
-    const spendings = this.monthlySpendings();
-    const totalCharges = expenses + annual + spendings;
-    const net = income - totalCharges;
+  protected readonly kpis = computed<KpiCard[]>(() => {
+    const income = this.breakdown().income;
+    const annual = this.breakdown().annualMonthly;
+    const spendings = this.breakdown().spendings;
+    const totalCharges = this.breakdown().totalCharges;
+    const net = this.breakdown().net;
 
-    const envCredits = this.monthlyEnvelopeCredits();
-    const loanPay = this.monthlyLoanPayments();
+    const envCredits = this.breakdown().envelopeCredits;
+    const loanPay = this.breakdown().loanPayments;
     const otherSpendings = spendings - envCredits - loanPay;
 
     const chargeParts: string[] = [];
@@ -341,235 +268,185 @@ export class BudgetAnalytics {
     ];
   });
 
-  protected readonly balanceHistory = computed<AreaChartPoint[]>(() => {
-    const arch = this.archives().slice(-12);
-    return arch.map((a) => ({
-      label: this.formatMonth(a.month),
-      value: salaryArchiveRemaining(a),
-    }));
-  });
+  protected readonly balanceHistory = computed<AreaChartPoint[]>(() =>
+    balanceHistorySeries(this.archives()).map((p) => ({
+      label: this.formatMonth(p.month),
+      value: p.value,
+    })),
+  );
 
-  protected readonly expenseByCategory = computed<DonutSlice[]>(() => {
-    const expenses = this.entries().filter(
-      (e) => e.type === 'expense' || e.type === 'annual_expense',
-    );
-    // Regroupe par catégorie NORMALISÉE (clé) : « Alimentation » et « alimentation » fusionnent.
-    const byKey = new Map<string, { i18nKey: string; color: string; value: number }>();
+  protected readonly incomeVsExpenses = computed<BarGroup[]>(() =>
+    incomeVsExpensesSeries(this.archives()).map((p) => ({
+      label: this.formatMonth(p.month),
+      bars: [
+        { value: p.salary, color: 'var(--color-ib-green)' },
+        { value: p.charges, color: 'var(--color-ib-red)' },
+      ],
+    })),
+  );
 
-    for (const e of expenses) {
-      const category = normalizeCategory(e.category);
-      const amount = e.type === 'annual_expense' ? Number(e.amount) / 12 : Number(e.amount);
-      const acc = byKey.get(category.key);
-      if (acc) acc.value += amount;
-      else
-        byKey.set(category.key, {
-          i18nKey: category.i18nKey,
-          color: category.color,
-          value: amount,
-        });
-    }
-
-    return [...byKey.values()]
-      .sort((a, b) => b.value - a.value)
-      .slice(0, 8)
-      .map(({ i18nKey, color, value }) => ({ label: this._i18n.translate(i18nKey), value, color }));
-  });
+  protected readonly expenseByCategory = computed<DonutSlice[]>(() =>
+    expenseCategoryBreakdown(this.entries(), this.currentMonth()).map((d) => ({
+      label: this._i18n.translate(d.i18nKey),
+      value: d.value,
+      color: d.color,
+    })),
+  );
 
   protected readonly totalExpensesLabel = computed(() => {
     const total = this.expenseByCategory().reduce((s, d) => s + d.value, 0);
     return total >= 1000 ? `${(total / 1000).toFixed(1)}k€` : `${total.toFixed(0)}€`;
   });
 
-  protected readonly incomeVsExpenses = computed<BarGroup[]>(() => {
-    const arch = this.archives().slice(-6);
-    return arch.map((a) => ({
-      label: this.formatMonth(a.month),
-      bars: [
-        { value: Number(a.salary), color: 'var(--color-ib-green)' },
-        { value: Number(a.totalExpenses) + Number(a.totalSpendings), color: 'var(--color-ib-red)' },
-      ],
-    }));
-  });
-
   protected readonly envelopeForecastChart = computed<AreaChartPoint[]>(() => {
-    const envs = this.envelopes().filter((e) => e.target && Number(e.target) > 0);
-    if (envs.length === 0) return [];
-
-    const envCredits = this.monthlyEnvelopeCredits();
-    const totalBalance = envs.reduce((s, e) => s + Number(e.balance), 0);
-    const totalTarget = envs.reduce((s, e) => s + Number(e.target ?? 0), 0);
-    const monthlyContrib = envCredits > 0 ? envCredits : (totalTarget - totalBalance) / 12;
-
     const now = new Date();
-    const points: AreaChartPoint[] = [
-      { label: this._i18n.translate('budget.analytics.todayLabel'), value: totalBalance },
-    ];
-
-    for (let i = 1; i <= 6; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
-      const projected = Math.min(totalBalance + monthlyContrib * i, totalTarget);
-      points.push({
-        label: this._i18n.translate(`budget.analytics.monthShort.${d.getMonth() + 1}`),
-        value: projected,
-      });
-    }
-
-    return points;
+    return envelopeForecastSeries(this.envelopes(), this.breakdown().envelopeCredits, { now }).map(
+      (p) => ({
+        label:
+          p.monthOffset === 0
+            ? this._i18n.translate('budget.analytics.todayLabel')
+            : this._i18n.translate(
+                `budget.analytics.monthShort.${new Date(now.getFullYear(), now.getMonth() + p.monthOffset, 1).getMonth() + 1}`,
+              ),
+        value: p.value,
+      }),
+    );
   });
 
-  protected readonly forecasts = computed<Forecast[]>(() => {
-    const results: Forecast[] = [];
-    const income = this.monthlyIncome();
-    const totalCharges = this.monthlyExpenses() + this.monthlyAnnual() + this.monthlySpendings();
-    const net = income - totalCharges;
-    const envCredits = this.monthlyEnvelopeCredits();
-    const loanPay = this.monthlyLoanPayments();
+  private readonly forecastResults = computed<ForecastResult[]>(() =>
+    buildForecasts({
+      net: this.breakdown().net,
+      envelopes: this.envelopes(),
+      loans: this.loans(),
+      envelopeCredits: this.breakdown().envelopeCredits,
+      loanPayments: this.breakdown().loanPayments,
+    }),
+  );
 
-    if (net > 0) {
-      results.push({
-        label: this._i18n.translate('budget.analytics.forecast.remainingTitle'),
-        icon: 'trending-up',
-        color: 'var(--color-ib-green)',
-        message: this._i18n.translate('budget.analytics.forecast.remainingMessage', {
-          net: net.toFixed(0),
-        }),
-        detail: this._i18n.translate('budget.analytics.forecast.remainingDetail', {
-          half: (net * 6).toFixed(0),
-          year: (net * 12).toFixed(0),
-        }),
-        type: 'balance',
-      });
-    } else if (net < 0) {
-      results.push({
-        label: this._i18n.translate('budget.analytics.forecast.deficitTitle'),
-        icon: 'alert-triangle',
-        color: 'var(--color-ib-red)',
-        message: this._i18n.translate('budget.analytics.forecast.deficitMessage', {
-          amount: Math.abs(net).toFixed(0),
-        }),
-        detail: this._i18n.translate('budget.analytics.forecast.deficitDetail', {
-          amount: Math.abs(net).toFixed(0),
-        }),
-        type: 'balance',
-      });
+  protected readonly forecasts = computed<ForecastView[]>(() =>
+    this.forecastResults().map((r) => this.toForecastView(r)),
+  );
+
+  private toForecastView(r: ForecastResult): ForecastView {
+    switch (r.kind) {
+      case 'surplus':
+        return {
+          label: this._i18n.translate('budget.analytics.forecast.remainingTitle'),
+          icon: 'trending-up',
+          color: 'var(--color-ib-green)',
+          message: this._i18n.translate('budget.analytics.forecast.remainingMessage', {
+            net: r.net.toFixed(0),
+          }),
+          detail: this._i18n.translate('budget.analytics.forecast.remainingDetail', {
+            half: (r.net * 6).toFixed(0),
+            year: (r.net * 12).toFixed(0),
+          }),
+        };
+      case 'deficit':
+        return {
+          label: this._i18n.translate('budget.analytics.forecast.deficitTitle'),
+          icon: 'alert-triangle',
+          color: 'var(--color-ib-red)',
+          message: this._i18n.translate('budget.analytics.forecast.deficitMessage', {
+            amount: Math.abs(r.net).toFixed(0),
+          }),
+          detail: this._i18n.translate('budget.analytics.forecast.deficitDetail', {
+            amount: Math.abs(r.net).toFixed(0),
+          }),
+        };
+      case 'envelope':
+        return this.envelopeForecastView(r);
+      case 'loan':
+        return this.loanForecastView(r);
     }
+  }
 
-    const envsWithTarget = this.envelopes().filter((e) => Number(e.target ?? 0) > 0);
-    for (const env of this.envelopes()) {
-      const envBalance = Number(env.balance);
-      const envTarget = Number(env.target ?? 0);
-      if (!envTarget || envTarget <= 0 || envBalance >= envTarget) continue;
-
-      const remaining = envTarget - envBalance;
-      const monthlyContrib = envCredits > 0 ? envCredits / Math.max(envsWithTarget.length, 1) : 0;
-
-      if (monthlyContrib > 0) {
-        const months = Math.ceil(remaining / monthlyContrib);
-        const targetDate = new Date();
-        targetDate.setMonth(targetDate.getMonth() + months);
-        const targetLabel = `${this._i18n.translate(`budget.analytics.monthShort.${targetDate.getMonth() + 1}`)} ${targetDate.getFullYear()}`;
-
-        results.push({
-          label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', {
-            name: env.name,
-          }),
-          icon: 'wallet',
-          color: env.color || 'var(--color-ib-cyan)',
-          message:
-            months <= 1
-              ? this._i18n.translate('budget.analytics.forecast.envelopeNextMonth')
-              : this._i18n.translate('budget.analytics.forecast.envelopeIn', {
-                  months,
-                  date: targetLabel,
-                }),
-          detail: this._i18n.translate('budget.analytics.forecast.envelopeDetail', {
-            balance: envBalance.toFixed(0),
-            target: envTarget.toFixed(0),
-            remaining: remaining.toFixed(0),
-            contrib: monthlyContrib.toFixed(0),
-          }),
-          type: 'envelope',
-        });
-      } else {
-        results.push({
-          label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', {
-            name: env.name,
-          }),
-          icon: 'wallet',
-          color: env.color || 'var(--color-ib-cyan)',
-          message: this._i18n.translate('budget.analytics.forecast.envelopeNoContrib', {
-            remaining: remaining.toFixed(0),
-          }),
-          detail: this._i18n.translate('budget.analytics.forecast.envelopeNoContribDetail', {
-            balance: envBalance.toFixed(0),
-            target: envTarget.toFixed(0),
-          }),
-          type: 'envelope',
-        });
-      }
+  private envelopeForecastView(r: Extract<ForecastResult, { kind: 'envelope' }>): ForecastView {
+    if (r.monthsToTarget !== null) {
+      const targetDate = new Date();
+      targetDate.setMonth(targetDate.getMonth() + r.monthsToTarget);
+      const targetLabel = `${this._i18n.translate(`budget.analytics.monthShort.${targetDate.getMonth() + 1}`)} ${targetDate.getFullYear()}`;
+      return {
+        label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', {
+          name: r.name,
+        }),
+        icon: 'wallet',
+        color: r.color,
+        message:
+          r.monthsToTarget <= 1
+            ? this._i18n.translate('budget.analytics.forecast.envelopeNextMonth')
+            : this._i18n.translate('budget.analytics.forecast.envelopeIn', {
+                months: r.monthsToTarget,
+                date: targetLabel,
+              }),
+        detail: this._i18n.translate('budget.analytics.forecast.envelopeDetail', {
+          balance: r.balance.toFixed(0),
+          target: r.target.toFixed(0),
+          remaining: r.remaining.toFixed(0),
+          contrib: r.contrib.toFixed(0),
+        }),
+      };
     }
+    return {
+      label: this._i18n.translate('budget.analytics.forecast.envelopeLabel', {
+        name: r.name,
+      }),
+      icon: 'wallet',
+      color: r.color,
+      message: this._i18n.translate('budget.analytics.forecast.envelopeNoContrib', {
+        remaining: r.remaining.toFixed(0),
+      }),
+      detail: this._i18n.translate('budget.analytics.forecast.envelopeNoContribDetail', {
+        balance: r.balance.toFixed(0),
+        target: r.target.toFixed(0),
+      }),
+    };
+  }
 
-    const activeLoans = this.loans().filter((l) => Number(l.remaining) > 0);
-    for (const loan of this.loans()) {
-      const loanAmount = Number(loan.amount);
-      const loanRemaining = Number(loan.remaining);
-      if (loanRemaining <= 0) continue;
+  private loanForecastView(r: Extract<ForecastResult, { kind: 'loan' }>): ForecastView {
+    const prefix = this._i18n.translate(
+      r.direction === 'lent'
+        ? 'budget.analytics.forecast.loanPrefixLent'
+        : 'budget.analytics.forecast.loanPrefixBorrowed',
+    );
+    const label = this._i18n.translate('budget.analytics.forecast.loanLabel', {
+      prefix,
+      person: r.person,
+    });
+    const icon: IconName = r.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left';
 
-      const repaid = loanAmount - loanRemaining;
-      const pct = loanAmount > 0 ? (repaid / loanAmount) * 100 : 0;
-
-      const monthlyPayment = loanPay > 0 ? loanPay / Math.max(activeLoans.length, 1) : 0;
-
-      const prefix = this._i18n.translate(
-        loan.direction === 'lent'
-          ? 'budget.analytics.forecast.loanPrefixLent'
-          : 'budget.analytics.forecast.loanPrefixBorrowed',
-      );
-      const label = this._i18n.translate('budget.analytics.forecast.loanLabel', {
-        prefix,
-        person: loan.person,
-      });
-
-      if (monthlyPayment > 0) {
-        const months = Math.ceil(loanRemaining / monthlyPayment);
-        const clearDate = new Date();
-        clearDate.setMonth(clearDate.getMonth() + months);
-        const clearLabel = `${this._i18n.translate(`budget.analytics.monthShort.${clearDate.getMonth() + 1}`)} ${clearDate.getFullYear()}`;
-
-        results.push({
-          label,
-          icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
-          color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
-          message:
-            months <= 1
-              ? this._i18n.translate('budget.analytics.forecast.loanNextMonth')
-              : this._i18n.translate('budget.analytics.forecast.loanIn', {
-                  months,
-                  date: clearLabel,
-                }),
-          detail: this._i18n.translate('budget.analytics.forecast.loanDetail', {
-            pct: pct.toFixed(0),
-            remaining: loanRemaining.toFixed(0),
-            payment: monthlyPayment.toFixed(0),
-          }),
-          type: 'loan',
-        });
-      } else {
-        results.push({
-          label,
-          icon: loan.direction === 'lent' ? 'arrow-up-right' : 'arrow-down-left',
-          color: loan.direction === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)',
-          message: this._i18n.translate('budget.analytics.forecast.loanNoPayment', {
-            remaining: loanRemaining.toFixed(0),
-          }),
-          detail: this._i18n.translate('budget.analytics.forecast.loanNoPaymentDetail', {
-            pct: pct.toFixed(0),
-          }),
-          type: 'loan',
-        });
-      }
+    if (r.monthsToClear !== null) {
+      const clearDate = new Date();
+      clearDate.setMonth(clearDate.getMonth() + r.monthsToClear);
+      const clearLabel = `${this._i18n.translate(`budget.analytics.monthShort.${clearDate.getMonth() + 1}`)} ${clearDate.getFullYear()}`;
+      return {
+        label,
+        icon,
+        color: r.color,
+        message:
+          r.monthsToClear <= 1
+            ? this._i18n.translate('budget.analytics.forecast.loanNextMonth')
+            : this._i18n.translate('budget.analytics.forecast.loanIn', {
+                months: r.monthsToClear,
+                date: clearLabel,
+              }),
+        detail: this._i18n.translate('budget.analytics.forecast.loanDetail', {
+          pct: r.pct.toFixed(0),
+          remaining: r.remaining.toFixed(0),
+          payment: r.payment.toFixed(0),
+        }),
+      };
     }
-
-    return results;
-  });
+    return {
+      label,
+      icon,
+      color: r.color,
+      message: this._i18n.translate('budget.analytics.forecast.loanNoPayment', {
+        remaining: r.remaining.toFixed(0),
+      }),
+      detail: this._i18n.translate('budget.analytics.forecast.loanNoPaymentDetail', {
+        pct: r.pct.toFixed(0),
+      }),
+    };
+  }
 }
