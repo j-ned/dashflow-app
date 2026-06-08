@@ -1,4 +1,4 @@
-type SpendingSnapshot = {
+export type SpendingSnapshot = {
   readonly label: string;
   readonly amount: number;
   readonly date: string | null;

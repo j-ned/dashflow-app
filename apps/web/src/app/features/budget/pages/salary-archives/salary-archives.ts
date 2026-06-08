@@ -6,13 +6,19 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { DecimalPipe, DatePipe } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
 import { salaryArchiveRemaining } from '../../domain/salary-archive-remaining';
+import {
+  availableYears as availableYearsOf,
+  filterArchivesByYear,
+  importedSpendings as importedSpendingsOf,
+  previousMonth as previousMonthOf,
+} from '../../domain/salary-archive-list';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
@@ -20,11 +26,21 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { SalaryYearFilter } from './salary-year-filter/salary-year-filter';
+import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
 
 @Component({
   selector: 'app-salary-archives',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, FormsModule, ModalDialog, Icon, TranslocoPipe],
+  imports: [
+    DecimalPipe,
+    FormsModule,
+    ModalDialog,
+    Icon,
+    TranslocoPipe,
+    SalaryYearFilter,
+    SalaryArchiveCard,
+  ],
   host: { class: 'block space-y-6' },
   template: `
     <header class="flex items-center justify-between">
@@ -46,263 +62,27 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
     </header>
 
     @if (availableYears().length > 1) {
-      <div class="flex flex-wrap items-center gap-2">
-        <span class="text-xs font-medium text-text-muted">{{
-          'budget.salaryArchive.filterYear' | transloco
-        }}</span>
-        <button
-          type="button"
-          class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-          [class.border-ib-cyan]="filterYear() === null"
-          [class.bg-ib-cyan]="filterYear() === null"
-          [class.text-canvas]="filterYear() === null"
-          [class.border-border]="filterYear() !== null"
-          [class.text-text-muted]="filterYear() !== null"
-          (click)="filterYear.set(null)"
-        >
-          {{ 'budget.salaryArchive.allYears' | transloco }}
-        </button>
-        @for (year of availableYears(); track year) {
-          <button
-            type="button"
-            class="inline-flex items-center rounded-full border px-3 py-1 text-xs font-medium transition-colors"
-            [class.border-ib-cyan]="filterYear() === year"
-            [class.bg-ib-cyan]="filterYear() === year"
-            [class.text-canvas]="filterYear() === year"
-            [class.border-border]="filterYear() !== year"
-            [class.text-text-muted]="filterYear() !== year"
-            (click)="filterYear.set(year)"
-          >
-            {{ year }}
-          </button>
-        }
-      </div>
+      <app-salary-year-filter
+        [years]="availableYears()"
+        [selected]="filterYear()"
+        (selectYear)="filterYear.set($event)"
+      />
     }
 
     @if (archives().length > 0) {
       <div class="space-y-4">
         @for (archive of filteredArchives(); track archive.id) {
-          @let r = remainingOf(archive);
-          <article
-            class="group rounded-xl border border-border bg-surface overflow-hidden transition hover:shadow-lg hover:shadow-ib-cyan/5"
-          >
-            <button
-              type="button"
-              class="w-full flex items-center justify-between px-5 py-4 hover:bg-hover/30 transition-colors"
-              (click)="toggleExpand(archive.id)"
-            >
-              <div class="flex items-center gap-4">
-                <div
-                  class="flex h-11 w-11 items-center justify-center rounded-xl bg-ib-cyan/10 text-ib-cyan"
-                >
-                  <app-icon name="folder" size="20" />
-                </div>
-                <div class="text-left">
-                  <p class="text-base font-semibold text-text-primary">
-                    {{ monthLabel(archive.month) }}
-                  </p>
-                  @if (accountName(archive.accountId); as aName) {
-                    <span class="text-[11px] text-ib-cyan/60">{{ aName }}</span>
-                  }
-                </div>
-              </div>
-              <div class="flex items-center gap-6">
-                <div class="text-right">
-                  <p class="text-lg font-mono font-bold text-ib-green">
-                    {{ archive.salary | number: '1.2-2' }}<span class="text-sm ml-0.5">&euro;</span>
-                  </p>
-                  <p class="text-[11px] text-text-muted">
-                    {{
-                      'budget.salaryArchive.expensesLabel'
-                        | transloco
-                          : {
-                              value:
-                                (+archive.totalExpenses + +archive.totalSpendings
-                                | number: '1.2-2'),
-                            }
-                    }}
-                  </p>
-                </div>
-                <div
-                  class="flex h-7 w-7 items-center justify-center rounded-lg transition-colors"
-                  [class.bg-ib-cyan-10]="expandedId() === archive.id"
-                  [class.text-ib-cyan]="expandedId() === archive.id"
-                  [class.text-text-muted]="expandedId() !== archive.id"
-                >
-                  <app-icon
-                    [name]="expandedId() === archive.id ? 'chevron-up' : 'chevron-down'"
-                    size="16"
-                  />
-                </div>
-              </div>
-            </button>
-
-            @if (expandedId() === archive.id) {
-              <div class="border-t border-border px-5 py-5 space-y-4">
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div
-                    class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4"
-                  >
-                    <div class="flex items-center gap-1.5 mb-2">
-                      <div
-                        class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-green/10"
-                      >
-                        <app-icon name="trending-up" size="12" class="text-ib-green" />
-                      </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                        {{ 'budget.salaryArchive.kpi.salary' | transloco }}
-                      </p>
-                    </div>
-                    <p class="text-lg font-mono font-bold text-ib-green tracking-tight">
-                      {{ archive.salary | number: '1.2-2'
-                      }}<span class="text-xs ml-0.5">&euro;</span>
-                    </p>
-                  </div>
-                  <div
-                    class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4"
-                  >
-                    <div class="flex items-center gap-1.5 mb-2">
-                      <div class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red/10">
-                        <app-icon name="receipt" size="12" class="text-ib-red" />
-                      </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                        {{ 'budget.salaryArchive.kpi.fixedCharges' | transloco }}
-                      </p>
-                    </div>
-                    <p class="text-lg font-mono font-bold text-ib-red tracking-tight">
-                      {{ archive.totalExpenses | number: '1.2-2'
-                      }}<span class="text-xs ml-0.5">&euro;</span>
-                    </p>
-                  </div>
-                  <div
-                    class="relative overflow-hidden rounded-xl border border-border bg-canvas p-4"
-                  >
-                    <div class="flex items-center gap-1.5 mb-2">
-                      <div
-                        class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow/10"
-                      >
-                        <app-icon name="banknote" size="12" class="text-ib-yellow" />
-                      </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                        {{ 'budget.salaryArchive.kpi.spendings' | transloco }}
-                      </p>
-                    </div>
-                    <p class="text-lg font-mono font-bold text-ib-yellow tracking-tight">
-                      {{ archive.totalSpendings | number: '1.2-2'
-                      }}<span class="text-xs ml-0.5">&euro;</span>
-                    </p>
-                  </div>
-                  <div
-                    class="relative overflow-hidden rounded-xl border bg-canvas p-4"
-                    [class.border-ib-green-30]="r >= 0"
-                    [class.border-ib-red-30]="r < 0"
-                  >
-                    <div class="flex items-center gap-1.5 mb-2">
-                      <div
-                        class="flex h-6 w-6 items-center justify-center rounded-lg"
-                        [class.bg-ib-green-10]="r >= 0"
-                        [class.bg-ib-red-10]="r < 0"
-                      >
-                        <app-icon
-                          name="wallet"
-                          size="12"
-                          [class.text-ib-green]="r >= 0"
-                          [class.text-ib-red]="r < 0"
-                        />
-                      </div>
-                      <p class="text-[10px] font-semibold uppercase tracking-wider text-text-muted">
-                        {{ 'budget.salaryArchive.kpi.remaining' | transloco }}
-                      </p>
-                    </div>
-                    <p
-                      class="text-lg font-mono font-bold tracking-tight"
-                      [class.text-ib-green]="r >= 0"
-                      [class.text-ib-red]="r < 0"
-                    >
-                      {{ r >= 0 ? '+' : '' }}{{ r | number: '1.2-2'
-                      }}<span class="text-xs ml-0.5">&euro;</span>
-                    </p>
-                  </div>
-                </div>
-
-                @if (archive.spendings.length > 0) {
-                  <div class="rounded-xl border border-border overflow-hidden">
-                    <div
-                      class="flex items-center gap-2 px-4 py-2.5 bg-ib-yellow/5 border-b border-border/50"
-                    >
-                      <app-icon name="banknote" size="13" class="text-ib-yellow" />
-                      <span
-                        class="text-[11px] font-semibold uppercase tracking-wider text-ib-yellow"
-                        >{{ 'budget.salaryArchive.spendingsDetail' | transloco }}</span
-                      >
-                    </div>
-                    <div class="divide-y divide-border/20">
-                      @for (s of archive.spendings; track $index) {
-                        <div class="flex items-center justify-between px-4 py-2.5">
-                          <div class="flex items-center gap-2 min-w-0">
-                            @if (s.date) {
-                              <span class="text-[10px] font-mono text-text-muted">{{
-                                s.date | date: 'dd/MM'
-                              }}</span>
-                            }
-                            <span class="text-sm text-text-primary truncate">{{ s.label }}</span>
-                            @if (s.category) {
-                              <span
-                                class="inline-flex items-center rounded-md bg-raised px-1.5 py-0.5 text-[10px] font-medium text-text-muted"
-                                >{{ s.category }}</span
-                              >
-                            }
-                          </div>
-                          <span class="text-sm font-mono font-bold text-ib-yellow shrink-0"
-                            >-{{ s.amount | number: '1.2-2' }}&euro;</span
-                          >
-                        </div>
-                      }
-                    </div>
-                  </div>
-                }
-
-                <div class="flex items-center justify-between pt-2">
-                  @if (archive.payslipKey) {
-                    <button
-                      type="button"
-                      (click)="openPayslip(archive.id)"
-                      class="inline-flex items-center gap-1.5 rounded-lg bg-ib-cyan/10 min-h-8 px-3 py-1.5 text-xs font-medium text-ib-cyan hover:bg-ib-cyan/20 transition-colors"
-                    >
-                      <app-icon name="file-text" size="14" />
-                      {{ 'budget.salaryArchive.viewPayslip' | transloco }}
-                    </button>
-                  } @else {
-                    <span class="text-[11px] text-text-muted">{{
-                      'budget.salaryArchive.noPayslip' | transloco
-                    }}</span>
-                  }
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary hover:border-ib-cyan/30 transition-colors"
-                    [attr.aria-label]="
-                      'budget.salaryArchive.editAria'
-                        | transloco: { month: monthLabel(archive.month) }
-                    "
-                    (click)="openEditModal(archive)"
-                  >
-                    <app-icon name="pencil" size="14" /> {{ 'budget.actions.edit' | transloco }}
-                  </button>
-                  <button
-                    type="button"
-                    class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-                    [attr.aria-label]="
-                      'budget.salaryArchive.deleteAria'
-                        | transloco: { month: monthLabel(archive.month) }
-                    "
-                    (click)="deleteArchive(archive)"
-                  >
-                    <app-icon name="trash" size="14" /> {{ 'budget.actions.delete' | transloco }}
-                  </button>
-                </div>
-              </div>
-            }
-          </article>
+          <app-salary-archive-card
+            [archive]="archive"
+            [expanded]="expandedId() === archive.id"
+            [remaining]="remainingOf(archive)"
+            [monthLabel]="monthLabel(archive.month)"
+            [accountName]="accountName(archive.accountId)"
+            (toggled)="toggleExpand(archive.id)"
+            (openPayslip)="openPayslip(archive.id)"
+            (edit)="openEditModal(archive)"
+            (delete)="deleteArchive(archive)"
+          />
         }
       </div>
     } @else {
@@ -507,15 +287,10 @@ export class SalaryArchives {
 
   // Year filter. Defaults to "Toutes" (null) so nothing is hidden.
   protected readonly filterYear = signal<string | null>(null);
-  protected readonly availableYears = computed(() => {
-    const years = new Set(this.archives().map((a) => a.month.slice(0, 4)));
-    return [...years].sort((a, b) => b.localeCompare(a));
-  });
-  protected readonly filteredArchives = computed(() => {
-    const y = this.filterYear();
-    const all = this.archives();
-    return y ? all.filter((a) => a.month.startsWith(y)) : all;
-  });
+  protected readonly availableYears = computed(() => availableYearsOf(this.archives()));
+  protected readonly filteredArchives = computed(() =>
+    filterArchivesByYear(this.archives(), this.filterYear()),
+  );
 
   protected readonly formMonth = signal(this.previousMonth());
   protected readonly formSalary = signal<number | null>(null);
@@ -526,25 +301,12 @@ export class SalaryArchives {
   private _editingArchive: SalaryArchive | null = null;
   private _selectedFile: File | null = null;
 
-  protected readonly importedSpendings = computed(() => {
-    if (!this.useCurrentSpendings()) return [];
-    const month = this.formMonth();
-    if (!month) return [];
-    const accountId = this.formAccountId();
-    return this.allEntries()
-      .filter((e) => {
-        if (e.type !== 'spending') return false;
-        if (accountId && e.accountId !== accountId) return false;
-        if (!e.date) return false;
-        return e.date.startsWith(month);
-      })
-      .map((e) => ({
-        label: e.label,
-        amount: Number(e.amount),
-        date: e.date,
-        category: e.category,
-      }));
-  });
+  protected readonly importedSpendings = computed(() =>
+    importedSpendingsOf(this.allEntries(), {
+      month: this.formMonth(),
+      accountId: this.formAccountId(),
+    }),
+  );
 
   protected readonly importedSpendingsTotal = computed(() =>
     this.importedSpendings().reduce((s, e) => s + e.amount, 0),
@@ -689,8 +451,6 @@ export class SalaryArchives {
   }
 
   private previousMonth(): string {
-    const now = new Date();
-    const d = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-    return d.toISOString().slice(0, 7);
+    return previousMonthOf(new Date());
   }
 }
