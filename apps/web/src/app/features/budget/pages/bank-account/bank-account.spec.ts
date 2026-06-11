@@ -440,6 +440,52 @@ describe('BankAccount — échéances manuelles', () => {
   });
 });
 
+describe('BankAccount — virement entrant ≠ échéance à débiter', () => {
+  // Virement récurrent a → liv (la source est 'a', la destination 'liv').
+  const TRANSFER = {
+    id: 'tr1',
+    accountId: 'a',
+    toAccountId: 'liv',
+    label: 'Courses',
+    amount: 650,
+    type: 'transfer' as const,
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
+  };
+  const ACCS = [
+    { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 },
+    { id: 'liv', name: 'Marie', type: 'courant', initialBalance: 1800 },
+  ];
+  type C = {
+    pendingCharges: () => { entry: { id: string } }[];
+    store: { selectAccount: (id: string | null) => void };
+  };
+
+  it("n'apparaît PAS dans les échéances du compte destinataire (il crédite, pas débite)", () => {
+    const cmp = makeComponent({ entries: [TRANSFER], accounts: ACCS }) as unknown as C;
+    cmp.store.selectAccount('liv'); // destination
+    expect(cmp.pendingCharges().some((c) => c.entry.id === 'tr1')).toBe(false);
+  });
+
+  it('apparaît dans les échéances du compte source (le débité)', () => {
+    const cmp = makeComponent({ entries: [TRANSFER], accounts: ACCS }) as unknown as C;
+    cmp.store.selectAccount('a'); // source
+    expect(cmp.pendingCharges().some((c) => c.entry.id === 'tr1')).toBe(true);
+  });
+
+  it('apparaît une fois en vue « Tous les comptes »', () => {
+    const cmp = makeComponent({ entries: [TRANSFER], accounts: ACCS }) as unknown as C;
+    cmp.store.selectAccount(null);
+    expect(cmp.pendingCharges().filter((c) => c.entry.id === 'tr1')).toHaveLength(1);
+  });
+});
+
 describe("BankAccount — auto-pointage à l'ouverture", () => {
   it("crée la transaction d'une échéance auto échue et non pointée", () => {
     const created: { accountId: string; body: Record<string, unknown> }[] = [];

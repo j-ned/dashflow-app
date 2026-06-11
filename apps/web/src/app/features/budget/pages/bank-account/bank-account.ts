@@ -501,11 +501,21 @@ export class BankAccount {
     this.store.entries().filter((e) => e.accountId == null),
   );
 
+  // Un virement n'est une échéance « à débiter » que pour son compte SOURCE (le débité).
+  // Sur le compte destinataire, le crédit est matérialisé par la MÊME transaction quand la
+  // source la poste : l'afficher comme un prélèvement à débiter induirait en erreur (on
+  // confirmerait un « prélèvement » qui en réalité ajoute au solde). Vue « Tous les comptes »
+  // (sel = null) : on garde tous les virements (présentés du point de vue de leur source).
+  private readonly pendingTransferCharges = computed(() => {
+    const sel = this.store.selectedAccountId();
+    return this.recurringTransfers().filter((e) => sel === null || e.accountId === sel);
+  });
+
   protected readonly pendingCharges = computed<PendingCharge[]>(() =>
     buildPendingCharges({
       incomes: this.incomes(),
       monthlyExpenses: this.monthlyExpenses(),
-      recurringTransfers: this.recurringTransfers(),
+      recurringTransfers: this.pendingTransferCharges(),
       ignored: this._ignoredCharges(),
       salaryDay: this.salaryDay(),
       currentDay: this.currentDay,
