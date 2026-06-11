@@ -524,8 +524,22 @@ describe("BankAccount — auto-pointage à l'ouverture", () => {
 
 describe('BankAccount — virement ponctuel posté immédiatement', () => {
   const ACCS_LIV = [
-    { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
-    { id: 'liv', name: 'Livret A', type: 'épargne', initialBalance: 0, color: null, dotColor: null },
+    {
+      id: 'a',
+      name: 'Courant',
+      type: 'courant',
+      initialBalance: 1000,
+      color: null,
+      dotColor: null,
+    },
+    {
+      id: 'liv',
+      name: 'Livret A',
+      type: 'épargne',
+      initialBalance: 0,
+      color: null,
+      dotColor: null,
+    },
   ];
   const ONE_TIME_PAST = {
     accountId: 'a',
@@ -603,7 +617,12 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
         return of({ id: 'x' });
       },
     }) as unknown as PostCmp;
-    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e4', dayOfMonth: 5, date: null });
+    await cmp._postIfImmediateOneTimeTransfer({
+      ...ONE_TIME_PAST,
+      id: 'e4',
+      dayOfMonth: 5,
+      date: null,
+    });
     expect(created).toHaveLength(0);
   });
 
