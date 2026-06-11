@@ -653,16 +653,20 @@ export class BankAccount {
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
   protected readonly totalMonthSpendings = computed(() => sumAmount(this.monthSpendings()));
 
-  // Virements ponctuels sortants/entrants du mois (tous considérés comme passés)
+  // Virements ponctuels sortants/entrants du mois encore en projection : ceux déjà matérialisés
+  // en transaction réelle (recurringEntryId) sont comptés dans le solde confirmé → exclus ici
+  // pour éviter le double comptage.
+  private readonly _unpostedOneTime = (predicate: (e: RecurringEntry) => boolean) => {
+    const txs = this.store.transactions();
+    return this.monthOneTimeTransfers().filter(
+      (e) => predicate(e) && !txs.some((t) => t.recurringEntryId === e.id),
+    );
+  };
   protected readonly totalOneTimeOutgoing = computed(() =>
-    sumAmount(
-      this.monthOneTimeTransfers().filter((e) => e.accountId === this.store.selectedAccountId()),
-    ),
+    sumAmount(this._unpostedOneTime((e) => e.accountId === this.store.selectedAccountId())),
   );
   protected readonly totalOneTimeIncoming = computed(() =>
-    sumAmount(
-      this.monthOneTimeTransfers().filter((e) => e.toAccountId === this.store.selectedAccountId()),
-    ),
+    sumAmount(this._unpostedOneTime((e) => e.toAccountId === this.store.selectedAccountId())),
   );
 
   private readonly totalOutgoing = computed(
@@ -828,13 +832,37 @@ export class BankAccount {
         }
       }
 
-      await lastValueFrom(this.entryGateway.create(data));
+      const created = await lastValueFrom(this.entryGateway.create(data));
+      await this._postIfImmediateOneTimeTransfer(created);
       this.toaster.success('budget.bankAccount.messages.entryCreated');
       this.createModalRef().close();
       this.store.refreshEntries();
     } catch {
       this.toaster.error('budget.bankAccount.messages.entryCreateError');
     }
+  }
+
+  // Un virement ponctuel (type transfer, sans dayOfMonth) représente un mouvement qui a déjà eu
+  // lieu : on matérialise immédiatement la transaction réelle pour qu'elle impacte le solde confirmé,
+  // au lieu de rester une simple projection. Liée par recurringEntryId → exclue du delta projeté
+  // (cf. totalOneTimeIncoming/Outgoing) pour éviter le double comptage. Skip si daté dans le futur
+  // (encore une projection) ou sans compte source (orphelin → la table transactions exige un compte).
+  private async _postIfImmediateOneTimeTransfer(entry: RecurringEntry): Promise<void> {
+    const isOneTimeTransfer = entry.type === 'transfer' && entry.dayOfMonth == null && !!entry.date;
+    if (!isOneTimeTransfer || entry.accountId == null || entry.date! > this.todayIso) return;
+    await lastValueFrom(
+      this.txGateway.create(entry.accountId, {
+        amount: entry.amount,
+        direction: 'transfer',
+        date: entry.date!,
+        toAccountId: entry.toAccountId,
+        category: entry.category,
+        note: null,
+        memberId: entry.memberId,
+        recurringEntryId: entry.id,
+      }),
+    );
+    this.store.refreshTransactions();
   }
 
   private async archiveCurrentCycle() {

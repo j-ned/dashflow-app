@@ -13,7 +13,7 @@ import { encryptFile } from '@core/services/crypto/file-crypto';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { RecurringEntry } from '../domain/models/recurring-entry.model';
 import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gateway';
-import { withAutoPostDefaults } from './recurring-entry.adapter';
+import { normalizeRecurringEntry } from './recurring-entry.adapter';
 import { RecurringEntrySchema } from './schemas/recurring-entry.schema';
 
 const CLEARTEXT_KEYS = [
@@ -35,7 +35,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
       this.api.get<ApiRow[]>('/recurring-entries'),
       this.crypto.getMasterKey(),
     ).pipe(
-      map((list) => list.map(withAutoPostDefaults)),
+      map((list) => list.map(normalizeRecurringEntry)),
       map((list) => validateList(RecurringEntrySchema, list, { entity: 'RecurringEntry' })),
     );
   }

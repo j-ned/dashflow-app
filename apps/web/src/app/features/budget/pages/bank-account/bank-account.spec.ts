@@ -30,6 +30,7 @@ function makeComponent(
     txs?: unknown[];
     accounts?: unknown[];
     createImpl?: (accountId: string, body: Record<string, unknown>) => Observable<unknown>;
+    entryCreateImpl?: (data: Record<string, unknown>) => Observable<unknown>;
     updateImpl?: (id: string, data: { accountId: string }) => Observable<unknown>;
     entryDeleteImpl?: (id: string) => Observable<unknown>;
     accountDeleteImpl?: () => Observable<unknown>;
@@ -44,6 +45,7 @@ function makeComponent(
         provide: RecurringEntryGateway,
         useValue: {
           getAll: () => of(opts.entries ?? []),
+          create: opts.entryCreateImpl ?? ((d: Record<string, unknown>) => of({ ...d, id: 'new' })),
           update: opts.updateImpl ?? (() => of({})),
           delete: opts.entryDeleteImpl ?? (() => of(undefined)),
         },
@@ -517,5 +519,131 @@ describe("BankAccount — auto-pointage à l'ouverture", () => {
       },
     });
     expect(created).toHaveLength(0);
+  });
+});
+
+describe('BankAccount — virement ponctuel posté immédiatement', () => {
+  const ACCS_LIV = [
+    { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
+    { id: 'liv', name: 'Livret A', type: 'épargne', initialBalance: 0, color: null, dotColor: null },
+  ];
+  const ONE_TIME_PAST = {
+    accountId: 'a',
+    toAccountId: 'liv',
+    label: 'Vers Livret',
+    amount: 500,
+    type: 'transfer' as const,
+    dayOfMonth: null,
+    date: '2020-01-15',
+    endDate: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
+  };
+
+  type PostCmp = {
+    createEntry: (d: unknown) => Promise<void>;
+    _postIfImmediateOneTimeTransfer: (e: unknown) => Promise<void>;
+  };
+
+  it('poste immédiatement la transaction réelle pour un virement ponctuel daté ≤ aujourd’hui', async () => {
+    const created: { accountId: string; body: Record<string, unknown> }[] = [];
+    const cmp = makeComponent({
+      accounts: ACCS_LIV,
+      createImpl: (accountId, body) => {
+        created.push({ accountId, body });
+        return of({ id: 'tx1' });
+      },
+    }) as unknown as PostCmp;
+    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e-new' });
+    expect(created).toHaveLength(1);
+    expect(created[0].accountId).toBe('a');
+    expect(created[0].body).toMatchObject({
+      amount: 500,
+      direction: 'transfer',
+      toAccountId: 'liv',
+      recurringEntryId: 'e-new',
+    });
+  });
+
+  it('ne poste rien pour un virement ponctuel futur (reste une projection)', async () => {
+    const created: unknown[] = [];
+    const cmp = makeComponent({
+      accounts: ACCS_LIV,
+      createImpl: () => {
+        created.push(1);
+        return of({ id: 'x' });
+      },
+    }) as unknown as PostCmp;
+    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e2', date: '2999-01-01' });
+    expect(created).toHaveLength(0);
+  });
+
+  it('ne poste rien si le virement n’a pas de compte source (orphelin, vue tous comptes)', async () => {
+    const created: unknown[] = [];
+    const cmp = makeComponent({
+      accounts: ACCS_LIV,
+      createImpl: () => {
+        created.push(1);
+        return of({ id: 'x' });
+      },
+    }) as unknown as PostCmp;
+    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e3', accountId: null });
+    expect(created).toHaveLength(0);
+  });
+
+  it('ne poste rien pour un virement récurrent (dayOfMonth présent)', async () => {
+    const created: unknown[] = [];
+    const cmp = makeComponent({
+      accounts: ACCS_LIV,
+      createImpl: () => {
+        created.push(1);
+        return of({ id: 'x' });
+      },
+    }) as unknown as PostCmp;
+    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e4', dayOfMonth: 5, date: null });
+    expect(created).toHaveLength(0);
+  });
+
+  it('ne double-compte pas dans le projeté du livret un ponctuel déjà posté', () => {
+    const month = new Date().toISOString().slice(0, 7);
+    const entry = {
+      id: 'ot1',
+      accountId: 'a',
+      toAccountId: 'liv',
+      label: 'Vers Livret',
+      amount: 500,
+      type: 'transfer',
+      dayOfMonth: null,
+      date: `${month}-02`,
+      endDate: null,
+      category: null,
+      memberId: null,
+      payslipKey: null,
+      autoPost: false,
+      autoPostSince: null,
+    };
+    const tx = {
+      id: 'txot',
+      accountId: 'a',
+      amount: 500,
+      direction: 'transfer',
+      toAccountId: 'liv',
+      date: `${month}-02`,
+      category: null,
+      note: null,
+      memberId: null,
+      recurringEntryId: 'ot1',
+    };
+    const cmp = makeComponent({ entries: [entry], txs: [tx], accounts: ACCS_LIV }) as unknown as {
+      confirmedBalance: () => number;
+      projectedBalance: () => number;
+      store: { selectAccount: (id: string | null) => void };
+    };
+    cmp.store.selectAccount('liv');
+    expect(cmp.confirmedBalance()).toBe(500); // livret 0 + virement crédité
+    expect(cmp.projectedBalance()).toBe(500); // pas de double comptage (ponctuel posté exclu du delta)
   });
 });
