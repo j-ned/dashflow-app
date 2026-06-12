@@ -21,7 +21,6 @@ yarn-error.log
 .idea/
 .project
 .classpath
-.claude
 .gemini
 .c9/
 *.launch
@@ -54,8 +53,9 @@ Thumbs.db
 
 # AI ignore
 .agents
-CLAUDE.md
-.claude
+# .claude/ est vendoré (agents AAK) et committé pour les sessions cloud ;
+# seules les préférences locales restent ignorées.
+.claude/settings.local.json
 .remember
 PRODUCT.md
 DESIGN.md
