@@ -36,10 +36,13 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
 
   protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, memberId, accountId } = parseBody(createEncryptedRecurringEntrySchema, body);
+      const { encryptedData, memberId, accountId, toAccountId } = parseBody(createEncryptedRecurringEntrySchema, body);
       return {
         memberId: memberId ?? null,
         accountId: accountId ?? null,
+        // toAccountId reste en clair (référence FK) : sans lui, un virement chiffré ne crédite
+        // jamais le compte destination (le solde le filtre par to_account_id).
+        toAccountId: toAccountId ?? null,
         label: '',
         amount: '0',
         type: 'income',
@@ -66,6 +69,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
       const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
       if (body.memberId !== undefined) patch.memberId = body.memberId;
       if (body.accountId !== undefined) patch.accountId = body.accountId;
+      if (body.toAccountId !== undefined) patch.toAccountId = body.toAccountId;
       return patch;
     }
     const { id: _i, userId: _u, createdAt: _c, ...rest } = body;

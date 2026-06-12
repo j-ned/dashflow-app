@@ -22,5 +22,6 @@ export const createRecurringEntrySchema = z.object({
 export const createEncryptedRecurringEntrySchema = z.object({
   memberId: optionalUuid,
   accountId: optionalUuid,
+  toAccountId: optionalUuid,
   encryptedData: z.string().min(1),
 });
