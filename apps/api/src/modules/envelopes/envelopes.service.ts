@@ -4,9 +4,9 @@ import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { envelopes, envelopeTransactions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { addMoney } from '../../common/money';
+import { today } from '../../common/today';
 
 type Envelope = typeof envelopes.$inferSelect;
-const today = (): string => new Date().toISOString().slice(0, 10);
 
 @Injectable()
 export class EnvelopesService extends OwnedCrudService<Envelope> {

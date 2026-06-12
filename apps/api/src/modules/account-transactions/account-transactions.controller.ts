@@ -7,8 +7,7 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { createTransactionSchema, createEncryptedTransactionSchema, batchTransactionSchema } from './dto/account-transaction.dto';
-
-const today = (): string => new Date().toISOString().slice(0, 10);
+import { today } from '../../common/today';
 
 @UseGuards(JwtAuthGuard)
 @Controller()

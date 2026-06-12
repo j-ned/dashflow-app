@@ -13,6 +13,7 @@ import { LoansService } from './loans.service';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { today } from '../../common/today';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import {
   createLoanSchema,
@@ -36,7 +37,7 @@ export class LoansController extends OwnedCrudController<unknown> {
         direction: direction ?? 'lent',
         amount: '0',
         remaining: '0',
-        date: new Date().toISOString().slice(0, 10),
+        date: today(),
         encryptedData,
       };
     }
@@ -85,7 +86,7 @@ export class LoansController extends OwnedCrudController<unknown> {
     if (body.encryptedData) {
       const row = await this.svc.addTransaction(u.id, id, {
         amount: '0',
-        date: new Date().toISOString().slice(0, 10),
+        date: today(),
         encryptedData: body.encryptedData as string,
       });
       if (row === undefined) throw new NotFoundException('Non trouvé');

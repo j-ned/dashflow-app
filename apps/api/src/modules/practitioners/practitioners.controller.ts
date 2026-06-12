@@ -2,6 +2,7 @@ import { Controller } from '@nestjs/common';
 import { PractitionersService } from './practitioners.service';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { parseBody } from '../../common/parse-body';
+import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import { createPractitionerSchema, createEncryptedPractitionerSchema } from './dto/practitioner.dto';
 
 @Controller('practitioners')
@@ -29,6 +30,6 @@ export class PractitionersController extends OwnedCrudController<unknown> {
   protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
     return body.encryptedData
       ? { encryptedData: body.encryptedData }
-      : (({ id: _i, userId: _u, createdAt: _c, ...rest }) => rest)(body);
+      : excludeSystemFields(body);
   }
 }

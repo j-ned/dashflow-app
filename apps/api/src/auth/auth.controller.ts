@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Get, HttpCode, HttpException, NotFoundException, Param,
+  BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param,
   Patch, Post, Req, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -27,12 +27,8 @@ import type {
   TotpVerifyDto, TotpDisableDto,
 } from './dto/auth.dto';
 import type { Env } from '../config/env.schema';
-
-const STRICT = { default: { limit: 10, ttl: 900_000 } };
-
-function httpFrom(r: { status: number; error: string; code?: string }): HttpException {
-  return new HttpException(r.code ? { message: r.error, code: r.code } : r.error, r.status);
-}
+import { httpFrom } from './http-error';
+import { STRICT_THROTTLE } from './throttle';
 
 @Controller('auth')
 export class AuthController {
@@ -54,14 +50,14 @@ export class AuthController {
     res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
   }
 
-  @Throttle(STRICT) @Post('register') @HttpCode(201)
+  @Throttle(STRICT_THROTTLE) @Post('register') @HttpCode(201)
   async register(@Body(new ZodValidationPipe(registerSchema)) dto: RegisterDto) {
     const r = await this.auth.register(dto);
     if (!r.success) throw httpFrom(r);
     return { message: 'Compte créé, vérifiez votre email' };
   }
 
-  @Throttle(STRICT) @Post('verify') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('verify') @HttpCode(200)
   async verify(@Body(new ZodValidationPipe(verifySchema)) dto: VerifyDto, @Res({ passthrough: true }) res: Response) {
     const r = await this.auth.verify(dto);
     if (!r.success) throw httpFrom(r);
@@ -69,13 +65,13 @@ export class AuthController {
     return { user: toPublicUser(r.data), keyMaterial: toKeyMaterial(r.data) };
   }
 
-  @Throttle(STRICT) @Post('resend-code') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('resend-code') @HttpCode(200)
   async resend(@Body(new ZodValidationPipe(resendSchema)) dto: { email: string }) {
     await this.auth.resendCode(dto.email);
     return { message: 'Si le compte existe, un code a été envoyé' };
   }
 
-  @Throttle(STRICT) @Post('login') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('login') @HttpCode(200)
   async login(@Body(new ZodValidationPipe(loginSchema)) dto: LoginDto, @Res({ passthrough: true }) res: Response) {
     const r = await this.auth.login(dto);
     if (!r.success) throw httpFrom(r);
@@ -85,7 +81,7 @@ export class AuthController {
   }
 
   // Public demo session, gated by DEMO_ENABLED.
-  @Throttle(STRICT) @Post('demo-login') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('demo-login') @HttpCode(200)
   async demoLogin(@Res({ passthrough: true }) res: Response) {
     if (!this.demoEnabled) throw new NotFoundException();
     const r = await this.auth.demoLogin();
@@ -94,20 +90,20 @@ export class AuthController {
     return { user: toPublicUser(r.data), keyMaterial: null };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard) @Throttle(STRICT) @Post('demo-reset') @HttpCode(200)
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Throttle(STRICT_THROTTLE) @Post('demo-reset') @HttpCode(200)
   async demoReset(@CurrentUser() u: AuthUser) {
     if (!this.demoEnabled) throw new NotFoundException();
     await this.demo.reset(u.id);
     return { message: 'Démo réinitialisée' };
   }
 
-  @Throttle(STRICT) @Post('forgot-password') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('forgot-password') @HttpCode(200)
   async forgot(@Body(new ZodValidationPipe(forgotPasswordSchema)) dto: { email: string }) {
     await this.auth.forgotPassword(dto.email);
     return { message: 'Si le compte existe, un code a été envoyé' };
   }
 
-  @Throttle(STRICT) @Post('reset-password') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('reset-password') @HttpCode(200)
   async reset(@Body(new ZodValidationPipe(resetPasswordSchema)) dto: ResetPasswordDto) {
     const r = await this.auth.resetPassword(dto);
     if (!r.success) throw httpFrom(r);

@@ -4,6 +4,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import { createBankAccountSchema, createEncryptedBankAccountSchema } from './dto/bank-account.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -28,7 +29,7 @@ export class BankAccountsController {
   async update(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() body: Record<string, unknown>) {
     const patch = body.encryptedData
       ? { encryptedData: body.encryptedData }
-      : (({ id: _i, userId: _u, createdAt: _c, ...rest }) => rest)(body);
+      : excludeSystemFields(body);
     const row = await this.svc.update(u.id, id, patch);
     if (!row) throw new NotFoundException('Non trouvé');
     return row;

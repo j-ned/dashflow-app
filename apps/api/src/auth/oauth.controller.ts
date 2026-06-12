@@ -8,6 +8,7 @@ import {
   SESSION_COOKIE, OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE,
   sessionCookieOptions, oauthCookieOptions,
 } from './cookie';
+import { STRICT_THROTTLE } from './throttle';
 import type { Env } from '../config/env.schema';
 
 @Controller('auth/oauth/google')
@@ -23,7 +24,7 @@ export class OAuthController {
     this.frontUrl = config.get('CORS_ORIGIN', { infer: true }).split(',')[0];
   }
 
-  @Throttle({ default: { limit: 10, ttl: 900_000 } })
+  @Throttle(STRICT_THROTTLE)
   @Get()
   start(@Res({ passthrough: true }) res: Response): void {
     const { url, state, codeVerifier } = this.oauth.createAuthorization();

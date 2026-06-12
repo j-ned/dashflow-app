@@ -1,6 +1,8 @@
-import { Body, Controller, HttpCode, HttpException, Patch, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, HttpCode, Patch, Post, UseGuards } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { EncryptionService } from './encryption.service';
+import { httpFrom } from './http-error';
+import { STRICT_THROTTLE } from './throttle';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
@@ -9,11 +11,6 @@ import {
   setupEncryptionKeysSchema, encryptionPassphraseSchema, migrateEncryptionSchema, resetWithRecoverySchema,
 } from './dto/auth.dto';
 import type { SetupEncryptionKeysDto, MigrateEncryptionDto, ResetWithRecoveryDto } from './dto/auth.dto';
-
-const STRICT = { default: { limit: 10, ttl: 900_000 } };
-function httpFrom(r: { status: number; error: string; code?: string }): HttpException {
-  return new HttpException(r.code ? { message: r.error, code: r.code } : r.error, r.status);
-}
 
 @Controller('auth')
 export class EncryptionController {
@@ -43,7 +40,7 @@ export class EncryptionController {
     return { message: 'Données chiffrées supprimées' };
   }
 
-  @Throttle(STRICT) @Post('reset-password-with-recovery') @HttpCode(200)
+  @Throttle(STRICT_THROTTLE) @Post('reset-password-with-recovery') @HttpCode(200)
   async resetWithRecovery(@Body(new ZodValidationPipe(resetWithRecoverySchema)) dto: ResetWithRecoveryDto) {
     const r = await this.enc.resetPasswordWithRecovery(dto);
     if (!r.success) throw httpFrom(r);

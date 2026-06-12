@@ -24,6 +24,7 @@ import {
   createEncryptedRecurringEntrySchema,
 } from './dto/recurring-entry.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
+import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 
 @Controller('recurring-entries')
 export class RecurringEntriesController extends OwnedCrudController<unknown> {
@@ -67,13 +68,12 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
     if (body.encryptedData) {
       const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
-      if (body.memberId !== undefined) patch.memberId = body.memberId;
-      if (body.accountId !== undefined) patch.accountId = body.accountId;
-      if (body.toAccountId !== undefined) patch.toAccountId = body.toAccountId;
+      for (const k of ['memberId', 'accountId', 'toAccountId'] as const) {
+        if (body[k] !== undefined) patch[k] = body[k];
+      }
       return patch;
     }
-    const { id: _i, userId: _u, createdAt: _c, ...rest } = body;
-    return rest;
+    return excludeSystemFields(body);
   }
 
   // --- Payslip file sub-routes ---

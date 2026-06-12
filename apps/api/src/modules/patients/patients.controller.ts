@@ -3,6 +3,7 @@ import { PatientsService } from './patients.service';
 import { parseBody } from '../../common/parse-body';
 import { createPatientSchema, createEncryptedPatientSchema } from './dto/patient.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
+import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 
 @Controller('patients')
 export class PatientsController extends OwnedCrudController<unknown> {
@@ -20,6 +21,6 @@ export class PatientsController extends OwnedCrudController<unknown> {
   protected toUpdatePatch(body: Record<string, unknown>) {
     return body.encryptedData
       ? { encryptedData: body.encryptedData }
-      : (({ id: _i, userId: _u, createdAt: _c, ...rest }) => rest)(body);
+      : excludeSystemFields(body);
   }
 }
