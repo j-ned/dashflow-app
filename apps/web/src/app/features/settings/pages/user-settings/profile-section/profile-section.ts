@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
@@ -116,7 +116,6 @@ type ProfileFormShape = {
 })
 export class ProfileSection {
   protected readonly auth = inject(AuthStore);
-  private readonly _i18n = inject(TranslocoService);
   private readonly toaster = inject(Toaster);
 
   protected readonly avatarPreview = signal<string | null>(null);
@@ -145,10 +144,10 @@ export class ProfileSection {
     this.profileSaving.set(true);
     try {
       await this.auth.uploadAvatar(file);
-      this.showFeedback('success', this._i18n.translate('settings.profile.feedback.avatarUpdated'));
+      this.toaster.success('settings.profile.feedback.avatarUpdated');
     } catch {
       this.avatarPreview.set(null);
-      this.showFeedback('error', this._i18n.translate('settings.profile.feedback.avatarFailed'));
+      this.toaster.error('settings.profile.feedback.avatarFailed');
     } finally {
       this.profileSaving.set(false);
     }
@@ -159,16 +158,12 @@ export class ProfileSection {
     this.profileSaving.set(true);
     try {
       await this.auth.updateProfile({ displayName: this.profileForm.getRawValue().displayName });
-      this.showFeedback('success', this._i18n.translate('settings.profile.feedback.updated'));
+      this.toaster.success('settings.profile.feedback.updated');
       this.profileForm.markAsPristine();
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.profile.feedback.updateFailed'));
+      this.toaster.error('settings.profile.feedback.updateFailed');
     } finally {
       this.profileSaving.set(false);
     }
-  }
-
-  private showFeedback(type: 'success' | 'error', message: string) {
-    this.toaster[type](message);
   }
 }

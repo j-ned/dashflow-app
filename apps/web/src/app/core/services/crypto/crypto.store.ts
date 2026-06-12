@@ -26,8 +26,7 @@ export class CryptoStore {
   }
 
   generateRecoveryKey(): string {
-    const bytes = crypto.getRandomValues(new Uint8Array(32));
-    return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+    return bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
   }
 
   // ── Key Derivation ──
@@ -57,7 +56,7 @@ export class CryptoStore {
   }
 
   async deriveWrappingKeyFromRecovery(recoveryHex: string): Promise<CryptoKey> {
-    const bytes = new Uint8Array(recoveryHex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
+    const bytes = hexToBytes(recoveryHex);
     return crypto.subtle.importKey('raw', bytes, { name: 'AES-KW', length: KEY_BITS }, false, [
       'wrapKey',
       'unwrapKey',
@@ -233,6 +232,6 @@ export function bytesToHex(bytes: Uint8Array): string {
   return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
 }
 
-export function hexToBytes(hex: string): Uint8Array {
+export function hexToBytes(hex: string): Uint8Array<ArrayBuffer> {
   return new Uint8Array(hex.match(/.{2}/g)!.map((h) => parseInt(h, 16)));
 }

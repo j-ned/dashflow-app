@@ -540,21 +540,36 @@ export class BankAccount {
       });
   }
 
+  // Construit le payload de transaction réelle dérivé d'une récurrence : les champs liés à
+  // l'entrée (compte, virement, catégorie, membre, lien recurringEntryId) sont toujours repris ;
+  // montant / sens / date / note varient selon le contexte (confirmation manuelle, auto-post…).
+  private _txPayloadFor(
+    entry: RecurringEntry,
+    over: Pick<AccountTransaction, 'amount' | 'direction' | 'date' | 'note'>,
+  ): Omit<AccountTransaction, 'id' | 'accountId'> {
+    return {
+      ...over,
+      toAccountId: entry.toAccountId,
+      category: entry.category,
+      memberId: entry.memberId,
+      recurringEntryId: entry.id,
+    };
+  }
+
   protected confirmCharge(id: string, amount: number): void {
     const charge = this.pendingCharges().find((c) => c.entry.id === id);
     if (!charge) return;
     const e = charge.entry;
     this.txGateway
-      .create(e.accountId!, {
-        amount,
-        direction: charge.direction,
-        date: charge.suggestedDate,
-        toAccountId: e.toAccountId,
-        category: e.category,
-        note: null,
-        memberId: e.memberId,
-        recurringEntryId: e.id,
-      })
+      .create(
+        e.accountId!,
+        this._txPayloadFor(e, {
+          amount,
+          direction: charge.direction,
+          date: charge.suggestedDate,
+          note: null,
+        }),
+      )
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe({
         next: () => {
@@ -583,16 +598,15 @@ export class BankAccount {
     for (const c of charges) {
       const e = c.entry;
       this.txGateway
-        .create(e.accountId!, {
-          amount: c.suggestedAmount,
-          direction: c.direction,
-          date: c.suggestedDate,
-          toAccountId: e.toAccountId,
-          category: e.category,
-          note: null,
-          memberId: e.memberId,
-          recurringEntryId: e.id,
-        })
+        .create(
+          e.accountId!,
+          this._txPayloadFor(e, {
+            amount: c.suggestedAmount,
+            direction: c.direction,
+            date: c.suggestedDate,
+            note: null,
+          }),
+        )
         .pipe(takeUntilDestroyed(this._destroyRef))
         .subscribe({
           next: done,
@@ -636,16 +650,15 @@ export class BankAccount {
     for (const d of due) {
       const e = d.entry;
       this.txGateway
-        .create(e.accountId!, {
-          amount: d.amount,
-          direction: d.direction,
-          date: d.date,
-          toAccountId: e.toAccountId,
-          category: e.category,
-          note: 'auto',
-          memberId: e.memberId,
-          recurringEntryId: e.id,
-        })
+        .create(
+          e.accountId!,
+          this._txPayloadFor(e, {
+            amount: d.amount,
+            direction: d.direction,
+            date: d.date,
+            note: 'auto',
+          }),
+        )
         .pipe(takeUntilDestroyed(this._destroyRef))
         .subscribe({
           next: done,
@@ -861,16 +874,15 @@ export class BankAccount {
     const isOneTimeTransfer = entry.type === 'transfer' && entry.dayOfMonth == null && !!entry.date;
     if (!isOneTimeTransfer || entry.accountId == null || entry.date! > this.todayIso) return;
     await lastValueFrom(
-      this.txGateway.create(entry.accountId, {
-        amount: entry.amount,
-        direction: 'transfer',
-        date: entry.date!,
-        toAccountId: entry.toAccountId,
-        category: entry.category,
-        note: null,
-        memberId: entry.memberId,
-        recurringEntryId: entry.id,
-      }),
+      this.txGateway.create(
+        entry.accountId,
+        this._txPayloadFor(entry, {
+          amount: entry.amount,
+          direction: 'transfer',
+          date: entry.date!,
+          note: null,
+        }),
+      ),
     );
     this.store.refreshTransactions();
   }

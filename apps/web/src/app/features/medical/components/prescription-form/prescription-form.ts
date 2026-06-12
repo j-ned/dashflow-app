@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { formInvalid } from '@shared/forms/form-invalid';
+import { formatFileSize } from '@shared/forms/format-file-size';
 import { Prescription } from '../../domain/models/prescription.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
@@ -219,10 +219,8 @@ export class PrescriptionForm {
     notes: new FormControl('', { nonNullable: true }),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
+  protected readonly formatSize = formatFileSize;
 
   private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
   private readonly MAX_SIZE = 10 * 1024 * 1024;
@@ -274,12 +272,6 @@ export class PrescriptionForm {
 
   protected removeFile() {
     this.selectedFile.set(null);
-  }
-
-  protected formatSize(bytes: number): string {
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 
   protected submitForm() {

@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Medication, MedicationWithStock } from '../domain/models/medication.model';
 import { MedicationGateway } from '../domain/gateways/medication.gateway';
@@ -45,49 +41,36 @@ export class HttpMedicationGateway implements MedicationGateway {
   }
 
   getAlerts(): Observable<MedicationWithStock[]> {
-    return this.api.get<ApiRow[]>('/medications/alerts').pipe(
-      switchMap((rows) => {
-        const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as MedicationWithStock[]]);
-        return from(decryptEntities<MedicationWithStock>(rows, key));
-      }),
+    return decryptList<MedicationWithStock>(
+      this.api.get<ApiRow[]>('/medications/alerts'),
+      this.crypto.getMasterKey(),
     );
   }
 
   create(data: Omit<Medication, 'id'>): Observable<Medication> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/medications', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/medications', encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/medications', body),
     );
   }
 
   update(id: string, data: Partial<Omit<Medication, 'id'>>): Observable<Medication> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/medications/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/medications/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/medications/${id}`, body),
     );
   }
 
   refill(id: string, quantity: number): Observable<Medication> {
-    const key = this.crypto.getMasterKey();
-    const payload = { quantity };
-    if (!key) return this.api.patch(`/medications/${id}/refill`, payload);
-
-    return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.patch<ApiRow>(`/medications/${id}/refill`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Medication>(row, key)) : from([row as Medication]),
-      ),
+    return mutateEncrypted(
+      { quantity },
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.patch<ApiRow>(`/medications/${id}/refill`, body),
     );
   }
 

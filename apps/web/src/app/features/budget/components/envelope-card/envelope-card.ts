@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Envelope } from '../../domain/models/envelope.model';
@@ -115,7 +115,7 @@ import { Icon } from '@shared/components/icon/icon';
           </div>
           @if (entries().length > 0) {
             <ul class="space-y-1.5">
-              @for (entry of entries().slice(0, 3); track entry.tx.id) {
+              @for (entry of recentEntries(); track entry.tx.id) {
                 <li class="flex items-center justify-between gap-2 text-xs">
                   <span class="flex min-w-0 items-center gap-1.5">
                     <app-icon
@@ -183,4 +183,6 @@ export class EnvelopeCard {
   readonly edit = output<void>();
   readonly remove = output<void>();
   readonly history = output<void>();
+
+  protected readonly recentEntries = computed(() => this.entries().slice(0, 3));
 }

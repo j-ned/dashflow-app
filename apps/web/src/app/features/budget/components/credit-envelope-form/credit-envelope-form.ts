@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
+import { formInvalid } from '@shared/forms/form-invalid';
 
 type CreditFormShape = {
   amount: FormControl<number>;
@@ -112,10 +111,7 @@ export class CreditEnvelopeForm {
     accountId: new FormControl('', { nonNullable: true }),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
 
   protected submitForm() {
     if (this.form.invalid) return;

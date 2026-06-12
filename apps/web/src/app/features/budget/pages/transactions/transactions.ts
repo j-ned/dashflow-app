@@ -189,15 +189,13 @@ export class Transactions {
       .subscribe((txs) => this._allTx.set(txs));
   }
 
-  private readonly _currentAccount = computed(() => {
+  protected readonly currentAccount = computed(() => {
     const id = this.selectedId() ?? this.accounts()[0]?.id ?? null;
     return this.accounts().find((a) => a.id === id) ?? null;
   });
 
-  protected readonly currentAccount = this._currentAccount;
-
   protected readonly transactions = computed<TransactionViewModel[]>(() => {
-    const acc = this._currentAccount();
+    const acc = this.currentAccount();
     if (!acc) return [];
     return this.allTx()
       .filter((t) => t.accountId === acc.id || t.toAccountId === acc.id)
@@ -211,7 +209,7 @@ export class Transactions {
   });
 
   protected readonly confirmedBalanceValue = computed(() => {
-    const acc = this._currentAccount();
+    const acc = this.currentAccount();
     if (!acc) return 0;
     const today = new Date().toISOString().slice(0, 10);
     return confirmedBalance(acc, this.transactions(), today);
@@ -224,7 +222,7 @@ export class Transactions {
   protected readonly draftCategory = signal<string>('other');
 
   protected addTransaction(): void {
-    const acc = this._currentAccount();
+    const acc = this.currentAccount();
     if (!acc) return;
     this._txGateway
       .create(acc.id, {
@@ -253,7 +251,7 @@ export class Transactions {
 
   protected readonly existingForImport = computed(() =>
     this.allTx()
-      .filter((t) => t.accountId === (this._currentAccount()?.id ?? ''))
+      .filter((t) => t.accountId === (this.currentAccount()?.id ?? ''))
       .map((t) => ({ date: t.date, amount: t.amount, note: t.note })),
   );
 

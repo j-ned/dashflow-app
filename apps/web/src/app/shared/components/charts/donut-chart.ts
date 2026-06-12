@@ -76,9 +76,11 @@ export class DonutChart {
 
   private readonly circumference = 2 * Math.PI * 48;
 
+  private readonly total = computed(() => this.data().reduce((s, d) => s + d.value, 0));
+
   protected readonly arcs = computed(() => {
     const slices = this.data();
-    const total = slices.reduce((s, d) => s + d.value, 0);
+    const total = this.total();
     if (total === 0) return [];
     const circ = this.circumference;
     const gap = 3;
@@ -99,7 +101,7 @@ export class DonutChart {
   });
 
   protected readonly legendItems = computed(() => {
-    const total = this.data().reduce((s, d) => s + d.value, 0);
+    const total = this.total();
     return this.data().map((s) => ({
       label: s.label,
       color: s.color,

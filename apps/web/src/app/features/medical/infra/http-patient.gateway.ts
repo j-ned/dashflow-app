@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Patient } from '../domain/models/patient.model';
 import { PatientGateway } from '../domain/gateways/patient.gateway';
@@ -45,26 +41,20 @@ export class HttpPatientGateway implements PatientGateway {
   }
 
   create(data: Omit<Patient, 'id'>): Observable<Patient> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/patients', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/patients', encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/patients', body),
     );
   }
 
   update(id: string, data: Partial<Omit<Patient, 'id'>>): Observable<Patient> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/patients/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/patients/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Patient>(row, key)) : from([row as Patient]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/patients/${id}`, body),
     );
   }
 

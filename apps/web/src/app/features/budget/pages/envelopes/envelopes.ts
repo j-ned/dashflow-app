@@ -12,6 +12,7 @@ import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Envelope } from '../../domain/models/envelope.model';
 import { buildMemberMap } from '../../domain/member-map';
+import { activeMembers as activeMembersOf } from '../../domain/active-members';
 import { buildEnvelopeHistories, HistoryEntry } from '../../domain/envelope-history';
 import { buildEnvelopeCreditEntry } from '../../domain/envelope-credit-entry';
 import { EnvelopeCard } from '../../components/envelope-card/envelope-card';
@@ -192,11 +193,9 @@ export class Envelopes {
 
   protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
   protected readonly accounts = toSignal(this.bankAccountGateway.getAll(), { initialValue: [] });
-  protected readonly activeMembers = computed(() => {
-    const envs = this.envelopes();
-    const memberIds = new Set(envs.map((e) => e.memberId).filter(Boolean));
-    return this.members().filter((m) => memberIds.has(m.id));
-  });
+  protected readonly activeMembers = computed(() =>
+    activeMembersOf(this.members(), this.envelopes()),
+  );
 
   // Defaults to "Tous" (null) so nothing is hidden on first view.
   protected readonly filterMemberId = signal<string | null>(null);

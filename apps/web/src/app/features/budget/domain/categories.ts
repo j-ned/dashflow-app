@@ -1,4 +1,6 @@
 // category est un champ texte libre (pas de table) : matching tolérant accent+casse pour éviter que « Alimentation » et « alimentation » tombent en « Autre ».
+import { foldText } from './fold-text';
+
 type BudgetCategoryKey =
   | 'housing'
   | 'transport'
@@ -84,23 +86,14 @@ export const BUDGET_CATEGORIES: readonly BudgetCategory[] = [
 
 const OTHER_CATEGORY = BUDGET_CATEGORIES[BUDGET_CATEGORIES.length - 1];
 
-/** Repli accents + casse + espaces pour un appariement tolérant. */
-function fold(value: string): string {
-  return value
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')
-    .trim()
-    .toLowerCase();
-}
-
 const BY_FOLDED_LABEL = new Map<string, BudgetCategory>(
-  BUDGET_CATEGORIES.map((category) => [fold(category.label), category]),
+  BUDGET_CATEGORIES.map((category) => [foldText(category.label), category]),
 );
 
 /** Résout un libellé brut (texte libre) vers une catégorie connue, sinon « Autre ». */
 export function normalizeCategory(raw: string | null | undefined): BudgetCategory {
   if (!raw) return OTHER_CATEGORY;
-  return BY_FOLDED_LABEL.get(fold(raw)) ?? OTHER_CATEGORY;
+  return BY_FOLDED_LABEL.get(foldText(raw)) ?? OTHER_CATEGORY;
 }
 
 // ---------------------------------------------------------------------------

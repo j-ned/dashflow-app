@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Appointment } from '../domain/models/appointment.model';
 import { AppointmentGateway } from '../domain/gateways/appointment.gateway';
@@ -45,39 +41,29 @@ export class HttpAppointmentGateway implements AppointmentGateway {
   }
 
   create(data: Omit<Appointment, 'id'>): Observable<Appointment> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/appointments', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/appointments', encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/appointments', body),
     );
   }
 
   update(id: string, data: Partial<Omit<Appointment, 'id'>>): Observable<Appointment> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/appointments/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/appointments/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/appointments/${id}`, body),
     );
   }
 
   updateStatus(id: string, status: string): Observable<Appointment> {
-    const key = this.crypto.getMasterKey();
-    const payload = { status };
-    if (!key) return this.api.patch(`/appointments/${id}/status`, payload);
-
-    return from(encryptEntity(payload as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.patch<ApiRow>(`/appointments/${id}/status`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData ? from(decryptEntity<Appointment>(row, key)) : from([row as Appointment]),
-      ),
+    return mutateEncrypted(
+      { status },
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.patch<ApiRow>(`/appointments/${id}/status`, body),
     );
   }
 

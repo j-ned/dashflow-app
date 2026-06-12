@@ -436,8 +436,6 @@ export class CommandPalette {
     }));
   });
 
-  private readonly flatFiltered = computed(() => this.filtered());
-
   // ── Keyboard shortcut ──
 
   protected onGlobalKey(e: KeyboardEvent) {
@@ -479,14 +477,14 @@ export class CommandPalette {
   protected onInput(e: Event) {
     const value = (e.target as HTMLInputElement).value;
     this.query.set(value);
-    const first = this.flatFiltered()[0];
+    const first = this.filtered()[0];
     if (first) this.activeId.set(first.id);
   }
 
   // ── Keyboard navigation ──
 
   protected onKeydown(e: KeyboardEvent) {
-    const list = this.flatFiltered();
+    const list = this.filtered();
     if (!list.length) return;
 
     const currentIdx = list.findIndex((c) => c.id === this.activeId());

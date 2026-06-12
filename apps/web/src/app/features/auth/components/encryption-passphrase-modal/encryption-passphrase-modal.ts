@@ -29,10 +29,6 @@ type PassphraseFormShape = {
           </p>
         </div>
 
-        @if (error()) {
-          <p role="alert" class="rounded-md bg-ib-red/10 p-3 text-sm text-ib-red">{{ error() }}</p>
-        }
-
         <form [formGroup]="form" (ngSubmit)="submit()" class="flex flex-col gap-4">
           <fieldset class="flex flex-col gap-4">
             <legend class="sr-only">{{ 'auth.passphraseModal.legend' | transloco }}</legend>
@@ -108,13 +104,10 @@ type PassphraseFormShape = {
 
           <button
             type="submit"
-            [disabled]="form.invalid || loading()"
+            [disabled]="form.invalid"
             class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {{
-              (loading() ? 'auth.passphraseModal.submitting' : 'auth.passphraseModal.submit')
-                | transloco
-            }}
+            {{ 'auth.passphraseModal.submit' | transloco }}
           </button>
         </form>
       </div>
@@ -129,8 +122,6 @@ export class EncryptionPassphraseModal {
 
   protected readonly showPassphrase = signal(false);
   protected readonly showConfirm = signal(false);
-  protected readonly loading = signal(false);
-  protected readonly error = signal('');
 
   protected readonly form = new FormGroup<PassphraseFormShape>(
     {
@@ -156,7 +147,6 @@ export class EncryptionPassphraseModal {
 
   open(): void {
     this.form.reset();
-    this.error.set('');
     this.modal().open();
   }
 }

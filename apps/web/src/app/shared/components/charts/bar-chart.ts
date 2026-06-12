@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { formatAxisValue } from '@shared/components/charts/axis-format';
 
 export type BarGroup = {
   readonly label: string;
@@ -136,7 +137,7 @@ export class BarChart {
     return Array.from({ length: count + 1 }, (_, i) => {
       const y = top + ((bottom - top) / count) * i;
       const val = max * (1 - i / count);
-      return { y, label: val >= 1000 ? `${(val / 1000).toFixed(1)}k` : val.toFixed(0) };
+      return { y, label: formatAxisValue(val) };
     });
   });
 }

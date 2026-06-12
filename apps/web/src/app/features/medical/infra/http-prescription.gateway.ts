@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Prescription } from '../domain/models/prescription.model';
@@ -65,16 +61,11 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
   }
 
   create(data: Omit<Prescription, 'id' | 'documentUrl'>): Observable<Prescription> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post<Prescription>('/prescriptions', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/prescriptions', encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<Prescription>(row, key))
-          : from([row as Prescription]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/prescriptions', body),
     );
   }
 
@@ -82,16 +73,11 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
     id: string,
     data: Partial<Omit<Prescription, 'id' | 'documentUrl'>>,
   ): Observable<Prescription> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put<Prescription>(`/prescriptions/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/prescriptions/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<Prescription>(row, key))
-          : from([row as Prescription]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/prescriptions/${id}`, body),
     );
   }
 
@@ -112,13 +98,11 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
         );
         formData.append('originalMimeType', file.type);
         formData.append('encrypted', 'true');
-        return this.api.postForm<ApiRow>(`/prescriptions/${id}/document`, formData);
+        return decryptOne<Prescription>(
+          this.api.postForm<ApiRow>(`/prescriptions/${id}/document`, formData),
+          key,
+        );
       }),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<Prescription>(row, key))
-          : from([row as Prescription]),
-      ),
     );
   }
 

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { RecoveryKeyModal } from '@features/auth/components/recovery-key-modal/recovery-key-modal';
@@ -105,7 +105,6 @@ export class EncryptionSection {
   protected readonly auth = inject(AuthStore);
   private readonly crypto = inject(CryptoStore);
   private readonly router = inject(Router);
-  private readonly _i18n = inject(TranslocoService);
   private readonly toaster = inject(Toaster);
 
   protected readonly encryptionLoading = signal(false);
@@ -121,7 +120,7 @@ export class EncryptionSection {
     try {
       const masterKey = this.crypto.getMasterKey();
       if (!masterKey) {
-        this.showFeedback('error', this._i18n.translate('settings.encryption.feedback.locked'));
+        this.toaster.error('settings.encryption.feedback.locked');
         return;
       }
 
@@ -132,17 +131,13 @@ export class EncryptionSection {
       this.settingsRecoveryKey.set(recoveryKey);
       this.recoveryModal()?.open();
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.encryption.feedback.regenFailed'));
+      this.toaster.error('settings.encryption.feedback.regenFailed');
     } finally {
       this.encryptionLoading.set(false);
     }
   }
 
   protected onRecoveryKeyRegenerated(): void {
-    this.showFeedback('success', this._i18n.translate('settings.encryption.feedback.regenerated'));
-  }
-
-  private showFeedback(type: 'success' | 'error', message: string) {
-    this.toaster[type](message);
+    this.toaster.success('settings.encryption.feedback.regenerated');
   }
 }

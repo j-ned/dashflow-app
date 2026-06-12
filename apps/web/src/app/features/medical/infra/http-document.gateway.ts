@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { MedicalDocument } from '../domain/models/document.model';
@@ -58,16 +54,11 @@ export class HttpDocumentGateway implements DocumentGateway {
   }
 
   create(data: Omit<MedicalDocument, 'id' | 'fileUrl'>): Observable<MedicalDocument> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post<MedicalDocument>('/documents', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/documents', encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<MedicalDocument>(row, key))
-          : from([row as MedicalDocument]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/documents', body),
     );
   }
 
@@ -75,16 +66,11 @@ export class HttpDocumentGateway implements DocumentGateway {
     id: string,
     data: Partial<Omit<MedicalDocument, 'id' | 'fileUrl'>>,
   ): Observable<MedicalDocument> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put<MedicalDocument>(`/documents/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/documents/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<MedicalDocument>(row, key))
-          : from([row as MedicalDocument]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/documents/${id}`, body),
     );
   }
 
@@ -105,13 +91,11 @@ export class HttpDocumentGateway implements DocumentGateway {
         );
         formData.append('originalMimeType', file.type);
         formData.append('encrypted', 'true');
-        return this.api.postForm<ApiRow>(`/documents/${id}/file`, formData);
+        return decryptOne<MedicalDocument>(
+          this.api.postForm<ApiRow>(`/documents/${id}/file`, formData),
+          key,
+        );
       }),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<MedicalDocument>(row, key))
-          : from([row as MedicalDocument]),
-      ),
     );
   }
 

@@ -25,6 +25,8 @@ import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Icon } from '@shared/components/icon/icon';
 
+const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
+
 @Component({
   selector: 'app-reminders',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -394,15 +396,12 @@ export class Reminders {
 
       const rruleParts = ['FREQ=DAILY'];
       if (med.skipDays.length > 0) {
-        const icsSkipDays = med.skipDays
-          .map((d) => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d])
-          .filter(Boolean);
-        if (icsSkipDays.length > 0) {
-          rruleParts.push(
-            `BYDAY=${this.allDaysExcept(med.skipDays)
-              .map((d) => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][d])
-              .join(',')}`,
-          );
+        const hasValidSkipDay = med.skipDays.some((d) => ICS_WEEKDAYS[d]);
+        if (hasValidSkipDay) {
+          const byDays = this.allDaysExcept(med.skipDays)
+            .map((d) => ICS_WEEKDAYS[d])
+            .filter(Boolean);
+          rruleParts.push(`BYDAY=${byDays.join(',')}`);
         }
       }
 

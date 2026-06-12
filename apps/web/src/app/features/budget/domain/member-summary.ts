@@ -3,6 +3,7 @@ import { Loan } from './models/loan.model';
 import { Member } from './models/member.model';
 import { RecurringEntry } from './models/recurring-entry.model';
 import { isExpensePassed } from './salary-cycle';
+import { isEntryActive, isSpendingInMonth } from './analytics-monthly';
 
 export type MemberSummary = {
   readonly id: string | null;
@@ -92,14 +93,15 @@ export function buildMemberSummaries(
     const lent = mLoans.filter((l) => l.direction === 'lent');
     const borrowed = mLoans.filter((l) => l.direction === 'borrowed');
     const currentMonth = clock.currentMonth;
-    const isActive = (e: RecurringEntry) => !e.endDate || e.endDate.slice(0, 7) >= currentMonth;
-    const incomes = mEntries.filter((e) => e.type === 'income' && isActive(e));
+    const incomes = mEntries.filter((e) => e.type === 'income' && isEntryActive(e, currentMonth));
     const monthlyExp = mEntries
-      .filter((e) => e.type === 'expense' && isActive(e))
+      .filter((e) => e.type === 'expense' && isEntryActive(e, currentMonth))
       .sort((a, b) => (a.dayOfMonth ?? 32) - (b.dayOfMonth ?? 32));
-    const annualExp = mEntries.filter((e) => e.type === 'annual_expense' && isActive(e));
+    const annualExp = mEntries.filter(
+      (e) => e.type === 'annual_expense' && isEntryActive(e, currentMonth),
+    );
     const spendings = mEntries.filter(
-      (e) => e.type === 'spending' && (!e.date || e.date.startsWith(currentMonth)),
+      (e) => e.type === 'spending' && isSpendingInMonth(e, currentMonth),
     );
 
     const totalIncome = incomes.reduce((s, e) => s + Number(e.amount), 0);

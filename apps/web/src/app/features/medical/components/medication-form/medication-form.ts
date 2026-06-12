@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { formInvalid } from '@shared/forms/form-invalid';
 import { Medication, MedicationType } from '../../domain/models/medication.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Prescription } from '../../domain/models/prescription.model';
@@ -328,10 +327,7 @@ export class MedicationForm {
     }),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
 
   constructor() {
     effect(() => {

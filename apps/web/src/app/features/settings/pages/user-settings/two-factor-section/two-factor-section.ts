@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
@@ -175,7 +175,6 @@ import { Toaster } from '@shared/components/toast/toast';
 })
 export class TwoFactorSection {
   protected readonly auth = inject(AuthStore);
-  private readonly _i18n = inject(TranslocoService);
   private readonly toaster = inject(Toaster);
 
   protected readonly showDisable2faPassword = signal(false);
@@ -190,7 +189,7 @@ export class TwoFactorSection {
       const data = await this.auth.setup2FA();
       this.totpSetup.set(data);
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.setupFailed'));
+      this.toaster.error('settings.twoFactor.feedback.setupFailed');
     } finally {
       this.totpLoading.set(false);
     }
@@ -205,9 +204,9 @@ export class TwoFactorSection {
       await this.auth.verify2FA(code);
       this.totpSetup.set(null);
       this.totpVerifyCode.set('');
-      this.showFeedback('success', this._i18n.translate('settings.twoFactor.feedback.activated'));
+      this.toaster.success('settings.twoFactor.feedback.activated');
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.invalidCode'));
+      this.toaster.error('settings.twoFactor.feedback.invalidCode');
     } finally {
       this.totpLoading.set(false);
     }
@@ -221,15 +220,11 @@ export class TwoFactorSection {
     try {
       await this.auth.disable2FA(password);
       this.disablePassword.set('');
-      this.showFeedback('success', this._i18n.translate('settings.twoFactor.feedback.deactivated'));
+      this.toaster.success('settings.twoFactor.feedback.deactivated');
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.twoFactor.feedback.wrongPassword'));
+      this.toaster.error('settings.twoFactor.feedback.wrongPassword');
     } finally {
       this.totpLoading.set(false);
     }
-  }
-
-  private showFeedback(type: 'success' | 'error', message: string) {
-    this.toaster[type](message);
   }
 }

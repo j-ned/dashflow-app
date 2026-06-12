@@ -1,9 +1,8 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
+import { formInvalid } from '@shared/forms/form-invalid';
 
 type PaymentFormShape = {
   amount: FormControl<number>;
@@ -117,10 +116,7 @@ export class RecordPaymentForm {
     note: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(255)] }),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
 
   protected submitForm() {
     if (this.form.invalid) return;

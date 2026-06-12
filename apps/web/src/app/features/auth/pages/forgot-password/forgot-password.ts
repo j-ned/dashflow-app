@@ -3,7 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
-import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { bytesToHex, CryptoStore } from '@core/services/crypto/crypto.store';
 import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { firstValueFrom } from 'rxjs';
@@ -452,7 +452,6 @@ export class ForgotPassword {
       const salt = this.cryptoStore.generateSalt();
       const wrappingKey = await this.cryptoStore.deriveWrappingKey(this._resetPassword, salt);
       const wrappedMasterKey = await this.cryptoStore.wrapKey(masterKey, wrappingKey);
-      const { bytesToHex } = await import('@core/services/crypto/crypto.store');
       const saltHex = bytesToHex(salt);
 
       const recoveryWrappingKey = await this.cryptoStore.deriveWrappingKeyFromRecovery(recoveryHex);

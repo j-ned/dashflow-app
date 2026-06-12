@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Icon } from '@shared/components/icon/icon';
@@ -186,7 +186,6 @@ type PasswordFormShape = {
 export class PasswordSection {
   protected readonly auth = inject(AuthStore);
   private readonly crypto = inject(CryptoStore);
-  private readonly _i18n = inject(TranslocoService);
   private readonly toaster = inject(Toaster);
 
   protected readonly showCurrentPassword = signal(false);
@@ -227,7 +226,7 @@ export class PasswordSection {
 
       if (!this.auth.hasPassword()) {
         await this.auth.setPassword(newPassword);
-        this.showFeedback('success', this._i18n.translate('settings.password.feedback.set'));
+        this.toaster.success('settings.password.feedback.set');
         this.passwordForm.controls.currentPassword.addValidators(Validators.required);
         this.passwordForm.controls.currentPassword.updateValueAndValidity();
       } else if (this.auth.encryptionVersion() === 1) {
@@ -237,33 +236,25 @@ export class PasswordSection {
           try {
             await this.auth.unlockWithPassword(currentPassword);
           } catch {
-            this.showFeedback(
-              'error',
-              this._i18n.translate('settings.password.feedback.outOfSync'),
-            );
+            this.toaster.error('settings.password.feedback.outOfSync');
             return;
           }
         }
         await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
-        this.showFeedback('success', this._i18n.translate('settings.password.feedback.updated'));
+        this.toaster.success('settings.password.feedback.updated');
       } else {
         await this.auth.updatePassword(currentPassword, newPassword);
-        this.showFeedback('success', this._i18n.translate('settings.password.feedback.updated'));
+        this.toaster.success('settings.password.feedback.updated');
       }
       this.passwordForm.reset();
     } catch {
-      this.showFeedback(
-        'error',
+      this.toaster.error(
         this.auth.hasPassword()
-          ? this._i18n.translate('settings.password.feedback.updateFailed')
-          : this._i18n.translate('settings.password.feedback.setFailed'),
+          ? 'settings.password.feedback.updateFailed'
+          : 'settings.password.feedback.setFailed',
       );
     } finally {
       this.passwordSaving.set(false);
     }
-  }
-
-  private showFeedback(type: 'success' | 'error', message: string) {
-    this.toaster[type](message);
   }
 }

@@ -15,6 +15,7 @@ import { buildLoanHistories, buildLoanVMs, HistoryEntry, LoanVM } from '../../do
 import { buildLoanRepaymentEntry } from '../../domain/loan-repayment-entry';
 import { LoanHistoryDetail } from '../../components/loan-history-detail/loan-history-detail';
 import { buildMemberMap } from '../../domain/member-map';
+import { activeMembers as activeMembersOf } from '../../domain/active-members';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
 import { BankAccountGateway } from '@features/budget/domain/gateways/bank-account.gateway';
@@ -329,11 +330,7 @@ export class Loans {
 
   protected readonly members = toSignal(this.memberGateway.getAll(), { initialValue: [] });
   protected readonly accounts = toSignal(this.bankAccountGateway.getAll(), { initialValue: [] });
-  protected readonly activeMembers = computed(() => {
-    const allLoans = this.loans();
-    const memberIds = new Set(allLoans.map((l) => l.memberId).filter(Boolean));
-    return this.members().filter((m) => memberIds.has(m.id));
-  });
+  protected readonly activeMembers = computed(() => activeMembersOf(this.members(), this.loans()));
 
   // Defaults to "Tous" (null) so nothing is hidden on first view.
   protected readonly filterMemberId = signal<string | null>(null);
@@ -366,7 +363,9 @@ export class Loans {
   protected readonly netAbs = computed(() => Math.abs(this.netBalance()));
   protected readonly netDirection = computed<'positive' | 'negative' | 'even'>(() => {
     const n = this.netBalance();
-    return n > 0 ? 'positive' : n < 0 ? 'negative' : 'even';
+    if (n > 0) return 'positive';
+    if (n < 0) return 'negative';
+    return 'even';
   });
 
   protected readonly selectedLoan = signal<Loan | null>(null);

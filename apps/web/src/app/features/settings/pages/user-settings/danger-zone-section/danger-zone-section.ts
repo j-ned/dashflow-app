@@ -79,12 +79,8 @@ export class DangerZoneSection {
       await this.auth.deleteAccount();
       this.router.navigate(['/auth/login']);
     } catch {
-      this.showFeedback('error', this._i18n.translate('settings.danger.feedback.deleteFailed'));
+      this.toaster.error('settings.danger.feedback.deleteFailed');
       this.deleting.set(false);
     }
-  }
-
-  private showFeedback(type: 'success' | 'error', message: string) {
-    this.toaster[type](message);
   }
 }

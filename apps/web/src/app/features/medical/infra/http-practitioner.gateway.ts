@@ -2,12 +2,8 @@ import { inject, Injectable } from '@angular/core';
 import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import {
-  ApiRow,
-  encryptEntity,
-  decryptEntities,
-  decryptEntity,
-} from '@core/services/crypto/entity-crypto';
+import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
+import { mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Practitioner } from '../domain/models/practitioner.model';
 import { PractitionerGateway } from '../domain/gateways/practitioner.gateway';
@@ -45,30 +41,20 @@ export class HttpPractitionerGateway implements PractitionerGateway {
   }
 
   create(data: Omit<Practitioner, 'id'>): Observable<Practitioner> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.post('/practitioners', data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.post<ApiRow>('/practitioners', encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<Practitioner>(row, key))
-          : from([row as Practitioner]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/practitioners', body),
     );
   }
 
   update(id: string, data: Partial<Omit<Practitioner, 'id'>>): Observable<Practitioner> {
-    const key = this.crypto.getMasterKey();
-    if (!key) return this.api.put(`/practitioners/${id}`, data);
-
-    return from(encryptEntity(data as Record<string, unknown>, CLEARTEXT_KEYS, key)).pipe(
-      switchMap((encrypted) => this.api.put<ApiRow>(`/practitioners/${id}`, encrypted)),
-      switchMap((row) =>
-        row.encryptedData
-          ? from(decryptEntity<Practitioner>(row, key))
-          : from([row as Practitioner]),
-      ),
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/practitioners/${id}`, body),
     );
   }
 

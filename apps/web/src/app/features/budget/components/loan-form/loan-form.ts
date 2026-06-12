@@ -1,10 +1,9 @@
 import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Loan, LoanDirection } from '../../domain/models/loan.model';
 import { Member } from '../../domain/models/member.model';
+import { formInvalid } from '@shared/forms/form-invalid';
 
 type LoanFormShape = {
   memberId: FormControl<string>;
@@ -194,10 +193,7 @@ export class LoanForm {
     dueDay: new FormControl<number | null>(null),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
 
   constructor() {
     effect(() => {

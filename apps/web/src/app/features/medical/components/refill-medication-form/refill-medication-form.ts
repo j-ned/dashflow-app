@@ -1,8 +1,7 @@
 import { ChangeDetectionStrategy, Component, output } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { map } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { formInvalid } from '@shared/forms/form-invalid';
 
 type RefillFormShape = {
   quantity: FormControl<number>;
@@ -67,10 +66,7 @@ export class RefillMedicationForm {
     }),
   });
 
-  protected readonly isInvalid = toSignal(
-    this.form.statusChanges.pipe(map(() => this.form.invalid)),
-    { initialValue: this.form.invalid },
-  );
+  protected readonly isInvalid = formInvalid(this.form);
 
   protected submitForm() {
     if (this.form.invalid) return;
