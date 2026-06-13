@@ -2,6 +2,7 @@ import { Component, ChangeDetectionStrategy, inject, viewChild } from '@angular/
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/domain/auth.store';
+import { EntitlementStore } from '@core/entitlements/entitlement.store';
 import { Icon } from '@shared/components/icon/icon';
 import { CommandPalette } from '@shared/components/command-palette/command-palette';
 import { ConfirmDialog } from '@shared/components/confirm-dialog/confirm-dialog';
@@ -40,6 +41,16 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
         <a routerLink="/medical" routerLinkActive="tab--active-medical" class="tab">
           <app-icon name="heart-pulse" size="15" /> Médical
         </a>
+        @if (auth.isAdmin()) {
+          <a
+            routerLink="/admin"
+            routerLinkActive="tab--active-budget"
+            class="tab"
+            data-testid="nav-admin"
+          >
+            <app-icon name="shield" size="15" /> {{ 'admin.nav' | transloco }}
+          </a>
+        }
       </nav>
 
       <div class="flex items-center gap-2 shrink-0">
@@ -232,8 +243,13 @@ export class AppShell {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeStore);
   protected readonly locale = inject(LocaleStore);
+  private readonly entitlements = inject(EntitlementStore);
   protected readonly commandPalette = viewChild<CommandPalette>('cmdPalette');
   protected readonly kbdShortcut = /Mac|iPhone|iPad|iPod/.test(navigator.platform)
     ? '⌘K'
     : 'Ctrl K';
+
+  constructor() {
+    void this.entitlements.load();
+  }
 }

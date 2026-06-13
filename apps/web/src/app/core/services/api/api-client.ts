@@ -1,15 +1,28 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, Observable, throwError } from 'rxjs';
 import { environment } from '@env/environment';
+
+type QueryParams = Record<string, string | number | boolean>;
 
 @Injectable({ providedIn: 'root' })
 export class ApiClient {
   private readonly http = inject(HttpClient);
   private readonly baseUrl = environment.apiUrl;
 
-  get<T>(path: string): Observable<T> {
-    return this.http.get<T>(`${this.baseUrl}${path}`).pipe(catchError((e) => this.handleError(e)));
+  get<T>(path: string, params?: QueryParams): Observable<T> {
+    const httpParams = params ? this.toHttpParams(params) : undefined;
+    return this.http
+      .get<T>(`${this.baseUrl}${path}`, { params: httpParams })
+      .pipe(catchError((e) => this.handleError(e)));
+  }
+
+  private toHttpParams(params: QueryParams): HttpParams {
+    let httpParams = new HttpParams();
+    for (const [key, value] of Object.entries(params)) {
+      httpParams = httpParams.set(key, value);
+    }
+    return httpParams;
   }
   post<T>(path: string, body: unknown): Observable<T> {
     return this.http

@@ -46,7 +46,7 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <app-landing-security />
       <app-landing-budget-pillar />
       <app-landing-medical-pillar />
-      <app-landing-pricing [premiumPrice]="premiumPrice" />
+      <app-landing-pricing />
       <app-landing-faq />
       <app-landing-final-cta />
     </main>
@@ -58,7 +58,6 @@ export class LandingComponent {
   private readonly router = inject(Router);
   private readonly toaster = inject(Toaster);
 
-  protected readonly premiumPrice = 49;
   protected readonly contactEmail = CONTACT_EMAIL;
   protected readonly currentYear = new Date().getFullYear();
   protected readonly demoLoading = signal(false);

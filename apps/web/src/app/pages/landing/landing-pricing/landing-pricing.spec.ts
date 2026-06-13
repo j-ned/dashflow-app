@@ -16,15 +16,20 @@ function mount() {
     providers: [provideRouter([])],
   });
   const f = TestBed.createComponent(LandingPricing);
-  f.componentRef.setInput('premiumPrice', 49);
   f.detectChanges();
   return f.nativeElement as HTMLElement;
 }
 
 describe('LandingPricing', () => {
-  it('rend le titre et le prix premium', () => {
+  it('rend le titre de section', () => {
     const el = mount();
     expect(el.textContent).toContain('landing.pricing.title');
-    expect(el.textContent).toContain('49');
+  });
+
+  it('délègue aux trois cartes de tarifs', () => {
+    const el = mount();
+    expect(el.querySelector('[data-testid="pricing-card-solo"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="pricing-card-family"]')).not.toBeNull();
+    expect(el.querySelector('[data-testid="pricing-card-family_health"]')).not.toBeNull();
   });
 });
