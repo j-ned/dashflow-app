@@ -16,7 +16,8 @@ export type KpiCard = {
   selector: 'app-analytics-kpi-grid',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DecimalPipe, Icon],
-  host: { class: 'contents' },
+  // `block` (et non `contents`) pour que le `space-y-6` du parent espace bien le titre et les KPIs.
+  host: { class: 'block' },
   template: `
     <section class="grid grid-cols-2 lg:grid-cols-4 gap-4" [attr.aria-label]="ariaLabel()">
       @for (kpi of kpis(); track kpi.label) {

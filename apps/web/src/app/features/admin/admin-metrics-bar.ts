@@ -6,7 +6,9 @@ import type { AdminMetrics } from '@core/admin/admin.types';
 @Component({
   selector: 'app-admin-metrics-bar',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { class: 'contents' },
+  // `block` (et non `contents`) pour que la marge passée par le parent (mb-8) s'applique :
+  // un display:contents annule les marges → le bandeau collerait à la recherche.
+  host: { class: 'block' },
   imports: [DecimalPipe, TranslocoPipe],
   template: `
     @if (metrics(); as m) {
