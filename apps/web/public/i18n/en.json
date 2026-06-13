@@ -1797,6 +1797,14 @@
       }
     }
   },
+  "billing": {
+    "sectionTitle": "Subscription",
+    "error": "Something went wrong. Please try again.",
+    "canceled": "Payment canceled. You can try again whenever you like.",
+    "success": "Your subscription is active. Thank you!",
+    "managePlan": "Manage my subscription",
+    "choosePlan": "Choose a plan"
+  },
   "entitlement": {
     "paywall": {
       "title": "Upgrade your plan",
@@ -1818,6 +1826,80 @@
       "family": "Family plan",
       "family_health": "Family Health plan",
       "aria": "Feature included in a higher plan"
+    }
+  },
+  "admin": {
+    "nav": "Admin",
+    "eyebrow": "Admin",
+    "title": "Administration",
+    "tableCaption": "List of users and their payment status",
+    "demoBadge": "Demo",
+    "empty": "No users",
+    "col": {
+      "email": "Email",
+      "plan": "Plan",
+      "status": "Status",
+      "source": "Source",
+      "paid": "Paid",
+      "periodEnd": "Period end",
+      "createdAt": "Joined",
+      "demo": "Demo",
+      "action": "Action"
+    },
+    "paid": {
+      "yes": "Paid",
+      "no": "Not paid"
+    },
+    "metrics": {
+      "totalUsers": "Users",
+      "mrr": "MRR",
+      "active": "Active subscriptions",
+      "trialing": "Trials",
+      "pastDue": "Past due",
+      "pastDueAttention": "to handle",
+      "byPlan": {
+        "solo": "Solo",
+        "family": "Family",
+        "familyHealth": "Family Health"
+      }
+    },
+    "plan": {
+      "solo": "Solo",
+      "family": "Family",
+      "family_health": "Family Health"
+    },
+    "status": {
+      "active": "Active",
+      "trialing": "Trial",
+      "past_due": "Past due",
+      "canceled": "Canceled",
+      "incomplete": "Incomplete"
+    },
+    "source": {
+      "stripe": "Stripe",
+      "admin": "Admin",
+      "free": "Free"
+    },
+    "override": {
+      "label": "Change plan",
+      "apply": "Apply",
+      "applying": "…"
+    },
+    "search": {
+      "label": "Search a user",
+      "placeholder": "Search by email"
+    },
+    "pagination": {
+      "label": "Users pagination",
+      "prev": "Previous",
+      "next": "Next",
+      "page": "Page {{page}} / {{pages}}"
+    },
+    "toast": {
+      "overrideOk": "Plan updated",
+      "overrideError": "Failed to update plan",
+      "usersError": "Failed to load users",
+      "metricsError": "Failed to load metrics"
     }
   }
 }

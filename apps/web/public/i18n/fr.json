@@ -1797,6 +1797,14 @@
       }
     }
   },
+  "billing": {
+    "sectionTitle": "Abonnement",
+    "error": "Une erreur est survenue. Veuillez réessayer.",
+    "canceled": "Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.",
+    "success": "Votre abonnement est actif. Merci !",
+    "managePlan": "Gérer mon abonnement",
+    "choosePlan": "Choisir une offre"
+  },
   "entitlement": {
     "paywall": {
       "title": "Passez à une offre supérieure",
@@ -1818,6 +1826,80 @@
       "family": "Offre Famille",
       "family_health": "Offre Famille Santé",
       "aria": "Fonctionnalité incluse dans une offre supérieure"
+    }
+  },
+  "admin": {
+    "nav": "Admin",
+    "eyebrow": "Admin",
+    "title": "Administration",
+    "tableCaption": "Liste des utilisateurs et de leur état de paiement",
+    "demoBadge": "Démo",
+    "empty": "Aucun utilisateur",
+    "col": {
+      "email": "Email",
+      "plan": "Plan",
+      "status": "Statut",
+      "source": "Source",
+      "paid": "Payé",
+      "periodEnd": "Fin de période",
+      "createdAt": "Inscrit",
+      "demo": "Démo",
+      "action": "Action"
+    },
+    "paid": {
+      "yes": "Payé",
+      "no": "Non payé"
+    },
+    "metrics": {
+      "totalUsers": "Utilisateurs",
+      "mrr": "MRR",
+      "active": "Abonnements actifs",
+      "trialing": "Essais",
+      "pastDue": "Impayés",
+      "pastDueAttention": "à traiter",
+      "byPlan": {
+        "solo": "Solo",
+        "family": "Famille",
+        "familyHealth": "Famille Santé"
+      }
+    },
+    "plan": {
+      "solo": "Solo",
+      "family": "Famille",
+      "family_health": "Famille Santé"
+    },
+    "status": {
+      "active": "Actif",
+      "trialing": "Essai",
+      "past_due": "Impayé",
+      "canceled": "Annulé",
+      "incomplete": "Incomplet"
+    },
+    "source": {
+      "stripe": "Stripe",
+      "admin": "Admin",
+      "free": "Gratuit"
+    },
+    "override": {
+      "label": "Changer le plan",
+      "apply": "Appliquer",
+      "applying": "…"
+    },
+    "search": {
+      "label": "Rechercher un utilisateur",
+      "placeholder": "Rechercher par email"
+    },
+    "pagination": {
+      "label": "Pagination des utilisateurs",
+      "prev": "Précédent",
+      "next": "Suivant",
+      "page": "Page {{page}} / {{pages}}"
+    },
+    "toast": {
+      "overrideOk": "Plan mis à jour",
+      "overrideError": "Échec de la mise à jour du plan",
+      "usersError": "Échec du chargement des utilisateurs",
+      "metricsError": "Échec du chargement des métriques"
     }
   }
 }

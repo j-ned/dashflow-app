@@ -3,6 +3,7 @@ import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from '@core/guards/auth';
 import { guestGuard } from '@core/guards/guest';
 import { featureGuard } from '@core/guards/feature';
+import { adminGuard } from '@core/guards/admin';
 
 export const routes: Routes = [
   {
@@ -47,6 +48,11 @@ export const routes: Routes = [
         path: 'settings',
         loadChildren: () =>
           import('./features/settings/settings.routes').then((m) => m.SETTINGS_ROUTES),
+      },
+      {
+        path: 'admin',
+        canMatch: [adminGuard],
+        loadChildren: () => import('./features/admin/admin.routes').then((m) => m.ADMIN_ROUTES),
       },
     ],
   },

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
@@ -17,6 +17,7 @@ type PlanCard = PricingPlanView & {
   readonly taglineKey: string;
   readonly ctaKey: string;
   readonly showCta: boolean;
+  readonly useButton: boolean;
   readonly articleClass: string;
   readonly nameClass: string;
   readonly priceClass: string;
@@ -64,9 +65,24 @@ type PlanCard = PricingPlanView & {
           </ul>
 
           @if (card.showCta) {
-            <a [routerLink]="ctaTarget()" [class]="card.ctaClass">
-              {{ card.ctaKey | transloco }}
-            </a>
+            @if (card.useButton) {
+              <button
+                type="button"
+                (click)="selectPlan.emit(card.key)"
+                [class]="card.ctaClass"
+                [attr.data-testid]="'pricing-cta-' + card.key"
+              >
+                {{ card.ctaKey | transloco }}
+              </button>
+            } @else {
+              <a
+                [routerLink]="ctaTarget()"
+                [class]="card.ctaClass"
+                [attr.data-testid]="'pricing-cta-' + card.key"
+              >
+                {{ card.ctaKey | transloco }}
+              </a>
+            }
           }
         </article>
       }
@@ -78,6 +94,7 @@ export class PricingCards {
   readonly highlightPlan = input<PlanKey>();
   /** `'public'` = landing (CTA inscription) ; `'app'` = /upgrade (carte Solo masquée). */
   readonly context = input<'public' | 'app'>('public');
+  readonly selectPlan = output<PlanKey>();
 
   protected readonly ctaTarget = computed(() =>
     this.context() === 'app' ? '/settings' : '/auth/register',
@@ -97,6 +114,7 @@ export class PricingCards {
         taglineKey: `pricing.plans.${plan.key}.tagline`,
         ctaKey: `pricing.plans.${plan.key}.cta`,
         showCta: !inApp || plan.key !== 'solo',
+        useButton: inApp,
         articleClass: `flex flex-col rounded-lg border ${emphasized ? 'border-ib-blue' : 'border-border'} bg-canvas p-8`,
         nameClass: `font-mono text-xs uppercase tracking-[0.16em] ${emphasized ? 'text-ib-blue' : 'text-text-muted'}`,
         priceClass: `text-4xl font-semibold tracking-tight ${emphasized ? 'text-ib-blue' : 'text-text-primary'}`,

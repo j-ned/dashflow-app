@@ -23,6 +23,7 @@ export type AuthUser = {
   encryptionVersion: number;
   hasEncryptionPassphrase: boolean;
   isDemoAccount: boolean;
+  role: 'user' | 'admin';
 };
 
 type LoginResponse =
@@ -55,6 +56,7 @@ export class AuthStore {
     if (!url) return null;
     return `${environment.apiUrl}${url}`;
   });
+  readonly isAdmin = computed(() => this._user()?.role === 'admin');
   readonly totpEnabled = computed(() => this._user()?.totpEnabled ?? false);
   readonly userInitial = computed(() => {
     const name = this.displayName();

@@ -1,8 +1,10 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 import { PricingCards } from '@shared/components/pricing-cards/pricing-cards';
+import { BillingGateway } from '@core/billing/billing.gateway';
+import { Toaster } from '@shared/components/toast/toast';
 import { FEATURE_PLAN } from '@core/entitlements/feature-plan';
 import type { Feature, PlanKey } from '@core/entitlements/entitlement.types';
 
@@ -44,7 +46,11 @@ function safeInternalUrl(url: string | undefined): string {
 
       <div class="mt-12">
         <h2 class="sr-only">{{ 'pricing.choosePlan' | transloco }}</h2>
-        <app-pricing-cards context="app" [highlightPlan]="requiredPlan()" />
+        <app-pricing-cards
+          context="app"
+          [highlightPlan]="requiredPlan()"
+          (selectPlan)="startCheckout($event)"
+        />
       </div>
 
       <div class="mt-10 text-center">
@@ -64,6 +70,23 @@ export class Upgrade {
   readonly reason = input<string>();
   readonly limit = input<string>();
   readonly returnUrl = input<string>();
+  readonly checkout = input<string>();
+
+  private readonly billing = inject(BillingGateway);
+  private readonly toaster = inject(Toaster);
+
+  constructor() {
+    effect(() => {
+      if (this.checkout() === 'cancel') {
+        this.toaster.info('billing.canceled');
+      }
+    });
+  }
+
+  protected startCheckout(plan: PlanKey): void {
+    if (plan === 'solo') return;
+    void this.billing.checkout(plan);
+  }
 
   protected readonly safeReturnUrl = computed(() => safeInternalUrl(this.returnUrl()));
 

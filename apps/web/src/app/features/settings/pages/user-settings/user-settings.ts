@@ -1,11 +1,14 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { Toaster } from '@shared/components/toast/toast';
+import { EntitlementStore } from '@core/entitlements/entitlement.store';
 import { ProfileSection } from './profile-section/profile-section';
 import { PasswordSection } from './password-section/password-section';
 import { TwoFactorSection } from './two-factor-section/two-factor-section';
 import { EncryptionSection } from './encryption-section/encryption-section';
 import { DangerZoneSection } from './danger-zone-section/danger-zone-section';
 import { FamilySharingSection } from './family-sharing-section/family-sharing-section';
+import { BillingSection } from './billing-section/billing-section';
 
 @Component({
   selector: 'app-user-settings',
@@ -18,6 +21,7 @@ import { FamilySharingSection } from './family-sharing-section/family-sharing-se
     EncryptionSection,
     DangerZoneSection,
     FamilySharingSection,
+    BillingSection,
   ],
   host: { class: 'block w-full h-full overflow-y-auto' },
   template: `
@@ -38,6 +42,8 @@ import { FamilySharingSection } from './family-sharing-section/family-sharing-se
         <app-two-factor-section />
       </div>
 
+      <app-billing-section />
+
       <app-family-sharing-section />
 
       <app-encryption-section />
@@ -46,4 +52,18 @@ import { FamilySharingSection } from './family-sharing-section/family-sharing-se
     </div>
   `,
 })
-export class UserSettings {}
+export class UserSettings {
+  readonly checkout = input<string>();
+
+  private readonly toaster = inject(Toaster);
+  private readonly entitlement = inject(EntitlementStore);
+
+  constructor() {
+    effect(() => {
+      if (this.checkout() === 'success') {
+        this.toaster.success('billing.success');
+        void this.entitlement.reload();
+      }
+    });
+  }
+}

@@ -21,6 +21,7 @@ describe('AuthStore — demo account bypass', () => {
       encryptionVersion: 0,
       hasEncryptionPassphrase: false,
       isDemoAccount: false,
+      role: 'user',
       ...over,
     };
   }
@@ -132,6 +133,23 @@ describe('AuthStore — demo account bypass', () => {
     expect(mockApi.get).toHaveBeenCalledWith('/auth/me');
     expect(store.isAuthenticated()).toBe(true);
     expect(store.user()?.email).toBe('oauth@example.com');
+  });
+
+  it('isAdmin is TRUE when the user role is admin', () => {
+    internals()._user.set(makeUser({ role: 'admin' }));
+    internals()._isAuthenticated.set(true);
+    expect(store.isAdmin()).toBe(true);
+  });
+
+  it('isAdmin is FALSE for a normal user role', () => {
+    internals()._user.set(makeUser({ role: 'user' }));
+    internals()._isAuthenticated.set(true);
+    expect(store.isAdmin()).toBe(false);
+  });
+
+  it('isAdmin is FALSE when no user is loaded', () => {
+    internals()._user.set(null);
+    expect(store.isAdmin()).toBe(false);
   });
 
   it('logout calls crypto.lock, posts to /auth/logout, and clears state', async () => {

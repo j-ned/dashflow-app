@@ -41,6 +41,16 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
         <a routerLink="/medical" routerLinkActive="tab--active-medical" class="tab">
           <app-icon name="heart-pulse" size="15" /> Médical
         </a>
+        @if (auth.isAdmin()) {
+          <a
+            routerLink="/admin"
+            routerLinkActive="tab--active-budget"
+            class="tab"
+            data-testid="nav-admin"
+          >
+            <app-icon name="shield" size="15" /> {{ 'admin.nav' | transloco }}
+          </a>
+        }
       </nav>
 
       <div class="flex items-center gap-2 shrink-0">
