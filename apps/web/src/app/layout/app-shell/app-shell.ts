@@ -33,7 +33,7 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
 
       <nav
         aria-label="Espaces"
-        class="flex items-center bg-canvas p-1 rounded-lg border border-border"
+        class="hidden sm:flex items-center bg-canvas p-1 rounded-lg border border-border"
       >
         <a routerLink="/budget" routerLinkActive="tab--active-budget" class="tab">
           <app-icon name="wallet" size="15" /> <span class="hidden sm:inline">Budget</span>
@@ -127,6 +127,33 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
     <main class="flex-1 flex min-h-0">
       <router-outlet />
     </main>
+
+    <!-- Barre d'onglets mobile (thumb-friendly). Masquée ≥ sm où la nav vit dans le header. -->
+    <nav aria-label="Navigation principale" class="bottom-nav sm:hidden">
+      <a routerLink="/budget" routerLinkActive="bottom-tab--active-budget" class="bottom-tab">
+        <app-icon name="wallet" size="20" />
+        <span>Budget</span>
+      </a>
+      <a routerLink="/medical" routerLinkActive="bottom-tab--active-medical" class="bottom-tab">
+        <app-icon name="heart-pulse" size="20" />
+        <span>Médical</span>
+      </a>
+      @if (auth.isAdmin()) {
+        <a
+          routerLink="/admin"
+          routerLinkActive="bottom-tab--active-budget"
+          class="bottom-tab"
+          data-testid="bottom-nav-admin"
+        >
+          <app-icon name="shield" size="20" />
+          <span>{{ 'admin.nav' | transloco }}</span>
+        </a>
+      }
+      <a routerLink="/settings" routerLinkActive="bottom-tab--active-budget" class="bottom-tab">
+        <app-icon name="settings" size="20" />
+        <span>{{ 'common.settings' | transloco }}</span>
+      </a>
+    </nav>
 
     @defer (on idle) {
       <app-command-palette #cmdPalette />
@@ -263,6 +290,43 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       border-color: var(--text-muted);
       color: var(--text-primary);
       background: var(--bg-hover);
+    }
+
+    /* Barre d'onglets mobile : enfant flex du shell (pas de fixed → pas de chevauchement du contenu). */
+    .bottom-nav {
+      display: flex;
+      align-items: stretch;
+      flex-shrink: 0;
+      border-top: 1px solid var(--border);
+      background: var(--bg-surface);
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .bottom-tab {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.125rem;
+      min-height: 56px;
+      padding: 0.375rem 0;
+      font-size: 0.625rem;
+      font-weight: 500;
+      color: var(--text-muted);
+      transition: color 150ms;
+    }
+
+    .bottom-tab:hover {
+      color: var(--text-primary);
+    }
+
+    .bottom-tab--active-budget {
+      color: var(--color-ib-blue);
+    }
+
+    .bottom-tab--active-medical {
+      color: var(--color-ib-purple);
     }
   `,
 })
