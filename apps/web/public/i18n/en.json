@@ -496,32 +496,8 @@
     },
     "pricing": {
       "eyebrow": "Pricing",
-      "title": "Free to start, Premium for life.",
-      "subtitle": "End-to-end encryption is included in both plans. You only pay if you want to unlock everything, and only once.",
-      "free": {
-        "name": "Free",
-        "price": "0€",
-        "period": "forever",
-        "tagline": "The budget essentials, encrypted, with no time limit.",
-        "feature1": "Accounts and envelopes",
-        "feature2": "Recurring expenses and 12-month projection",
-        "feature3": "1 member",
-        "feature4": "End-to-end encryption included",
-        "cta": "Start for free"
-      },
-      "premium": {
-        "name": "Premium",
-        "badge": "For life",
-        "currency": "€",
-        "period": "one-time payment",
-        "tagline": "Everything in Free, plus full medical tracking and the whole family.",
-        "feature1": "Everything in Free",
-        "feature2": "Full medical tracking and multi-member",
-        "feature3": "Encrypted attachments",
-        "feature4": "Shared iCal calendar",
-        "feature5": "Two-factor authentication (2FA)",
-        "cta": "Go Premium"
-      }
+      "title": "One free plan, two to go further.",
+      "subtitle": "End-to-end encryption is included everywhere. Start for free, upgrade whenever you need to."
     },
     "faq": {
       "eyebrow": "Questions",
@@ -1782,6 +1758,45 @@
       }
     }
   },
+  "pricing": {
+    "recommended": "Recommended",
+    "choosePlan": "Choose your plan",
+    "encryptionNote": "End-to-end encryption included in every plan.",
+    "plans": {
+      "solo": {
+        "name": "Solo",
+        "price": "€0",
+        "period": "free, forever",
+        "tagline": "Budget essentials, encrypted.",
+        "f1": "Core budget: accounts and expenses",
+        "f2": "1 bank account",
+        "f3": "1 member",
+        "f4": "End-to-end encryption",
+        "cta": "Start for free"
+      },
+      "family": {
+        "name": "Family",
+        "price": "€6.99",
+        "period": "/mo",
+        "tagline": "All the budget, for the whole family.",
+        "f1": "Everything in Solo, plus:",
+        "f2": "Unlimited accounts and members",
+        "f3": "Family sharing and CSV imports",
+        "f4": "Envelopes, loans and advanced forecasts",
+        "cta": "Choose Family"
+      },
+      "family_health": {
+        "name": "Family + Health",
+        "price": "€11.99",
+        "period": "/mo",
+        "tagline": "Budget and medical tracking, together.",
+        "f1": "Everything in Family, plus:",
+        "f2": "Medical tracking: appointments, prescriptions, medications",
+        "f3": "Encrypted attachments (10 GB) and iCal calendar",
+        "cta": "Choose Family + Health"
+      }
+    }
+  },
   "entitlement": {
     "paywall": {
       "title": "Upgrade your plan",
@@ -1799,7 +1814,6 @@
       "storageBytes": "You've reached the storage limit of your plan."
     },
     "badge": {
-      "locked": "Unlock",
       "solo": "Solo plan",
       "family": "Family plan",
       "family_health": "Family Health plan",

@@ -496,32 +496,8 @@
     },
     "pricing": {
       "eyebrow": "Tarifs",
-      "title": "Gratuit pour commencer, Premium à vie.",
-      "subtitle": "Le chiffrement de bout en bout est inclus dans les deux offres. Tu ne paies que si tu veux tout débloquer, et une seule fois.",
-      "free": {
-        "name": "Free",
-        "price": "0€",
-        "period": "pour toujours",
-        "tagline": "L'essentiel du budget, chiffré, sans limite de durée.",
-        "feature1": "Comptes et enveloppes",
-        "feature2": "Dépenses récurrentes et projection 12 mois",
-        "feature3": "1 membre",
-        "feature4": "Chiffrement de bout en bout inclus",
-        "cta": "Commencer gratuitement"
-      },
-      "premium": {
-        "name": "Premium",
-        "badge": "À vie",
-        "currency": "€",
-        "period": "paiement unique",
-        "tagline": "Tout le Free, plus le médical complet et la famille entière.",
-        "feature1": "Tout le plan Free",
-        "feature2": "Suivi médical complet et multi-membres",
-        "feature3": "Pièces jointes chiffrées",
-        "feature4": "Calendrier partagé iCal",
-        "feature5": "Double authentification (2FA)",
-        "cta": "Passer Premium"
-      }
+      "title": "Un plan gratuit, deux pour aller plus loin.",
+      "subtitle": "Le chiffrement de bout en bout est inclus partout. Commencez gratuitement, passez à une offre supérieure quand vous en avez besoin."
     },
     "faq": {
       "eyebrow": "Questions",
@@ -1782,6 +1758,45 @@
       }
     }
   },
+  "pricing": {
+    "recommended": "Recommandé",
+    "choosePlan": "Choisissez votre offre",
+    "encryptionNote": "Chiffrement de bout en bout inclus dans toutes les offres.",
+    "plans": {
+      "solo": {
+        "name": "Solo",
+        "price": "0 €",
+        "period": "gratuit, pour toujours",
+        "tagline": "L'essentiel du budget, chiffré.",
+        "f1": "Budget de base : comptes et dépenses",
+        "f2": "1 compte bancaire",
+        "f3": "1 membre",
+        "f4": "Chiffrement de bout en bout",
+        "cta": "Commencer gratuitement"
+      },
+      "family": {
+        "name": "Famille",
+        "price": "6,99 €",
+        "period": "/mois",
+        "tagline": "Tout le budget, en famille.",
+        "f1": "Tout le plan Solo, plus :",
+        "f2": "Comptes et membres illimités",
+        "f3": "Partage famille et imports CSV",
+        "f4": "Enveloppes, prêts et prévisions avancées",
+        "cta": "Choisir Famille"
+      },
+      "family_health": {
+        "name": "Famille + Santé",
+        "price": "11,99 €",
+        "period": "/mois",
+        "tagline": "Budget et suivi médical réunis.",
+        "f1": "Tout le plan Famille, plus :",
+        "f2": "Suivi médical : RDV, ordonnances, médicaments",
+        "f3": "Pièces jointes chiffrées (10 Go) et calendrier iCal",
+        "cta": "Choisir Famille + Santé"
+      }
+    }
+  },
   "entitlement": {
     "paywall": {
       "title": "Passez à une offre supérieure",
@@ -1799,7 +1814,6 @@
       "storageBytes": "Vous avez atteint la limite de stockage de votre offre."
     },
     "badge": {
-      "locked": "Débloquer",
       "solo": "Offre Solo",
       "family": "Offre Famille",
       "family_health": "Offre Famille Santé",

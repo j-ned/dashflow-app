@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 import type { Feature, PlanKey } from '@core/entitlements/entitlement.types';
+import { FEATURE_PLAN } from '@core/entitlements/feature-plan';
 
 @Component({
   selector: 'app-locked-badge',
@@ -17,7 +18,7 @@ import type { Feature, PlanKey } from '@core/entitlements/entitlement.types';
       [attr.aria-label]="'entitlement.badge.aria' | transloco"
     >
       <app-icon name="lock" size="12" class="shrink-0" />
-      <span class="truncate">{{ 'entitlement.badge.' + (planKey() ?? 'locked') | transloco }}</span>
+      <span class="truncate">{{ 'entitlement.badge.' + requiredPlan() | transloco }}</span>
     </a>
   `,
   styles: `
@@ -50,10 +51,16 @@ import type { Feature, PlanKey } from '@core/entitlements/entitlement.types';
 })
 export class LockedBadge {
   readonly feature = input.required<Feature>();
+  /** Override optionnel ; par défaut le plan requis est dérivé de la feature. */
   readonly planKey = input<PlanKey>();
 
-  protected readonly queryParams = computed(() => {
-    const plan = this.planKey();
-    return plan ? { feature: this.feature(), planKey: plan } : { feature: this.feature() };
-  });
+  /** Plan minimal qui débloque la feature (consommé par le libellé et le lien). */
+  protected readonly requiredPlan = computed<PlanKey>(
+    () => this.planKey() ?? FEATURE_PLAN[this.feature()],
+  );
+
+  protected readonly queryParams = computed(() => ({
+    feature: this.feature(),
+    planKey: this.requiredPlan(),
+  }));
 }
