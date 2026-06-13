@@ -98,9 +98,10 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
           <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" size="18" />
         </button>
 
+        <!-- Avatar masqué < sm : la nav du bas porte l'accès aux Réglages sur mobile (anti-doublon). -->
         <a
           routerLink="/settings"
-          class="block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+          class="hidden sm:block rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
           [attr.aria-label]="'common.settings' | transloco"
         >
           @if (auth.avatarUrl()) {
@@ -128,8 +129,9 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       <router-outlet />
     </main>
 
-    <!-- Barre d'onglets mobile (thumb-friendly). Masquée ≥ sm où la nav vit dans le header. -->
-    <nav aria-label="Navigation principale" class="bottom-nav sm:hidden">
+    <!-- Barre d'onglets mobile (thumb-friendly). Masquée ≥ sm via media query CSS (le display
+         encapsulé bat le sm:hidden de Tailwind, d'où le masquage géré ici). -->
+    <nav aria-label="Navigation principale" class="bottom-nav">
       <a routerLink="/budget" routerLinkActive="bottom-tab--active-budget" class="bottom-tab">
         <app-icon name="wallet" size="20" />
         <span>Budget</span>
@@ -327,6 +329,14 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
 
     .bottom-tab--active-medical {
       color: var(--color-ib-purple);
+    }
+
+    /* Desktop : la nav du haut prend le relais. On masque ici (et non via sm:hidden) car le
+       display:flex encapsulé par Angular bat la spécificité de l'utilitaire Tailwind. */
+    @media (min-width: 640px) {
+      .bottom-nav {
+        display: none;
+      }
     }
   `,
 })
