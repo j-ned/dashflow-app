@@ -8,7 +8,8 @@ import { LocaleThemeToggle } from '@shared/components/locale-theme-toggle/locale
   selector: 'app-landing-nav',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, LocaleThemeToggle, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : <nav> sticky en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <nav
       class="sticky top-0 z-50 border-b border-border bg-canvas"

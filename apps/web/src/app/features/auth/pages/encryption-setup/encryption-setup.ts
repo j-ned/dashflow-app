@@ -297,8 +297,6 @@ export class EncryptionSetup {
             encryptedData[tableName] = encrypted;
           }
         } catch (e) {
-          // E2EE : une table non chiffrée resterait en clair côté serveur. On ne
-          // marque jamais la migration terminée sur un succès partiel.
           console.error(`Encryption migration failed for table "${tableName}":`, e);
           failedTables.push(tableName);
         }

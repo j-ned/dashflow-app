@@ -3,13 +3,6 @@ import { type HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/
 import { catchError, throwError } from 'rxjs';
 import { Toaster } from '@shared/components/toast/toast';
 
-/**
- * Traduit les refus d'entitlement du back sans jamais éjecter l'utilisateur.
- * - 402 `LIMIT_REACHED` (limite atteinte sur une action délibérée) → toast informatif, pas de redirection.
- * - 403 (feature non incluse) → silencieux : le verrouillage doux (badge) porte l'UX et les
- *   sections pleinement réservées ont leur propre guard de route. Pas de redirection forcée
- *   (sinon un appel avancé en arrière-plan éjecterait un compte gratuit hors de son budget).
- */
 export const entitlementErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toaster = inject(Toaster);
 

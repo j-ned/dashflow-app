@@ -13,7 +13,8 @@ type ProfileFormShape = {
   selector: 'app-profile-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, Icon, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <!-- ── Profile ── -->
     <section

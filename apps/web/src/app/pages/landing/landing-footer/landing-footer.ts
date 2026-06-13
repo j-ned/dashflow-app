@@ -7,7 +7,8 @@ import { Icon } from '@shared/components/icon/icon';
   selector: 'app-landing-footer',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, Icon, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <footer class="border-t border-border bg-canvas">
       <div

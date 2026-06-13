@@ -8,7 +8,8 @@ import { Icon } from '@shared/components/icon/icon';
   selector: 'app-landing-hero',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, NgOptimizedImage, Icon, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <section
       class="mx-auto max-w-6xl px-6 pt-16 pb-16 lg:pt-24 lg:pb-20"

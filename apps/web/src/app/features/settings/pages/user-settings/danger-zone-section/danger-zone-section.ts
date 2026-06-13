@@ -9,7 +9,8 @@ import { Toaster } from '@shared/components/toast/toast';
   selector: 'app-danger-zone-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <!-- ── Danger zone ── -->
     <section

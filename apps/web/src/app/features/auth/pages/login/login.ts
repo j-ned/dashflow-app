@@ -323,8 +323,6 @@ export class Login {
 
   private redirectAfterLogin(): void {
     this.toaster.success('auth.login.success');
-    // Use the store computeds (which exempt demo accounts) rather than a raw
-    // encryptionVersion check, so the demo account lands on /budget like the guard expects.
     if (this.auth.needsEncryptionSetup()) {
       this.router.navigate(['/auth/encryption-setup'], { replaceUrl: true });
     } else if (this.auth.needsUnlock()) {

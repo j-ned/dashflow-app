@@ -7,7 +7,8 @@ import { PricingCards } from '@shared/components/pricing-cards/pricing-cards';
   selector: 'app-landing-pricing',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [PricingCards, Icon, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <section id="pricing" class="border-t border-border bg-surface" aria-labelledby="pricing-title">
       <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">

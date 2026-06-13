@@ -10,7 +10,8 @@ import { Toaster } from '@shared/components/toast/toast';
   selector: 'app-encryption-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RecoveryKeyModal, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <!-- ── Encryption ── -->
     <section
