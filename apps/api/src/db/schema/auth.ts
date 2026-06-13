@@ -16,6 +16,7 @@ export const users = pgTable('users', {
   encryptionVersion: integer('encryption_version').notNull().default(0),
   encryptionPassphrase: boolean('encryption_passphrase').notNull().default(false),
   isDemoAccount: boolean('is_demo_account').notNull().default(false),
+  role: varchar('role', { length: 16 }).notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
 });
 
