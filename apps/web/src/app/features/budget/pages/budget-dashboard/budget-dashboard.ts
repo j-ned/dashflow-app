@@ -13,7 +13,7 @@ import { MemberLoanList } from '../../components/member-loan-list/member-loan-li
 import { MemberManager } from '../../components/member-manager/member-manager';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
-import { switchMap } from 'rxjs';
+import { Observable, catchError, of, switchMap } from 'rxjs';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { MemberGateway } from '@features/budget/domain/gateways/member.gateway';
@@ -129,13 +129,25 @@ export class BudgetDashboard {
     this._membersRefresh.update((v) => v + 1);
   }
 
-  protected readonly envelopes = toSignal(this.envelopeGateway.getAll(), { initialValue: [] });
-  protected readonly loans = toSignal(this.loanGateway.getAll(), { initialValue: [] });
+  // Dégrade à liste vide sur erreur (ex. 403 d'une feature avancée non incluse dans le plan gratuit)
+  // pour que le dashboard rende le budget de base sans planter.
+  private orEmpty<T>(src: Observable<T[]>): Observable<T[]> {
+    return src.pipe(catchError(() => of<T[]>([])));
+  }
+
+  protected readonly envelopes = toSignal(this.orEmpty(this.envelopeGateway.getAll()), {
+    initialValue: [],
+  });
+  protected readonly loans = toSignal(this.orEmpty(this.loanGateway.getAll()), {
+    initialValue: [],
+  });
   protected readonly members = toSignal(
     toObservable(this._membersRefresh).pipe(switchMap(() => this.memberGateway.getAll())),
     { initialValue: [] },
   );
-  protected readonly entries = toSignal(this.recurringEntryGateway.getAll(), { initialValue: [] });
+  protected readonly entries = toSignal(this.orEmpty(this.recurringEntryGateway.getAll()), {
+    initialValue: [],
+  });
 
   protected readonly memberSummaries = computed<MemberSummary[]>(() =>
     buildMemberSummaries(
