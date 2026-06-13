@@ -28,7 +28,7 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
     <header class="header">
       <a routerLink="/budget" class="logo-link" aria-label="Accueil DashFlow">
         <app-icon name="dashflow-logo" size="22" />
-        <span>DashFlow</span>
+        <span class="hidden sm:inline">DashFlow</span>
       </a>
 
       <nav
@@ -36,10 +36,10 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
         class="flex items-center bg-canvas p-1 rounded-lg border border-border"
       >
         <a routerLink="/budget" routerLinkActive="tab--active-budget" class="tab">
-          <app-icon name="wallet" size="15" /> Budget
+          <app-icon name="wallet" size="15" /> <span class="hidden sm:inline">Budget</span>
         </a>
         <a routerLink="/medical" routerLinkActive="tab--active-medical" class="tab">
-          <app-icon name="heart-pulse" size="15" /> Médical
+          <app-icon name="heart-pulse" size="15" /> <span class="hidden sm:inline">Médical</span>
         </a>
         @if (auth.isAdmin()) {
           <a
@@ -48,7 +48,8 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
             class="tab"
             data-testid="nav-admin"
           >
-            <app-icon name="shield" size="15" /> {{ 'admin.nav' | transloco }}
+            <app-icon name="shield" size="15" />
+            <span class="hidden sm:inline">{{ 'admin.nav' | transloco }}</span>
           </a>
         }
       </nav>
@@ -192,6 +193,16 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
 
     .tab--active-medical:hover {
       color: var(--color-ib-purple);
+    }
+
+    /* Mobile : onglets en icônes seules (labels masqués via .hidden sm:inline) + padding resserré. */
+    @media (max-width: 640px) {
+      .header {
+        padding-inline: 0.75rem;
+      }
+      .tab {
+        padding: 0.5rem 0.625rem;
+      }
     }
 
     .header-btn {
