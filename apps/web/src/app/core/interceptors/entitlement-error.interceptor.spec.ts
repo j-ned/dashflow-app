@@ -43,12 +43,10 @@ describe('entitlementErrorInterceptor', () => {
     await expectRejected(promise);
 
     expect(toaster.error).toHaveBeenCalledWith('entitlement.limit.bankAccounts');
-    expect(router.navigate).toHaveBeenCalledWith(['/upgrade'], {
-      queryParams: { reason: 'limit', limit: 'bankAccounts' },
-    });
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
-  it('403 → toast info feature verrouillée + navigation /upgrade', async () => {
+  it('403 → silencieux : ni toast ni navigation (verrouillage doux), erreur re-propagée', async () => {
     const promise = firstValueFrom(http.get('/medical/patients'));
     httpMock
       .expectOne('/medical/patients')
@@ -56,8 +54,9 @@ describe('entitlementErrorInterceptor', () => {
 
     await expectRejected(promise);
 
-    expect(toaster.info).toHaveBeenCalledWith('entitlement.feature.locked');
-    expect(router.navigate).toHaveBeenCalledWith(['/upgrade']);
+    expect(toaster.info).not.toHaveBeenCalled();
+    expect(toaster.error).not.toHaveBeenCalled();
+    expect(router.navigate).not.toHaveBeenCalled();
   });
 
   it('402 sans code LIMIT_REACHED → ni toast ni navigation, erreur re-propagée', async () => {

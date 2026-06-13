@@ -1,12 +1,17 @@
 import { inject } from '@angular/core';
 import { type HttpErrorResponse, type HttpInterceptorFn } from '@angular/common/http';
-import { Router } from '@angular/router';
 import { catchError, throwError } from 'rxjs';
 import { Toaster } from '@shared/components/toast/toast';
 
+/**
+ * Traduit les refus d'entitlement du back sans jamais éjecter l'utilisateur.
+ * - 402 `LIMIT_REACHED` (limite atteinte sur une action délibérée) → toast informatif, pas de redirection.
+ * - 403 (feature non incluse) → silencieux : le verrouillage doux (badge) porte l'UX et les
+ *   sections pleinement réservées ont leur propre guard de route. Pas de redirection forcée
+ *   (sinon un appel avancé en arrière-plan éjecterait un compte gratuit hors de son budget).
+ */
 export const entitlementErrorInterceptor: HttpInterceptorFn = (req, next) => {
   const toaster = inject(Toaster);
-  const router = inject(Router);
 
   return next(req).pipe(
     catchError((err: HttpErrorResponse) => {
@@ -15,10 +20,6 @@ export const entitlementErrorInterceptor: HttpInterceptorFn = (req, next) => {
       if (err.status === 402 && code === 'LIMIT_REACHED') {
         const limit = (err.error as { limit: string }).limit;
         toaster.error('entitlement.limit.' + limit);
-        router.navigate(['/upgrade'], { queryParams: { reason: 'limit', limit } });
-      } else if (err.status === 403) {
-        toaster.info('entitlement.feature.locked');
-        router.navigate(['/upgrade']);
       }
 
       return throwError(() => err);
