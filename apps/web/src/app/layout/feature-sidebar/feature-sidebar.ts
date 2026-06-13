@@ -4,18 +4,21 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { SidebarFooter } from '@shared/components/sidebar-footer/sidebar-footer';
 import { Icon, type IconName } from '@shared/components/icon/icon';
 import { SidebarStore } from '@core/services/sidebar.store';
+import { RequiresFeature } from '@shared/directives/requires-feature';
+import type { Feature } from '@core/entitlements/entitlement.types';
 
 export type FeatureSidebarItem = {
   readonly route: string;
   readonly icon: IconName;
   readonly labelKey: string;
+  readonly requiresFeature?: Feature;
 };
 
 @Component({
   selector: 'app-feature-sidebar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'contents' },
-  imports: [RouterLink, RouterLinkActive, SidebarFooter, Icon, TranslocoPipe],
+  imports: [RouterLink, RouterLinkActive, SidebarFooter, Icon, TranslocoPipe, RequiresFeature],
   template: `
     <aside class="sidebar" [class.sidebar--collapsed]="sidebar.collapsed()">
       <div
@@ -38,18 +41,34 @@ export type FeatureSidebarItem = {
 
       <nav [attr.aria-label]="navLabelKey() | transloco" class="flex-1 px-2 flex flex-col gap-0.5">
         @for (item of items(); track item.route) {
-          <a
-            [routerLink]="item.route"
-            routerLinkActive="nav-link--active"
-            class="nav-link"
-            [class.nav-link--collapsed]="sidebar.collapsed()"
-            [attr.title]="sidebar.collapsed() ? (item.labelKey | transloco) : null"
-          >
-            <app-icon [name]="item.icon" size="18" class="shrink-0" />
-            @if (!sidebar.collapsed()) {
-              <span class="truncate">{{ item.labelKey | transloco }}</span>
-            }
-          </a>
+          @if (item.requiresFeature; as feature) {
+            <a
+              *appRequiresFeature="feature"
+              [routerLink]="item.route"
+              routerLinkActive="nav-link--active"
+              class="nav-link"
+              [class.nav-link--collapsed]="sidebar.collapsed()"
+              [attr.title]="sidebar.collapsed() ? (item.labelKey | transloco) : null"
+            >
+              <app-icon [name]="item.icon" size="18" class="shrink-0" />
+              @if (!sidebar.collapsed()) {
+                <span class="truncate">{{ item.labelKey | transloco }}</span>
+              }
+            </a>
+          } @else {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="nav-link--active"
+              class="nav-link"
+              [class.nav-link--collapsed]="sidebar.collapsed()"
+              [attr.title]="sidebar.collapsed() ? (item.labelKey | transloco) : null"
+            >
+              <app-icon [name]="item.icon" size="18" class="shrink-0" />
+              @if (!sidebar.collapsed()) {
+                <span class="truncate">{{ item.labelKey | transloco }}</span>
+              }
+            </a>
+          }
         }
       </nav>
 

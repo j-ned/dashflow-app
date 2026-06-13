@@ -1,6 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
+import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { Transactions } from './transactions';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
@@ -53,6 +54,7 @@ describe('Transactions page', () => {
       ],
       providers: [
         provideHttpClient(),
+        provideRouter([]),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
         { provide: AccountTransactionGateway, useValue: { getAll: () => of(txs) } },
       ],
@@ -91,6 +93,7 @@ describe('Transactions page', () => {
       ],
       providers: [
         provideHttpClient(),
+        provideRouter([]),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
         {
           provide: AccountTransactionGateway,

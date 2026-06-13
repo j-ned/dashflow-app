@@ -354,6 +354,11 @@
       "feedback": {
         "deleteFailed": "Erreur lors de la suppression du compte."
       }
+    },
+    "familySharing": {
+      "title": "Partage familial",
+      "subtitle": "Invitez les membres de votre famille à partager votre budget.",
+      "invite": "Inviter un membre"
     }
   },
   "layout": {
@@ -1775,6 +1780,30 @@
         "navSettings": "Paramètres",
         "actLogout": "Déconnexion"
       }
+    }
+  },
+  "entitlement": {
+    "paywall": {
+      "title": "Passez à une offre supérieure",
+      "feature": "La fonctionnalité « {{feature}} » est incluse dans une offre supérieure.",
+      "limit": "Vous avez atteint la limite de votre offre ({{limit}}). Passez à une offre supérieure pour continuer.",
+      "cta": "Voir les offres",
+      "back": "Retour"
+    },
+    "feature": {
+      "locked": "Cette fonctionnalité nécessite une offre supérieure."
+    },
+    "limit": {
+      "bankAccounts": "Vous avez atteint le nombre maximal de comptes bancaires de votre offre.",
+      "members": "Vous avez atteint le nombre maximal de membres de votre offre.",
+      "storageBytes": "Vous avez atteint la limite de stockage de votre offre."
+    },
+    "badge": {
+      "locked": "Débloquer",
+      "solo": "Offre Solo",
+      "family": "Offre Famille",
+      "family_health": "Offre Famille Santé",
+      "aria": "Fonctionnalité incluse dans une offre supérieure"
     }
   }
 }

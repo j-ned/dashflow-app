@@ -2,6 +2,7 @@ import { computed, inject, Injectable, signal } from '@angular/core';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { CsrfStore } from '@core/services/csrf/csrf-store';
+import { EntitlementStore } from '@core/entitlements/entitlement.store';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 
@@ -33,6 +34,7 @@ export class AuthStore {
   private readonly api = inject(ApiClient);
   private readonly crypto = inject(CryptoStore);
   private readonly csrf = inject(CsrfStore);
+  private readonly entitlements = inject(EntitlementStore);
 
   private readonly _user = signal<AuthUser | null>(null);
   private readonly _isAuthenticated = signal(false);
@@ -179,6 +181,7 @@ export class AuthStore {
 
   async logout(): Promise<void> {
     this.crypto.lock();
+    this.entitlements.reset();
     try {
       await firstValueFrom(this.api.post('/auth/logout', {}));
     } catch {

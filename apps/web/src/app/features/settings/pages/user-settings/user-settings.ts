@@ -5,6 +5,7 @@ import { PasswordSection } from './password-section/password-section';
 import { TwoFactorSection } from './two-factor-section/two-factor-section';
 import { EncryptionSection } from './encryption-section/encryption-section';
 import { DangerZoneSection } from './danger-zone-section/danger-zone-section';
+import { FamilySharingSection } from './family-sharing-section/family-sharing-section';
 
 @Component({
   selector: 'app-user-settings',
@@ -16,6 +17,7 @@ import { DangerZoneSection } from './danger-zone-section/danger-zone-section';
     TwoFactorSection,
     EncryptionSection,
     DangerZoneSection,
+    FamilySharingSection,
   ],
   host: { class: 'block w-full h-full overflow-y-auto' },
   template: `
@@ -35,6 +37,8 @@ import { DangerZoneSection } from './danger-zone-section/danger-zone-section';
         <app-password-section />
         <app-two-factor-section />
       </div>
+
+      <app-family-sharing-section />
 
       <app-encryption-section />
 

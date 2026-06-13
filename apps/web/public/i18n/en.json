@@ -354,6 +354,11 @@
       "feedback": {
         "deleteFailed": "Failed to delete account."
       }
+    },
+    "familySharing": {
+      "title": "Family sharing",
+      "subtitle": "Invite your family members to share your budget.",
+      "invite": "Invite a member"
     }
   },
   "layout": {
@@ -1775,6 +1780,30 @@
         "navSettings": "Settings",
         "actLogout": "Logout"
       }
+    }
+  },
+  "entitlement": {
+    "paywall": {
+      "title": "Upgrade your plan",
+      "feature": "The “{{feature}}” feature is included in a higher plan.",
+      "limit": "You've reached your plan limit ({{limit}}). Upgrade to continue.",
+      "cta": "See plans",
+      "back": "Back"
+    },
+    "feature": {
+      "locked": "This feature requires a higher plan."
+    },
+    "limit": {
+      "bankAccounts": "You've reached the maximum number of bank accounts in your plan.",
+      "members": "You've reached the maximum number of members in your plan.",
+      "storageBytes": "You've reached the storage limit of your plan."
+    },
+    "badge": {
+      "locked": "Unlock",
+      "solo": "Solo plan",
+      "family": "Family plan",
+      "family_health": "Family Health plan",
+      "aria": "Feature included in a higher plan"
     }
   }
 }
