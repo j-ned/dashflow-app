@@ -25,6 +25,11 @@ export const envSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('DashFlow <noreply@dashflow.app>'),
+  // ── Stripe (billing). Optionnel : l'app boote sans, BillingService lève une erreur si invoqué sans config. ──
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_PRICE_FAMILY: z.string().optional(),
+  STRIPE_PRICE_FAMILY_HEALTH: z.string().optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

@@ -17,4 +17,35 @@ export class SubscriptionRepository {
       .limit(1);
     return rows[0] ?? null;
   }
+
+  async findByStripeCustomerId(customerId: string): Promise<SubscriptionRow | null> {
+    const rows = await this.db
+      .select()
+      .from(subscriptions)
+      .where(eq(subscriptions.stripeCustomerId, customerId))
+      .limit(1);
+    return rows[0] ?? null;
+  }
+
+  /** Upsert par `userId` (unique). Met à jour les colonnes fournies + `updatedAt`. */
+  async upsertByUserId(
+    userId: string,
+    values: Partial<typeof subscriptions.$inferInsert>,
+  ): Promise<SubscriptionRow> {
+    const rows = await this.db
+      .insert(subscriptions)
+      .values({
+        userId,
+        planKey: values.planKey ?? 'solo',
+        status: values.status ?? 'incomplete',
+        source: values.source ?? 'stripe',
+        ...values,
+      })
+      .onConflictDoUpdate({
+        target: subscriptions.userId,
+        set: { ...values, updatedAt: new Date() },
+      })
+      .returning();
+    return rows[0];
+  }
 }
