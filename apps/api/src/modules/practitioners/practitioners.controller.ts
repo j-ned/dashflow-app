@@ -1,10 +1,15 @@
-import { Controller } from '@nestjs/common';
+import { Controller, UseGuards } from '@nestjs/common';
 import { PractitionersService } from './practitioners.service';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { parseBody } from '../../common/parse-body';
 import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import { createPractitionerSchema, createEncryptedPractitionerSchema } from './dto/practitioner.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { FeatureGuard } from '../entitlements/feature.guard';
+import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 
+@RequiresFeature('medical.access')
+@UseGuards(JwtAuthGuard, FeatureGuard)
 @Controller('practitioners')
 export class PractitionersController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: PractitionersService) {

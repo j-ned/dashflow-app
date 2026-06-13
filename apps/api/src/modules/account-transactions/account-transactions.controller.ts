@@ -3,6 +3,8 @@ import {
 } from '@nestjs/common';
 import { AccountTransactionsService } from './account-transactions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { FeatureGuard } from '../entitlements/feature.guard';
+import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -49,6 +51,8 @@ export class AccountTransactionsController {
     return row;
   }
 
+  @RequiresFeature('budget.import')
+  @UseGuards(FeatureGuard)
   @UseGuards(CsrfGuard) @Post('bank-accounts/:accountId/transactions/batch') @HttpCode(201)
   async createBatch(
     @CurrentUser() u: AuthUser,

@@ -8,15 +8,16 @@ const EXPECTED_TABLES = [
   'loan_transactions', 'consumables', 'recurring_entries', 'salary_archives',
   'patients', 'practitioners', 'appointments', 'prescriptions', 'medications',
   'documents', 'reminders', 'shared_access',
+  'subscriptions', 'stripe_events',
 ];
 
 describe('schéma Drizzle porté', () => {
-  it('exporte exactement les 19 tables attendues', () => {
+  it('exporte exactement les 21 tables attendues', () => {
     const tables = Object.values(schema).filter((v) => {
       try { return getTableName(v as never) !== undefined; } catch { return false; }
     });
     const names = tables.map((t) => getTableName(t as never));
     expect(new Set(names)).toEqual(new Set(EXPECTED_TABLES));
-    expect(names).toHaveLength(19);
+    expect(names).toHaveLength(21);
   });
 });

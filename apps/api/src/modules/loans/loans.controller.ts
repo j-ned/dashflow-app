@@ -10,6 +10,9 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { LoansService } from './loans.service';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { FeatureGuard } from '../entitlements/feature.guard';
+import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -22,6 +25,8 @@ import {
   loanPaymentSchema,
 } from './dto/loan.dto';
 
+@RequiresFeature('budget.advanced')
+@UseGuards(JwtAuthGuard, FeatureGuard)
 @Controller('loans')
 export class LoansController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: LoansService) {

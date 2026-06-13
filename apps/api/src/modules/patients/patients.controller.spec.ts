@@ -6,6 +6,7 @@ import { PatientsController } from './patients.controller';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { FeatureGuard } from '../entitlements/feature.guard';
 
 describe('PatientsController (routes héritées de OwnedCrudController)', () => {
   let app: INestApplication;
@@ -30,6 +31,8 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
         },
       })
       .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(FeatureGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

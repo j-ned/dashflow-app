@@ -8,6 +8,7 @@ export function toPublicUser(u: User) {
     totpEnabled: !!u.totpEnabled, hasPassword: !!u.password, googleLinked: !!u.googleId,
     encryptionVersion: u.encryptionVersion, hasEncryptionPassphrase: u.encryptionPassphrase,
     isDemoAccount: u.isDemoAccount,
+    role: u.role,
   };
 }
 export function toKeyMaterial(u: User) {
