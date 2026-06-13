@@ -2,11 +2,8 @@ import { from, Observable, switchMap } from 'rxjs';
 import { ApiRow, encryptEntity, decryptEntity, decryptEntities } from './entity-crypto';
 import { decryptFile } from './file-crypto';
 
-// E2EE branching: mapPlain coerces plaintext rows (postgres returns numerics as strings); decrypted path skips it because JSON.parse already yields the right types.
-
 const identity = <T>(row: ApiRow): T => row as T;
 
-/** Decrypt a list response, or coerce the plaintext rows when E2EE is off. */
 export function decryptList<T>(
   rows$: Observable<ApiRow[]>,
   key: CryptoKey | null,
@@ -21,7 +18,6 @@ export function decryptList<T>(
   );
 }
 
-/** Decrypt a single-row response, or coerce the plaintext row when E2EE is off. */
 export function decryptOne<T>(
   row$: Observable<ApiRow>,
   key: CryptoKey | null,
@@ -34,7 +30,6 @@ export function decryptOne<T>(
   );
 }
 
-// Encrypt before sending and decrypt the response when E2EE is on; pass through unchanged when off.
 export function mutateEncrypted<T>(
   data: Record<string, unknown>,
   cleartextKeys: readonly string[],
@@ -48,7 +43,6 @@ export function mutateEncrypted<T>(
   );
 }
 
-/** Decrypt a downloaded blob when it was stored encrypted (octet-stream), else pass through. */
 export function decryptBlob(
   blob$: Observable<Blob>,
   key: CryptoKey | null,

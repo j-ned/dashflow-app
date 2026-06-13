@@ -397,7 +397,6 @@ export class ForgotPassword {
           this.step.set('done');
         }
       } catch (e) {
-        // Auto-login après reset : un échec ne doit pas avancer en silence (perte de signal).
         console.error('[forgot-password] auto-login après reset échoué :', e);
         this.step.set('done');
       }
@@ -468,8 +467,6 @@ export class ForgotPassword {
       await this.auth.logout();
       this.step.set('done');
     } catch (e) {
-      // Ne pas avaler en silence : un échec réseau/PATCH après déchiffrement n'est pas
-      // forcément une « clé invalide » — on conserve le signal pour le diagnostic.
       console.error('[forgot-password] récupération E2EE échouée :', e);
       this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
     } finally {

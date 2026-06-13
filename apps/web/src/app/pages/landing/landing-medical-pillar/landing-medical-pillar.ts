@@ -6,7 +6,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
   selector: 'app-landing-medical-pillar',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [NgOptimizedImage, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <section id="medical" class="border-t border-border" aria-labelledby="medical-title">
       <div class="mx-auto max-w-6xl px-6 py-24 lg:py-32">

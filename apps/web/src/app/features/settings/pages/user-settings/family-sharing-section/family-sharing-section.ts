@@ -6,7 +6,8 @@ import { RequiresFeature } from '@shared/directives/requires-feature';
   selector: 'app-family-sharing-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslocoPipe, RequiresFeature],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <section
       aria-labelledby="family-sharing-heading"

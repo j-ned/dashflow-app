@@ -8,7 +8,8 @@ import { EntitlementStore } from '@core/entitlements/entitlement.store';
   selector: 'app-billing-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RouterLink, TranslocoPipe],
-  host: { class: 'contents' },
+  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  host: { class: 'block' },
   template: `
     <section
       aria-labelledby="billing-heading"

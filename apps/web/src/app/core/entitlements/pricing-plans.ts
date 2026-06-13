@@ -1,6 +1,5 @@
 import type { PlanKey } from './entitlement.types';
 
-/** Structure des 3 plans (ordre, plan recommandé, clés i18n des features). Libellés dans `pricing.*`. */
 export type PricingPlanView = {
   readonly key: PlanKey;
   readonly recommended: boolean;

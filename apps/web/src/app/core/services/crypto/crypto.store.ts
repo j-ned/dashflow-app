@@ -12,8 +12,6 @@ export class CryptoStore {
 
   readonly isUnlocked = computed(() => !!this._masterKey());
 
-  // ── Key Generation ──
-
   async generateMasterKey(): Promise<CryptoKey> {
     return crypto.subtle.generateKey({ name: 'AES-GCM', length: KEY_BITS }, true, [
       'encrypt',
@@ -28,8 +26,6 @@ export class CryptoStore {
   generateRecoveryKey(): string {
     return bytesToHex(crypto.getRandomValues(new Uint8Array(32)));
   }
-
-  // ── Key Derivation ──
 
   async deriveWrappingKey(password: string, salt: Uint8Array): Promise<CryptoKey> {
     const encoder = new TextEncoder();
@@ -63,8 +59,6 @@ export class CryptoStore {
     ]);
   }
 
-  // ── Key Wrapping ──
-
   async wrapKey(masterKey: CryptoKey, wrappingKey: CryptoKey): Promise<string> {
     const wrapped = await crypto.subtle.wrapKey('raw', masterKey, wrappingKey, 'AES-KW');
     return bufferToBase64(wrapped);
@@ -83,7 +77,6 @@ export class CryptoStore {
     );
   }
 
-  // ── Encrypt / Decrypt (text) ──
 
   async encrypt(plaintext: string): Promise<string> {
     const key = this._masterKey();
@@ -97,7 +90,6 @@ export class CryptoStore {
     return decryptWithKey(ciphertext, key);
   }
 
-  // ── Encrypt / Decrypt (binary — for files) ──
 
   async encryptBuffer(data: ArrayBuffer): Promise<ArrayBuffer> {
     const key = this._masterKey();
@@ -110,8 +102,6 @@ export class CryptoStore {
     if (!key) throw new Error('CryptoStore is locked');
     return decryptBufferWithKey(data, key);
   }
-
-  // ── Unlock / Lock / Session ──
 
   async unlock(password: string, saltHex: string, wrappedKeyBase64: string): Promise<void> {
     const salt = hexToBytes(saltHex);
@@ -158,15 +148,12 @@ export class CryptoStore {
     return this._masterKey();
   }
 
-  // ── Private Helpers ──
 
   private async saveToSession(key: CryptoKey): Promise<void> {
     const raw = await crypto.subtle.exportKey('raw', key);
     sessionStorage.setItem(SESSION_KEY, bufferToBase64(raw));
   }
 }
-
-// ── Standalone Helpers (also usable from entity-crypto / file-crypto) ──
 
 export async function encryptWithKey(plaintext: string, key: CryptoKey): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
@@ -211,8 +198,6 @@ export async function decryptBufferWithKey(
   const ciphertext = combined.slice(IV_BYTES);
   return crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
 }
-
-// ── Encoding Helpers ──
 
 export function bufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
