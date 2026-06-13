@@ -68,6 +68,16 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
           >
         </button>
 
+        <!-- Mobile : la recherche complète (avec kbd) est masquée < sm ; on garde un accès via une icône. -->
+        <button
+          type="button"
+          class="icon-btn sm:hidden"
+          (click)="commandPalette()?.open()"
+          [attr.aria-label]="'common.search' | transloco"
+        >
+          <app-icon name="search" size="18" />
+        </button>
+
         <button
           type="button"
           class="icon-btn font-mono text-[11px] font-semibold tracking-tight uppercase"
@@ -195,13 +205,19 @@ import { DemoBanner } from '../components/demo-banner/demo-banner';
       color: var(--color-ib-purple);
     }
 
-    /* Mobile : onglets en icônes seules (labels masqués via .hidden sm:inline) + padding resserré. */
+    /* Mobile : onglets en icônes seules (labels masqués via .hidden sm:inline), padding resserré,
+       et cibles tactiles agrandies (≈40px, vs 32px par défaut) pour le confort au doigt. */
     @media (max-width: 640px) {
       .header {
         padding-inline: 0.75rem;
       }
       .tab {
         padding: 0.5rem 0.625rem;
+        min-height: 40px;
+      }
+      .icon-btn {
+        width: 2.5rem;
+        height: 2.5rem;
       }
     }
 
