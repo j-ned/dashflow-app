@@ -406,7 +406,7 @@
       "titleLine2": "Personne d'autre ne peut les lire.",
       "subtitle": "DashFlow gère ton budget et le suivi médical de ta famille dans une seule app. Tout est chiffré sur ton appareil avant d'être envoyé : ni le serveur, ni nous ne voyons tes données en clair.",
       "primaryCta": "Commencer gratuitement",
-      "secondaryCta": "Voir les tarifs",
+      "secondaryCta": "Comment ça marche",
       "demoCta": "Tester la démo, sans inscription",
       "demoLoading": "Ouverture de la démo…",
       "demoError": "Démo indisponible pour le moment",
@@ -494,11 +494,6 @@
         "description": "Ordonnances, bilans, certificats. Pièces jointes chiffrées sur ton appareil avant d'être stockées."
       }
     },
-    "pricing": {
-      "eyebrow": "Tarifs",
-      "title": "Un plan gratuit, deux pour aller plus loin.",
-      "subtitle": "Le chiffrement de bout en bout est inclus partout. Commencez gratuitement, passez à une offre supérieure quand vous en avez besoin."
-    },
     "faq": {
       "eyebrow": "Questions",
       "title": "Ce que tu te demandes sûrement.",
@@ -511,16 +506,8 @@
         "answer": "Comme nous ne pouvons pas lire tes données, nous ne pouvons pas non plus les déchiffrer à ta place. Sans ton mot de passe ni ta clé de récupération, les données restent illisibles, définitivement. C'est le revers honnête du zero-knowledge : garde ta clé de récupération en lieu sûr."
       },
       "q3": {
-        "question": "Le paiement Premium est-il vraiment unique ?",
-        "answer": "Oui. Premium est un paiement unique de 49€ qui débloque toutes les fonctionnalités à vie. Pas d'abonnement, pas de renouvellement, pas de prélèvement caché."
-      },
-      "q4": {
         "question": "Puis-je exporter ou supprimer mes données ?",
         "answer": "Oui. Tu peux exporter tes données à tout moment et supprimer ton compte définitivement. La suppression efface tes données chiffrées de nos serveurs."
-      },
-      "q5": {
-        "question": "Le plan Free est-il gratuit pour toujours ?",
-        "answer": "Oui. Le plan Free couvre l'essentiel du budget avec le chiffrement de bout en bout inclus, sans limite de durée et sans carte bancaire."
       }
     },
     "finalCta": {
@@ -1758,132 +1745,25 @@
       }
     }
   },
-  "pricing": {
-    "recommended": "Recommandé",
-    "choosePlan": "Choisissez votre offre",
-    "encryptionNote": "Chiffrement de bout en bout inclus dans toutes les offres.",
-    "plans": {
-      "solo": {
-        "name": "Solo",
-        "price": "0 €",
-        "period": "gratuit, pour toujours",
-        "tagline": "L'essentiel du budget, chiffré.",
-        "f1": "Budget de base : comptes et dépenses",
-        "f2": "1 compte bancaire",
-        "f3": "1 membre",
-        "f4": "Chiffrement de bout en bout",
-        "cta": "Commencer gratuitement"
-      },
-      "family": {
-        "name": "Famille",
-        "price": "6,99 €",
-        "period": "/mois",
-        "tagline": "Tout le budget, en famille.",
-        "f1": "Tout le plan Solo, plus :",
-        "f2": "Comptes et membres illimités",
-        "f3": "Partage famille et imports CSV",
-        "f4": "Enveloppes, prêts et prévisions avancées",
-        "cta": "Choisir Famille"
-      },
-      "family_health": {
-        "name": "Famille + Santé",
-        "price": "11,99 €",
-        "period": "/mois",
-        "tagline": "Budget et suivi médical réunis.",
-        "f1": "Tout le plan Famille, plus :",
-        "f2": "Suivi médical : RDV, ordonnances, médicaments",
-        "f3": "Pièces jointes chiffrées (10 Go) et calendrier iCal",
-        "cta": "Choisir Famille + Santé"
-      }
-    }
-  },
-  "billing": {
-    "sectionTitle": "Abonnement",
-    "error": "Une erreur est survenue. Veuillez réessayer.",
-    "canceled": "Paiement annulé. Vous pouvez réessayer quand vous le souhaitez.",
-    "success": "Votre abonnement est actif. Merci !",
-    "managePlan": "Gérer mon abonnement",
-    "choosePlan": "Choisir une offre"
-  },
-  "entitlement": {
-    "paywall": {
-      "title": "Passez à une offre supérieure",
-      "feature": "La fonctionnalité « {{feature}} » est incluse dans une offre supérieure.",
-      "limit": "Vous avez atteint la limite de votre offre ({{limit}}). Passez à une offre supérieure pour continuer.",
-      "cta": "Voir les offres",
-      "back": "Retour"
-    },
-    "feature": {
-      "locked": "Cette fonctionnalité nécessite une offre supérieure."
-    },
-    "limit": {
-      "bankAccounts": "Vous avez atteint le nombre maximal de comptes bancaires de votre offre.",
-      "members": "Vous avez atteint le nombre maximal de membres de votre offre.",
-      "storageBytes": "Vous avez atteint la limite de stockage de votre offre."
-    },
-    "badge": {
-      "solo": "Offre Solo",
-      "family": "Offre Famille",
-      "family_health": "Offre Famille Santé",
-      "aria": "Fonctionnalité incluse dans une offre supérieure"
-    }
-  },
   "admin": {
     "nav": "Admin",
     "eyebrow": "Admin",
     "title": "Administration",
-    "tableCaption": "Liste des utilisateurs et de leur état de paiement",
+    "tableCaption": "Liste des membres",
     "demoBadge": "Démo",
     "empty": "Aucun utilisateur",
     "col": {
       "email": "Email",
-      "plan": "Plan",
-      "status": "Statut",
-      "source": "Source",
-      "paid": "Payé",
-      "periodEnd": "Fin de période",
+      "role": "Rôle",
       "createdAt": "Inscrit",
-      "demo": "Démo",
-      "action": "Action"
+      "demo": "Démo"
     },
-    "paid": {
-      "yes": "Payé",
-      "no": "Non payé"
+    "role": {
+      "user": "Membre",
+      "admin": "Admin"
     },
     "metrics": {
-      "totalUsers": "Utilisateurs",
-      "mrr": "MRR",
-      "active": "Abonnements actifs",
-      "trialing": "Essais",
-      "pastDue": "Impayés",
-      "pastDueAttention": "à traiter",
-      "byPlan": {
-        "solo": "Solo",
-        "family": "Famille",
-        "familyHealth": "Famille Santé"
-      }
-    },
-    "plan": {
-      "solo": "Solo",
-      "family": "Famille",
-      "family_health": "Famille Santé"
-    },
-    "status": {
-      "active": "Actif",
-      "trialing": "Essai",
-      "past_due": "Impayé",
-      "canceled": "Annulé",
-      "incomplete": "Incomplet"
-    },
-    "source": {
-      "stripe": "Stripe",
-      "admin": "Admin",
-      "free": "Gratuit"
-    },
-    "override": {
-      "label": "Changer le plan",
-      "apply": "Appliquer",
-      "applying": "…"
+      "totalUsers": "Membres"
     },
     "search": {
       "label": "Rechercher un utilisateur",
@@ -1896,10 +1776,7 @@
       "page": "Page {{page}} / {{pages}}"
     },
     "toast": {
-      "overrideOk": "Plan mis à jour",
-      "overrideError": "Échec de la mise à jour du plan",
-      "usersError": "Échec du chargement des utilisateurs",
-      "metricsError": "Échec du chargement des métriques"
+      "usersError": "Échec du chargement des utilisateurs"
     }
   }
 }

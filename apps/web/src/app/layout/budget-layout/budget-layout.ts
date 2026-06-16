@@ -5,25 +5,10 @@ import { FeatureSidebar, type FeatureSidebarItem } from '../feature-sidebar/feat
 
 const BUDGET_NAV: readonly FeatureSidebarItem[] = [
   { route: '/budget/dashboard', icon: 'layout-dashboard', labelKey: 'layout.budget.dashboard' },
-  {
-    route: '/budget/envelopes',
-    icon: 'mail',
-    labelKey: 'layout.budget.envelopes',
-    requiresFeature: 'budget.advanced',
-  },
-  {
-    route: '/budget/loans',
-    icon: 'banknote',
-    labelKey: 'layout.budget.loans',
-    requiresFeature: 'budget.advanced',
-  },
+  { route: '/budget/envelopes', icon: 'mail', labelKey: 'layout.budget.envelopes' },
+  { route: '/budget/loans', icon: 'banknote', labelKey: 'layout.budget.loans' },
   { route: '/budget/account', icon: 'wallet', labelKey: 'layout.budget.account' },
-  {
-    route: '/budget/archives',
-    icon: 'folder',
-    labelKey: 'layout.budget.archives',
-    requiresFeature: 'budget.advanced',
-  },
+  { route: '/budget/archives', icon: 'folder', labelKey: 'layout.budget.archives' },
   { route: '/budget/analytics', icon: 'trending-up', labelKey: 'layout.budget.analytics' },
   { route: '/budget/transactions', icon: 'receipt', labelKey: 'layout.budget.transactions' },
 ];

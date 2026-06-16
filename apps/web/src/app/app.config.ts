@@ -10,7 +10,6 @@ import {
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { credentialsInterceptor } from '@core/interceptors/credentials.interceptor';
 import { csrfInterceptor } from '@core/interceptors/csrf.interceptor';
-import { entitlementErrorInterceptor } from '@core/interceptors/entitlement-error.interceptor';
 import localeFr from '@angular/common/locales/fr';
 import localeEn from '@angular/common/locales/en';
 
@@ -61,7 +60,7 @@ export const appConfig: ApplicationConfig = {
     ),
     provideHttpClient(
       withFetch(),
-      withInterceptors([credentialsInterceptor, csrfInterceptor, entitlementErrorInterceptor]),
+      withInterceptors([credentialsInterceptor, csrfInterceptor]),
     ),
     transloco,
 

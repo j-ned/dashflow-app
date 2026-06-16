@@ -42,7 +42,7 @@ import { Icon } from '@shared/components/icon/icon';
             <app-icon name="arrow-right" [size]="16" />
           </a>
           <a
-            href="#pricing"
+            href="#security"
             class="inline-flex min-h-12 items-center gap-2 rounded-md border border-border px-6 py-3 text-base font-medium text-text-primary transition-colors hover:bg-surface focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
             >{{ 'landing.hero.secondaryCta' | transloco }}</a
           >

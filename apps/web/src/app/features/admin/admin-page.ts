@@ -3,8 +3,7 @@ import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, skip } from 'rxjs';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AdminStore } from '@core/admin/admin.store';
-import { AdminMetricsBar } from './admin-metrics-bar';
-import { AdminUsersTable, type OverrideRequest } from './admin-users-table';
+import { AdminUsersTable } from './admin-users-table';
 
 const PAGE_SIZE = 20;
 const SEARCH_DEBOUNCE_MS = 250;
@@ -13,7 +12,7 @@ const SEARCH_DEBOUNCE_MS = 250;
   selector: 'app-admin-page',
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block w-full h-full overflow-y-auto' },
-  imports: [TranslocoPipe, AdminMetricsBar, AdminUsersTable],
+  imports: [TranslocoPipe, AdminUsersTable],
   template: `
     <section aria-labelledby="admin-title" class="mx-auto max-w-6xl p-6 pb-12">
       <header class="mb-8">
@@ -25,7 +24,19 @@ const SEARCH_DEBOUNCE_MS = 250;
         </h1>
       </header>
 
-      <app-admin-metrics-bar class="mb-8" [metrics]="store.metrics()" />
+      <dl class="mb-8 flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-border bg-surface p-4">
+        <div class="flex flex-col">
+          <dt class="font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
+            {{ 'admin.metrics.totalUsers' | transloco }}
+          </dt>
+          <dd
+            class="text-lg font-semibold text-text-primary tabular-nums"
+            data-testid="metric-total"
+          >
+            {{ store.total() }}
+          </dd>
+        </div>
+      </dl>
 
       <div class="mb-4">
         <label class="sr-only" for="admin-search">{{ 'admin.search.label' | transloco }}</label>
@@ -46,8 +57,6 @@ const SEARCH_DEBOUNCE_MS = 250;
         [page]="page()"
         [pageSize]="pageSize"
         [loading]="store.loading()"
-        [overridingId]="overridingId()"
-        (overridePlan)="applyOverride($event)"
         (pageChange)="goToPage($event)"
       />
     </section>
@@ -58,11 +67,9 @@ export class AdminPage {
 
   protected readonly search = signal('');
   protected readonly page = signal(1);
-  protected readonly overridingId = signal<string | null>(null);
   protected readonly pageSize = PAGE_SIZE;
 
   constructor() {
-    void this.store.loadMetrics();
     void this.store.loadUsers({ page: 1, pageSize: PAGE_SIZE });
 
     toObservable(this.search)
@@ -80,14 +87,5 @@ export class AdminPage {
       page,
       pageSize: PAGE_SIZE,
     });
-  }
-
-  protected async applyOverride({ userId, planKey }: OverrideRequest): Promise<void> {
-    this.overridingId.set(userId);
-    try {
-      await this.store.overridePlan(userId, planKey);
-    } finally {
-      this.overridingId.set(null);
-    }
   }
 }

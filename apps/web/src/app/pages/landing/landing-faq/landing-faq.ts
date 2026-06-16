@@ -49,7 +49,5 @@ export class LandingFaq {
     { q: 'landing.faq.q1.question', a: 'landing.faq.q1.answer' },
     { q: 'landing.faq.q2.question', a: 'landing.faq.q2.answer' },
     { q: 'landing.faq.q3.question', a: 'landing.faq.q3.answer' },
-    { q: 'landing.faq.q4.question', a: 'landing.faq.q4.answer' },
-    { q: 'landing.faq.q5.question', a: 'landing.faq.q5.answer' },
   ];
 }
