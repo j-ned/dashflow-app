@@ -9,7 +9,6 @@ import { LandingProblem } from './landing-problem/landing-problem';
 import { LandingSecurity } from './landing-security/landing-security';
 import { LandingBudgetPillar } from './landing-budget-pillar/landing-budget-pillar';
 import { LandingMedicalPillar } from './landing-medical-pillar/landing-medical-pillar';
-import { LandingPricing } from './landing-pricing/landing-pricing';
 import { LandingFaq } from './landing-faq/landing-faq';
 import { LandingFinalCta } from './landing-final-cta/landing-final-cta';
 import { LandingFooter } from './landing-footer/landing-footer';
@@ -27,7 +26,6 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
     LandingSecurity,
     LandingBudgetPillar,
     LandingMedicalPillar,
-    LandingPricing,
     LandingFaq,
     LandingFinalCta,
     LandingFooter,
@@ -46,7 +44,6 @@ const CONTACT_EMAIL = 'contact@nedellec-julien.fr';
       <app-landing-security />
       <app-landing-budget-pillar />
       <app-landing-medical-pillar />
-      <app-landing-pricing />
       <app-landing-faq />
       <app-landing-final-cta />
     </main>

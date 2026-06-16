@@ -19,7 +19,6 @@ import { CATEGORY_GROUPS, categoryMeta } from '../../domain/categories';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { CsvImportWizard } from './csv-import-wizard/csv-import-wizard';
-import { RequiresFeature } from '@shared/directives/requires-feature';
 
 type TransactionViewModel = AccountTransaction & {
   categoryLabel: string;
@@ -30,13 +29,12 @@ type TransactionViewModel = AccountTransaction & {
 @Component({
   selector: 'app-transactions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, FormsModule, TranslocoPipe, ModalDialog, CsvImportWizard, RequiresFeature],
+  imports: [DecimalPipe, FormsModule, TranslocoPipe, ModalDialog, CsvImportWizard],
   host: { class: 'block p-6' },
   template: `
     <div class="flex items-center justify-between mb-4">
       <h1 class="text-xl font-semibold">{{ 'budget.transactions.title' | transloco }}</h1>
       <button
-        *appRequiresFeature="'budget.import'"
         type="button"
         class="rounded-lg border border-border px-3 py-1.5 text-sm text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
         (click)="importModalRef().open()"

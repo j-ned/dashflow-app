@@ -19,10 +19,10 @@ function mount() {
 }
 
 describe('LandingFaq', () => {
-  it('rend 5 questions/réponses dans des <details>', () => {
+  it('rend 3 questions/réponses dans des <details>', () => {
     const el = mount();
-    expect(el.querySelectorAll('details').length).toBe(5);
-    for (const n of [1, 2, 3, 4, 5]) {
+    expect(el.querySelectorAll('details').length).toBe(3);
+    for (const n of [1, 2, 3]) {
       expect(el.textContent).toContain(`landing.faq.q${n}.question`);
       expect(el.textContent).toContain(`landing.faq.q${n}.answer`);
     }

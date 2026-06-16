@@ -1,11 +1,10 @@
 import { ChangeDetectionStrategy, Component } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { RequiresFeature } from '@shared/directives/requires-feature';
 
 @Component({
   selector: 'app-family-sharing-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [TranslocoPipe, RequiresFeature],
+  imports: [TranslocoPipe],
   // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
@@ -23,7 +22,6 @@ import { RequiresFeature } from '@shared/directives/requires-feature';
       </div>
       <div class="p-6">
         <button
-          *appRequiresFeature="'family.sharing'"
           type="button"
           class="inline-flex items-center justify-center rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-medium text-canvas transition-colors hover:bg-ib-blue/90"
         >

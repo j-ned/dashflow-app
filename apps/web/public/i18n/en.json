@@ -406,7 +406,7 @@
       "titleLine2": "No one else can read them.",
       "subtitle": "DashFlow manages your budget and your family's health records in a single app. Everything is encrypted on your device before it leaves: neither the server nor we ever see your data in the clear.",
       "primaryCta": "Start for free",
-      "secondaryCta": "See pricing",
+      "secondaryCta": "How it works",
       "demoCta": "Try the demo, no signup",
       "demoLoading": "Opening the demo…",
       "demoError": "Demo unavailable right now",
@@ -494,11 +494,6 @@
         "description": "Prescriptions, lab results, certificates. Attachments encrypted on your device before they are stored."
       }
     },
-    "pricing": {
-      "eyebrow": "Pricing",
-      "title": "One free plan, two to go further.",
-      "subtitle": "End-to-end encryption is included everywhere. Start for free, upgrade whenever you need to."
-    },
     "faq": {
       "eyebrow": "Questions",
       "title": "What you are probably wondering.",
@@ -511,16 +506,8 @@
         "answer": "Since we cannot read your data, we cannot decrypt it for you either. Without your password and your recovery key, the data stays unreadable, permanently. That is the honest trade-off of zero-knowledge: keep your recovery key somewhere safe."
       },
       "q3": {
-        "question": "Is the Premium payment really one-time?",
-        "answer": "Yes. Premium is a one-time payment of 49€ that unlocks every feature for life. No subscription, no renewal, no hidden charge."
-      },
-      "q4": {
         "question": "Can I export or delete my data?",
         "answer": "Yes. You can export your data at any time and delete your account permanently. Deletion wipes your encrypted data from our servers."
-      },
-      "q5": {
-        "question": "Is the Free plan free forever?",
-        "answer": "Yes. The Free plan covers the budget essentials with end-to-end encryption included, with no time limit and no credit card."
       }
     },
     "finalCta": {
@@ -1758,132 +1745,25 @@
       }
     }
   },
-  "pricing": {
-    "recommended": "Recommended",
-    "choosePlan": "Choose your plan",
-    "encryptionNote": "End-to-end encryption included in every plan.",
-    "plans": {
-      "solo": {
-        "name": "Solo",
-        "price": "€0",
-        "period": "free, forever",
-        "tagline": "Budget essentials, encrypted.",
-        "f1": "Core budget: accounts and expenses",
-        "f2": "1 bank account",
-        "f3": "1 member",
-        "f4": "End-to-end encryption",
-        "cta": "Start for free"
-      },
-      "family": {
-        "name": "Family",
-        "price": "€6.99",
-        "period": "/mo",
-        "tagline": "All the budget, for the whole family.",
-        "f1": "Everything in Solo, plus:",
-        "f2": "Unlimited accounts and members",
-        "f3": "Family sharing and CSV imports",
-        "f4": "Envelopes, loans and advanced forecasts",
-        "cta": "Choose Family"
-      },
-      "family_health": {
-        "name": "Family + Health",
-        "price": "€11.99",
-        "period": "/mo",
-        "tagline": "Budget and medical tracking, together.",
-        "f1": "Everything in Family, plus:",
-        "f2": "Medical tracking: appointments, prescriptions, medications",
-        "f3": "Encrypted attachments (10 GB) and iCal calendar",
-        "cta": "Choose Family + Health"
-      }
-    }
-  },
-  "billing": {
-    "sectionTitle": "Subscription",
-    "error": "Something went wrong. Please try again.",
-    "canceled": "Payment canceled. You can try again whenever you like.",
-    "success": "Your subscription is active. Thank you!",
-    "managePlan": "Manage my subscription",
-    "choosePlan": "Choose a plan"
-  },
-  "entitlement": {
-    "paywall": {
-      "title": "Upgrade your plan",
-      "feature": "The “{{feature}}” feature is included in a higher plan.",
-      "limit": "You've reached your plan limit ({{limit}}). Upgrade to continue.",
-      "cta": "See plans",
-      "back": "Back"
-    },
-    "feature": {
-      "locked": "This feature requires a higher plan."
-    },
-    "limit": {
-      "bankAccounts": "You've reached the maximum number of bank accounts in your plan.",
-      "members": "You've reached the maximum number of members in your plan.",
-      "storageBytes": "You've reached the storage limit of your plan."
-    },
-    "badge": {
-      "solo": "Solo plan",
-      "family": "Family plan",
-      "family_health": "Family Health plan",
-      "aria": "Feature included in a higher plan"
-    }
-  },
   "admin": {
     "nav": "Admin",
     "eyebrow": "Admin",
     "title": "Administration",
-    "tableCaption": "List of users and their payment status",
+    "tableCaption": "List of members",
     "demoBadge": "Demo",
     "empty": "No users",
     "col": {
       "email": "Email",
-      "plan": "Plan",
-      "status": "Status",
-      "source": "Source",
-      "paid": "Paid",
-      "periodEnd": "Period end",
+      "role": "Role",
       "createdAt": "Joined",
-      "demo": "Demo",
-      "action": "Action"
+      "demo": "Demo"
     },
-    "paid": {
-      "yes": "Paid",
-      "no": "Not paid"
+    "role": {
+      "user": "Member",
+      "admin": "Admin"
     },
     "metrics": {
-      "totalUsers": "Users",
-      "mrr": "MRR",
-      "active": "Active subscriptions",
-      "trialing": "Trials",
-      "pastDue": "Past due",
-      "pastDueAttention": "to handle",
-      "byPlan": {
-        "solo": "Solo",
-        "family": "Family",
-        "familyHealth": "Family Health"
-      }
-    },
-    "plan": {
-      "solo": "Solo",
-      "family": "Family",
-      "family_health": "Family Health"
-    },
-    "status": {
-      "active": "Active",
-      "trialing": "Trial",
-      "past_due": "Past due",
-      "canceled": "Canceled",
-      "incomplete": "Incomplete"
-    },
-    "source": {
-      "stripe": "Stripe",
-      "admin": "Admin",
-      "free": "Free"
-    },
-    "override": {
-      "label": "Change plan",
-      "apply": "Apply",
-      "applying": "…"
+      "totalUsers": "Members"
     },
     "search": {
       "label": "Search a user",
@@ -1896,10 +1776,7 @@
       "page": "Page {{page}} / {{pages}}"
     },
     "toast": {
-      "overrideOk": "Plan updated",
-      "overrideError": "Failed to update plan",
-      "usersError": "Failed to load users",
-      "metricsError": "Failed to load metrics"
+      "usersError": "Failed to load users"
     }
   }
 }

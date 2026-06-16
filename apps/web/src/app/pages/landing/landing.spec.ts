@@ -61,7 +61,7 @@ describe('LandingComponent', () => {
     expect(navigate).not.toHaveBeenCalled();
   });
 
-  it('monte les 10 sections', () => {
+  it('monte les 9 sections', () => {
     const el = make().fixture.nativeElement as HTMLElement;
     for (const sel of [
       'app-landing-nav',
@@ -70,7 +70,6 @@ describe('LandingComponent', () => {
       'app-landing-security',
       'app-landing-budget-pillar',
       'app-landing-medical-pillar',
-      'app-landing-pricing',
       'app-landing-faq',
       'app-landing-final-cta',
       'app-landing-footer',
