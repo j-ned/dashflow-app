@@ -24,9 +24,6 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
 import { SharedAccessModule } from './modules/shared-access/shared-access.module';
 import { MedicalCalendarModule } from './modules/medical-calendar/medical-calendar.module';
-import { EntitlementsModule } from './modules/entitlements/entitlements.module';
-import { StripeModule } from './modules/billing/stripe.module';
-import { BillingModule } from './modules/billing/billing.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -55,9 +52,6 @@ import { StorageModule } from './storage/storage.module';
     DocumentsModule,
     RemindersModule,
     SharedAccessModule,
-    EntitlementsModule,
-    StripeModule,
-    BillingModule,
     AdminModule,
     MedicalCalendarModule,
     StorageModule,

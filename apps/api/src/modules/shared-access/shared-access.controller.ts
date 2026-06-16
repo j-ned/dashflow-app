@@ -1,15 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, Param, Post, UseGuards } from '@nestjs/common';
 import { SharedAccessService } from './shared-access.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { createSharedAccessSchema } from './dto/shared-access.dto';
 
-@RequiresFeature('family.sharing')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('shared-access')
 export class SharedAccessController {
   constructor(private readonly svc: SharedAccessService) {}

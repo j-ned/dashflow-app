@@ -1,15 +1,12 @@
 import { Body, Controller, Delete, Get, HttpCode, NotFoundException, Param, Post, Put, UseGuards } from '@nestjs/common';
 import { ConsumablesService } from './consumables.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { createConsumableSchema } from './dto/consumable.dto';
 
-@RequiresFeature('medical.access')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('consumables')
 export class ConsumablesController {
   constructor(private readonly svc: ConsumablesService) {}

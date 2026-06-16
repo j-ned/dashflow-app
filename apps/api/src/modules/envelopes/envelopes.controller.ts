@@ -11,8 +11,6 @@ import {
 } from '@nestjs/common';
 import { EnvelopesService } from './envelopes.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -26,8 +24,7 @@ import {
   creditEncryptedEnvelopeSchema,
 } from './dto/envelope.dto';
 
-@RequiresFeature('budget.advanced')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('envelopes')
 export class EnvelopesController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: EnvelopesService) {

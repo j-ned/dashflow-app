@@ -6,8 +6,3 @@ export const listQuerySchema = z.object({
   pageSize: z.coerce.number().int().min(1).max(100).default(20),
 });
 export type ListQueryDto = z.infer<typeof listQuerySchema>;
-
-export const overridePlanSchema = z.object({
-  planKey: z.enum(['solo', 'family', 'family_health']),
-});
-export type OverridePlanDto = z.infer<typeof overridePlanSchema>;

@@ -5,11 +5,8 @@ import { createPatientSchema, createEncryptedPatientSchema } from './dto/patient
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 
-@RequiresFeature('medical.access')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('patients')
 export class PatientsController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: PatientsService) { super(); }

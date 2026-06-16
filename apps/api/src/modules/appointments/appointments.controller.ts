@@ -9,8 +9,6 @@ import {
 import { AppointmentsService } from './appointments.service';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -20,8 +18,7 @@ import {
   updateAppointmentStatusSchema,
 } from './dto/appointment.dto';
 
-@RequiresFeature('medical.access')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('appointments')
 export class AppointmentsController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: AppointmentsService) {

@@ -9,8 +9,6 @@ import {
 } from '@nestjs/common';
 import { MedicationsService } from './medications.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
-import { FeatureGuard } from '../entitlements/feature.guard';
-import { RequiresFeature } from '../entitlements/requires-feature.decorator';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
@@ -21,8 +19,7 @@ import {
 } from './dto/medication.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 
-@RequiresFeature('medical.access')
-@UseGuards(JwtAuthGuard, FeatureGuard)
+@UseGuards(JwtAuthGuard)
 @Controller('medications')
 export class MedicationsController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: MedicationsService) {
