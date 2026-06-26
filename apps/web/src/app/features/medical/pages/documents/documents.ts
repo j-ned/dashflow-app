@@ -76,7 +76,7 @@ import { Icon } from '@shared/components/icon/icon';
       [attr.aria-label]="'medical.document.listLabel' | transloco"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
     >
-      @for (doc of filteredDocuments(); track doc.id) {
+      @for (doc of documentRows(); track doc.id) {
         <article
           class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5"
         >
@@ -100,7 +100,7 @@ import { Icon } from '@shared/components/icon/icon';
             <dl class="grid grid-cols-2 gap-2 text-xs mb-3">
               <div>
                 <dt class="text-text-muted">{{ 'medical.document.patientLabel' | transloco }}</dt>
-                <dd class="font-medium text-text-primary">{{ patientName(doc.patientId) }}</dd>
+                <dd class="font-medium text-text-primary">{{ doc.patientName }}</dd>
               </div>
               <div>
                 <dt class="text-text-muted">{{ 'medical.document.dateLabel' | transloco }}</dt>
@@ -108,7 +108,7 @@ import { Icon } from '@shared/components/icon/icon';
               </div>
             </dl>
 
-            @if (practitionerName(doc.practitionerId); as pName) {
+            @if (doc.practitionerName; as pName) {
               <p class="text-xs text-text-muted mb-2">
                 {{ 'medical.document.practitionerLabel' | transloco }} :
                 <span class="font-medium text-ib-purple">{{ pName }}</span>
@@ -242,6 +242,14 @@ export class Documents {
     const pid = this.filterPatientId();
     return pid ? docs.filter((d) => d.patientId === pid) : docs;
   });
+
+  protected readonly documentRows = computed(() =>
+    this.filteredDocuments().map((doc) => ({
+      ...doc,
+      patientName: this.patientName(doc.patientId),
+      practitionerName: this.practitionerName(doc.practitionerId),
+    })),
+  );
 
   private readonly patientMap = computed(() => {
     const map = new Map<string, string>();

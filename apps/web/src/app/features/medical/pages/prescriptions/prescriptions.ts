@@ -52,7 +52,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
       [attr.aria-label]="'medical.prescription.listLabel' | transloco"
       class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"
     >
-      @for (presc of prescriptions(); track presc.id) {
+      @for (presc of prescriptionRows(); track presc.id) {
         <article
           class="group relative overflow-hidden rounded-xl border bg-surface transition"
           [class.border-ib-red-30]="isExpired(presc)"
@@ -67,7 +67,9 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-cyan/10">
                   <app-icon name="file-text" size="16" class="text-ib-cyan" />
                 </div>
-                <h3 class="font-semibold text-text-primary">{{ patientName(presc.patientId) }}</h3>
+                <h3 class="font-semibold text-text-primary">{{
+                  presc.patientName ?? ('medical.dashboard.unknownPractitioner' | transloco)
+                }}</h3>
               </div>
               @if (isExpired(presc)) {
                 <span
@@ -82,7 +84,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
               }
             </div>
 
-            @if (practitionerName(presc.practitionerId); as pName) {
+            @if (presc.practitionerName; as pName) {
               <p class="text-xs text-text-muted mb-2 ml-10">
                 {{ 'medical.prescription.prescriberLabel' | transloco }} :
                 <span class="font-medium text-ib-purple">{{ pName }}</span>
@@ -116,7 +118,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
               </div>
             </dl>
 
-            @if (appointmentDate(presc.appointmentId); as aDate) {
+            @if (presc.appointmentDate; as aDate) {
               <p class="text-xs text-text-muted mb-2 ml-10">
                 {{ 'medical.prescription.linkedAppointment' | transloco }} :
                 <span class="font-mono text-ib-purple">{{ aDate }}</span>
@@ -281,21 +283,19 @@ export class Prescriptions {
     return map;
   });
 
-  protected patientName(id: string): string {
-    return (
-      this.patientMap().get(id) ?? this._i18n.translate('medical.dashboard.unknownPractitioner')
-    );
-  }
-
-  protected practitionerName(id: string | null): string | null {
-    if (!id) return null;
-    return this.practitionerMap().get(id) ?? null;
-  }
-
-  protected appointmentDate(id: string | null): string | null {
-    if (!id) return null;
-    return this.appointmentMap().get(id) ?? null;
-  }
+  protected readonly prescriptionRows = computed(() => {
+    const patients = this.patientMap();
+    const practitioners = this.practitionerMap();
+    const appointments = this.appointmentMap();
+    return this.prescriptions().map((presc) => ({
+      ...presc,
+      patientName: patients.get(presc.patientId) ?? null,
+      practitionerName: presc.practitionerId
+        ? (practitioners.get(presc.practitionerId) ?? null)
+        : null,
+      appointmentDate: presc.appointmentId ? (appointments.get(presc.appointmentId) ?? null) : null,
+    }));
+  });
 
   protected openCreateModal() {
     this.createModalRef().open();

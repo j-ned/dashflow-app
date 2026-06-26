@@ -1,4 +1,4 @@
-import { Injectable, inject, linkedSignal, signal } from '@angular/core';
+import { Injectable, computed, inject, linkedSignal, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { switchMap, tap } from 'rxjs';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
@@ -6,6 +6,8 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { MemberGateway } from '../../domain/gateways/member.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
+import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
+import { addMoney } from '../../domain/money';
 
 @Injectable()
 export class BudgetDataStore {
@@ -49,6 +51,42 @@ export class BudgetDataStore {
   readonly selectedAccountId = linkedSignal<string | null>(() => {
     const accs = this.accounts();
     return accs.length > 0 ? accs[0].id : null;
+  });
+
+  private readonly todayIso = new Date().toISOString().slice(0, 10);
+
+  readonly selectedAccount = computed(() => {
+    const id = this.selectedAccountId();
+    return this.accounts().find((a) => a.id === id) ?? null;
+  });
+
+  readonly selectedInitialBalance = computed(() =>
+    Number(this.selectedAccount()?.initialBalance ?? 0),
+  );
+
+  readonly accountRealTxs = computed(() => {
+    const id = this.selectedAccountId();
+    const txs = this.transactions();
+    if (id === null) return txs;
+    return txs.filter((t) => t.accountId === id || t.toAccountId === id);
+  });
+
+  readonly confirmedBalance = computed(() => {
+    const acc = this.selectedAccount();
+    if (acc) return computeConfirmedBalance(acc, this.accountRealTxs(), this.todayIso);
+    const txs = this.transactions();
+    return this.accounts().reduce(
+      (sum, a) =>
+        addMoney(
+          sum,
+          computeConfirmedBalance(
+            a,
+            txs.filter((t) => t.accountId === a.id || t.toAccountId === a.id),
+            this.todayIso,
+          ),
+        ),
+      0,
+    );
   });
 
   selectAccount(id: string | null): void {

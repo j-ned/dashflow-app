@@ -105,7 +105,7 @@ const DAY_LABELS = [
             <p class="text-sm text-text-muted mb-1">{{ med.dosage }}</p>
             <p class="text-xs text-text-muted mb-2">
               {{ 'medical.medication.patientLabel' | transloco }} :
-              <span class="font-medium text-text-primary">{{ patientName(med.patientId) }}</span>
+              <span class="font-medium text-text-primary">{{ med.patientName }}</span>
             </p>
 
             @if (med.skipDays.length > 0) {
@@ -294,7 +294,10 @@ export class Medications {
   protected readonly prescriptions = toSignal(this.prescriptionGw.getAll(), { initialValue: [] });
 
   protected readonly medicationsWithStock = computed(() =>
-    this.medications().map((med) => computeMedicationStock(med)),
+    this.medications().map((med) => ({
+      ...computeMedicationStock(med),
+      patientName: this.patientName(med.patientId),
+    })),
   );
 
   protected readonly lowStockCount = computed(

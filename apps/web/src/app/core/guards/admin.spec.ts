@@ -1,6 +1,13 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { provideRouter, Router, UrlSegment, type Route, type UrlTree } from '@angular/router';
+import {
+  provideRouter,
+  Router,
+  UrlSegment,
+  type PartialMatchRouteSnapshot,
+  type Route,
+  type UrlTree,
+} from '@angular/router';
 import { adminGuard } from './admin';
 import { AuthStore } from '@features/auth/domain/auth.store';
 
@@ -12,6 +19,8 @@ type AuthMock = {
 
 const EMPTY_ROUTE: Route = {};
 const SEGMENTS: UrlSegment[] = [new UrlSegment('admin', {})];
+// v22 : CanMatchFn requiert un 3e arg (currentSnapshot) ; le guard l'ignore.
+const MATCH_SNAPSHOT = {} as PartialMatchRouteSnapshot;
 
 describe('adminGuard', () => {
   let authMock: AuthMock;
@@ -31,7 +40,9 @@ describe('adminGuard', () => {
   });
 
   function runGuard() {
-    return TestBed.runInInjectionContext(() => adminGuard(EMPTY_ROUTE, SEGMENTS)) as Promise<
+    return TestBed.runInInjectionContext(() =>
+      adminGuard(EMPTY_ROUTE, SEGMENTS, MATCH_SNAPSHOT),
+    ) as Promise<
       boolean | UrlTree
     >;
   }
