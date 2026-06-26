@@ -1,23 +1,26 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { form, FormField, maxLength, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type PaymentFormShape = {
-  amount: FormControl<number>;
-  date: FormControl<string>;
-  accountId: FormControl<string>;
-  note: FormControl<string>;
+type RecordPaymentModel = {
+  amount: number;
+  date: string;
+  accountId: string;
+  note: string;
 };
+
+function emptyModel(): RecordPaymentModel {
+  return { amount: 0, date: new Date().toISOString().slice(0, 10), accountId: '', note: '' };
+}
 
 @Component({
   selector: 'app-record-payment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">{{ 'budget.loan.paymentForm.legend' | transloco }}</legend>
 
@@ -29,19 +32,14 @@ type PaymentFormShape = {
           <input
             id="payment-amount"
             type="number"
-            formControlName="amount"
+            [formField]="recordPaymentForm.amount"
             step="0.01"
-            min="0.01"
             aria-required="true"
             class="form-input mono"
           />
-          @if (form.controls.amount.touched) {
-            @if (form.controls.amount.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'budget.errors.amountRequired' | transloco
-              }}</small>
-            } @else if (form.controls.amount.errors?.['min']) {
-              <small class="error" role="alert">{{ 'budget.errors.amountMin' | transloco }}</small>
+          @if (recordPaymentForm.amount().touched() && recordPaymentForm.amount().invalid()) {
+            @for (err of recordPaymentForm.amount().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
             }
           }
         </div>
@@ -50,7 +48,12 @@ type PaymentFormShape = {
           <label for="payment-date" class="form-label">{{
             'budget.loan.paymentForm.date' | transloco
           }}</label>
-          <input id="payment-date" type="date" formControlName="date" class="form-input" />
+          <input
+            id="payment-date"
+            type="date"
+            [formField]="recordPaymentForm.date"
+            class="form-input"
+          />
         </div>
 
         <div>
@@ -60,8 +63,7 @@ type PaymentFormShape = {
           <input
             id="payment-note"
             type="text"
-            formControlName="note"
-            maxlength="255"
+            [formField]="recordPaymentForm.note"
             [placeholder]="'budget.loan.paymentForm.notePlaceholder' | transloco"
             class="form-input"
           />
@@ -72,7 +74,11 @@ type PaymentFormShape = {
             <label for="payment-account" class="form-label">{{
               'budget.loan.paymentForm.deductFromAccount' | transloco
             }}</label>
-            <select id="payment-account" formControlName="accountId" class="form-input">
+            <select
+              id="payment-account"
+              [formField]="recordPaymentForm.accountId"
+              class="form-input"
+            >
               <option value="">{{ 'budget.loan.paymentForm.noDeduction' | transloco }}</option>
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }}</option>
@@ -89,7 +95,11 @@ type PaymentFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-blue">
+        <button
+          type="submit"
+          [disabled]="recordPaymentForm().invalid()"
+          class="btn-submit bg-ib-blue"
+        >
           {{ 'budget.actions.validate' | transloco }}
         </button>
       </footer>
@@ -106,32 +116,26 @@ export class RecordPaymentForm {
   }>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<PaymentFormShape>({
-    amount: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0.01)],
-    }),
-    date: new FormControl(new Date().toISOString().slice(0, 10), { nonNullable: true }),
-    accountId: new FormControl('', { nonNullable: true }),
-    note: new FormControl('', { nonNullable: true, validators: [Validators.maxLength(255)] }),
+  protected readonly model = signal<RecordPaymentModel>(emptyModel());
+
+  protected readonly recordPaymentForm = form(this.model, (path) => {
+    required(path.amount, { message: 'budget.errors.amountRequired' });
+    min(path.amount, 0.01, { message: 'budget.errors.amountMin' });
+    maxLength(path.note, 255);
   });
 
-  protected readonly isInvalid = formInvalid(this.form);
-
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      amount: v.amount,
-      date: v.date,
-      accountId: v.accountId || null,
-      note: v.note.trim() || null,
-    });
-    this.form.reset({
-      amount: 0,
-      date: new Date().toISOString().slice(0, 10),
-      accountId: '',
-      note: '',
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.recordPaymentForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        amount: v.amount,
+        date: v.date,
+        accountId: v.accountId || null,
+        note: v.note.trim() || null,
+      });
+      this.model.set(emptyModel());
+      return [];
     });
   }
 }

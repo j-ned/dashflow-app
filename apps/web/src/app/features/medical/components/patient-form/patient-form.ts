@@ -1,23 +1,24 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { Patient } from '../../domain/models/patient.model';
 
-type PatientFormShape = {
-  firstName: FormControl<string>;
-  lastName: FormControl<string>;
-  birthDate: FormControl<string>;
-  notes: FormControl<string>;
+type PatientFormModel = {
+  firstName: string;
+  lastName: string;
+  birthDate: string;
+  notes: string;
 };
+
+const EMPTY_MODEL: PatientFormModel = { firstName: '', lastName: '', birthDate: '', notes: '' };
 
 @Component({
   selector: 'app-patient-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -34,14 +35,14 @@ type PatientFormShape = {
           <input
             id="patient-firstName"
             type="text"
-            formControlName="firstName"
+            [formField]="patientForm.firstName"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.firstName.touched && form.controls.firstName.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.patient.form.firstNameRequired' | transloco
-            }}</small>
+          @if (patientForm.firstName().touched() && patientForm.firstName().invalid()) {
+            @for (err of patientForm.firstName().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -53,14 +54,14 @@ type PatientFormShape = {
           <input
             id="patient-lastName"
             type="text"
-            formControlName="lastName"
+            [formField]="patientForm.lastName"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.lastName.touched && form.controls.lastName.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.patient.form.lastNameRequired' | transloco
-            }}</small>
+          @if (patientForm.lastName().touched() && patientForm.lastName().invalid()) {
+            @for (err of patientForm.lastName().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -72,14 +73,14 @@ type PatientFormShape = {
           <input
             id="patient-birthDate"
             type="date"
-            formControlName="birthDate"
+            [formField]="patientForm.birthDate"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.birthDate.touched && form.controls.birthDate.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.patient.form.birthDateRequired' | transloco
-            }}</small>
+          @if (patientForm.birthDate().touched() && patientForm.birthDate().invalid()) {
+            @for (err of patientForm.birthDate().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -89,7 +90,7 @@ type PatientFormShape = {
           }}</label>
           <textarea
             id="patient-notes"
-            formControlName="notes"
+            [formField]="patientForm.notes"
             rows="3"
             class="form-input"
           ></textarea>
@@ -100,7 +101,7 @@ type PatientFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button type="submit" [disabled]="patientForm().invalid()" class="btn-submit bg-ib-purple">
           {{
             (initial() ? 'medical.patient.form.save' : 'medical.patient.form.create') | transloco
           }}
@@ -114,39 +115,36 @@ export class PatientForm {
   readonly submitted = output<Omit<Patient, 'id'>>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<PatientFormShape>({
-    firstName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    lastName: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    birthDate: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    notes: new FormControl('', { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<PatientFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           firstName: data.firstName,
           lastName: data.lastName,
           birthDate: data.birthDate,
           notes: data.notes ?? '',
-        });
-      } else {
-        this.form.reset();
-      }
-    });
-  }
+        }
+      : { ...EMPTY_MODEL };
+  });
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      firstName: v.firstName,
-      lastName: v.lastName,
-      birthDate: v.birthDate,
-      notes: v.notes || null,
+  protected readonly patientForm = form(this.model, (path) => {
+    required(path.firstName, { message: 'medical.patient.form.firstNameRequired' });
+    required(path.lastName, { message: 'medical.patient.form.lastNameRequired' });
+    required(path.birthDate, { message: 'medical.patient.form.birthDateRequired' });
+  });
+
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.patientForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        firstName: v.firstName,
+        lastName: v.lastName,
+        birthDate: v.birthDate,
+        notes: v.notes || null,
+      });
+      return [];
     });
   }
 }

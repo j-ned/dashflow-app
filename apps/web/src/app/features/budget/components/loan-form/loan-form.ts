@@ -1,27 +1,36 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Loan, LoanDirection } from '../../domain/models/loan.model';
 import { Member } from '../../domain/models/member.model';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type LoanFormShape = {
-  memberId: FormControl<string>;
-  person: FormControl<string>;
-  amount: FormControl<number>;
-  description: FormControl<string>;
-  date: FormControl<string>;
-  dueDate: FormControl<string>;
-  dueDay: FormControl<number | null>;
+type LoanFormModel = {
+  memberId: string;
+  person: string;
+  amount: number;
+  description: string;
+  date: string;
+  dueDate: string;
+  dueDay: number | null;
+};
+
+const EMPTY_MODEL: LoanFormModel = {
+  memberId: '',
+  person: '',
+  amount: 0,
+  description: '',
+  date: '',
+  dueDate: '',
+  dueDay: null,
 };
 
 @Component({
   selector: 'app-loan-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -37,7 +46,7 @@ type LoanFormShape = {
           <label for="loan-member" class="form-label">{{
             'budget.loan.form.member' | transloco
           }}</label>
-          <select id="loan-member" formControlName="memberId" class="form-select">
+          <select id="loan-member" [formField]="loanForm.memberId" class="form-select">
             <option value="">{{ 'budget.loan.form.memberGlobal' | transloco }}</option>
             @for (m of members(); track m.id) {
               <option [value]="m.id">{{ m.firstName }} {{ m.lastName }}</option>
@@ -53,14 +62,14 @@ type LoanFormShape = {
           <input
             id="loan-person"
             type="text"
-            formControlName="person"
+            [formField]="loanForm.person"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.person.touched && form.controls.person.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'budget.errors.personRequired' | transloco
-            }}</small>
+          @if (loanForm.person().touched() && loanForm.person().invalid()) {
+            @for (err of loanForm.person().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -72,19 +81,14 @@ type LoanFormShape = {
           <input
             id="loan-amount"
             type="number"
-            formControlName="amount"
+            [formField]="loanForm.amount"
             step="0.01"
-            min="0.01"
             aria-required="true"
             class="form-input mono"
           />
-          @if (form.controls.amount.touched) {
-            @if (form.controls.amount.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'budget.errors.amountRequired' | transloco
-              }}</small>
-            } @else if (form.controls.amount.errors?.['min']) {
-              <small class="error" role="alert">{{ 'budget.errors.amountMin' | transloco }}</small>
+          @if (loanForm.amount().touched() && loanForm.amount().invalid()) {
+            @for (err of loanForm.amount().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
             }
           }
         </div>
@@ -96,7 +100,7 @@ type LoanFormShape = {
           <input
             id="loan-description"
             type="text"
-            formControlName="description"
+            [formField]="loanForm.description"
             class="form-input"
           />
         </div>
@@ -110,21 +114,21 @@ type LoanFormShape = {
             <input
               id="loan-date"
               type="date"
-              formControlName="date"
+              [formField]="loanForm.date"
               aria-required="true"
               class="form-input"
             />
-            @if (form.controls.date.touched && form.controls.date.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'budget.errors.dateRequired' | transloco
-              }}</small>
+            @if (loanForm.date().touched() && loanForm.date().invalid()) {
+              @for (err of loanForm.date().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
           <div>
             <label for="loan-due-date" class="form-label">{{
               'budget.loan.form.dueDate' | transloco
             }}</label>
-            <input id="loan-due-date" type="date" formControlName="dueDate" class="form-input" />
+            <input id="loan-due-date" type="date" [formField]="loanForm.dueDate" class="form-input" />
           </div>
           <div>
             <label for="loan-due-day" class="form-label">{{
@@ -133,9 +137,7 @@ type LoanFormShape = {
             <input
               id="loan-due-day"
               type="number"
-              formControlName="dueDay"
-              min="1"
-              max="31"
+              [formField]="loanForm.dueDay"
               [placeholder]="'budget.loan.form.depositDayPlaceholder' | transloco"
               class="form-input mono"
             />
@@ -152,7 +154,7 @@ type LoanFormShape = {
         </button>
         <button
           type="submit"
-          [disabled]="isInvalid()"
+          [disabled]="loanForm().invalid()"
           class="btn-submit"
           [style.background-color]="
             direction() === 'lent' ? 'var(--color-ib-blue)' : 'var(--color-ib-orange)'
@@ -177,29 +179,11 @@ export class LoanForm {
   readonly submitted = output<Omit<Loan, 'id'>>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<LoanFormShape>({
-    memberId: new FormControl('', { nonNullable: true }),
-    person: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    amount: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0.01)],
-    }),
-    description: new FormControl('', { nonNullable: true }),
-    date: new FormControl(new Date().toISOString().slice(0, 10), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    dueDate: new FormControl('', { nonNullable: true }),
-    dueDay: new FormControl<number | null>(null),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<LoanFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           memberId: data.memberId ?? '',
           person: data.person,
           amount: data.amount,
@@ -207,27 +191,34 @@ export class LoanForm {
           date: data.date,
           dueDate: data.dueDate ?? '',
           dueDay: data.dueDay,
-        });
-      } else {
-        this.form.reset();
-      }
-    });
-  }
+        }
+      : { ...EMPTY_MODEL, date: new Date().toISOString().slice(0, 10) };
+  });
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    const init = this.initial();
-    this.submitted.emit({
-      memberId: v.memberId || null,
-      person: v.person,
-      direction: this.direction(),
-      amount: v.amount,
-      remaining: init ? init.remaining : v.amount,
-      description: v.description,
-      date: v.date,
-      dueDate: v.dueDate || null,
-      dueDay: v.dueDay ?? null,
+  protected readonly loanForm = form(this.model, (path) => {
+    required(path.person, { message: 'budget.errors.personRequired' });
+    required(path.amount, { message: 'budget.errors.amountRequired' });
+    min(path.amount, 0.01, { message: 'budget.errors.amountMin' });
+    required(path.date, { message: 'budget.errors.dateRequired' });
+  });
+
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.loanForm, async () => {
+      const v = this.model();
+      const init = this.initial();
+      this.submitted.emit({
+        memberId: v.memberId || null,
+        person: v.person,
+        direction: this.direction(),
+        amount: v.amount,
+        remaining: init ? init.remaining : v.amount,
+        description: v.description,
+        date: v.date,
+        dueDate: v.dueDate || null,
+        dueDay: v.dueDay ?? null,
+      });
+      return [];
     });
   }
 }

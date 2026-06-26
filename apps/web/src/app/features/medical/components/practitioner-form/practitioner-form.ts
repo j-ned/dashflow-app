@@ -1,16 +1,24 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { email, form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { Practitioner, PractitionerType } from '../../domain/models/practitioner.model';
 
-type PractitionerFormShape = {
-  name: FormControl<string>;
-  type: FormControl<PractitionerType>;
-  phone: FormControl<string>;
-  email: FormControl<string>;
-  address: FormControl<string>;
-  bookingUrl: FormControl<string>;
+type PractitionerFormModel = {
+  name: string;
+  type: PractitionerType;
+  phone: string;
+  email: string;
+  address: string;
+  bookingUrl: string;
+};
+
+const EMPTY_MODEL: PractitionerFormModel = {
+  name: '',
+  type: 'generaliste',
+  phone: '',
+  email: '',
+  address: '',
+  bookingUrl: '',
 };
 
 const PRACTITIONER_TYPES: PractitionerType[] = [
@@ -34,10 +42,10 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
 @Component({
   selector: 'app-practitioner-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -56,14 +64,14 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
           <input
             id="pract-name"
             type="text"
-            formControlName="name"
+            [formField]="practitionerForm.name"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.practitioner.form.nameRequired' | transloco
-            }}</small>
+          @if (practitionerForm.name().touched() && practitionerForm.name().invalid()) {
+            @for (err of practitionerForm.name().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -72,7 +80,12 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
             {{ 'medical.practitioner.form.type' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select id="pract-type" formControlName="type" aria-required="true" class="form-select">
+          <select
+            id="pract-type"
+            [formField]="practitionerForm.type"
+            aria-required="true"
+            class="form-select"
+          >
             @for (entry of practitionerTypes; track entry) {
               <option [value]="entry">
                 {{ 'medical.practitioner.types.' + entry | transloco }}
@@ -88,7 +101,7 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
           <input
             id="pract-phone"
             type="tel"
-            formControlName="phone"
+            [formField]="practitionerForm.phone"
             autocomplete="tel"
             class="form-input"
           />
@@ -101,14 +114,14 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
           <input
             id="pract-email"
             type="email"
-            formControlName="email"
+            [formField]="practitionerForm.email"
             autocomplete="email"
             class="form-input"
           />
-          @if (form.controls.email.touched && form.controls.email.errors?.['email']) {
-            <small class="error" role="alert">{{
-              'medical.practitioner.form.emailInvalid' | transloco
-            }}</small>
+          @if (practitionerForm.email().touched() && practitionerForm.email().invalid()) {
+            @for (err of practitionerForm.email().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -118,7 +131,7 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
           }}</label>
           <textarea
             id="pract-address"
-            formControlName="address"
+            [formField]="practitionerForm.address"
             rows="2"
             class="form-input"
           ></textarea>
@@ -131,7 +144,7 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
           <input
             id="pract-booking"
             type="text"
-            formControlName="bookingUrl"
+            [formField]="practitionerForm.bookingUrl"
             placeholder="https://www.doctolib.fr/..."
             class="form-input"
           />
@@ -142,7 +155,11 @@ const PRACTITIONER_TYPES: PractitionerType[] = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button
+          type="submit"
+          [disabled]="practitionerForm().invalid()"
+          class="btn-submit bg-ib-purple"
+        >
           {{
             (initial() ? 'medical.practitioner.form.save' : 'medical.practitioner.form.create')
               | transloco
@@ -159,48 +176,40 @@ export class PractitionerForm {
 
   protected readonly practitionerTypes = PRACTITIONER_TYPES;
 
-  protected readonly form = new FormGroup<PractitionerFormShape>({
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    type: new FormControl<PractitionerType>('generaliste', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    phone: new FormControl('', { nonNullable: true }),
-    email: new FormControl('', { nonNullable: true, validators: [Validators.email] }),
-    address: new FormControl('', { nonNullable: true }),
-    bookingUrl: new FormControl('', { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<PractitionerFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           name: data.name,
           type: data.type,
           phone: data.phone ?? '',
           email: data.email ?? '',
           address: data.address ?? '',
           bookingUrl: data.bookingUrl ?? '',
-        });
-      } else {
-        this.form.reset();
-      }
-    });
-  }
+        }
+      : { ...EMPTY_MODEL };
+  });
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      name: v.name,
-      type: v.type,
-      phone: v.phone || null,
-      email: v.email || null,
-      address: v.address || null,
-      bookingUrl: v.bookingUrl || null,
+  protected readonly practitionerForm = form(this.model, (path) => {
+    required(path.name, { message: 'medical.practitioner.form.nameRequired' });
+    required(path.type, { message: 'medical.practitioner.form.typeRequired' });
+    email(path.email, { message: 'medical.practitioner.form.emailInvalid' });
+  });
+
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.practitionerForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        name: v.name,
+        type: v.type,
+        phone: v.phone || null,
+        email: v.email || null,
+        address: v.address || null,
+        bookingUrl: v.bookingUrl || null,
+      });
+      return [];
     });
   }
 }

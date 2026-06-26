@@ -7,8 +7,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { Subscription } from 'rxjs';
+import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
@@ -172,22 +171,13 @@ export class Transactions {
 
   protected readonly categoryGroups = CATEGORY_GROUPS;
 
-  // Reloadable signal — populated via manual subscribe so we can trigger reload after mutations
-  private readonly _allTx = signal<AccountTransaction[]>([]);
-  protected readonly allTx = this._allTx.asReadonly();
-  private _reloadSub?: Subscription;
-
-  constructor() {
-    this.reload();
-  }
-
-  private reload(): void {
-    this._reloadSub?.unsubscribe();
-    this._reloadSub = this._txGateway
-      .getAll()
-      .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe((txs) => this._allTx.set(txs));
-  }
+  // GET réactif full-signal : rxResource enveloppe le gateway (préserve l'abstraction)
+  // et expose .reload() pour rafraîchir après mutation.
+  private readonly _txResource = rxResource({
+    stream: () => this._txGateway.getAll(),
+    defaultValue: [] as AccountTransaction[],
+  });
+  protected readonly allTx = this._txResource.value;
 
   protected readonly currentAccount = computed(() => {
     const id = this.selectedId() ?? this.accounts()[0]?.id ?? null;
@@ -238,7 +228,7 @@ export class Transactions {
       .pipe(takeUntilDestroyed(this._destroyRef))
       .subscribe(() => {
         this.draftAmount.set(0);
-        this.reload();
+        this._txResource.reload();
       });
   }
 
@@ -246,7 +236,7 @@ export class Transactions {
     this._txGateway
       .delete(id)
       .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe(() => this.reload());
+      .subscribe(() => this._txResource.reload());
   }
 
   protected readonly existingForImport = computed(() =>
@@ -257,6 +247,6 @@ export class Transactions {
 
   protected onImported(): void {
     this.importModalRef().close();
-    this.reload();
+    this._txResource.reload();
   }
 }
