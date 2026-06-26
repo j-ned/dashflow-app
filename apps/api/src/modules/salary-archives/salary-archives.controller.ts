@@ -20,6 +20,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import {
   createSalaryArchiveSchema,
   createEncryptedSalaryArchiveSchema,
@@ -36,14 +37,8 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
     super();
   }
 
-  /**
-   * POST / — create an archive.
-   * Encrypted mode: JSON body with encryptedData → minimal placeholders stored.
-   * Plaintext mode: JSON body with month/salary/etc. → parsed fields stored.
-   * Note: the Hono route also accepts multipart/form-data with an optional payslip
-   * file upload (stored in S3/R2). File upload is deferred until a StorageModule
-   * is implemented; the payslipKey field remains null on create in this port.
-   */
+  // E2EE : en mode chiffré, month/salary sont des placeholders (le vrai contenu
+  // est dans encryptedData, opaque au serveur). Le payslip s'upload via POST :id/payslip.
   protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
     if (body.encryptedData) {
       const { encryptedData, accountId } = parseBody(createEncryptedSalaryArchiveSchema, body);
@@ -71,8 +66,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
       if (body.accountId !== undefined) patch.accountId = body.accountId;
       return patch;
     }
-    const { id: _i, userId: _u, createdAt: _c, ...rest } = body;
-    return rest;
+    return excludeSystemFields(body);
   }
 
   @UseGuards(CsrfGuard) @Delete(':id') @HttpCode(204)

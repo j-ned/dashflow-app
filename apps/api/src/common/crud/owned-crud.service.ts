@@ -1,11 +1,14 @@
 import { and, eq } from 'drizzle-orm';
+import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { DrizzleDB } from '../../db/drizzle.constants';
 
 /** Table Drizzle possédant les colonnes `id` et `userId`. */
+export type OwnedTable = PgTable & { id: PgColumn; userId: PgColumn };
+
 export class OwnedCrudService<TRow> {
   constructor(
     protected readonly db: DrizzleDB,
-    protected readonly table: any,
+    protected readonly table: OwnedTable,
   ) {}
 
   list(userId: string): Promise<TRow[]> {
