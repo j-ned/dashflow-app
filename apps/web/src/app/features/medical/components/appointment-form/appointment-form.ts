@@ -1,19 +1,28 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { Appointment, AppointmentStatus } from '../../domain/models/appointment.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
 
-type AppointmentFormShape = {
-  patientId: FormControl<string>;
-  practitionerId: FormControl<string>;
-  date: FormControl<string>;
-  time: FormControl<string>;
-  status: FormControl<AppointmentStatus>;
-  reason: FormControl<string>;
-  outcome: FormControl<string>;
+type AppointmentFormModel = {
+  patientId: string;
+  practitionerId: string;
+  date: string;
+  time: string;
+  status: AppointmentStatus;
+  reason: string;
+  outcome: string;
+};
+
+const EMPTY_MODEL: AppointmentFormModel = {
+  patientId: '',
+  practitionerId: '',
+  date: '',
+  time: '',
+  status: 'scheduled',
+  reason: '',
+  outcome: '',
 };
 
 const APPOINTMENT_STATUSES: AppointmentStatus[] = [
@@ -26,10 +35,10 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
 @Component({
   selector: 'app-appointment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -47,7 +56,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
           </label>
           <select
             id="appt-patientId"
-            formControlName="patientId"
+            [formField]="appointmentForm.patientId"
             aria-required="true"
             class="form-select"
           >
@@ -58,10 +67,10 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
-          @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.appointment.form.patientRequired' | transloco
-            }}</small>
+          @if (appointmentForm.patientId().touched() && appointmentForm.patientId().invalid()) {
+            @for (err of appointmentForm.patientId().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -72,7 +81,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
           </label>
           <select
             id="appt-practitionerId"
-            formControlName="practitionerId"
+            [formField]="appointmentForm.practitionerId"
             aria-required="true"
             class="form-select"
           >
@@ -86,12 +95,12 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
             }
           </select>
           @if (
-            form.controls.practitionerId.touched &&
-            form.controls.practitionerId.errors?.['required']
+            appointmentForm.practitionerId().touched() &&
+            appointmentForm.practitionerId().invalid()
           ) {
-            <small class="error" role="alert">{{
-              'medical.appointment.form.practitionerRequired' | transloco
-            }}</small>
+            @for (err of appointmentForm.practitionerId().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -104,14 +113,14 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
             <input
               id="appt-date"
               type="date"
-              formControlName="date"
+              [formField]="appointmentForm.date"
               aria-required="true"
               class="form-input"
             />
-            @if (form.controls.date.touched && form.controls.date.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.appointment.form.dateRequired' | transloco
-              }}</small>
+            @if (appointmentForm.date().touched() && appointmentForm.date().invalid()) {
+              @for (err of appointmentForm.date().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
 
@@ -123,14 +132,14 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
             <input
               id="appt-time"
               type="time"
-              formControlName="time"
+              [formField]="appointmentForm.time"
               aria-required="true"
               class="form-input"
             />
-            @if (form.controls.time.touched && form.controls.time.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.appointment.form.timeRequired' | transloco
-              }}</small>
+            @if (appointmentForm.time().touched() && appointmentForm.time().invalid()) {
+              @for (err of appointmentForm.time().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
         </div>
@@ -142,7 +151,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
           </label>
           <select
             id="appt-status"
-            formControlName="status"
+            [formField]="appointmentForm.status"
             aria-required="true"
             class="form-select"
           >
@@ -160,7 +169,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
           }}</label>
           <textarea
             id="appt-reason"
-            formControlName="reason"
+            [formField]="appointmentForm.reason"
             rows="2"
             class="form-input"
           ></textarea>
@@ -172,7 +181,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
           }}</label>
           <textarea
             id="appt-outcome"
-            formControlName="outcome"
+            [formField]="appointmentForm.outcome"
             rows="2"
             class="form-input"
           ></textarea>
@@ -183,7 +192,11 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button
+          type="submit"
+          [disabled]="appointmentForm().invalid()"
+          class="btn-submit bg-ib-purple"
+        >
           {{
             (initial() ? 'medical.appointment.form.save' : 'medical.appointment.form.create')
               | transloco
@@ -202,26 +215,11 @@ export class AppointmentForm {
 
   protected readonly statuses = APPOINTMENT_STATUSES;
 
-  protected readonly form = new FormGroup<AppointmentFormShape>({
-    patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    practitionerId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    date: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    time: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    status: new FormControl<AppointmentStatus>('scheduled', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    reason: new FormControl('', { nonNullable: true }),
-    outcome: new FormControl('', { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<AppointmentFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           patientId: data.patientId,
           practitionerId: data.practitionerId,
           date: data.date,
@@ -229,24 +227,32 @@ export class AppointmentForm {
           status: data.status,
           reason: data.reason ?? '',
           outcome: data.outcome ?? '',
-        });
-      } else {
-        this.form.reset();
-      }
-    });
-  }
+        }
+      : { ...EMPTY_MODEL };
+  });
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      patientId: v.patientId,
-      practitionerId: v.practitionerId,
-      date: v.date,
-      time: v.time,
-      status: v.status,
-      reason: v.reason || null,
-      outcome: v.outcome || null,
+  protected readonly appointmentForm = form(this.model, (path) => {
+    required(path.patientId, { message: 'medical.appointment.form.patientRequired' });
+    required(path.practitionerId, { message: 'medical.appointment.form.practitionerRequired' });
+    required(path.date, { message: 'medical.appointment.form.dateRequired' });
+    required(path.time, { message: 'medical.appointment.form.timeRequired' });
+    required(path.status, { message: 'medical.appointment.form.statusRequired' });
+  });
+
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.appointmentForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        patientId: v.patientId,
+        practitionerId: v.practitionerId,
+        date: v.date,
+        time: v.time,
+        status: v.status,
+        reason: v.reason || null,
+        outcome: v.outcome || null,
+      });
+      return [];
     });
   }
 }

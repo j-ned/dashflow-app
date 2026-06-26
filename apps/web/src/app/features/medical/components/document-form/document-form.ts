@@ -1,19 +1,27 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output, signal } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { formatFileSize } from '@shared/forms/format-file-size';
 import { MedicalDocument, DocumentType } from '../../domain/models/document.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
 
-type DocumentFormShape = {
-  patientId: FormControl<string>;
-  practitionerId: FormControl<string>;
-  type: FormControl<DocumentType>;
-  title: FormControl<string>;
-  date: FormControl<string>;
-  notes: FormControl<string>;
+type DocumentModel = {
+  patientId: string;
+  practitionerId: string;
+  type: DocumentType;
+  title: string;
+  date: string;
+  notes: string;
+};
+
+const EMPTY_MODEL: DocumentModel = {
+  patientId: '',
+  practitionerId: '',
+  type: 'compte_rendu',
+  title: '',
+  date: '',
+  notes: '',
 };
 
 export type DocumentSubmitData = {
@@ -33,10 +41,10 @@ const DOCUMENT_TYPES: DocumentType[] = [
 @Component({
   selector: 'app-document-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -52,7 +60,7 @@ const DOCUMENT_TYPES: DocumentType[] = [
           </label>
           <select
             id="doc-patient"
-            formControlName="patientId"
+            [formField]="documentForm.patientId"
             aria-required="true"
             class="form-select"
           >
@@ -61,10 +69,10 @@ const DOCUMENT_TYPES: DocumentType[] = [
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
-          @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.document.form.patientRequired' | transloco
-            }}</small>
+          @if (documentForm.patientId().touched() && documentForm.patientId().invalid()) {
+            @for (err of documentForm.patientId().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -72,7 +80,7 @@ const DOCUMENT_TYPES: DocumentType[] = [
           <label for="doc-practitioner" class="form-label">{{
             'medical.document.form.practitioner' | transloco
           }}</label>
-          <select id="doc-practitioner" formControlName="practitionerId" class="form-select">
+          <select id="doc-practitioner" [formField]="documentForm.practitionerId" class="form-select">
             <option value="">
               {{ 'medical.document.form.practitionerPlaceholder' | transloco }}
             </option>
@@ -90,7 +98,7 @@ const DOCUMENT_TYPES: DocumentType[] = [
               {{ 'medical.document.form.type' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="doc-type" formControlName="type" aria-required="true" class="form-select">
+            <select id="doc-type" [formField]="documentForm.type" aria-required="true" class="form-select">
               @for (t of documentTypes; track t) {
                 <option [value]="t">{{ 'medical.document.types.' + t | transloco }}</option>
               }
@@ -104,14 +112,14 @@ const DOCUMENT_TYPES: DocumentType[] = [
             <input
               id="doc-date"
               type="date"
-              formControlName="date"
+              [formField]="documentForm.date"
               aria-required="true"
               class="form-input"
             />
-            @if (form.controls.date.touched && form.controls.date.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.document.form.dateRequired' | transloco
-              }}</small>
+            @if (documentForm.date().touched() && documentForm.date().invalid()) {
+              @for (err of documentForm.date().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
         </div>
@@ -124,15 +132,15 @@ const DOCUMENT_TYPES: DocumentType[] = [
           <input
             id="doc-title"
             type="text"
-            formControlName="title"
+            [formField]="documentForm.title"
             aria-required="true"
             [placeholder]="'medical.document.form.titlePlaceholder' | transloco"
             class="form-input"
           />
-          @if (form.controls.title.touched && form.controls.title.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.document.form.titleRequired' | transloco
-            }}</small>
+          @if (documentForm.title().touched() && documentForm.title().invalid()) {
+            @for (err of documentForm.title().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -140,7 +148,7 @@ const DOCUMENT_TYPES: DocumentType[] = [
           <label for="doc-notes" class="form-label">{{
             'medical.document.form.notes' | transloco
           }}</label>
-          <textarea id="doc-notes" formControlName="notes" rows="2" class="form-input"></textarea>
+          <textarea id="doc-notes" [formField]="documentForm.notes" rows="2" class="form-input"></textarea>
         </div>
 
         <!-- Drag & drop file -->
@@ -199,7 +207,7 @@ const DOCUMENT_TYPES: DocumentType[] = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button type="submit" [disabled]="documentForm().invalid()" class="btn-submit bg-ib-purple">
           {{
             (initial() ? 'medical.document.form.save' : 'medical.document.form.create') | transloco
           }}
@@ -219,47 +227,32 @@ export class DocumentForm {
   protected readonly selectedFile = signal<File | null>(null);
 
   protected readonly documentTypes = DOCUMENT_TYPES;
-
-  protected readonly form = new FormGroup<DocumentFormShape>({
-    patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    practitionerId: new FormControl('', { nonNullable: true }),
-    type: new FormControl<DocumentType>('compte_rendu', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    title: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    date: new FormControl(new Date().toISOString().slice(0, 10), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    notes: new FormControl('', { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
   protected readonly formatSize = formatFileSize;
 
-  private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-  private readonly MAX_SIZE = 10 * 1024 * 1024;
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<DocumentModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           patientId: data.patientId,
           practitionerId: data.practitionerId ?? '',
           type: data.type,
           title: data.title,
           date: data.date,
           notes: data.notes ?? '',
-        });
-        this.selectedFile.set(null);
-      } else {
-        this.form.reset();
-        this.selectedFile.set(null);
-      }
-    });
-  }
+        }
+      : { ...EMPTY_MODEL, date: new Date().toISOString().slice(0, 10) };
+  });
+
+  protected readonly documentForm = form(this.model, (path) => {
+    required(path.patientId, { message: 'medical.document.form.patientRequired' });
+    required(path.type, { message: 'medical.document.form.typeRequired' });
+    required(path.title, { message: 'medical.document.form.titleRequired' });
+    required(path.date, { message: 'medical.document.form.dateRequired' });
+  });
+
+  private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  private readonly MAX_SIZE = 10 * 1024 * 1024;
 
   protected onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -290,19 +283,22 @@ export class DocumentForm {
     this.selectedFile.set(null);
   }
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      data: {
-        patientId: v.patientId,
-        practitionerId: v.practitionerId || null,
-        type: v.type,
-        title: v.title,
-        date: v.date,
-        notes: v.notes || null,
-      },
-      file: this.selectedFile(),
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.documentForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        data: {
+          patientId: v.patientId,
+          practitionerId: v.practitionerId || null,
+          type: v.type,
+          title: v.title,
+          date: v.date,
+          notes: v.notes || null,
+        },
+        file: this.selectedFile(),
+      });
+      return [];
     });
   }
 

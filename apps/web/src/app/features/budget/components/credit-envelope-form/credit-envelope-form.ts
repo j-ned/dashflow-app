@@ -1,23 +1,26 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type CreditFormShape = {
-  amount: FormControl<number>;
-  date: FormControl<string>;
-  note: FormControl<string>;
-  accountId: FormControl<string>;
+type CreditModel = {
+  amount: number;
+  date: string;
+  note: string;
+  accountId: string;
 };
+
+function emptyModel(): CreditModel {
+  return { amount: 0, date: new Date().toISOString().slice(0, 10), note: '', accountId: '' };
+}
 
 @Component({
   selector: 'app-credit-envelope-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">{{ 'budget.envelope.creditForm.legend' | transloco }}</legend>
 
@@ -32,15 +35,15 @@ type CreditFormShape = {
           <input
             id="credit-amount"
             type="number"
-            formControlName="amount"
+            [formField]="creditForm.amount"
             step="0.01"
             aria-required="true"
             class="form-input mono"
           />
-          @if (form.controls.amount.touched && form.controls.amount.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'budget.errors.amountRequired' | transloco
-            }}</small>
+          @if (creditForm.amount().touched() && creditForm.amount().invalid()) {
+            @for (err of creditForm.amount().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -48,7 +51,7 @@ type CreditFormShape = {
           <label for="credit-date" class="form-label">{{
             'budget.envelope.creditForm.date' | transloco
           }}</label>
-          <input id="credit-date" type="date" formControlName="date" class="form-input" />
+          <input id="credit-date" type="date" [formField]="creditForm.date" class="form-input" />
         </div>
 
         <div>
@@ -58,8 +61,7 @@ type CreditFormShape = {
           <input
             id="credit-note"
             type="text"
-            formControlName="note"
-            maxlength="255"
+            [formField]="creditForm.note"
             [placeholder]="'budget.envelope.creditForm.notePlaceholder' | transloco"
             class="form-input"
           />
@@ -70,7 +72,7 @@ type CreditFormShape = {
             <label for="credit-account" class="form-label">{{
               'budget.envelope.creditForm.deductFromAccount' | transloco
             }}</label>
-            <select id="credit-account" formControlName="accountId" class="form-select">
+            <select id="credit-account" [formField]="creditForm.accountId" class="form-select">
               <option value="">{{ 'budget.envelope.creditForm.noDeduction' | transloco }}</option>
               @for (acc of accounts(); track acc.id) {
                 <option [value]="acc.id">{{ acc.name }}</option>
@@ -87,7 +89,7 @@ type CreditFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-blue">
+        <button type="submit" [disabled]="creditForm().invalid()" class="btn-submit bg-ib-blue">
           {{ 'budget.actions.validate' | transloco }}
         </button>
       </footer>
@@ -104,29 +106,24 @@ export class CreditEnvelopeForm {
   }>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<CreditFormShape>({
-    amount: new FormControl(0, { nonNullable: true, validators: [Validators.required] }),
-    date: new FormControl(new Date().toISOString().slice(0, 10), { nonNullable: true }),
-    note: new FormControl('', { nonNullable: true }),
-    accountId: new FormControl('', { nonNullable: true }),
+  protected readonly model = signal<CreditModel>(emptyModel());
+
+  protected readonly creditForm = form(this.model, (path) => {
+    required(path.amount, { message: 'budget.errors.amountRequired' });
   });
 
-  protected readonly isInvalid = formInvalid(this.form);
-
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      amount: v.amount,
-      date: v.date,
-      note: v.note.trim() || null,
-      accountId: v.accountId || null,
-    });
-    this.form.reset({
-      amount: 0,
-      date: new Date().toISOString().slice(0, 10),
-      note: '',
-      accountId: '',
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.creditForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        amount: v.amount,
+        date: v.date,
+        note: v.note.trim() || null,
+        accountId: v.accountId || null,
+      });
+      this.model.set(emptyModel());
+      return [];
     });
   }
 }

@@ -1,18 +1,27 @@
-import { ChangeDetectionStrategy, Component, effect, input, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Envelope, EnvelopeType } from '../../domain/models/envelope.model';
 import { Member } from '../../domain/models/member.model';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type EnvelopeFormShape = {
-  memberId: FormControl<string>;
-  name: FormControl<string>;
-  type: FormControl<EnvelopeType>;
-  balance: FormControl<number>;
-  target: FormControl<number | null>;
-  color: FormControl<string>;
-  dueDay: FormControl<number | null>;
+type EnvelopeModel = {
+  memberId: string;
+  name: string;
+  type: EnvelopeType;
+  balance: number;
+  target: number | null;
+  color: string;
+  dueDay: number | null;
+};
+
+const EMPTY_MODEL: EnvelopeModel = {
+  memberId: '',
+  name: '',
+  type: 'épargne',
+  balance: 0,
+  target: null,
+  color: '#6aab73',
+  dueDay: null,
 };
 
 const ENVELOPE_COLORS = [
@@ -29,10 +38,10 @@ const ENVELOPE_COLORS = [
 @Component({
   selector: 'app-envelope-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -46,7 +55,7 @@ const ENVELOPE_COLORS = [
           <label for="env-member" class="form-label">{{
             'budget.envelope.form.member' | transloco
           }}</label>
-          <select id="env-member" formControlName="memberId" class="form-select">
+          <select id="env-member" [formField]="envelopeForm.memberId" class="form-select">
             <option value="">{{ 'budget.envelope.form.memberGlobal' | transloco }}</option>
             @for (m of members(); track m.id) {
               <option [value]="m.id">{{ m.firstName }} {{ m.lastName }}</option>
@@ -62,12 +71,14 @@ const ENVELOPE_COLORS = [
           <input
             id="env-name"
             type="text"
-            formControlName="name"
+            [formField]="envelopeForm.name"
             aria-required="true"
             class="form-input"
           />
-          @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <small class="error" role="alert">{{ 'budget.errors.nameRequired' | transloco }}</small>
+          @if (envelopeForm.name().touched() && envelopeForm.name().invalid()) {
+            @for (err of envelopeForm.name().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -76,7 +87,7 @@ const ENVELOPE_COLORS = [
             {{ 'budget.envelope.form.type' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select id="env-type" formControlName="type" aria-required="true" class="form-select">
+          <select id="env-type" [formField]="envelopeForm.type" aria-required="true" class="form-select">
             <option value="épargne">{{ 'budget.envelope.form.typeSavings' | transloco }}</option>
             <option value="impôts">{{ 'budget.envelope.form.typeTaxes' | transloco }}</option>
             <option value="équipement">
@@ -93,13 +104,14 @@ const ENVELOPE_COLORS = [
           <input
             id="env-balance"
             type="number"
-            formControlName="balance"
+            [formField]="envelopeForm.balance"
             step="0.01"
-            min="0"
             class="form-input mono"
           />
-          @if (form.controls.balance.touched && form.controls.balance.errors?.['min']) {
-            <small class="error" role="alert">{{ 'budget.errors.balanceMin' | transloco }}</small>
+          @if (envelopeForm.balance().touched() && envelopeForm.balance().invalid()) {
+            @for (err of envelopeForm.balance().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -111,9 +123,8 @@ const ENVELOPE_COLORS = [
             <input
               id="env-target"
               type="number"
-              formControlName="target"
+              [formField]="envelopeForm.target"
               step="0.01"
-              min="0"
               class="form-input mono"
             />
           </div>
@@ -124,9 +135,7 @@ const ENVELOPE_COLORS = [
             <input
               id="env-due-day"
               type="number"
-              formControlName="dueDay"
-              min="1"
-              max="31"
+              [formField]="envelopeForm.dueDay"
               [placeholder]="'budget.envelope.form.depositDayPlaceholder' | transloco"
               class="form-input mono"
             />
@@ -146,10 +155,10 @@ const ENVELOPE_COLORS = [
                 type="button"
                 class="h-8 w-8 rounded-full border-2 transition"
                 [style.background-color]="c"
-                [class.border-text-primary]="form.controls.color.value === c"
-                [class.border-transparent]="form.controls.color.value !== c"
-                [class.scale-110]="form.controls.color.value === c"
-                (click)="form.controls.color.setValue(c)"
+                [class.border-text-primary]="envelopeForm.color().value() === c"
+                [class.border-transparent]="envelopeForm.color().value() !== c"
+                [class.scale-110]="envelopeForm.color().value() === c"
+                (click)="envelopeForm.color().value.set(c)"
                 [attr.aria-label]="'budget.envelope.form.colorAria' | transloco: { color: c }"
               ></button>
             }
@@ -161,7 +170,7 @@ const ENVELOPE_COLORS = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-green">
+        <button type="submit" [disabled]="envelopeForm().invalid()" class="btn-submit bg-ib-green">
           {{
             initial()
               ? ('budget.envelope.form.submitEdit' | transloco)
@@ -180,48 +189,41 @@ export class EnvelopeForm {
 
   protected readonly colors = ENVELOPE_COLORS;
 
-  protected readonly form = new FormGroup<EnvelopeFormShape>({
-    memberId: new FormControl('', { nonNullable: true }),
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    type: new FormControl<EnvelopeType>('épargne', { nonNullable: true }),
-    balance: new FormControl(0, { nonNullable: true, validators: [Validators.min(0)] }),
-    target: new FormControl<number | null>(null),
-    dueDay: new FormControl<number | null>(null),
-    color: new FormControl('#6aab73', { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<EnvelopeModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           memberId: data.memberId ?? '',
           name: data.name,
           type: data.type,
           balance: data.balance,
           target: data.target,
-          dueDay: data.dueDay,
           color: data.color,
-        });
-      } else {
-        this.form.reset();
-      }
-    });
-  }
+          dueDay: data.dueDay,
+        }
+      : { ...EMPTY_MODEL };
+  });
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      memberId: v.memberId || null,
-      name: v.name,
-      type: v.type,
-      balance: v.balance,
-      target: v.target,
-      color: v.color,
-      dueDay: v.dueDay ?? null,
+  protected readonly envelopeForm = form(this.model, (path) => {
+    required(path.name, { message: 'budget.errors.nameRequired' });
+    min(path.balance, 0, { message: 'budget.errors.balanceMin' });
+  });
+
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.envelopeForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        memberId: v.memberId || null,
+        name: v.name,
+        type: v.type,
+        balance: v.balance,
+        target: v.target,
+        color: v.color,
+        dueDay: v.dueDay ?? null,
+      });
+      return [];
     });
   }
 }

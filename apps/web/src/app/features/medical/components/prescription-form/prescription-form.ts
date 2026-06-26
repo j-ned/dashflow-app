@@ -1,21 +1,31 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output, signal } from '@angular/core';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { formatFileSize } from '@shared/forms/format-file-size';
 import { Prescription } from '../../domain/models/prescription.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
 
-type PrescriptionFormShape = {
-  patientId: FormControl<string>;
-  practitionerId: FormControl<string>;
-  appointmentId: FormControl<string>;
-  issuedDate: FormControl<string>;
-  validUntil: FormControl<string>;
-  notes: FormControl<string>;
+type PrescriptionFormModel = {
+  patientId: string;
+  practitionerId: string;
+  appointmentId: string;
+  issuedDate: string;
+  validUntil: string;
+  notes: string;
 };
+
+function emptyModel(): PrescriptionFormModel {
+  return {
+    patientId: '',
+    practitionerId: '',
+    appointmentId: '',
+    issuedDate: new Date().toISOString().slice(0, 10),
+    validUntil: '',
+    notes: '',
+  };
+}
 
 export type PrescriptionSubmitData = {
   data: Omit<Prescription, 'id' | 'documentUrl'>;
@@ -25,10 +35,10 @@ export type PrescriptionSubmitData = {
 @Component({
   selector: 'app-prescription-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -46,7 +56,7 @@ export type PrescriptionSubmitData = {
           </label>
           <select
             id="presc-patient"
-            formControlName="patientId"
+            [formField]="prescriptionForm.patientId"
             aria-required="true"
             class="form-select"
           >
@@ -57,10 +67,10 @@ export type PrescriptionSubmitData = {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
-          @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.prescription.form.patientRequired' | transloco
-            }}</small>
+          @if (prescriptionForm.patientId().touched() && prescriptionForm.patientId().invalid()) {
+            @for (err of prescriptionForm.patientId().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -68,7 +78,11 @@ export type PrescriptionSubmitData = {
           <label for="presc-practitioner" class="form-label">{{
             'medical.prescription.form.practitioner' | transloco
           }}</label>
-          <select id="presc-practitioner" formControlName="practitionerId" class="form-select">
+          <select
+            id="presc-practitioner"
+            [formField]="prescriptionForm.practitionerId"
+            class="form-select"
+          >
             <option value="">
               {{ 'medical.prescription.form.practitionerPlaceholder' | transloco }}
             </option>
@@ -84,7 +98,11 @@ export type PrescriptionSubmitData = {
           <label for="presc-appointment" class="form-label">{{
             'medical.prescription.form.appointment' | transloco
           }}</label>
-          <select id="presc-appointment" formControlName="appointmentId" class="form-select">
+          <select
+            id="presc-appointment"
+            [formField]="prescriptionForm.appointmentId"
+            class="form-select"
+          >
             <option value="">
               {{ 'medical.prescription.form.appointmentPlaceholder' | transloco }}
             </option>
@@ -103,23 +121,28 @@ export type PrescriptionSubmitData = {
             <input
               id="presc-issued"
               type="date"
-              formControlName="issuedDate"
+              [formField]="prescriptionForm.issuedDate"
               aria-required="true"
               class="form-input"
             />
             @if (
-              form.controls.issuedDate.touched && form.controls.issuedDate.errors?.['required']
+              prescriptionForm.issuedDate().touched() && prescriptionForm.issuedDate().invalid()
             ) {
-              <small class="error" role="alert">{{
-                'medical.prescription.form.issuedRequired' | transloco
-              }}</small>
+              @for (err of prescriptionForm.issuedDate().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
           <div>
             <label for="presc-valid" class="form-label">{{
               'medical.prescription.form.validUntil' | transloco
             }}</label>
-            <input id="presc-valid" type="date" formControlName="validUntil" class="form-input" />
+            <input
+              id="presc-valid"
+              type="date"
+              [formField]="prescriptionForm.validUntil"
+              class="form-input"
+            />
           </div>
         </div>
 
@@ -127,7 +150,12 @@ export type PrescriptionSubmitData = {
           <label for="presc-notes" class="form-label">{{
             'medical.prescription.form.notes' | transloco
           }}</label>
-          <textarea id="presc-notes" formControlName="notes" rows="3" class="form-input"></textarea>
+          <textarea
+            id="presc-notes"
+            [formField]="prescriptionForm.notes"
+            rows="3"
+            class="form-input"
+          ></textarea>
         </div>
 
         <!-- Drag & drop document -->
@@ -186,7 +214,11 @@ export type PrescriptionSubmitData = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button
+          type="submit"
+          [disabled]="prescriptionForm().invalid()"
+          class="btn-submit bg-ib-purple"
+        >
           {{
             (initial() ? 'medical.prescription.form.save' : 'medical.prescription.form.create')
               | transloco
@@ -205,45 +237,36 @@ export class PrescriptionForm {
   readonly cancelled = output<void>();
 
   protected readonly isDragging = signal(false);
-  protected readonly selectedFile = signal<File | null>(null);
-
-  protected readonly form = new FormGroup<PrescriptionFormShape>({
-    patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    practitionerId: new FormControl('', { nonNullable: true }),
-    appointmentId: new FormControl('', { nonNullable: true }),
-    issuedDate: new FormControl(new Date().toISOString().slice(0, 10), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    validUntil: new FormControl('', { nonNullable: true }),
-    notes: new FormControl('', { nonNullable: true }),
+  // Réinitialisé quand `initial` change, mais éditable par les interactions fichier.
+  protected readonly selectedFile = linkedSignal<File | null>(() => {
+    this.initial();
+    return null;
   });
 
-  protected readonly isInvalid = formInvalid(this.form);
-  protected readonly formatSize = formatFileSize;
-
-  private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-  private readonly MAX_SIZE = 10 * 1024 * 1024;
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<PrescriptionFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           patientId: data.patientId,
           practitionerId: data.practitionerId ?? '',
           appointmentId: data.appointmentId ?? '',
           issuedDate: data.issuedDate,
           validUntil: data.validUntil ?? '',
           notes: data.notes ?? '',
-        });
-        this.selectedFile.set(null);
-      } else {
-        this.form.reset();
-        this.selectedFile.set(null);
-      }
-    });
-  }
+        }
+      : emptyModel();
+  });
+
+  protected readonly prescriptionForm = form(this.model, (path) => {
+    required(path.patientId, { message: 'medical.prescription.form.patientRequired' });
+    required(path.issuedDate, { message: 'medical.prescription.form.issuedRequired' });
+  });
+
+  protected readonly formatSize = formatFileSize;
+
+  private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
+  private readonly MAX_SIZE = 10 * 1024 * 1024;
 
   protected onDragOver(event: DragEvent) {
     event.preventDefault();
@@ -274,19 +297,22 @@ export class PrescriptionForm {
     this.selectedFile.set(null);
   }
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      data: {
-        patientId: v.patientId,
-        practitionerId: v.practitionerId || null,
-        appointmentId: v.appointmentId || null,
-        issuedDate: v.issuedDate,
-        validUntil: v.validUntil || null,
-        notes: v.notes || null,
-      },
-      file: this.selectedFile(),
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.prescriptionForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        data: {
+          patientId: v.patientId,
+          practitionerId: v.practitionerId || null,
+          appointmentId: v.appointmentId || null,
+          issuedDate: v.issuedDate,
+          validUntil: v.validUntil || null,
+          notes: v.notes || null,
+        },
+        file: this.selectedFile(),
+      });
+      return [];
     });
   }
 

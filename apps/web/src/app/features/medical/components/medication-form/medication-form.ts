@@ -1,22 +1,35 @@
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
+import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 import { Medication, MedicationType } from '../../domain/models/medication.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Prescription } from '../../domain/models/prescription.model';
 
-type MedicationFormShape = {
-  patientId: FormControl<string>;
-  prescriptionId: FormControl<string>;
-  name: FormControl<string>;
-  type: FormControl<MedicationType>;
-  dosage: FormControl<string>;
-  quantity: FormControl<number>;
-  dailyRate: FormControl<number>;
-  startDate: FormControl<string>;
-  alertDaysBefore: FormControl<number>;
+type MedicationFormModel = {
+  patientId: string;
+  prescriptionId: string;
+  name: string;
+  type: MedicationType;
+  dosage: string;
+  quantity: number;
+  dailyRate: number;
+  startDate: string;
+  alertDaysBefore: number;
 };
+
+function emptyMedicationModel(): MedicationFormModel {
+  return {
+    patientId: '',
+    prescriptionId: '',
+    name: '',
+    type: 'comprime',
+    dosage: '',
+    quantity: 0,
+    dailyRate: 1,
+    startDate: new Date().toISOString().slice(0, 10),
+    alertDaysBefore: 7,
+  };
+}
 
 const DAY_LABELS = [
   { value: 0, label: 'Dim' },
@@ -42,10 +55,10 @@ const MEDICATION_TYPES: MedicationType[] = [
 @Component({
   selector: 'app-medication-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">
           {{
@@ -61,21 +74,16 @@ const MEDICATION_TYPES: MedicationType[] = [
             {{ 'medical.medication.form.patient' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select
-            id="med-patient"
-            formControlName="patientId"
-            aria-required="true"
-            class="form-select"
-          >
+          <select id="med-patient" [formField]="medicationForm.patientId" aria-required="true" class="form-select">
             <option value="">{{ 'medical.medication.form.patientPlaceholder' | transloco }}</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
             }
           </select>
-          @if (form.controls.patientId.touched && form.controls.patientId.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.medication.form.patientRequired' | transloco
-            }}</small>
+          @if (medicationForm.patientId().touched() && medicationForm.patientId().invalid()) {
+            @for (err of medicationForm.patientId().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -83,7 +91,7 @@ const MEDICATION_TYPES: MedicationType[] = [
           <label for="med-prescription" class="form-label">{{
             'medical.medication.form.prescription' | transloco
           }}</label>
-          <select id="med-prescription" formControlName="prescriptionId" class="form-select">
+          <select id="med-prescription" [formField]="medicationForm.prescriptionId" class="form-select">
             <option value="">
               {{ 'medical.medication.form.prescriptionPlaceholder' | transloco }}
             </option>
@@ -101,17 +109,11 @@ const MEDICATION_TYPES: MedicationType[] = [
             {{ 'medical.medication.form.name' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input
-            id="med-name"
-            type="text"
-            formControlName="name"
-            aria-required="true"
-            class="form-input"
-          />
-          @if (form.controls.name.touched && form.controls.name.errors?.['required']) {
-            <small class="error" role="alert">{{
-              'medical.medication.form.nameRequired' | transloco
-            }}</small>
+          <input id="med-name" type="text" [formField]="medicationForm.name" aria-required="true" class="form-input" />
+          @if (medicationForm.name().touched() && medicationForm.name().invalid()) {
+            @for (err of medicationForm.name().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
+            }
           }
         </div>
 
@@ -121,7 +123,7 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.type' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="med-type" formControlName="type" aria-required="true" class="form-select">
+            <select id="med-type" [formField]="medicationForm.type" aria-required="true" class="form-select">
               @for (t of medicationTypes; track t) {
                 <option [value]="t">{{ 'medical.medication.types.' + t | transloco }}</option>
               }
@@ -135,15 +137,15 @@ const MEDICATION_TYPES: MedicationType[] = [
             <input
               id="med-dosage"
               type="text"
-              formControlName="dosage"
+              [formField]="medicationForm.dosage"
               [placeholder]="'medical.medication.form.dosagePlaceholder' | transloco"
               aria-required="true"
               class="form-input"
             />
-            @if (form.controls.dosage.touched && form.controls.dosage.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.medication.form.dosageRequired' | transloco
-              }}</small>
+            @if (medicationForm.dosage().touched() && medicationForm.dosage().invalid()) {
+              @for (err of medicationForm.dosage().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
         </div>
@@ -154,23 +156,10 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.quantity' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input
-              id="med-quantity"
-              type="number"
-              formControlName="quantity"
-              min="0"
-              aria-required="true"
-              class="form-input mono"
-            />
-            @if (form.controls.quantity.touched) {
-              @if (form.controls.quantity.errors?.['required']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.quantityRequired' | transloco
-                }}</small>
-              } @else if (form.controls.quantity.errors?.['min']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.quantityMin' | transloco
-                }}</small>
+            <input id="med-quantity" type="number" [formField]="medicationForm.quantity" aria-required="true" class="form-input mono" />
+            @if (medicationForm.quantity().touched() && medicationForm.quantity().invalid()) {
+              @for (err of medicationForm.quantity().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
               }
             }
           </div>
@@ -182,21 +171,14 @@ const MEDICATION_TYPES: MedicationType[] = [
             <input
               id="med-daily-rate"
               type="number"
-              formControlName="dailyRate"
-              min="0.1"
+              [formField]="medicationForm.dailyRate"
               step="0.1"
               aria-required="true"
               class="form-input mono"
             />
-            @if (form.controls.dailyRate.touched) {
-              @if (form.controls.dailyRate.errors?.['required']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.dailyRateRequired' | transloco
-                }}</small>
-              } @else if (form.controls.dailyRate.errors?.['min']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.dailyRateMin' | transloco
-                }}</small>
+            @if (medicationForm.dailyRate().touched() && medicationForm.dailyRate().invalid()) {
+              @for (err of medicationForm.dailyRate().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
               }
             }
           </div>
@@ -208,17 +190,11 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.startDate' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input
-              id="med-start-date"
-              type="date"
-              formControlName="startDate"
-              aria-required="true"
-              class="form-input"
-            />
-            @if (form.controls.startDate.touched && form.controls.startDate.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.medication.form.startDateRequired' | transloco
-              }}</small>
+            <input id="med-start-date" type="date" [formField]="medicationForm.startDate" aria-required="true" class="form-input" />
+            @if (medicationForm.startDate().touched() && medicationForm.startDate().invalid()) {
+              @for (err of medicationForm.startDate().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
+              }
             }
           </div>
           <div>
@@ -226,23 +202,10 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.alertDays' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input
-              id="med-alert"
-              type="number"
-              formControlName="alertDaysBefore"
-              min="1"
-              aria-required="true"
-              class="form-input mono"
-            />
-            @if (form.controls.alertDaysBefore.touched) {
-              @if (form.controls.alertDaysBefore.errors?.['required']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.alertDaysRequired' | transloco
-                }}</small>
-              } @else if (form.controls.alertDaysBefore.errors?.['min']) {
-                <small class="error" role="alert">{{
-                  'medical.medication.form.alertDaysMin' | transloco
-                }}</small>
+            <input id="med-alert" type="number" [formField]="medicationForm.alertDaysBefore" aria-required="true" class="form-input mono" />
+            @if (medicationForm.alertDaysBefore().touched() && medicationForm.alertDaysBefore().invalid()) {
+              @for (err of medicationForm.alertDaysBefore().errors(); track err.message) {
+                <small class="error" role="alert">{{ err.message | transloco }}</small>
               }
             }
           </div>
@@ -279,7 +242,7 @@ const MEDICATION_TYPES: MedicationType[] = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button type="submit" [disabled]="medicationForm().invalid()" class="btn-submit bg-ib-purple">
           {{
             (initial() ? 'medical.medication.form.save' : 'medical.medication.form.create')
               | transloco
@@ -298,42 +261,12 @@ export class MedicationForm {
 
   protected readonly days = DAY_LABELS;
   protected readonly medicationTypes = MEDICATION_TYPES;
-  protected readonly skipDays = signal<number[]>([]);
 
-  protected readonly form = new FormGroup<MedicationFormShape>({
-    patientId: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    prescriptionId: new FormControl('', { nonNullable: true }),
-    name: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    type: new FormControl<MedicationType>('comprime', {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    dosage: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    quantity: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0)],
-    }),
-    dailyRate: new FormControl(1, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0.1)],
-    }),
-    startDate: new FormControl(new Date().toISOString().slice(0, 10), {
-      nonNullable: true,
-      validators: [Validators.required],
-    }),
-    alertDaysBefore: new FormControl(7, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(1)],
-    }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // État dérivé modifiable : se réinitialise quand `initial` change, éditable par le form.
+  protected readonly model = linkedSignal<MedicationFormModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           patientId: data.patientId,
           prescriptionId: data.prescriptionId ?? '',
           name: data.name,
@@ -343,14 +276,29 @@ export class MedicationForm {
           dailyRate: data.dailyRate,
           startDate: data.startDate,
           alertDaysBefore: data.alertDaysBefore,
-        });
-        this.skipDays.set([...data.skipDays]);
-      } else {
-        this.form.reset();
-        this.skipDays.set([]);
-      }
-    });
-  }
+        }
+      : emptyMedicationModel();
+  });
+
+  // Jours de non-prise : hors FormControl, signal éditable réinitialisé sur `initial`.
+  protected readonly skipDays = linkedSignal<number[]>(() => {
+    const data = this.initial();
+    return data ? [...data.skipDays] : [];
+  });
+
+  protected readonly medicationForm = form(this.model, (path) => {
+    required(path.patientId, { message: 'medical.medication.form.patientRequired' });
+    required(path.name, { message: 'medical.medication.form.nameRequired' });
+    required(path.type);
+    required(path.dosage, { message: 'medical.medication.form.dosageRequired' });
+    required(path.quantity, { message: 'medical.medication.form.quantityRequired' });
+    min(path.quantity, 0, { message: 'medical.medication.form.quantityMin' });
+    required(path.dailyRate, { message: 'medical.medication.form.dailyRateRequired' });
+    min(path.dailyRate, 0.1, { message: 'medical.medication.form.dailyRateMin' });
+    required(path.startDate, { message: 'medical.medication.form.startDateRequired' });
+    required(path.alertDaysBefore, { message: 'medical.medication.form.alertDaysRequired' });
+    min(path.alertDaysBefore, 1, { message: 'medical.medication.form.alertDaysMin' });
+  });
 
   protected isDaySkipped(day: number): boolean {
     return this.skipDays().includes(day);
@@ -365,20 +313,23 @@ export class MedicationForm {
     }
   }
 
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({
-      patientId: v.patientId,
-      prescriptionId: v.prescriptionId || null,
-      name: v.name,
-      type: v.type,
-      dosage: v.dosage,
-      quantity: v.quantity,
-      dailyRate: v.dailyRate,
-      startDate: v.startDate,
-      alertDaysBefore: v.alertDaysBefore,
-      skipDays: this.skipDays(),
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.medicationForm, async () => {
+      const v = this.model();
+      this.submitted.emit({
+        patientId: v.patientId,
+        prescriptionId: v.prescriptionId || null,
+        name: v.name,
+        type: v.type,
+        dosage: v.dosage,
+        quantity: v.quantity,
+        dailyRate: v.dailyRate,
+        startDate: v.startDate,
+        alertDaysBefore: v.alertDaysBefore,
+        skipDays: this.skipDays(),
+      });
+      return [];
     });
   }
 }

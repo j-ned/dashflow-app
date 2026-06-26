@@ -65,7 +65,7 @@ describe('Transactions page', () => {
     expect(cmp.confirmedBalanceValue()).toBe(1600);
   });
 
-  it('crée un mouvement via la gateway puis recharge', () => {
+  it('crée un mouvement via la gateway puis recharge', async () => {
     const accounts = [
       { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0, color: null, dotColor: null },
     ];
@@ -124,6 +124,8 @@ describe('Transactions page', () => {
         category: 'food',
       }),
     );
+    // rxResource.reload() recharge de façon asynchrone → attendre la stabilisation.
+    await fixture.whenStable();
     expect(getAll).toHaveBeenCalledTimes(2);
   });
 });

@@ -1,19 +1,18 @@
-import { ChangeDetectionStrategy, Component, output } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, output, signal } from '@angular/core';
+import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type RefillFormShape = {
-  quantity: FormControl<number>;
+type RefillModel = {
+  quantity: number;
 };
 
 @Component({
   selector: 'app-refill-medication-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe],
+  imports: [FormField, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submitForm()">
+    <form (submit)="submitForm($event)">
       <fieldset class="space-y-3">
         <legend class="sr-only">{{ 'medical.medication.refill.legend' | transloco }}</legend>
 
@@ -25,20 +24,13 @@ type RefillFormShape = {
           <input
             id="refill-quantity"
             type="number"
-            formControlName="quantity"
-            min="1"
+            [formField]="refillForm.quantity"
             aria-required="true"
             class="form-input mono"
           />
-          @if (form.controls.quantity.touched) {
-            @if (form.controls.quantity.errors?.['required']) {
-              <small class="error" role="alert">{{
-                'medical.medication.refill.quantityRequired' | transloco
-              }}</small>
-            } @else if (form.controls.quantity.errors?.['min']) {
-              <small class="error" role="alert">{{
-                'medical.medication.refill.quantityMin' | transloco
-              }}</small>
+          @if (refillForm.quantity().touched() && refillForm.quantity().invalid()) {
+            @for (err of refillForm.quantity().errors(); track err.message) {
+              <small class="error" role="alert">{{ err.message | transloco }}</small>
             }
           }
         </div>
@@ -48,7 +40,7 @@ type RefillFormShape = {
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="isInvalid()" class="btn-submit bg-ib-purple">
+        <button type="submit" [disabled]="refillForm().invalid()" class="btn-submit bg-ib-purple">
           {{ 'medical.medication.refill.submit' | transloco }}
         </button>
       </footer>
@@ -59,19 +51,20 @@ export class RefillMedicationForm {
   readonly submitted = output<{ quantity: number }>();
   readonly cancelled = output<void>();
 
-  protected readonly form = new FormGroup<RefillFormShape>({
-    quantity: new FormControl(1, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(1)],
-    }),
+  protected readonly model = signal<RefillModel>({ quantity: 1 });
+
+  protected readonly refillForm = form(this.model, (path) => {
+    required(path.quantity, { message: 'medical.medication.refill.quantityRequired' });
+    min(path.quantity, 1, { message: 'medical.medication.refill.quantityMin' });
   });
 
-  protected readonly isInvalid = formInvalid(this.form);
-
-  protected submitForm() {
-    if (this.form.invalid) return;
-    const v = this.form.getRawValue();
-    this.submitted.emit({ quantity: v.quantity });
-    this.form.reset();
+  protected async submitForm(event: Event): Promise<void> {
+    event.preventDefault();
+    await submit(this.refillForm, async () => {
+      const v = this.model();
+      this.submitted.emit({ quantity: v.quantity });
+      this.model.set({ quantity: 1 });
+      return [];
+    });
   }
 }
