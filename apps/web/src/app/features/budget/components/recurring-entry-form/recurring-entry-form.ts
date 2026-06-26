@@ -2,14 +2,12 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
-  effect,
   inject,
   input,
   linkedSignal,
   output,
-  signal,
 } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import { BankAccount } from '../../domain/models/bank-account.model';
@@ -28,27 +26,38 @@ import {
   transferModeToggleVisible,
 } from '../../domain/recurring-entry-type';
 import { PayslipDropzone } from '../payslip-dropzone/payslip-dropzone';
-import { formInvalid } from '@shared/forms/form-invalid';
 
-type RecurringEntryFormShape = {
-  label: FormControl<string>;
-  amount: FormControl<number>;
-  dayOfMonth: FormControl<number | null>;
-  date: FormControl<string>;
-  endDate: FormControl<string>;
-  toAccountId: FormControl<string>;
-  category: FormControl<string>;
-  memberId: FormControl<string>;
-  autoPost: FormControl<boolean>;
+type RecurringEntryModel = {
+  label: string;
+  amount: number;
+  dayOfMonth: number | null;
+  date: string;
+  endDate: string;
+  toAccountId: string;
+  category: string;
+  memberId: string;
+  autoPost: boolean;
+};
+
+const EMPTY_MODEL: RecurringEntryModel = {
+  label: '',
+  amount: 0,
+  dayOfMonth: null,
+  date: '',
+  endDate: '',
+  toAccountId: '',
+  category: '',
+  memberId: '',
+  autoPost: false,
 };
 
 @Component({
   selector: 'app-recurring-entry-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, TranslocoPipe, PayslipDropzone],
+  imports: [FormField, TranslocoPipe, PayslipDropzone],
   host: { class: 'block' },
   template: `
-    <form [formGroup]="form" (ngSubmit)="submit()" class="space-y-4">
+    <form (submit)="submitForm($event)" class="space-y-4">
       <fieldset class="space-y-4">
         <legend class="sr-only">{{ 'budget.recurringForm.legend' | transloco }}</legend>
 
@@ -59,15 +68,17 @@ type RecurringEntryFormShape = {
           <input
             id="re-label"
             type="text"
-            formControlName="label"
+            [formField]="entryForm.label"
             aria-required="true"
             class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
             [placeholder]="labelPlaceholder()"
           />
-          @if (form.controls.label.touched && form.controls.label.errors?.['required']) {
-            <small class="mt-1 block text-xs text-ib-red" role="alert">{{
-              'budget.errors.labelRequired' | transloco
-            }}</small>
+          @if (entryForm.label().touched() && entryForm.label().invalid()) {
+            @for (err of entryForm.label().errors(); track err.message) {
+              <small class="mt-1 block text-xs text-ib-red" role="alert">{{
+                err.message | transloco
+              }}</small>
+            }
           }
         </div>
 
@@ -79,21 +90,16 @@ type RecurringEntryFormShape = {
           <input
             id="re-amount"
             type="number"
-            formControlName="amount"
+            [formField]="entryForm.amount"
             step="0.01"
-            min="0"
             aria-required="true"
             class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
             [placeholder]="'budget.recurringForm.amountPlaceholder' | transloco"
           />
-          @if (form.controls.amount.touched) {
-            @if (form.controls.amount.errors?.['required']) {
+          @if (entryForm.amount().touched() && entryForm.amount().invalid()) {
+            @for (err of entryForm.amount().errors(); track err.message) {
               <small class="mt-1 block text-xs text-ib-red" role="alert">{{
-                'budget.errors.amountRequired' | transloco
-              }}</small>
-            } @else if (form.controls.amount.errors?.['min']) {
-              <small class="mt-1 block text-xs text-ib-red" role="alert">{{
-                'budget.errors.amountMin' | transloco
+                err.message | transloco
               }}</small>
             }
           }
@@ -140,9 +146,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-day"
                   type="number"
-                  formControlName="dayOfMonth"
-                  min="1"
-                  max="31"
+                  [formField]="entryForm.dayOfMonth"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                   [placeholder]="'budget.recurringForm.incomeDayPlaceholder' | transloco"
                 />
@@ -157,7 +161,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-date"
                   type="date"
-                  formControlName="date"
+                  [formField]="entryForm.date"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                 />
                 <p class="mt-1 text-xs text-text-muted">
@@ -176,9 +180,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-day"
                   type="number"
-                  formControlName="dayOfMonth"
-                  min="1"
-                  max="31"
+                  [formField]="entryForm.dayOfMonth"
                   aria-required="true"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                   [placeholder]="'budget.recurringForm.expenseDayPlaceholder' | transloco"
@@ -194,7 +196,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-end-date"
                   type="date"
-                  formControlName="endDate"
+                  [formField]="entryForm.endDate"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                 />
                 <p class="mt-1 text-xs text-text-muted">
@@ -212,7 +214,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-date"
                   type="date"
-                  formControlName="date"
+                  [formField]="entryForm.date"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                 />
                 <p class="mt-1 text-xs text-text-muted">
@@ -226,7 +228,7 @@ type RecurringEntryFormShape = {
                 <input
                   id="re-end-date"
                   type="date"
-                  formControlName="endDate"
+                  [formField]="entryForm.endDate"
                   class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                 />
                 <p class="mt-1 text-xs text-text-muted">
@@ -243,7 +245,7 @@ type RecurringEntryFormShape = {
               <input
                 id="re-date"
                 type="date"
-                formControlName="date"
+                [formField]="entryForm.date"
                 class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
               />
               <p class="mt-1 text-xs text-text-muted">
@@ -298,7 +300,7 @@ type RecurringEntryFormShape = {
                   >
                   <select
                     id="re-to-account"
-                    formControlName="toAccountId"
+                    [formField]="entryForm.toAccountId"
                     aria-required="true"
                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                   >
@@ -312,7 +314,7 @@ type RecurringEntryFormShape = {
                   <p class="mt-1 text-xs text-text-muted">
                     {{ 'budget.recurringForm.toAccountHint' | transloco }}
                   </p>
-                  @if (activeType() === 'transfer' && !form.controls.toAccountId.value) {
+                  @if (activeType() === 'transfer' && !model().toAccountId) {
                     <small
                       data-testid="to-account-required"
                       class="mt-1 block text-xs text-ib-red"
@@ -332,9 +334,7 @@ type RecurringEntryFormShape = {
                     <input
                       id="re-day"
                       type="number"
-                      formControlName="dayOfMonth"
-                      min="1"
-                      max="31"
+                      [formField]="entryForm.dayOfMonth"
                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                       [placeholder]="'budget.recurringForm.transferDayPlaceholder' | transloco"
                     />
@@ -351,7 +351,7 @@ type RecurringEntryFormShape = {
                     <input
                       id="re-end-date"
                       type="date"
-                      formControlName="endDate"
+                      [formField]="entryForm.endDate"
                       class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                     />
                     <p class="mt-1 text-xs text-text-muted">
@@ -367,7 +367,7 @@ type RecurringEntryFormShape = {
                   <input
                     id="re-date"
                     type="date"
-                    formControlName="date"
+                    [formField]="entryForm.date"
                     class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
                   />
                   <p class="mt-1 text-xs text-text-muted">
@@ -385,11 +385,7 @@ type RecurringEntryFormShape = {
           <label
             class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
           >
-            <input
-              type="checkbox"
-              formControlName="autoPost"
-              class="mt-0.5 h-4 w-4 accent-ib-green"
-            />
+            <input type="checkbox" [formField]="entryForm.autoPost" class="mt-0.5 h-4 w-4 accent-ib-green" />
             <span class="text-sm">
               <span class="font-medium text-text-primary">{{
                 'budget.recurringForm.autoPost' | transloco
@@ -408,7 +404,7 @@ type RecurringEntryFormShape = {
           <input
             id="re-category"
             type="text"
-            formControlName="category"
+            [formField]="entryForm.category"
             list="re-category-options"
             class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
             [placeholder]="'budget.recurringForm.categoryPlaceholder' | transloco"
@@ -427,7 +423,7 @@ type RecurringEntryFormShape = {
             }}</label>
             <select
               id="re-member"
-              formControlName="memberId"
+              [formField]="entryForm.memberId"
               class="w-full rounded-lg border border-border bg-raised px-3 py-2 text-sm text-text-primary"
             >
               <option value="">{{ 'budget.recurringForm.memberNone' | transloco }}</option>
@@ -459,7 +455,7 @@ type RecurringEntryFormShape = {
         </button>
         <button
           type="submit"
-          [disabled]="isInvalid()"
+          [disabled]="entryForm().invalid()"
           class="rounded-lg bg-ib-green px-4 py-2 text-sm font-medium text-canvas hover:bg-ib-green/90 transition-colors disabled:opacity-50"
         >
           {{
@@ -485,7 +481,11 @@ export class RecurringEntryForm {
   readonly removePayslip = output<void>();
   readonly cancelled = output<void>();
 
-  protected readonly pendingFile = signal<File | null>(null);
+  // Réinitialisé quand `initial` change (deux-way avec la dropzone).
+  protected readonly pendingFile = linkedSignal<File | null>(() => {
+    this.initial();
+    return null;
+  });
 
   // Contexte prélèvement : un toggle Destination fait basculer expense ↔ transfer.
   protected readonly showDestinationToggle = computed(() =>
@@ -548,28 +548,11 @@ export class RecurringEntryForm {
     }
   });
 
-  protected readonly form = new FormGroup<RecurringEntryFormShape>({
-    label: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    amount: new FormControl(0, {
-      nonNullable: true,
-      validators: [Validators.required, Validators.min(0.01)],
-    }),
-    dayOfMonth: new FormControl<number | null>(null),
-    date: new FormControl('', { nonNullable: true }),
-    endDate: new FormControl('', { nonNullable: true }),
-    toAccountId: new FormControl('', { nonNullable: true }),
-    category: new FormControl('', { nonNullable: true }),
-    memberId: new FormControl('', { nonNullable: true }),
-    autoPost: new FormControl(false, { nonNullable: true }),
-  });
-
-  protected readonly isInvalid = formInvalid(this.form);
-
-  constructor() {
-    effect(() => {
-      const data = this.initial();
-      if (data) {
-        this.form.patchValue({
+  // Patch à l'édition / vide en création (remplace l'ancien effect de patchValue).
+  protected readonly model = linkedSignal<RecurringEntryModel>(() => {
+    const data = this.initial();
+    return data
+      ? {
           label: data.label,
           amount: data.amount,
           dayOfMonth: data.dayOfMonth,
@@ -579,50 +562,47 @@ export class RecurringEntryForm {
           category: data.category ?? '',
           memberId: data.memberId ?? '',
           autoPost: data.autoPost ?? false,
-        });
-      } else {
-        this.form.reset();
-      }
-      this.pendingFile.set(null);
-    });
+        }
+      : { ...EMPTY_MODEL };
+  });
 
-    effect(() => {
-      const ctrl = this.form.controls.toAccountId;
-      if (this.activeType() === 'transfer') {
-        ctrl.addValidators(Validators.required);
-      } else {
-        ctrl.removeValidators(Validators.required);
-      }
-      ctrl.updateValueAndValidity();
+  // toAccountId requis uniquement en mode virement (remplace l'effect addValidators dynamique).
+  protected readonly entryForm = form(this.model, (path) => {
+    required(path.label, { message: 'budget.errors.labelRequired' });
+    required(path.amount, { message: 'budget.errors.amountRequired' });
+    min(path.amount, 0.01, { message: 'budget.errors.amountMin' });
+    required(path.toAccountId, {
+      when: () => this.activeType() === 'transfer',
+      message: 'budget.recurringForm.toAccountRequired',
     });
-  }
+  });
 
   protected setTransferMode(mode: 'recurring' | 'one_time') {
     this.transferMode.set(mode);
     if (mode === 'one_time') {
-      this.form.controls.dayOfMonth.setValue(null);
-      this.form.controls.endDate.setValue('');
+      this.model.update((m) => ({ ...m, dayOfMonth: null, endDate: '' }));
     } else {
-      this.form.controls.date.setValue('');
+      this.model.update((m) => ({ ...m, date: '' }));
     }
   }
 
-  protected submit() {
-    if (this.form.invalid) return;
-
-    const pending = this.pendingFile();
-    if (pending) {
-      this.fileAttached.emit(pending);
-    }
-
-    const month = new Date().toISOString().slice(0, 7);
-    this.submitted.emit(
-      buildRecurringEntryPayload(this.form.getRawValue(), {
-        type: this.activeType(),
-        initial: this.initial(),
-        forcedAccountId: this.forcedAccountId(),
-        currentMonth: month,
-      }),
-    );
+  protected async submitForm(event?: Event): Promise<void> {
+    event?.preventDefault();
+    await submit(this.entryForm, async () => {
+      const pending = this.pendingFile();
+      if (pending) {
+        this.fileAttached.emit(pending);
+      }
+      const month = new Date().toISOString().slice(0, 7);
+      this.submitted.emit(
+        buildRecurringEntryPayload(this.model(), {
+          type: this.activeType(),
+          initial: this.initial(),
+          forcedAccountId: this.forcedAccountId(),
+          currentMonth: month,
+        }),
+      );
+      return [];
+    });
   }
 }
