@@ -18,10 +18,8 @@ import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gat
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
-import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
 import { buildPendingCharges } from '../../domain/pending-charges';
 import { duePostings } from '../../domain/auto-post';
-import { addMoney } from '../../domain/money';
 import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
 import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
@@ -440,39 +438,11 @@ export class BankAccount {
   protected readonly isExpensePassedFn = (entry: RecurringEntry) => this.isExpensePassed(entry);
   protected readonly accountNameByIdFn = (id: string | null) => this.accountNameById(id);
 
-  protected readonly selectedAccount = computed(() => {
-    const id = this.store.selectedAccountId();
-    return this.store.accounts().find((a) => a.id === id) ?? null;
-  });
-
-  protected readonly selectedInitialBalance = computed(() =>
-    Number(this.selectedAccount()?.initialBalance ?? 0),
-  );
-
-  protected readonly accountRealTxs = computed(() => {
-    const id = this.store.selectedAccountId();
-    const txs = this.store.transactions();
-    if (id === null) return txs;
-    return txs.filter((t) => t.accountId === id || t.toAccountId === id);
-  });
-
-  protected readonly confirmedBalance = computed(() => {
-    const acc = this.selectedAccount();
-    if (acc) return computeConfirmedBalance(acc, this.accountRealTxs(), this.todayIso);
-    const txs = this.store.transactions();
-    return this.store.accounts().reduce(
-      (sum, a) =>
-        addMoney(
-          sum,
-          computeConfirmedBalance(
-            a,
-            txs.filter((t) => t.accountId === a.id || t.toAccountId === a.id),
-            this.todayIso,
-          ),
-        ),
-      0,
-    );
-  });
+  // Cluster solde déplacé dans BudgetDataStore (réutilisable) ; ré-exposé ici pour le template.
+  protected readonly selectedAccount = this.store.selectedAccount;
+  protected readonly selectedInitialBalance = this.store.selectedInitialBalance;
+  protected readonly accountRealTxs = this.store.accountRealTxs;
+  protected readonly confirmedBalance = this.store.confirmedBalance;
 
   // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
   // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).

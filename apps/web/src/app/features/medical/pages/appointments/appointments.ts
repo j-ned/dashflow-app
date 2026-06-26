@@ -106,13 +106,13 @@ import { Icon } from '@shared/components/icon/icon';
             </tr>
           </thead>
           <tbody>
-            @for (appt of appointments(); track appt.id) {
+            @for (appt of appointmentRows(); track appt.id) {
               <tr class="border-b border-border/50 hover:bg-hover/30 transition-colors">
                 <td class="px-4 py-3 text-text-primary">{{ appt.date | date: 'd MMMM yyyy' }}</td>
                 <td class="px-4 py-3 text-text-primary">{{ appt.time }}</td>
-                <td class="px-4 py-3 text-text-primary">{{ patientName(appt.patientId) }}</td>
+                <td class="px-4 py-3 text-text-primary">{{ appt.patientName }}</td>
                 <td class="px-4 py-3 text-text-primary">
-                  {{ practitionerName(appt.practitionerId) }}
+                  {{ appt.practitionerName }}
                 </td>
                 <td class="px-4 py-3">
                   <span
@@ -261,6 +261,14 @@ export class Appointments {
     }
     return map;
   });
+
+  protected readonly appointmentRows = computed(() =>
+    this.appointments().map((appt) => ({
+      ...appt,
+      patientName: this.patientName(appt.patientId),
+      practitionerName: this.practitionerName(appt.practitionerId),
+    })),
+  );
 
   protected readonly selectedAppointment = signal<Appointment | null>(null);
 

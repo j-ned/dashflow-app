@@ -7,7 +7,7 @@ import {
   withPreloading,
   PreloadAllModules,
 } from '@angular/router';
-import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { credentialsInterceptor } from '@core/interceptors/credentials.interceptor';
 import { csrfInterceptor } from '@core/interceptors/csrf.interceptor';
 import localeFr from '@angular/common/locales/fr';
@@ -58,10 +58,7 @@ export const appConfig: ApplicationConfig = {
         scrollPositionRestoration: 'enabled',
       }),
     ),
-    provideHttpClient(
-      withFetch(),
-      withInterceptors([credentialsInterceptor, csrfInterceptor]),
-    ),
+    provideHttpClient(withInterceptors([credentialsInterceptor, csrfInterceptor])),
     transloco,
 
     { provide: AccountTransactionGateway, useClass: HttpAccountTransactionGateway },

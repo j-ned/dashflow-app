@@ -96,10 +96,7 @@ export function normalizeCategory(raw: string | null | undefined): BudgetCategor
   return BY_FOLDED_LABEL.get(foldText(raw)) ?? OTHER_CATEGORY;
 }
 
-// ---------------------------------------------------------------------------
 // Taxonomie groupée
-// ---------------------------------------------------------------------------
-
 export type CategoryGroup = {
   readonly key: string;
   readonly label: string;

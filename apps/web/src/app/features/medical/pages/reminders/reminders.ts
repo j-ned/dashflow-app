@@ -24,6 +24,14 @@ import { ReminderForm } from '../../components/reminder-form/reminder-form';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Icon } from '@shared/components/icon/icon';
+import {
+  allDaysExcept,
+  escapeIcs,
+  formatGoogleDateOnly,
+  toGoogleDate,
+  toIcsDateOnly,
+  toIcsDateTime,
+} from '../../domain/calendar-format';
 
 const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 
@@ -103,7 +111,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
             </tr>
           </thead>
           <tbody>
-            @for (reminder of reminders(); track reminder.id) {
+            @for (reminder of reminderRows(); track reminder.id) {
               <tr class="border-b border-border/50 hover:bg-hover/50 transition-colors">
                 <td class="px-5 py-3">
                   <span
@@ -138,7 +146,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
                   </span>
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
-                  {{ reminderDetail(reminder) }}
+                  {{ reminder.detail }}
                 </td>
                 <td class="px-5 py-3 text-sm text-text-primary">{{ reminder.recipientEmail }}</td>
                 <td class="px-5 py-3 text-center">
@@ -272,9 +280,13 @@ export class Reminders {
     return map;
   });
 
+  protected readonly reminderRows = computed(() =>
+    this.reminders().map((reminder) => ({ ...reminder, detail: this.reminderDetail(reminder) })),
+  );
+
   // ── Calendar helpers ──
 
-  protected reminderDetail(reminder: Reminder): string {
+  private reminderDetail(reminder: Reminder): string {
     if (reminder.target === 'appointment' && reminder.appointmentId) {
       const appt = this.appointmentMap().get(reminder.appointmentId);
       if (appt) {
@@ -305,8 +317,8 @@ export class Reminders {
         patient,
         practitioner,
       });
-      const start = this.toGoogleDate(appt.date, appt.time);
-      const end = this.toGoogleDate(appt.date, appt.time, 60);
+      const start = toGoogleDate(appt.date, appt.time);
+      const end = toGoogleDate(appt.date, appt.time, 60);
       const details = appt.reason
         ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason })
         : '';
@@ -323,7 +335,7 @@ export class Reminders {
         patient,
       });
       const today = new Date();
-      const start = this.formatGoogleDateOnly(today);
+      const start = formatGoogleDateOnly(today);
       const details = this._i18n.translate('medical.reminder.medicationDescription', {
         dosage: med.dosage,
         patient,
@@ -347,8 +359,8 @@ export class Reminders {
         patient,
         practitioner,
       });
-      const dtStart = this.toIcsDateTime(appt.date, appt.time);
-      const dtEnd = this.toIcsDateTime(appt.date, appt.time, 60);
+      const dtStart = toIcsDateTime(appt.date, appt.time);
+      const dtEnd = toIcsDateTime(appt.date, appt.time, 60);
       const description = appt.reason
         ? this._i18n.translate('medical.reminder.appointmentReason', { reason: appt.reason })
         : '';
@@ -364,12 +376,12 @@ export class Reminders {
         `UID:${reminder.id}@dashflow`,
         `DTSTART:${dtStart}`,
         `DTEND:${dtEnd}`,
-        `SUMMARY:${this.escapeIcs(title)}`,
-        description ? `DESCRIPTION:${this.escapeIcs(description)}` : '',
+        `SUMMARY:${escapeIcs(title)}`,
+        description ? `DESCRIPTION:${escapeIcs(description)}` : '',
         'BEGIN:VALARM',
         'TRIGGER:-PT30M',
         'ACTION:DISPLAY',
-        `DESCRIPTION:${this.escapeIcs(alarmDescription)}`,
+        `DESCRIPTION:${escapeIcs(alarmDescription)}`,
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR',
@@ -392,13 +404,13 @@ export class Reminders {
         .translate('medical.reminder.medicationDescription', { dosage: med.dosage, patient })
         .replace(/\n/g, '\\n');
       const alarmDescription = this._i18n.translate('medical.reminder.alarmMedication');
-      const dtStart = this.toIcsDateOnly(new Date());
+      const dtStart = toIcsDateOnly(new Date());
 
       const rruleParts = ['FREQ=DAILY'];
       if (med.skipDays.length > 0) {
         const hasValidSkipDay = med.skipDays.some((d) => ICS_WEEKDAYS[d]);
         if (hasValidSkipDay) {
-          const byDays = this.allDaysExcept(med.skipDays)
+          const byDays = allDaysExcept(med.skipDays)
             .map((d) => ICS_WEEKDAYS[d])
             .filter(Boolean);
           rruleParts.push(`BYDAY=${byDays.join(',')}`);
@@ -415,12 +427,12 @@ export class Reminders {
         `UID:${reminder.id}@dashflow`,
         `DTSTART;VALUE=DATE:${dtStart}`,
         `RRULE:${rruleParts.join(';')}`,
-        `SUMMARY:${this.escapeIcs(title)}`,
+        `SUMMARY:${escapeIcs(title)}`,
         `DESCRIPTION:${description}`,
         'BEGIN:VALARM',
         'TRIGGER:-PT15M',
         'ACTION:DISPLAY',
-        `DESCRIPTION:${this.escapeIcs(alarmDescription)}`,
+        `DESCRIPTION:${escapeIcs(alarmDescription)}`,
         'END:VALARM',
         'END:VEVENT',
         'END:VCALENDAR',
@@ -437,41 +449,6 @@ export class Reminders {
     a.click();
     URL.revokeObjectURL(url);
     this.toaster.success('medical.reminder.feedback.icsDownloaded');
-  }
-
-  // ── Date formatting helpers ──
-
-  private toGoogleDate(date: string, time: string, addMinutes = 0): string {
-    const d = new Date(`${date}T${time}`);
-    if (addMinutes) d.setMinutes(d.getMinutes() + addMinutes);
-    return d
-      .toISOString()
-      .replace(/[-:]/g, '')
-      .replace(/\.\d{3}/, '');
-  }
-
-  private formatGoogleDateOnly(d: Date): string {
-    return d.toISOString().slice(0, 10).replace(/-/g, '');
-  }
-
-  private toIcsDateTime(date: string, time: string, addMinutes = 0): string {
-    const d = new Date(`${date}T${time}`);
-    if (addMinutes) d.setMinutes(d.getMinutes() + addMinutes);
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}T${pad(d.getHours())}${pad(d.getMinutes())}00`;
-  }
-
-  private toIcsDateOnly(d: Date): string {
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}`;
-  }
-
-  private escapeIcs(s: string): string {
-    return s.replace(/[\\;,]/g, (c) => `\\${c}`).replace(/\n/g, '\\n');
-  }
-
-  private allDaysExcept(skipDays: number[]): number[] {
-    return [0, 1, 2, 3, 4, 5, 6].filter((d) => !skipDays.includes(d));
   }
 
   // ── Reminder CRUD ──
