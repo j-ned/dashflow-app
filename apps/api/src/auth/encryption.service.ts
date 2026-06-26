@@ -5,9 +5,12 @@ import { AuthRepository } from './auth.repository';
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
 import { ok, fail, type Result } from './auth.result';
 import type { SetupEncryptionKeysDto, MigrateEncryptionDto, ResetWithRecoveryDto } from './dto/auth.dto';
+import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import * as schema from '../db/schema';
 
-const MIGRATE_TABLES: Record<string, { table: any; hasUserId: boolean }> = {
+type MigrateTable = PgTable & { id: PgColumn; userId?: PgColumn };
+
+const MIGRATE_TABLES: Record<string, { table: MigrateTable; hasUserId: boolean }> = {
   bankAccounts: { table: schema.bankAccounts, hasUserId: true },
   envelopes: { table: schema.envelopes, hasUserId: true },
   envelopeTransactions: { table: schema.envelopeTransactions, hasUserId: false },
@@ -39,7 +42,7 @@ const CLEAR_COLUMNS: Record<string, Record<string, unknown>> = {
   documents: { type: 'autre', title: '[chiffré]', date: '1970-01-01', fileUrl: null, notes: null },
 };
 
-const WIPE_TABLES = [
+const WIPE_TABLES: (PgTable & { userId: PgColumn })[] = [
   schema.bankAccounts, schema.envelopes, schema.loans, schema.recurringEntries,
   schema.salaryArchives, schema.patients, schema.practitioners, schema.appointments,
   schema.prescriptions, schema.medications, schema.documents,
@@ -87,7 +90,7 @@ export class EncryptionService {
       const clear = CLEAR_COLUMNS[tableName] ?? {};
       for (const row of rows) {
         const conditions = [eq(mapping.table.id, row.id)];
-        if (mapping.hasUserId) conditions.push(eq(mapping.table.userId, userId));
+        if (mapping.hasUserId) conditions.push(eq(mapping.table.userId!, userId));
         await this.db.update(mapping.table).set({ encryptedData: row.encryptedData, ...clear }).where(and(...conditions));
       }
     }
@@ -100,7 +103,7 @@ export class EncryptionService {
 
   async wipe(userId: string): Promise<Result<null>> {
     for (const table of WIPE_TABLES) {
-      await this.db.delete(table).where(eq((table as any).userId, userId));
+      await this.db.delete(table).where(eq(table.userId, userId));
     }
     await this.repo.updateUser(userId, {
       encryptionSalt: null, wrappedMasterKey: null, recoveryWrappedKey: null, encryptionVersion: 0,

@@ -12,7 +12,7 @@ export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
     super(db, salaryArchives);
   }
 
-  /** Override list to sort by month DESC (as in the Hono route). */
+  /** Trie par mois décroissant. */
   override list(userId: string): Promise<SalaryArchive[]> {
     return this.db
       .select()
