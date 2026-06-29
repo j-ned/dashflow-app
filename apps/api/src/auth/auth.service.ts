@@ -5,6 +5,7 @@ import { AuthRepository } from './auth.repository';
 import { MAILER, type Mailer } from '../mail/mailer';
 import { ok, fail, type Result } from './auth.result';
 import { TwoFactorService } from './two-factor.service';
+import { StorageService } from '../storage/storage.service';
 import type { users } from '../db/schema';
 import type { RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePasswordDto, SetPasswordDto } from './dto/auth.dto';
 
@@ -21,6 +22,7 @@ export class AuthService {
     private readonly repo: AuthRepository,
     @Inject(MAILER) private readonly mailer: Mailer,
     private readonly twoFactor: TwoFactorService,
+    private readonly storage: StorageService,
   ) {}
 
   async register(dto: RegisterDto): Promise<Result<User>> {
@@ -137,6 +139,17 @@ export class AuthService {
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
     if (!(await argon2.verify(user.password, password))) return fail(401, 'Mot de passe incorrect');
     await this.repo.updateUser(userId, { totpSecret: null, totpEnabled: null });
+    return ok(null);
+  }
+
+  async deleteAccount(userId: string): Promise<Result<null>> {
+    const user = await this.repo.findById(userId);
+    if (user?.isDemoAccount) return fail(403, 'Le compte démo ne peut pas être supprimé');
+    await this.storage.deletePrefix(`avatars/${userId}`);
+    await this.storage.deletePrefix(`prescriptions/${userId}/`);
+    await this.storage.deletePrefix(`documents/${userId}/`);
+    await this.storage.deletePrefix(`payslips/${userId}/`);
+    await this.repo.deleteUser(userId);
     return ok(null);
   }
 

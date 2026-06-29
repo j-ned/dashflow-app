@@ -1,5 +1,5 @@
 import {
-  BadRequestException, Body, Controller, Get, HttpCode, NotFoundException, Param,
+  BadRequestException, Body, Controller, Delete, Get, HttpCode, NotFoundException, Param,
   Patch, Post, Req, Res, UnauthorizedException, UploadedFile, UseGuards, UseInterceptors,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -164,6 +164,13 @@ export class AuthController {
     const r = await this.auth.disableTotp(u.id, dto.password);
     if (!r.success) throw httpFrom(r);
     return { message: '2FA désactivée', totpEnabled: false };
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard) @Delete('me') @HttpCode(204)
+  async deleteAccount(@CurrentUser() u: AuthUser, @Res({ passthrough: true }) res: Response): Promise<void> {
+    const r = await this.auth.deleteAccount(u.id);
+    if (!r.success) throw httpFrom(r);
+    res.clearCookie(SESSION_COOKIE, sessionCookieOptions(this.isProd));
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard) @Post('logout') @HttpCode(200)

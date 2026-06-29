@@ -1,6 +1,6 @@
 import { Injectable, ServiceUnavailableException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, GetObjectCommand, DeleteObjectCommand, ListObjectsV2Command, DeleteObjectsCommand } from '@aws-sdk/client-s3';
 import type { Readable } from 'node:stream';
 import type { Env } from '../config/env.schema';
 
@@ -50,5 +50,29 @@ export class StorageService {
   async delete(key: string): Promise<void> {
     if (!this.client || !this.bucket) return;
     try { await this.client.send(new DeleteObjectCommand({ Bucket: this.bucket, Key: key })); } catch { /* non-critique */ }
+  }
+
+  async deletePrefix(prefix: string): Promise<void> {
+    if (!this.client || !this.bucket) return;
+    const client = this.client;
+    const bucket = this.bucket;
+    const keys: string[] = [];
+    let continuationToken: string | undefined;
+    do {
+      const res = await client.send(new ListObjectsV2Command({
+        Bucket: bucket,
+        Prefix: prefix,
+        ...(continuationToken ? { ContinuationToken: continuationToken } : {}),
+      }));
+      for (const obj of res.Contents ?? []) {
+        if (obj.Key) keys.push(obj.Key);
+      }
+      continuationToken = res.IsTruncated ? res.NextContinuationToken : undefined;
+    } while (continuationToken);
+
+    for (let i = 0; i < keys.length; i += 1000) {
+      const batch = keys.slice(i, i + 1000).map((Key) => ({ Key }));
+      await client.send(new DeleteObjectsCommand({ Bucket: bucket, Delete: { Objects: batch } }));
+    }
   }
 }

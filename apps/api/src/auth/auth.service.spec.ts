@@ -3,6 +3,7 @@ import argon2 from 'argon2';
 import * as OTPAuth from 'otpauth';
 import { AuthService } from './auth.service';
 import { TwoFactorService } from './two-factor.service';
+import type { Result } from './auth.result';
 
 const repo = () => ({
   findByEmail: vi.fn(), findById: vi.fn(), createUser: vi.fn(), updateUser: vi.fn(),
@@ -180,5 +181,61 @@ describe('AuthService', () => {
     r.updateUser.mockResolvedValue({ id: 'u1' });
     const res = await svc.resetPassword({ email: 'a@b.com', code: '123456', newPassword: 'nouveau-long-123' });
     expect(res.success).toBe(true);
+  });
+});
+
+// ───────────────────────── deleteAccount — suppression de compte RGPD ─────────────────────────
+// RED attendu : AuthService.deleteAccount n'existe pas encore (méthode absente → comportement dû au GREEN).
+// Le storage (4e dépendance) est injecté en plus du repo + mailer + twoFactor.
+describe('AuthService.deleteAccount (RGPD)', () => {
+  const repoFor = () => ({
+    findById: vi.fn(), deleteUser: vi.fn(),
+    findByEmail: vi.fn(), createUser: vi.fn(), updateUser: vi.fn(),
+    insertCode: vi.fn(), findValidCode: vi.fn(), deleteCodes: vi.fn(),
+  });
+  const storageFor = () => ({ deletePrefix: vi.fn() });
+
+  type Deletable = AuthService & { deleteAccount(userId: string): Promise<Result<null>> };
+  const build = (r: ReturnType<typeof repoFor>, s: ReturnType<typeof storageFor>): Deletable =>
+    new AuthService(
+      r as unknown as ConstructorParameters<typeof AuthService>[0],
+      { sendVerificationCode: vi.fn(), sendPasswordResetCode: vi.fn(), sendAccountExists: vi.fn() } as unknown as ConstructorParameters<typeof AuthService>[1],
+      new TwoFactorService(),
+      s as unknown as never,
+    ) as Deletable;
+
+  afterEach(() => vi.restoreAllMocks());
+
+  it('compte démo → fail 403 ; aucune suppression (ni storage ni DB)', async () => {
+    const r = repoFor(); const s = storageFor();
+    r.findById.mockResolvedValue({ id: 'u1', isDemoAccount: true });
+    const res = await build(r, s).deleteAccount('u1');
+    expect(res).toMatchObject({ success: false, status: 403 });
+    expect(s.deletePrefix).not.toHaveBeenCalled();
+    expect(r.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('compte normal → efface les 4 préfixes fichiers PUIS supprime l’user, retour ok', async () => {
+    const r = repoFor(); const s = storageFor();
+    r.findById.mockResolvedValue({ id: 'u1', isDemoAccount: false });
+    s.deletePrefix.mockResolvedValue(undefined);
+    r.deleteUser.mockResolvedValue(undefined);
+    const res = await build(r, s).deleteAccount('u1');
+    expect(res.success).toBe(true);
+    expect(s.deletePrefix).toHaveBeenCalledWith('avatars/u1');
+    expect(s.deletePrefix).toHaveBeenCalledWith('prescriptions/u1/');
+    expect(s.deletePrefix).toHaveBeenCalledWith('documents/u1/');
+    expect(s.deletePrefix).toHaveBeenCalledWith('payslips/u1/');
+    expect(s.deletePrefix).toHaveBeenCalledTimes(4);
+    expect(r.deleteUser).toHaveBeenCalledWith('u1');
+  });
+
+  it('ordre fichiers→DB : si deletePrefix rejette, deleteUser n’est PAS appelé et l’erreur est propagée', async () => {
+    const r = repoFor(); const s = storageFor();
+    r.findById.mockResolvedValue({ id: 'u1', isDemoAccount: false });
+    s.deletePrefix.mockRejectedValue(new Error('S3 indisponible'));
+    r.deleteUser.mockResolvedValue(undefined);
+    await expect(build(r, s).deleteAccount('u1')).rejects.toThrow();
+    expect(r.deleteUser).not.toHaveBeenCalled();
   });
 });

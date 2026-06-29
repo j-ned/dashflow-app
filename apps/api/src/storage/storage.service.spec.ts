@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { StorageService } from './storage.service';
 
 const cfg = (configured: boolean) => ({ get: (k: string) => configured
@@ -22,5 +22,44 @@ describe('StorageService non configuré', () => {
   it('delete ne lance pas si pas de client', async () => {
     const svc = new StorageService(cfg(false) as any);
     await expect(svc.delete('k')).resolves.toBeUndefined();
+  });
+});
+
+// ───────────────────────── deletePrefix — suppression par préfixe (RGPD) ─────────────────────────
+// RED attendu : StorageService.deletePrefix n'existe pas encore (méthode absente → comportement dû au GREEN).
+describe('StorageService.deletePrefix', () => {
+  type WithDeletePrefix = StorageService & { deletePrefix(prefix: string): Promise<void> };
+  type S3Command = { constructor: { name: string }; input: Record<string, unknown> };
+
+  it('liste sous le bon Prefix/Bucket (paginé via ContinuationToken) puis supprime les clés trouvées', async () => {
+    const svc = new StorageService(cfg(true) as any) as WithDeletePrefix;
+    const send = vi.fn((cmd: S3Command) => {
+      if (cmd.constructor.name === 'ListObjectsV2Command') {
+        return cmd.input.ContinuationToken
+          ? Promise.resolve({ Contents: [{ Key: 'documents/u1/b.pdf' }], IsTruncated: false })
+          : Promise.resolve({ Contents: [{ Key: 'documents/u1/a.pdf' }], IsTruncated: true, NextContinuationToken: 'tok1' });
+      }
+      return Promise.resolve({});
+    });
+    (svc as unknown as { client: { send: typeof send } }).client.send = send;
+
+    await svc.deletePrefix('documents/u1/');
+
+    const cmds = send.mock.calls.map((c) => c[0]);
+    const lists = cmds.filter((c) => c.constructor.name === 'ListObjectsV2Command');
+    const deletes = cmds.filter((c) => c.constructor.name === 'DeleteObjectsCommand');
+    expect(lists.length).toBeGreaterThanOrEqual(2);
+    expect(lists[0].input.Prefix).toBe('documents/u1/');
+    expect(lists[0].input.Bucket).toBe('dashflow-app');
+    expect(lists[1].input.ContinuationToken).toBe('tok1');
+    const deletedKeys = deletes.flatMap((d) =>
+      (d.input.Delete as { Objects: { Key: string }[] }).Objects.map((o) => o.Key),
+    );
+    expect(deletedKeys).toEqual(expect.arrayContaining(['documents/u1/a.pdf', 'documents/u1/b.pdf']));
+  });
+
+  it('no-op si client/bucket non configuré (aucun send émis, pas d’erreur)', async () => {
+    const svc = new StorageService(cfg(false) as any) as WithDeletePrefix;
+    await expect(svc.deletePrefix('documents/u1/')).resolves.toBeUndefined();
   });
 });

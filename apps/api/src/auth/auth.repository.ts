@@ -41,4 +41,8 @@ export class AuthRepository {
   async deleteCodes(email: string): Promise<void> {
     await this.db.delete(verificationCodes).where(eq(verificationCodes.email, email));
   }
+
+  async deleteUser(userId: string): Promise<void> {
+    await this.db.delete(users).where(eq(users.id, userId));
+  }
 }
