@@ -1,3 +1,4 @@
+import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
 import { AuthRepository } from './auth.repository';
@@ -10,7 +11,9 @@ import type { RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePassword
 type User = typeof users.$inferSelect;
 export type LoginOutcome = { kind: 'authenticated'; user: User } | { kind: 'mfa_required' };
 const CODE_TTL_MS = 10 * 60 * 1000;
-const genCode = (): string => String(Math.floor(100000 + Math.random() * 900000));
+const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
+// hash factice précalculé : cible de argon2.verify sur le chemin « user inconnu » (anti-timing)
+const DUMMY_PASSWORD_HASH = '$argon2id$v=19$m=65536,t=3,p=4$nDnJoEKnqivb4YJYimLDew$LsQ3NFQxFz3z6loo2TfhGsD7UEA5TiG67s9tn/ynstM';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +25,15 @@ export class AuthService {
 
   async register(dto: RegisterDto): Promise<Result<User>> {
     const existing = await this.repo.findByEmail(dto.email);
-    if (existing) return fail(409, 'Un compte existe déjà avec cet email');
+    if (existing) {
+      await argon2.hash(dto.password); // anti-timing : égalise le coût argon2 avec le chemin « inconnu »
+      if (existing.emailVerified) {
+        await this.mailer.sendAccountExists(dto.email);
+      } else {
+        await this.sendCode(dto.email, 'verification');
+      }
+      return ok(existing);
+    }
     const hash = await argon2.hash(dto.password);
     const user = await this.repo.createUser({ email: dto.email, password: hash, displayName: dto.displayName });
     await this.sendCode(dto.email, 'verification');
@@ -41,9 +52,12 @@ export class AuthService {
 
   async login(dto: LoginDto): Promise<Result<LoginOutcome>> {
     const user = await this.repo.findByEmail(dto.email);
-    if (!user || !user.password) return fail(401, 'Identifiants invalides');
-    if (!user.emailVerified) return fail(403, 'Email non vérifié');
+    if (!user || !user.password) {
+      await argon2.verify(DUMMY_PASSWORD_HASH, dto.password); // anti-timing : égalise le coût avec le chemin « user trouvé »
+      return fail(401, 'Identifiants invalides');
+    }
     if (!(await argon2.verify(user.password, dto.password))) return fail(401, 'Identifiants invalides');
+    if (!user.emailVerified) return fail(403, 'Email non vérifié', 'EMAIL_NOT_VERIFIED');
     if (user.totpEnabled && user.totpSecret) {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.

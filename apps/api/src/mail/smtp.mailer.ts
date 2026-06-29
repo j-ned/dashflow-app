@@ -54,6 +54,23 @@ export class SmtpMailer implements Mailer {
     });
   }
 
+  async sendAccountExists(to: string): Promise<void> {
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: 'Vous avez déjà un compte DashFlow',
+      text: `Un compte DashFlow existe déjà pour cette adresse.\n\nConnectez-vous : ${this.appUrl}/login\nMot de passe oublié : ${this.appUrl}/forgot-password`,
+      html: shell(
+        'Vous avez déjà un compte DashFlow',
+        `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
+          <p style="color: #374151; font-size: 14px; margin: 0 0 16px 0;">Un compte existe déjà pour cette adresse. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser.</p>
+          <a href="${this.appUrl}/login" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Se connecter</a><br/>
+          <a href="${this.appUrl}/forgot-password" style="display: inline-block; color: #6b7280; text-decoration: underline; font-size: 13px; margin-top: 8px;">Mot de passe oublié ?</a>
+        </div>`,
+      ),
+    });
+  }
+
   async sendPasswordResetCode(to: string, code: string): Promise<void> {
     await this.transporter.sendMail({
       from: this.from,

@@ -14,6 +14,11 @@ export class ConsoleMailer implements Mailer {
     console.log(`[verification] ${to} → code ${code}`);
   }
 
+  async sendAccountExists(to: string): Promise<void> {
+    this.logger.log(`[account-exists] ${to}`);
+    console.log(`[account-exists] ${to}`);
+  }
+
   async sendPasswordResetCode(to: string, code: string): Promise<void> {
     this.logger.log(`[reset] ${to} → code ${code}`);
     console.log(`[reset] ${to} → code ${code}`);
