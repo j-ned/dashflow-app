@@ -125,10 +125,9 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.step()).toBe('verify');
     });
 
-    it('échec inscription (email déjà utilisé) → erreur définie, étape reste register', async () => {
+    it('échec inscription avec erreur serveur structurée → affiche le message, reste à l’étape register', async () => {
       const { cmp, auth, navigate } = makeComponent({
-        register: () =>
-          Promise.reject({ error: { error: 'EMAIL_ALREADY_EXISTS' } } as unknown as Error),
+        register: () => Promise.reject({ error: { error: 'SERVER_ERROR' } } as unknown as Error),
       });
       cmp.registerForm.setValue(VALID_FORM);
 
@@ -136,7 +135,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
 
       expect(auth.register).toHaveBeenCalledTimes(1);
       expect(cmp.step()).toBe('register');
-      expect(cmp.error()).toBe('EMAIL_ALREADY_EXISTS');
+      expect(cmp.error()).toBe('SERVER_ERROR');
       expect(navigate).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
