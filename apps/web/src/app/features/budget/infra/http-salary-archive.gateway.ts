@@ -7,6 +7,7 @@ import { decryptBlob, decryptList, decryptOne } from '@core/services/crypto/cryp
 import { encryptFile } from '@core/services/crypto/file-crypto';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
+import { normalizeSalaryArchive } from './salary-archive.adapter';
 import { SalaryArchiveSchema } from './schemas/salary-archive.schema';
 import { SalaryArchiveGateway } from '../domain/gateways/salary-archive.gateway';
 
@@ -18,8 +19,15 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<SalaryArchive[]> {
-    return decryptList(this.api.get<ApiRow[]>('/salary-archives'), this.crypto.getMasterKey()).pipe(
-      map((archives) => validateList(SalaryArchiveSchema, archives, { entity: 'SalaryArchive' })),
+    return decryptList<SalaryArchive>(
+      this.api.get<ApiRow[]>('/salary-archives'),
+      this.crypto.getMasterKey(),
+    ).pipe(
+      map((archives) =>
+        validateList(SalaryArchiveSchema, archives.map(normalizeSalaryArchive), {
+          entity: 'SalaryArchive',
+        }),
+      ),
     );
   }
 
@@ -61,7 +69,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
     );
 
     return decryptOne<SalaryArchive>(response$, key).pipe(
-      map((a) => validateOne(SalaryArchiveSchema, a, { entity: 'SalaryArchive' })),
+      map((a) =>
+        validateOne(SalaryArchiveSchema, normalizeSalaryArchive(a), { entity: 'SalaryArchive' }),
+      ),
     );
   }
 
@@ -84,7 +94,9 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
       switchMap((encrypted) => this.api.put<ApiRow>(`/salary-archives/${id}`, encrypted)),
     );
     return decryptOne<SalaryArchive>(response$, key).pipe(
-      map((a) => validateOne(SalaryArchiveSchema, a, { entity: 'SalaryArchive' })),
+      map((a) =>
+        validateOne(SalaryArchiveSchema, normalizeSalaryArchive(a), { entity: 'SalaryArchive' }),
+      ),
     );
   }
 
