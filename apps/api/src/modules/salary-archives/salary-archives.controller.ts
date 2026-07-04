@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  Body,
   Controller,
   Delete,
   Get,
@@ -67,6 +68,22 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
       return patch;
     }
     return excludeSystemFields(body);
+  }
+
+  @UseGuards(CsrfGuard)
+  @Post()
+  @HttpCode(201)
+  @UseInterceptors(FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  override async create(
+    @CurrentUser() u: AuthUser,
+    @Body() body: Record<string, unknown>,
+    @UploadedFile() file?: { buffer: Buffer; mimetype: string },
+  ) {
+    const row = (await this.svc.create(u.id, this.toCreateValues(body))) as { id: string };
+    if (!file) return row;
+    const key = this.storage.payslipKey(u.id, row.id, file.mimetype);
+    await this.storage.upload(key, file.buffer, file.mimetype);
+    return this.svc.update(u.id, row.id, { payslipKey: key });
   }
 
   @UseGuards(CsrfGuard) @Delete(':id') @HttpCode(204)

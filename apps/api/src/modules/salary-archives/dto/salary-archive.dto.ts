@@ -7,7 +7,17 @@ export const createSalaryArchiveSchema = z.object({
   salary: amount,
   totalExpenses: amount.optional().default('0'),
   totalSpendings: amount.optional().default('0'),
-  spendings: z.array(z.unknown()).optional().default([]),
+  spendings: z
+    .preprocess((v) => {
+      if (typeof v !== 'string') return v;
+      try {
+        return JSON.parse(v);
+      } catch {
+        return v;
+      }
+    }, z.array(z.unknown()))
+    .optional()
+    .default([]),
   accountId: z.string().uuid().nullable().optional(),
 });
 
