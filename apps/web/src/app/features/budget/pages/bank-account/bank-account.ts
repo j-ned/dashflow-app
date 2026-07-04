@@ -21,6 +21,7 @@ import { AccountTransaction } from '../../domain/models/account-transaction.mode
 import { buildPendingCharges } from '../../domain/pending-charges';
 import { duePostings } from '../../domain/auto-post';
 import { toLocalIsoDate } from '../../domain/local-date';
+import { previousMonth } from '../../domain/salary-archive-list';
 import { immediatePostingFor } from '../../domain/immediate-posting';
 import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
 import { buildTimelineEvents } from '../../domain/timeline-builder';
@@ -867,7 +868,7 @@ export class BankAccount {
     const salary = this.totalIncome();
     if (salary <= 0) return;
 
-    const month = new Date().toISOString().slice(0, 7);
+    const month = previousMonth(new Date());
     const accountId = this.store.selectedAccountId();
     const totalExpenses = this.totalMonthlyExpenses() + this.monthlyAnnualExpenses();
     const totalSpendings = this.totalMonthSpendings();
@@ -886,11 +887,7 @@ export class BankAccount {
     fd.append('spendings', JSON.stringify(spendings));
     if (accountId) fd.append('accountId', accountId);
 
-    try {
-      await lastValueFrom(this.archiveGateway.create(fd));
-    } catch {
-      // L'archivage silencieux échoue — on continue quand même
-    }
+    await lastValueFrom(this.archiveGateway.create(fd));
   }
 
   protected async deleteEntry(id: string) {

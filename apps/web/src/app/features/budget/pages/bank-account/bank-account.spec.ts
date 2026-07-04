@@ -1,4 +1,5 @@
 import { TestBed } from '@angular/core/testing';
+import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { of, throwError, type Observable } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
@@ -11,6 +12,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { TranslocoService } from '@jsverse/transloco';
 import { BankAccount } from './bank-account';
 import { toLocalIsoDate } from '../../domain/local-date';
+import { previousMonth } from '../../domain/salary-archive-list';
 
 type Cmp = {
   confirmedBalance: () => number;
@@ -25,6 +27,22 @@ const ACCOUNTS = [
   { id: 'a', name: 'Courant', type: 'courant', initialBalance: 1000, color: null, dotColor: null },
 ];
 
+@Component({
+  selector: 'app-modal-stub',
+  template: '',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+})
+class ModalStub {
+  private readonly _open = signal(false);
+  isOpen = this._open.asReadonly();
+  open() {
+    this._open.set(true);
+  }
+  close() {
+    this._open.set(false);
+  }
+}
+
 function makeComponent(
   opts: {
     entries?: unknown[];
@@ -35,6 +53,7 @@ function makeComponent(
     updateImpl?: (id: string, data: { accountId: string }) => Observable<unknown>;
     entryDeleteImpl?: (id: string) => Observable<unknown>;
     accountDeleteImpl?: () => Observable<unknown>;
+    archiveCreateImpl?: (data: FormData) => Observable<unknown>;
     choose?: () => Promise<'confirm' | 'alternative' | 'cancel'>;
     toaster?: { success: () => void; error: () => void; info: () => void };
   } = {},
@@ -59,7 +78,13 @@ function makeComponent(
         },
       },
       { provide: MemberGateway, useValue: { getAll: () => of([]) } },
-      { provide: SalaryArchiveGateway, useValue: { getAll: () => of([]) } },
+      {
+        provide: SalaryArchiveGateway,
+        useValue: {
+          getAll: () => of([]),
+          create: opts.archiveCreateImpl ?? (() => of({ id: 'arch' })),
+        },
+      },
       {
         provide: AccountTransactionGateway,
         useValue: { getAll: () => of(opts.txs ?? []), create: opts.createImpl ?? (() => of({})) },
@@ -87,7 +112,12 @@ function makeComponent(
       },
     ],
   });
-  TestBed.overrideComponent(BankAccount, { set: { template: '', imports: [] } });
+  TestBed.overrideComponent(BankAccount, {
+    set: {
+      template: '<app-modal-stub #createModal /><app-modal-stub #editModal />',
+      imports: [ModalStub],
+    },
+  });
   const fixture = TestBed.createComponent(BankAccount);
   fixture.detectChanges();
   return fixture.componentInstance as unknown as Cmp;
@@ -715,5 +745,120 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
     cmp.store.selectAccount('liv');
     expect(cmp.confirmedBalance()).toBe(500); // livret 0 + virement crédité
     expect(cmp.projectedBalance()).toBe(500); // pas de double comptage (ponctuel posté exclu du delta)
+  });
+});
+
+describe('BankAccount — nouveau cycle (revenu existant + « Nouveau cycle »)', () => {
+  const INCOME = {
+    id: 'inc1',
+    accountId: 'a',
+    label: 'Salaire',
+    amount: 2000,
+    type: 'income' as const,
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    toAccountId: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
+  };
+  const NEW_INCOME = {
+    accountId: 'a',
+    label: 'Nouveau salaire',
+    amount: 2100,
+    type: 'income' as const,
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    toAccountId: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    autoPost: false,
+    autoPostSince: null,
+  };
+
+  type CycleCmp = {
+    createEntry: (data: unknown) => Promise<void>;
+    store: { refreshEntries: () => void };
+  };
+
+  it('archive le MOIS PRÉCÉDENT (previousMonth), pas le mois courant', async () => {
+    let capturedMonth: FormDataEntryValue | null = null;
+    const cmp = makeComponent({
+      entries: [INCOME],
+      choose: () => Promise.resolve('confirm'),
+      archiveCreateImpl: (fd) => {
+        capturedMonth = fd.get('month');
+        return of({ id: 'arch' });
+      },
+    }) as unknown as CycleCmp;
+
+    await cmp.createEntry(NEW_INCOME);
+
+    expect(capturedMonth).toBe(previousMonth(new Date()));
+  });
+
+  it('archivage KO → ni suppression de revenus ni création du nouveau salaire, toast erreur', async () => {
+    const deletes: string[] = [];
+    const creates: unknown[] = [];
+    const error = vi.fn();
+    const success = vi.fn();
+    const cmp = makeComponent({
+      entries: [INCOME],
+      choose: () => Promise.resolve('confirm'),
+      archiveCreateImpl: () => throwError(() => ({ status: 500 })),
+      entryDeleteImpl: (id: string) => {
+        deletes.push(id);
+        return of(undefined);
+      },
+      entryCreateImpl: (d: Record<string, unknown>) => {
+        creates.push(d);
+        return of({ ...d, id: 'new' });
+      },
+      toaster: { success, error, info: vi.fn() },
+    }) as unknown as CycleCmp;
+
+    await cmp.createEntry(NEW_INCOME);
+
+    expect(deletes).toHaveLength(0);
+    expect(creates).toHaveLength(0);
+    expect(error).toHaveBeenCalled();
+  });
+
+  it('archivage OK → bascule complète (bon mois, delete chaque income, create nouveau, refresh, toast cycleArchived)', async () => {
+    let capturedMonth: FormDataEntryValue | null = null;
+    const deletes: string[] = [];
+    const creates: unknown[] = [];
+    const success = vi.fn();
+    const cmp = makeComponent({
+      entries: [INCOME],
+      choose: () => Promise.resolve('confirm'),
+      archiveCreateImpl: (fd) => {
+        capturedMonth = fd.get('month');
+        return of({ id: 'arch' });
+      },
+      entryDeleteImpl: (id: string) => {
+        deletes.push(id);
+        return of(undefined);
+      },
+      entryCreateImpl: (d: Record<string, unknown>) => {
+        creates.push(d);
+        return of({ ...d, id: 'new' });
+      },
+      toaster: { success, error: vi.fn(), info: vi.fn() },
+    }) as unknown as CycleCmp;
+    const refreshSpy = vi.spyOn(cmp.store, 'refreshEntries');
+
+    await cmp.createEntry(NEW_INCOME);
+
+    expect(capturedMonth).toBe(previousMonth(new Date()));
+    expect(deletes).toEqual(['inc1']);
+    expect(creates).toHaveLength(1);
+    expect(refreshSpy).toHaveBeenCalled();
+    expect(success).toHaveBeenCalledWith('budget.bankAccount.messages.cycleArchived');
   });
 });
