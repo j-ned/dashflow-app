@@ -35,10 +35,10 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
     const key = this.crypto.getMasterKey();
     if (!key) return this.api.postForm('/salary-archives', data);
 
-    const file = data.get('file') as File | null;
+    const file = data.get('payslip') as File | null;
     const jsonFields: Record<string, unknown> = {};
     data.forEach((value, field) => {
-      if (field !== 'file') jsonFields[field] = value;
+      if (field !== 'payslip') jsonFields[field] = value;
     });
 
     const response$ = from(encryptEntity(jsonFields, CLEARTEXT_KEYS, key)).pipe(
@@ -48,7 +48,7 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
           return from(encryptFile(file, key)).pipe(
             switchMap((encryptedBlob) => {
               fd.append(
-                'file',
+                'payslip',
                 new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
               );
               fd.append('originalMimeType', file.type);
