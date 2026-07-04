@@ -20,6 +20,8 @@ import { AccountTransactionGateway } from '../../domain/gateways/account-transac
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { buildPendingCharges } from '../../domain/pending-charges';
 import { duePostings } from '../../domain/auto-post';
+import { toLocalIsoDate } from '../../domain/local-date';
+import { immediatePostingFor } from '../../domain/immediate-posting';
 import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
 import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
@@ -275,7 +277,7 @@ export class BankAccount {
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
   protected readonly accountManager = viewChild.required(AccountManager);
 
-  private readonly todayIso = new Date().toISOString().slice(0, 10);
+  private readonly todayIso = toLocalIsoDate(new Date());
 
   private readonly _autoPostAttempted = signal(false);
 
@@ -301,7 +303,7 @@ export class BankAccount {
     return all.filter((e) => e.accountId === accountId);
   });
 
-  private readonly currentMonth = new Date().toISOString().slice(0, 7);
+  private readonly currentMonth = toLocalIsoDate(new Date()).slice(0, 7);
 
   private isActive(entry: RecurringEntry): boolean {
     if (!entry.endDate) return true;
@@ -826,7 +828,7 @@ export class BankAccount {
       }
 
       const created = await lastValueFrom(this.entryGateway.create(data));
-      await this._postIfImmediateOneTimeTransfer(created);
+      await this._postIfDue(created);
       this.toaster.success('budget.bankAccount.messages.entryCreated');
       this.createModalRef().close();
       this.store.refreshEntries();
@@ -835,21 +837,25 @@ export class BankAccount {
     }
   }
 
-  // Un virement ponctuel (type transfer, sans dayOfMonth) représente un mouvement qui a déjà eu
-  // lieu : on matérialise immédiatement la transaction réelle pour qu'elle impacte le solde confirmé,
-  // au lieu de rester une simple projection. Liée par recurringEntryId → exclue du delta projeté
-  // (cf. totalOneTimeIncoming/Outgoing) pour éviter le double comptage. Skip si daté dans le futur
-  // (encore une projection) ou sans compte source (orphelin → la table transactions exige un compte).
-  private async _postIfImmediateOneTimeTransfer(entry: RecurringEntry): Promise<void> {
-    const isOneTimeTransfer = entry.type === 'transfer' && entry.dayOfMonth == null && !!entry.date;
-    if (!isOneTimeTransfer || entry.accountId == null || entry.date! > this.todayIso) return;
+  // Toute échéance créée (income, expense, transfer) est postée immédiatement en transaction réelle
+  // si son échéance est déjà due (date ≤ aujourd'hui pour les ponctuels, dayOfMonth ≤ currentDay
+  // pour les récurrents). Cela permet d'impacter le solde confirmé dès la création, sans attendre
+  // le cycle d'auto-post. Liée par recurringEntryId → exclue du delta projeté pour éviter le
+  // double comptage. Skip si non postable (accountId null, type non éligible, date future).
+  private async _postIfDue(created: RecurringEntry): Promise<void> {
+    const posting = immediatePostingFor(created, {
+      today: this.todayIso,
+      currentMonth: this.currentMonth,
+      currentDay: this.currentDay,
+    });
+    if (posting == null) return;
     await lastValueFrom(
       this.txGateway.create(
-        entry.accountId,
-        this._txPayloadFor(entry, {
-          amount: entry.amount,
-          direction: 'transfer',
-          date: entry.date!,
+        created.accountId!,
+        this._txPayloadFor(created, {
+          amount: posting.amount,
+          direction: posting.direction,
+          date: posting.date,
           note: null,
         }),
       ),

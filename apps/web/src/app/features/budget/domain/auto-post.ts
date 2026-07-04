@@ -17,13 +17,13 @@ export type DuePostingsContext = {
   readonly currentDay: number; // 1..31
 };
 
-const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set([
+export const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set([
   'income',
   'expense',
   'transfer',
 ]);
 
-const directionOf = (entry: RecurringEntry): DuePostingDirection =>
+export const directionOf = (entry: RecurringEntry): DuePostingDirection =>
   entry.type === 'income' ? 'income' : entry.type === 'transfer' ? 'transfer' : 'expense';
 
 /** Liste des mois 'YYYY-MM' de `from` à `to` inclus (from ≤ to). */

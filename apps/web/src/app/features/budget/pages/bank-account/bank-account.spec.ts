@@ -10,6 +10,7 @@ import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { TranslocoService } from '@jsverse/transloco';
 import { BankAccount } from './bank-account';
+import { toLocalIsoDate } from '../../domain/local-date';
 
 type Cmp = {
   confirmedBalance: () => number;
@@ -605,7 +606,7 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
 
   type PostCmp = {
     createEntry: (d: unknown) => Promise<void>;
-    _postIfImmediateOneTimeTransfer: (e: unknown) => Promise<void>;
+    _postIfDue: (e: unknown) => Promise<void>;
   };
 
   it('poste immédiatement la transaction réelle pour un virement ponctuel daté ≤ aujourd’hui', async () => {
@@ -617,7 +618,7 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
         return of({ id: 'tx1' });
       },
     }) as unknown as PostCmp;
-    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e-new' });
+    await cmp._postIfDue({ ...ONE_TIME_PAST, id: 'e-new' });
     expect(created).toHaveLength(1);
     expect(created[0].accountId).toBe('a');
     expect(created[0].body).toMatchObject({
@@ -637,7 +638,7 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
         return of({ id: 'x' });
       },
     }) as unknown as PostCmp;
-    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e2', date: '2999-01-01' });
+    await cmp._postIfDue({ ...ONE_TIME_PAST, id: 'e2', date: '2999-01-01' });
     expect(created).toHaveLength(0);
   });
 
@@ -650,26 +651,30 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
         return of({ id: 'x' });
       },
     }) as unknown as PostCmp;
-    await cmp._postIfImmediateOneTimeTransfer({ ...ONE_TIME_PAST, id: 'e3', accountId: null });
+    await cmp._postIfDue({ ...ONE_TIME_PAST, id: 'e3', accountId: null });
     expect(created).toHaveLength(0);
   });
 
-  it('ne poste rien pour un virement récurrent (dayOfMonth présent)', async () => {
-    const created: unknown[] = [];
+  it('poste immédiatement une échéance récurrente déjà due (dayOfMonth ≤ aujourd’hui)', async () => {
+    const created: { accountId: string; body: Record<string, unknown> }[] = [];
     const cmp = makeComponent({
       accounts: ACCS_LIV,
-      createImpl: () => {
-        created.push(1);
-        return of({ id: 'x' });
+      createImpl: (accountId, body) => {
+        created.push({ accountId, body });
+        return of({ id: 'tx4' });
       },
     }) as unknown as PostCmp;
-    await cmp._postIfImmediateOneTimeTransfer({
-      ...ONE_TIME_PAST,
-      id: 'e4',
-      dayOfMonth: 5,
-      date: null,
+    // dayOfMonth 1 → toujours ≤ jour courant, donc déterministe quel que soit le jour du test
+    await cmp._postIfDue({ ...ONE_TIME_PAST, id: 'e4', dayOfMonth: 1, date: null });
+    // Mois dérivé en heure locale, cohérent avec le SUT (currentMonth) → pas de flakiness UTC/local
+    const month = toLocalIsoDate(new Date()).slice(0, 7);
+    expect(created).toHaveLength(1);
+    expect(created[0].body).toMatchObject({
+      amount: 500,
+      direction: 'transfer',
+      date: `${month}-01`,
+      recurringEntryId: 'e4',
     });
-    expect(created).toHaveLength(0);
   });
 
   it('ne double-compte pas dans le projeté du livret un ponctuel déjà posté', () => {

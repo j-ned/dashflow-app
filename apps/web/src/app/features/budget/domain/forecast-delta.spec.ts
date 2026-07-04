@@ -77,4 +77,65 @@ describe('computeForecastDelta', () => {
     });
     expect(delta).toBe(0);
   });
+
+  it('exclut un revenu ponctuel déjà posté même à un mois passé (pas de double comptage)', () => {
+    const income: RecurringEntry = {
+      id: 'oti',
+      memberId: null,
+      accountId: 'a',
+      toAccountId: null,
+      label: 'Prime',
+      amount: 1500,
+      type: 'income',
+      dayOfMonth: null,
+      date: '2026-05-20',
+      endDate: null,
+      category: null,
+      payslipKey: null,
+      autoPost: false,
+      autoPostSince: null,
+    };
+    const tx: AccountTransaction = {
+      id: 't',
+      accountId: 'a',
+      amount: 1500,
+      direction: 'income',
+      toAccountId: null,
+      date: '2026-05-20',
+      category: null,
+      note: null,
+      memberId: null,
+      recurringEntryId: 'oti',
+    };
+    const delta = computeForecastDelta({
+      ...EMPTY,
+      incomes: [income],
+      txs: [tx],
+      currentMonth: '2026-06',
+    });
+    expect(delta).toBe(0);
+  });
+
+  it('projette encore un revenu récurrent dont seule une échéance d’un mois passé est postée', () => {
+    const income: RecurringEntry = { ...re('ri', 2000), type: 'income', dayOfMonth: 5 };
+    const txMay: AccountTransaction = {
+      id: 't',
+      accountId: 'a',
+      amount: 2000,
+      direction: 'income',
+      toAccountId: null,
+      date: '2026-05-05',
+      category: null,
+      note: null,
+      memberId: null,
+      recurringEntryId: 'ri',
+    };
+    const delta = computeForecastDelta({
+      ...EMPTY,
+      incomes: [income],
+      txs: [txMay],
+      currentMonth: '2026-06',
+    });
+    expect(delta).toBe(2000);
+  });
 });
