@@ -1,7 +1,9 @@
-# Profil-projet AAK — dash-flow
+# Profil-projet jned-team — dash-flow
 
-> Généré par `/aak-init-profile`. Adapté à la main si besoin.
-> Les 4 agents AAK lisent ce fichier à chaque invocation.
+> Généré par `/jned-init-profile`. Adapté à la main si besoin.
+> Les 5 agents jned-team (`architect`, `qa`, `implementer`, `reviewer`, `auditor`)
+> lisent ce fichier à chaque invocation.
+> Dernier rafraîchissement : 2026-07-04.
 
 ## Projet & langue
 
@@ -22,23 +24,27 @@
   `type` (pas `interface`), `T[]`, OnPush obligatoire, `inject()`, signals appelés,
   control flow, NgOptimizedImage. `any` interdit **partout, specs incluses** (accès
   white-box typé via cast d'internals, mocks via `vi.fn()`).
-- **format** : `pnpm format:check` (Prettier — gate de mise en forme **séparé** du
-  lint via `eslint-config-prettier`, reco officielle Prettier). `pnpm format` pour
-  corriger. Codebase 100% prettier-clean, gate en CI.
+- **format** : `pnpm format:check` (= `prettier --check .`, gate de mise en forme
+  **séparé** du lint via `eslint-config-prettier`). `pnpm format` (`prettier --write .`)
+  pour corriger. ⚠️ **Drift connu (2026-07-04)** : le codebase **n'est pas** 100%
+  prettier-clean — `format:check` flague ~100+ fichiers pré-existants. `format:check`
+  **n'est donc PAS une gate fiable en l'état** ; un `reviewer` ne doit se fier qu'aux
+  fichiers **du diff** (les 4 fixes 2026-07-04 étaient clean sur leur périmètre). À
+  assainir globalement (`pnpm format` sur tout le repo) dans un chantier dédié.
 - **build** : `pnpm build` (= `ng build`, configuration `production`). N'est
   **pas** la source de vérité des types (le typecheck des specs passe par `test`).
 - **invalidation cache** : `aucun` — pas de système de cache de build orchestré
   (pas de Nx). **Systèmes concernés** : cache Vite/Vitest (`node_modules/.vite`),
-  build incrémental tsc (`out-tsc/`). Absent ⇒ `qa`, `code-reviewer` et
-  `intake-auditor` tracent « invalidation cache non vérifiée ».
+  build incrémental tsc (`out-tsc/`). Absent ⇒ `qa`, `reviewer` et
+  `auditor` tracent « invalidation cache non vérifiée ».
 
 ## Stack & bibliothèques (choix structurants)
 
-- **Version Angular & détection par défaut** : **Angular 21** (`@angular/core ^21.2.0`).
-  `changeDetection: ChangeDetectionStrategy.OnPush` doit être écrit **explicitement**
-  (OnPush n'est le défaut framework qu'à partir de v22). Mettre à jour ce champ lors
-  d'une migration v22 (où OnPush devient implicite sur projet neuf, mais reste
-  `Eager` sur projet migré via `ng update`).
+- **Version Angular & détection par défaut** : **Angular 22** (`@angular/core ^22.0.3`,
+  `@angular/build ^22.0.4`). Projet **migré** vers v22 via `ng update` ⇒ OnPush reste
+  `Eager` par défaut : `changeDetection: ChangeDetectionStrategy.OnPush` doit toujours
+  être écrit **explicitement** sur chaque composant (l'implicite v22 ne vaut que pour
+  un projet neuf, pas migré).
 
 - **État partagé** : stores signals maison (`*.store.ts`, p. ex. `auth.store`,
   `crypto.store`, `csrf-store`). Pas de NgRx. **Seuil de promotion en store** :
@@ -46,10 +52,20 @@
 - **Coordinateur de feature (facade)** : `aucun` pour l'instant — les composants
   smart injectent directement gateways / use-cases. Naming/portée à définir si
   un coordinateur apparaît (critères store vs facade = discipline universelle).
-- **Validation aux frontières** : `aucune` lib (pas de Zod/Yup/Valibot).
-  L'adaptation DTO API → modèle domaine passe par des **fonctions pures**
-  (`infra/*.adapter.ts`). Absence de validation runtime aux frontières ⇒ tracée
-  en finding par `code-reviewer`.
+- **Validation aux frontières** : **`zod/mini`** (`zod ^4.4.3`). Un schéma par
+  entité dans `infra/schemas/*.schema.ts` (budget **et** medical), appliqué à la
+  **lecture** (après déchiffrement E2EE) via `validateList`/`validateOne`
+  (`@core/services/crypto/validate-decrypted.ts`) — une ligne invalide est **exclue**
+  (log `[E2EE] <Entity> : ligne déchiffrée invalide, exclue`), jamais propagée.
+  Chaque schéma porte un **garde-fou anti-dérive** `_Check = Expect<MutualAssign<
+  z.infer<Schema>, Model>>` liant le schéma au `type` domaine (le build casse si
+  divergence). **Coercition avant validation** dans des **fonctions pures**
+  `infra/*.adapter.ts` (ex. `normalizeRecurringEntry`, `normalizeSalaryArchive`) :
+  les colonnes `numeric` Postgres reviennent en **string** pour les comptes en clair
+  (compte démo, `encryptionVersion=0`) → coercer `Number(...)` avant `validate*`,
+  sinon `z.number()` exclut la ligne (footgun récurrent, cf. bugs « budget démo VIDE »
+  / archives). Le **schéma reste `z.number()`** (pas de `z.coerce`, non utilisé dans
+  le repo) ; la coercition vit dans l'adapter.
 - **Persistance** : backend **REST** (`@core/services/api/ApiClient`), avec CSRF
   (`csrf-store`) et chiffrement **E2E** (`crypto.store`, WebCrypto). Backend/auth :
   **oui** (feature `auth`, comptes démo inclus).
@@ -58,9 +74,10 @@
   pour les nouveaux GET ; RxJS réservé aux vrais flux.
 - **Cross-platform** : `aucun` (PWA mobile-first, pas de Capacitor/Electron).
   Aucune abstraction native requise.
-- **Forme des modèles** : `type` (jamais `interface`). Pas de dérivation depuis
-  un schéma de validation (aucune lib) — les `type` sont écrits à la main dans
-  `domain/models/`.
+- **Forme des modèles** : `type` (jamais `interface`), écrits à la main dans
+  `domain/models/`. Le modèle n'est **pas** dérivé du schéma (pas de `z.infer` comme
+  source), mais le schéma `zod/mini` correspondant est **verrouillé sur le `type`**
+  via le garde-fou `_Check MutualAssign` (cf. Validation aux frontières).
 
 ## Naming & arborescence
 
@@ -73,7 +90,7 @@
 - **Domaine pur** (logique testable hors UI) : `src/app/features/<x>/domain/**`
   (TS pur, specs colocalisés ; gateways abstraits dans `domain/gateways/`).
 - **Path alias** : `@env/*`, `@core/*`, `@features/*`, `@shared/*`.
-- **Seuils d'altitude composant** (gate advisory `code-reviewer`, non bloquant) :
+- **Seuils d'altitude composant** (gate advisory `reviewer`, non bloquant) :
   LOC **200**, collaborateurs injectés **5**. Au-delà, un composant touché par
   une PR est signalé « candidat découpe ».
 
@@ -158,7 +175,7 @@
 - i18n **Transloco** : clés i18n + params passés au Toaster, jamais une string
   déjà traduite.
 
-## Outillage intake (`intake-auditor`, dimensions 1/5/10)
+## Outillage d'audit (`auditor`, dimensions 1/5/10)
 
 - `pnpm dlx madge --circular --extensions ts` (cycles) ;
   `pnpm dlx knip` (dead code) ;
