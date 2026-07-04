@@ -11,7 +11,8 @@ export const createSalaryArchiveSchema = z.object({
     .preprocess((v) => {
       if (typeof v !== 'string') return v;
       try {
-        return JSON.parse(v);
+        const parsed: unknown = JSON.parse(v);
+        return parsed;
       } catch {
         return v;
       }

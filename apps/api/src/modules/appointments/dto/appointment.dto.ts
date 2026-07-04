@@ -1,10 +1,19 @@
 import { z } from 'zod';
 
 const uuid = z.string().uuid();
-const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
-const timeStr = z.string().regex(/^\d{2}:\d{2}$/, 'Format heure invalide (HH:MM)');
+const dateStr = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
+const timeStr = z
+  .string()
+  .regex(/^\d{2}:\d{2}$/, 'Format heure invalide (HH:MM)');
 
-const APPOINTMENT_STATUSES = ['scheduled', 'completed', 'cancelled', 'no_show'] as const;
+const APPOINTMENT_STATUSES = [
+  'scheduled',
+  'completed',
+  'cancelled',
+  'no_show',
+] as const;
 
 export const createAppointmentSchema = z.object({
   patientId: uuid,

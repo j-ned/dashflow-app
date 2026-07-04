@@ -13,14 +13,21 @@ describe('SharedAccessService', () => {
 
     // Mock Drizzle fluent chain for insert + select
     const returningInsert = vi.fn().mockResolvedValue([
-      { id: 'row-uuid', userId: 'user-1', invitedEmail: 'guest@test.com', calendarToken: 'a'.repeat(32) },
+      {
+        id: 'row-uuid',
+        userId: 'user-1',
+        invitedEmail: 'guest@test.com',
+        calendarToken: 'a'.repeat(32),
+      },
     ]);
-    const valuesInsert = vi.fn().mockReturnValue({ returning: returningInsert });
+    const valuesInsert = vi
+      .fn()
+      .mockReturnValue({ returning: returningInsert });
     const insertFn = vi.fn().mockReturnValue({ values: valuesInsert });
 
-    const limitSelect = vi.fn().mockResolvedValue([
-      { displayName: 'Alice', email: 'alice@test.com' },
-    ]);
+    const limitSelect = vi
+      .fn()
+      .mockResolvedValue([{ displayName: 'Alice', email: 'alice@test.com' }]);
     const whereSelect = vi.fn().mockReturnValue({ limit: limitSelect });
     const fromSelect = vi.fn().mockReturnValue({ where: whereSelect });
     const selectFn = vi.fn().mockReturnValue({ from: fromSelect });
@@ -60,7 +67,9 @@ describe('SharedAccessService', () => {
 
     it('falls back to email when displayName is null', async () => {
       // Override select chain to return user with no displayName
-      const limitSelect = vi.fn().mockResolvedValue([{ displayName: null, email: 'alice@test.com' }]);
+      const limitSelect = vi
+        .fn()
+        .mockResolvedValue([{ displayName: null, email: 'alice@test.com' }]);
       const whereSelect = vi.fn().mockReturnValue({ limit: limitSelect });
       const fromSelect = vi.fn().mockReturnValue({ where: whereSelect });
       mockDb.select = vi.fn().mockReturnValue({ from: fromSelect });

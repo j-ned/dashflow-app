@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import { ConfigService } from '@nestjs/config';
@@ -17,7 +25,9 @@ import { SESSION_COOKIE } from './cookie';
 describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () => {
   let app: INestApplication;
   const mockAuth = { deleteAccount: vi.fn() };
-  const mockConfig = { get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test') };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test'),
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -50,7 +60,9 @@ describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () =
   });
 
   beforeEach(() => {
-    mockAuth.deleteAccount.mockReset().mockResolvedValue({ success: true, data: null });
+    mockAuth.deleteAccount
+      .mockReset()
+      .mockResolvedValue({ success: true, data: null });
   });
 
   it('appel authentifié → 204 et appelle authService.deleteAccount(userId)', async () => {
@@ -93,8 +105,14 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
   };
 
   const mockAuth = { setAvatar: vi.fn() };
-  const mockStorage = { avatarKey: vi.fn(() => 'avatars/u1.png'), upload: vi.fn(), getStream: vi.fn() };
-  const mockConfig = { get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test') };
+  const mockStorage = {
+    avatarKey: vi.fn(() => 'avatars/u1.png'),
+    upload: vi.fn(),
+    getStream: vi.fn(),
+  };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test'),
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({
@@ -135,7 +153,10 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
   it("champ 'file' image → 201, storage.upload appelé, auth.setAvatar reçoit la clé", async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/me/avatar')
-      .attach('file', Buffer.from('fakepngbytes'), { filename: 'a.png', contentType: 'image/png' });
+      .attach('file', Buffer.from('fakepngbytes'), {
+        filename: 'a.png',
+        contentType: 'image/png',
+      });
 
     expect(res.status).toBe(201);
     expect(mockStorage.upload).toHaveBeenCalledTimes(1);
@@ -154,7 +175,10 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
   it('mimetype non-image (pdf) → 400 (type image invalide), upload jamais appelé', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/me/avatar')
-      .attach('file', Buffer.from('%PDF-1.4'), { filename: 'f.pdf', contentType: 'application/pdf' });
+      .attach('file', Buffer.from('%PDF-1.4'), {
+        filename: 'f.pdf',
+        contentType: 'application/pdf',
+      });
 
     expect(res.status).toBe(400);
     expect(mockStorage.upload).not.toHaveBeenCalled();

@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import type { INestApplication, ExecutionContext } from '@nestjs/common';
@@ -104,7 +112,10 @@ describe('RecurringEntriesController — POST /recurring-entries/:id/payslip (mu
 
   beforeEach(() => {
     mockSvc.getOne.mockReset().mockResolvedValue({ id: ENTRY_ID });
-    mockSvc.update.mockReset().mockResolvedValue({ id: ENTRY_ID, payslipKey: 'payslips/u1/entry-1.pdf' });
+    mockSvc.update.mockReset().mockResolvedValue({
+      id: ENTRY_ID,
+      payslipKey: 'payslips/u1/entry-1.pdf',
+    });
     mockStorage.payslipKey.mockClear();
     mockStorage.upload.mockReset().mockResolvedValue(undefined);
   });
@@ -125,7 +136,9 @@ describe('RecurringEntriesController — POST /recurring-entries/:id/payslip (mu
   });
 
   it('sans fichier → 400 (BadRequestException), storage.upload jamais appelé', async () => {
-    const res = await request(app.getHttpServer()).post(`/recurring-entries/${ENTRY_ID}/payslip`);
+    const res = await request(app.getHttpServer()).post(
+      `/recurring-entries/${ENTRY_ID}/payslip`,
+    );
 
     expect(res.status).toBe(400);
     expect(mockStorage.upload).not.toHaveBeenCalled();

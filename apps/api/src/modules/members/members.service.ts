@@ -19,30 +19,46 @@ export class MembersService {
   constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
 
   list(userId: string) {
-    return this.db.select(MEMBER_PROJECTION).from(patients)
-      .where(eq(patients.userId, userId)).limit(100);
+    return this.db
+      .select(MEMBER_PROJECTION)
+      .from(patients)
+      .where(eq(patients.userId, userId))
+      .limit(100);
   }
 
   async create(userId: string, values: Record<string, unknown>) {
-    const rows = await this.db.insert(patients)
-      .values({ firstName: '', lastName: '', birthDate: null, ...values, userId })
+    const rows = await this.db
+      .insert(patients)
+      .values({
+        firstName: '',
+        lastName: '',
+        birthDate: null,
+        ...values,
+        userId,
+      })
       .returning(MEMBER_PROJECTION);
     return rows[0];
   }
 
   async update(userId: string, id: string, patch: Record<string, unknown>) {
-    const rows = await this.db.update(patients).set(patch)
+    const rows = await this.db
+      .update(patients)
+      .set(patch)
       .where(and(eq(patients.id, id), eq(patients.userId, userId)))
       .returning(MEMBER_PROJECTION);
     return rows[0];
   }
 
   async remove(userId: string, id: string) {
-    await this.db.delete(patients).where(and(eq(patients.id, id), eq(patients.userId, userId)));
+    await this.db
+      .delete(patients)
+      .where(and(eq(patients.id, id), eq(patients.userId, userId)));
   }
 
   async updateColor(userId: string, id: string, color: string | null) {
-    const rows = await this.db.update(patients).set({ color })
+    const rows = await this.db
+      .update(patients)
+      .set({ color })
       .where(and(eq(patients.id, id), eq(patients.userId, userId)))
       .returning(MEMBER_PROJECTION);
     return rows[0];

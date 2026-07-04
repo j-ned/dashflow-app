@@ -31,11 +31,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         message = resp;
       } else if (resp && typeof resp === 'object') {
         const r = resp as { message?: unknown; code?: unknown };
-        message = typeof r.message === 'string'
-          ? r.message
-          : Array.isArray(r.message)
-            ? r.message.join(', ')
-            : exception.message;
+        message =
+          typeof r.message === 'string'
+            ? r.message
+            : Array.isArray(r.message)
+              ? r.message.join(', ')
+              : exception.message;
         if (typeof r.code === 'string') code = r.code;
       } else {
         message = exception.message;
@@ -43,7 +44,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (status >= 500) {
-      this.logger.error(exception instanceof Error ? exception.stack : String(exception));
+      this.logger.error(
+        exception instanceof Error ? exception.stack : String(exception),
+      );
     }
 
     res.status(status).json({

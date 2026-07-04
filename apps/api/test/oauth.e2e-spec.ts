@@ -11,17 +11,25 @@ describe('OAuth e2e', () => {
   beforeAll(async () => {
     process.env.GOOGLE_CLIENT_ID = 'test-client-id';
     process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] }).compile();
+    const moduleRef = await Test.createTestingModule({
+      imports: [AppModule],
+    }).compile();
     app = moduleRef.createNestApplication();
     app.use(cookieParser());
     await app.init();
   });
-  afterAll(async () => { await app.close(); });
+  afterAll(async () => {
+    await app.close();
+  });
 
   it('GET /auth/oauth/google → 302 vers Google + cookies state/verifier', async () => {
-    const res = await request(app.getHttpServer()).get('/auth/oauth/google').expect(302);
+    const res = await request(app.getHttpServer())
+      .get('/auth/oauth/google')
+      .expect(302);
     expect(res.headers.location).toContain('accounts.google.com');
-    const setCookie = (res.headers['set-cookie'] as unknown as string[]).join(';');
+    const setCookie = (res.headers['set-cookie'] as unknown as string[]).join(
+      ';',
+    );
     expect(setCookie).toContain('dashflow_oauth_state');
     expect(setCookie).toContain('dashflow_oauth_verifier');
   });

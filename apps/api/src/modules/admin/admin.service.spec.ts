@@ -55,7 +55,11 @@ describe('AdminService.listUsers', () => {
     const r = repo([row()], 1);
     const svc = new AdminService(r);
     await svc.listUsers({ search: 'a@b', limit: 10, offset: 20 });
-    expect(r.listUsers).toHaveBeenCalledWith({ search: 'a@b', limit: 10, offset: 20 });
+    expect(r.listUsers).toHaveBeenCalledWith({
+      search: 'a@b',
+      limit: 10,
+      offset: 20,
+    });
     expect(r.countAll).toHaveBeenCalledWith('a@b');
   });
 });

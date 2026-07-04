@@ -10,38 +10,69 @@ type Loan = typeof loans.$inferSelect;
 
 @Injectable()
 export class LoansService extends OwnedCrudService<Loan> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) { super(db, loans); }
+  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+    super(db, loans);
+  }
 
   allTransactions(userId: string) {
-    return this.db.select(getTableColumns(loanTransactions)).from(loanTransactions)
-      .innerJoin(loans, and(eq(loanTransactions.loanId, loans.id), eq(loans.userId, userId)))
+    return this.db
+      .select(getTableColumns(loanTransactions))
+      .from(loanTransactions)
+      .innerJoin(
+        loans,
+        and(eq(loanTransactions.loanId, loans.id), eq(loans.userId, userId)),
+      )
       .limit(1000);
   }
 
   async transactionsOf(userId: string, id: string) {
     const loan = await this.getOne(userId, id);
     if (!loan) return undefined;
-    return this.db.select().from(loanTransactions)
+    return this.db
+      .select()
+      .from(loanTransactions)
       .where(eq(loanTransactions.loanId, id))
-      .orderBy(desc(loanTransactions.date), desc(loanTransactions.createdAt)).limit(100);
+      .orderBy(desc(loanTransactions.date), desc(loanTransactions.createdAt))
+      .limit(100);
   }
 
-  async addTransaction(userId: string, id: string, values: { amount: string; date: string; encryptedData?: string }) {
+  async addTransaction(
+    userId: string,
+    id: string,
+    values: { amount: string; date: string; encryptedData?: string },
+  ) {
     const loan = await this.getOne(userId, id);
     if (!loan) return undefined;
-    const rows = await this.db.insert(loanTransactions).values({ loanId: id, ...values }).returning();
+    const rows = await this.db
+      .insert(loanTransactions)
+      .values({ loanId: id, ...values })
+      .returning();
     return rows[0];
   }
 
-  async recordPayment(userId: string, id: string, opts: { amount: number; date?: string; note?: string | null }) {
-    const current = await this.getOne(userId, id) as Loan | undefined;
+  async recordPayment(
+    userId: string,
+    id: string,
+    opts: { amount: number; date?: string; note?: string | null },
+  ) {
+    const current = await this.getOne(userId, id);
     if (!current) return undefined;
     const txDate = opts.date || today();
-    const newRemaining = String(Math.max(0, addMoney(Number(current.remaining), -opts.amount)));
+    const newRemaining = String(
+      Math.max(0, addMoney(Number(current.remaining), -opts.amount)),
+    );
     return this.db.transaction(async (tx) => {
-      const [updated] = await tx.update(loans).set({ remaining: newRemaining })
-        .where(and(eq(loans.id, id), eq(loans.userId, userId))).returning();
-      await tx.insert(loanTransactions).values({ loanId: id, amount: String(opts.amount), date: txDate, note: opts.note ?? null });
+      const [updated] = await tx
+        .update(loans)
+        .set({ remaining: newRemaining })
+        .where(and(eq(loans.id, id), eq(loans.userId, userId)))
+        .returning();
+      await tx.insert(loanTransactions).values({
+        loanId: id,
+        amount: String(opts.amount),
+        date: txDate,
+        note: opts.note ?? null,
+      });
       return updated;
     });
   }

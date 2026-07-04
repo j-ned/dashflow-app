@@ -17,7 +17,10 @@ export class TwoFactorService {
   }
 
   verify(secretBase32: string, code: string): boolean {
-    const totp = new OTPAuth.TOTP({ issuer: ISSUER, secret: OTPAuth.Secret.fromBase32(secretBase32) });
+    const totp = new OTPAuth.TOTP({
+      issuer: ISSUER,
+      secret: OTPAuth.Secret.fromBase32(secretBase32),
+    });
     return totp.validate({ token: code, window: 1 }) !== null;
   }
 }

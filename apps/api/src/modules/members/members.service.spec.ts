@@ -3,9 +3,13 @@ import { MembersService } from './members.service';
 import type { DrizzleDB } from '../../db/drizzle.constants';
 
 // Faux DrizzleDB : `insert().values().returning()` renvoie la ligne projetée (MEMBER_PROJECTION).
-function dbReturning(insertedRow: Record<string, unknown> = { id: 'new' }): DrizzleDB {
+function dbReturning(
+  insertedRow: Record<string, unknown> = { id: 'new' },
+): DrizzleDB {
   return {
-    insert: () => ({ values: () => ({ returning: async () => [insertedRow] }) }),
+    insert: () => ({
+      values: () => ({ returning: () => [insertedRow] }),
+    }),
   } as unknown as DrizzleDB;
 }
 

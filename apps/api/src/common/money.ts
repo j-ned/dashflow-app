@@ -7,6 +7,9 @@
  * **centimes entiers** puis on revient en unités.
  */
 export function addMoney(...amounts: number[]): number {
-  const cents = amounts.reduce((sum, amount) => sum + Math.round(amount * 100), 0);
+  const cents = amounts.reduce(
+    (sum, amount) => sum + Math.round(amount * 100),
+    0,
+  );
   return cents / 100;
 }

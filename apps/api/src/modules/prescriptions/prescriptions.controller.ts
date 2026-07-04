@@ -17,11 +17,17 @@ import type { Response } from 'express';
 import { PrescriptionsService } from './prescriptions.service';
 import { StorageService } from '../../storage/storage.service';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { parseBody } from '../../common/parse-body';
-import { createPrescriptionSchema, createEncryptedPrescriptionSchema } from './dto/prescription.dto';
+import {
+  createPrescriptionSchema,
+  createEncryptedPrescriptionSchema,
+} from './dto/prescription.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('prescriptions')
@@ -33,9 +39,12 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, appointmentId, practitionerId, patientId } = parseBody(createEncryptedPrescriptionSchema, body);
+      const { encryptedData, appointmentId, practitionerId, patientId } =
+        parseBody(createEncryptedPrescriptionSchema, body);
       return {
         appointmentId: appointmentId ?? null,
         practitionerId: practitionerId ?? null,
@@ -56,11 +65,17 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
-      if (body.appointmentId !== undefined) patch.appointmentId = body.appointmentId ?? null;
-      if (body.practitionerId !== undefined) patch.practitionerId = body.practitionerId ?? null;
+      const patch: Record<string, unknown> = {
+        encryptedData: body.encryptedData,
+      };
+      if (body.appointmentId !== undefined)
+        patch.appointmentId = body.appointmentId ?? null;
+      if (body.practitionerId !== undefined)
+        patch.practitionerId = body.practitionerId ?? null;
       if (body.patientId !== undefined) patch.patientId = body.patientId;
       return patch;
     }
@@ -70,7 +85,10 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
 
   // Static route must come before /:id to avoid param capture
   @Get('by-appointment/:appointmentId')
-  byAppointment(@CurrentUser() u: AuthUser, @Param('appointmentId') appointmentId: string) {
+  byAppointment(
+    @CurrentUser() u: AuthUser,
+    @Param('appointmentId') appointmentId: string,
+  ) {
     return this.svc.byAppointment(u.id, appointmentId);
   }
 
@@ -78,7 +96,9 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
 
   @UseGuards(CsrfGuard)
   @Post(':id/document')
-  @UseInterceptors(FileInterceptor('document', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('document', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   async uploadDocument(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
@@ -93,9 +113,14 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   }
 
   @Get(':id/document')
-  async getDocument(@CurrentUser() u: AuthUser, @Param('id') id: string, @Res() res: Response): Promise<void> {
+  async getDocument(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     const presc = await this.svc.getOne(u.id, id);
-    if (!presc?.documentUrl) throw new NotFoundException('Document introuvable');
+    if (!presc?.documentUrl)
+      throw new NotFoundException('Document introuvable');
     const obj = await this.storage.getStream(presc.documentUrl);
     if (!obj) throw new NotFoundException('Document introuvable');
     res.setHeader('Content-Type', obj.contentType);
@@ -105,7 +130,10 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Delete(':id/document')
   @HttpCode(204)
-  async deleteDocument(@CurrentUser() u: AuthUser, @Param('id') id: string): Promise<void> {
+  async deleteDocument(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+  ): Promise<void> {
     const presc = await this.svc.getOne(u.id, id);
     if (!presc) throw new NotFoundException('Non trouvé');
     if (presc.documentUrl) await this.storage.delete(presc.documentUrl);

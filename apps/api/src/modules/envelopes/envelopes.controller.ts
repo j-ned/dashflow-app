@@ -12,7 +12,10 @@ import {
 import { EnvelopesService } from './envelopes.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { today } from '../../common/today';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
@@ -31,10 +34,20 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, memberId } = parseBody(createEncryptedEnvelopeSchema, body);
-      return { memberId: memberId ?? null, name: '', type: 'épargne', encryptedData };
+      const { encryptedData, memberId } = parseBody(
+        createEncryptedEnvelopeSchema,
+        body,
+      );
+      return {
+        memberId: memberId ?? null,
+        name: '',
+        type: 'épargne',
+        encryptedData,
+      };
     }
     const d = parseBody(createEnvelopeSchema, body);
     return {
@@ -48,9 +61,13 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
+      const patch: Record<string, unknown> = {
+        encryptedData: body.encryptedData,
+      };
       if (body.memberId !== undefined) patch.memberId = body.memberId;
       return patch;
     }
@@ -60,7 +77,9 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
 
   // Static path must come before /:id to avoid capture by param route
   @Get('transactions/all')
-  allTransactions(@CurrentUser() u: AuthUser) { return this.svc.allTransactions(u.id); }
+  allTransactions(@CurrentUser() u: AuthUser) {
+    return this.svc.allTransactions(u.id);
+  }
 
   @Get(':id/transactions')
   async transactionsOf(@CurrentUser() u: AuthUser, @Param('id') id: string) {
@@ -69,7 +88,9 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
     return rows;
   }
 
-  @UseGuards(CsrfGuard) @Post(':id/transactions') @HttpCode(201)
+  @UseGuards(CsrfGuard)
+  @Post(':id/transactions')
+  @HttpCode(201)
   async addTransaction(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
@@ -85,12 +106,17 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
       return row;
     }
     const d = parseBody(envelopeTransactionSchema, body);
-    const row = await this.svc.addTransaction(u.id, id, { amount: String(d.amount), date: d.date, note: d.note ?? null });
+    const row = await this.svc.addTransaction(u.id, id, {
+      amount: String(d.amount),
+      date: d.date,
+      note: d.note ?? null,
+    });
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;
   }
 
-  @UseGuards(CsrfGuard) @Patch(':id/balance')
+  @UseGuards(CsrfGuard)
+  @Patch(':id/balance')
   async credit(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
@@ -103,7 +129,11 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
       return row;
     }
     const d = parseBody(creditEnvelopeSchema, body);
-    const row = await this.svc.credit(u.id, id, { amount: d.amount, date: d.date, note: d.note ?? null });
+    const row = await this.svc.credit(u.id, id, {
+      amount: d.amount,
+      date: d.date,
+      note: d.note ?? null,
+    });
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;
   }

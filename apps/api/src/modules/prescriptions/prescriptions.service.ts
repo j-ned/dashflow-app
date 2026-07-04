@@ -8,11 +8,23 @@ type Prescription = typeof prescriptions.$inferSelect;
 
 @Injectable()
 export class PrescriptionsService extends OwnedCrudService<Prescription> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) { super(db, prescriptions); }
+  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+    super(db, prescriptions);
+  }
 
-  byAppointment(userId: string, appointmentId: string): Promise<Prescription[]> {
-    return this.db.select().from(prescriptions)
-      .where(and(eq(prescriptions.userId, userId), eq(prescriptions.appointmentId, appointmentId)))
-      .limit(100) as Promise<Prescription[]>;
+  byAppointment(
+    userId: string,
+    appointmentId: string,
+  ): Promise<Prescription[]> {
+    return this.db
+      .select()
+      .from(prescriptions)
+      .where(
+        and(
+          eq(prescriptions.userId, userId),
+          eq(prescriptions.appointmentId, appointmentId),
+        ),
+      )
+      .limit(100);
   }
 }

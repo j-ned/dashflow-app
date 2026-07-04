@@ -20,7 +20,9 @@ export class AdminRepository {
     limit: number;
     offset: number;
   }): Promise<AdminUserRow[]> {
-    const where = opts.search ? ilike(users.email, `%${opts.search}%`) : undefined;
+    const where = opts.search
+      ? ilike(users.email, `%${opts.search}%`)
+      : undefined;
     return this.db
       .select({
         id: users.id,
@@ -33,12 +35,15 @@ export class AdminRepository {
       .where(where)
       .orderBy(sql`${users.createdAt} desc`)
       .limit(opts.limit)
-      .offset(opts.offset) as Promise<AdminUserRow[]>;
+      .offset(opts.offset);
   }
 
   async countAll(search?: string): Promise<number> {
     const where = search ? ilike(users.email, `%${search}%`) : undefined;
-    const rows = await this.db.select({ value: count() }).from(users).where(where);
+    const rows = await this.db
+      .select({ value: count() })
+      .from(users)
+      .where(where);
     return Number(rows[0]?.value ?? 0);
   }
 }

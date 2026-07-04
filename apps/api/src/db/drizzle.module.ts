@@ -20,7 +20,8 @@ const POSTGRES_CLIENT = Symbol('POSTGRES_CLIENT');
     {
       provide: DRIZZLE,
       inject: [POSTGRES_CLIENT],
-      useFactory: (sql: ReturnType<typeof postgres>) => drizzle(sql, { schema }),
+      useFactory: (sql: ReturnType<typeof postgres>) =>
+        drizzle(sql, { schema }),
     },
   ],
   exports: [DRIZZLE],

@@ -7,5 +7,7 @@ type Consumable = typeof consumables.$inferSelect;
 
 @Injectable()
 export class ConsumablesService extends OwnedCrudService<Consumable> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) { super(db, consumables); }
+  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+    super(db, consumables);
+  }
 }

@@ -15,6 +15,10 @@ export class AdminController {
   @Get('users')
   users(@Query() query: Record<string, unknown>) {
     const { search, page, pageSize } = parseBody(listQuerySchema, query);
-    return this.admin.listUsers({ search, limit: pageSize, offset: (page - 1) * pageSize });
+    return this.admin.listUsers({
+      search,
+      limit: pageSize,
+      offset: (page - 1) * pageSize,
+    });
   }
 }

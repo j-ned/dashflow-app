@@ -13,13 +13,21 @@ describe('AdminController', () => {
     const service = svc();
     const c = new AdminController(service);
     await c.users({ search: 'a', page: 2, pageSize: 20 });
-    expect(service.listUsers).toHaveBeenCalledWith({ search: 'a', limit: 20, offset: 20 });
+    expect(service.listUsers).toHaveBeenCalledWith({
+      search: 'a',
+      limit: 20,
+      offset: 20,
+    });
   });
 
   it('users : applique les valeurs par défaut (page 1, pageSize 20) sans query', async () => {
     const service = svc();
     const c = new AdminController(service);
     await c.users({});
-    expect(service.listUsers).toHaveBeenCalledWith({ search: undefined, limit: 20, offset: 0 });
+    expect(service.listUsers).toHaveBeenCalledWith({
+      search: undefined,
+      limit: 20,
+      offset: 0,
+    });
   });
 });
