@@ -8,6 +8,7 @@ import { AccountTransactionGateway } from '../../domain/gateways/account-transac
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { confirmedBalance as computeConfirmedBalance } from '../../domain/account-balance';
 import { addMoney } from '../../domain/money';
+import { toLocalIsoDate } from '../../domain/local-date';
 
 @Injectable()
 export class BudgetDataStore {
@@ -53,7 +54,7 @@ export class BudgetDataStore {
     return accs.length > 0 ? accs[0].id : null;
   });
 
-  private readonly todayIso = new Date().toISOString().slice(0, 10);
+  private readonly todayIso = toLocalIsoDate(new Date());
 
   readonly selectedAccount = computed(() => {
     const id = this.selectedAccountId();
