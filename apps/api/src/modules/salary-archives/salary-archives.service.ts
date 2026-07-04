@@ -19,6 +19,6 @@ export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
       .from(salaryArchives)
       .where(eq(salaryArchives.userId, userId))
       .orderBy(desc(salaryArchives.month))
-      .limit(200) as Promise<SalaryArchive[]>;
+      .limit(200);
   }
 }

@@ -3,7 +3,10 @@ import { PractitionersService } from './practitioners.service';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { parseBody } from '../../common/parse-body';
 import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
-import { createPractitionerSchema, createEncryptedPractitionerSchema } from './dto/practitioner.dto';
+import {
+  createPractitionerSchema,
+  createEncryptedPractitionerSchema,
+} from './dto/practitioner.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -13,9 +16,14 @@ export class PractitionersController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData } = parseBody(createEncryptedPractitionerSchema, body);
+      const { encryptedData } = parseBody(
+        createEncryptedPractitionerSchema,
+        body,
+      );
       return { name: '', type: 'autre', encryptedData };
     }
     const d = parseBody(createPractitionerSchema, body);
@@ -29,7 +37,9 @@ export class PractitionersController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     return body.encryptedData
       ? { encryptedData: body.encryptedData }
       : excludeSystemFields(body);

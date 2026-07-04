@@ -93,7 +93,11 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
       .send({ notes: 'x' });
 
     expect(res.status).toBe(200);
-    expect(mockSvc.update).toHaveBeenCalledWith('u1', 'p1', expect.objectContaining({ notes: 'x' }));
+    expect(mockSvc.update).toHaveBeenCalledWith(
+      'u1',
+      'p1',
+      expect.objectContaining({ notes: 'x' }),
+    );
   });
 
   it('DELETE /patients/:id → 204', async () => {

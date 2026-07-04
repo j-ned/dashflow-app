@@ -13,6 +13,8 @@ describe('ZodValidationPipe', () => {
 
   it('lève BadRequestException sur valeur invalide', () => {
     const pipe = new ZodValidationPipe(schema);
-    expect(() => pipe.transform({ email: 'nope' })).toThrow(BadRequestException);
+    expect(() => pipe.transform({ email: 'nope' })).toThrow(
+      BadRequestException,
+    );
   });
 });

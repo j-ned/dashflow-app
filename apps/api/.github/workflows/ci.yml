@@ -23,8 +23,51 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Lint
+        run: pnpm lint:check # eslint sans --fix (échoue s'il reste une erreur)
+
       - name: Build
         run: pnpm build # nest build (typecheck complet)
 
       - name: Test
         run: pnpm test # vitest run (unit + module, dont les tests HTTP multipart)
+
+  e2e:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: dashflow_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://postgres:postgres@localhost:5432/dashflow_test
+      JWT_SECRET: ci-e2e-test-secret-at-least-32-characters-long
+      NODE_ENV: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      - name: Migrate DB
+        run: pnpm db:migrate # applique les migrations drizzle sur la base éphémère
+
+      - name: E2E tests
+        run: pnpm test:e2e # vitest e2e — boote le vrai AppModule contre Postgres

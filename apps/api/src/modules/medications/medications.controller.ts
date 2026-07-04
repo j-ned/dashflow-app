@@ -10,7 +10,10 @@ import {
 import { MedicationsService } from './medications.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import {
   createMedicationSchema,
@@ -26,9 +29,14 @@ export class MedicationsController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, patientId, prescriptionId } = parseBody(createEncryptedMedicationSchema, body);
+      const { encryptedData, patientId, prescriptionId } = parseBody(
+        createEncryptedMedicationSchema,
+        body,
+      );
       return {
         prescriptionId: prescriptionId ?? null,
         patientId,
@@ -54,10 +62,15 @@ export class MedicationsController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
-      if (body.prescriptionId !== undefined) patch.prescriptionId = body.prescriptionId ?? null;
+      const patch: Record<string, unknown> = {
+        encryptedData: body.encryptedData,
+      };
+      if (body.prescriptionId !== undefined)
+        patch.prescriptionId = body.prescriptionId ?? null;
       if (body.patientId !== undefined) patch.patientId = body.patientId;
       return patch;
     }
@@ -67,10 +80,17 @@ export class MedicationsController extends OwnedCrudController<unknown> {
 
   // Static route must come before /:id to avoid param capture
   @Get('alerts')
-  alerts(@CurrentUser() u: AuthUser) { return this.svc.alerts(u.id); }
+  alerts(@CurrentUser() u: AuthUser) {
+    return this.svc.alerts(u.id);
+  }
 
-  @UseGuards(CsrfGuard) @Patch(':id/refill')
-  async refill(@CurrentUser() u: AuthUser, @Param('id') id: string, @Body() body: Record<string, unknown>) {
+  @UseGuards(CsrfGuard)
+  @Patch(':id/refill')
+  async refill(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
     const { quantity } = parseBody(refillMedicationSchema, body);
     const row = await this.svc.refill(u.id, id, quantity);
     if (!row) throw new NotFoundException('Non trouvé');

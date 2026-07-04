@@ -22,14 +22,18 @@ describe('DemoService.reset (intégration DB locale)', () => {
   const svc = new DemoService(db, config);
 
   it('réinitialise le compte démo sans erreur FK, même avec un user_id de snapshot périmé', async () => {
-    const demo = await client<{ id: string }[]>`select id from users where is_demo_account = true limit 1`;
+    const demo = await client<
+      { id: string }[]
+    >`select id from users where is_demo_account = true limit 1`;
     if (demo.length === 0) {
       console.warn('Pas de compte démo en DB locale — test ignoré');
       return;
     }
     const demoId = demo[0].id;
 
-    const seed = await client<{ reg: string | null }[]>`select to_regclass('public.demo_seed_shared_access') as reg`;
+    const seed = await client<
+      { reg: string | null }[]
+    >`select to_regclass('public.demo_seed_shared_access') as reg`;
     const hasSeed = seed[0].reg != null;
 
     // Simule l'échec rapporté : le snapshot pointe un user inexistant (compte démo recréé).
@@ -42,7 +46,9 @@ describe('DemoService.reset (intégration DB locale)', () => {
 
     // Après restauration, toutes les lignes sont rattachées au compte démo courant.
     if (hasSeed) {
-      const rows = await client<{ user_id: string }[]>`select user_id from shared_access`;
+      const rows = await client<
+        { user_id: string }[]
+      >`select user_id from shared_access`;
       for (const r of rows) expect(r.user_id).toBe(demoId);
     }
   });

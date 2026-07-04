@@ -9,9 +9,21 @@ import { MAILER, type Mailer } from '../src/mail/mailer';
 
 class CapturingMailer implements Mailer {
   lastCode = '';
-  async sendVerificationCode(_to: string, code: string) { this.lastCode = code; }
-  async sendPasswordResetCode(_to: string, code: string) { this.lastCode = code; }
-  async sendCalendarInvitation(_to: string, _senderName: string, _calendarToken: string) { /* no-op */ }
+  sendVerificationCode(_to: string, code: string): Promise<void> {
+    this.lastCode = code;
+    return Promise.resolve();
+  }
+  sendPasswordResetCode(_to: string, code: string): Promise<void> {
+    this.lastCode = code;
+    return Promise.resolve();
+  }
+  async sendCalendarInvitation(
+    _to: string,
+    _senderName: string,
+    _calendarToken: string,
+  ) {
+    /* no-op */
+  }
 }
 
 describe('Auth e2e', () => {
@@ -21,13 +33,17 @@ describe('Auth e2e', () => {
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER).useValue(mailer).compile();
+      .overrideProvider(MAILER)
+      .useValue(mailer)
+      .compile();
     app = moduleRef.createNestApplication();
     app.use(cookieParser());
     await app.init();
   });
 
-  afterAll(async () => { await app.close(); });
+  afterAll(async () => {
+    await app.close();
+  });
 
   it('register → verify → cookie → GET /me', async () => {
     await request(app.getHttpServer())
@@ -68,7 +84,9 @@ describe('Auth e2e', () => {
       .expect(200);
 
     const loginCookie = login.headers['set-cookie'] as string | string[];
-    const loginCookieArr = Array.isArray(loginCookie) ? loginCookie : [loginCookie];
+    const loginCookieArr = Array.isArray(loginCookie)
+      ? loginCookie
+      : [loginCookie];
 
     await request(app.getHttpServer())
       .post('/auth/logout')
@@ -79,27 +97,57 @@ describe('Auth e2e', () => {
   it('2FA : setup → enable → login exige le code', async () => {
     const email2 = `e2e2fa+${Date.now()}@dashflow.test`;
     const server = app.getHttpServer();
-    await request(server).post('/auth/register').send({ email: email2, password: 'motdepasse-long-12' }).expect(201);
-    const verify = await request(server).post('/auth/verify').send({ email: email2, code: mailer.lastCode }).expect(200);
+    await request(server)
+      .post('/auth/register')
+      .send({ email: email2, password: 'motdepasse-long-12' })
+      .expect(201);
+    const verify = await request(server)
+      .post('/auth/verify')
+      .send({ email: email2, code: mailer.lastCode })
+      .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
 
-    const csrf = await request(server).get('/auth/csrf').set('Cookie', cookieArr).expect(200);
+    const csrf = await request(server)
+      .get('/auth/csrf')
+      .set('Cookie', cookieArr)
+      .expect(200);
     const csrfCookie = csrf.headers['set-cookie'] as string | string[];
-    const allCookies = cookieArr.concat(Array.isArray(csrfCookie) ? csrfCookie : [csrfCookie]);
+    const allCookies = cookieArr.concat(
+      Array.isArray(csrfCookie) ? csrfCookie : [csrfCookie],
+    );
     const csrfToken = csrf.body.csrfToken as string;
 
-    const setup = await request(server).post('/auth/me/2fa/setup')
-      .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).expect(200);
+    const setup = await request(server)
+      .post('/auth/me/2fa/setup')
+      .set('Cookie', allCookies)
+      .set('X-CSRF-Token', csrfToken)
+      .expect(200);
     const secret = setup.body.secret as string;
-    const totp = new OTPAuth.TOTP({ issuer: 'DashFlow', secret: OTPAuth.Secret.fromBase32(secret) });
+    const totp = new OTPAuth.TOTP({
+      issuer: 'DashFlow',
+      secret: OTPAuth.Secret.fromBase32(secret),
+    });
 
-    await request(server).post('/auth/me/2fa/verify')
-      .set('Cookie', allCookies).set('X-CSRF-Token', csrfToken).send({ code: totp.generate() }).expect(200);
+    await request(server)
+      .post('/auth/me/2fa/verify')
+      .set('Cookie', allCookies)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ code: totp.generate() })
+      .expect(200);
 
-    const noCode = await request(server).post('/auth/login').send({ email: email2, password: 'motdepasse-long-12' }).expect(200);
+    const noCode = await request(server)
+      .post('/auth/login')
+      .send({ email: email2, password: 'motdepasse-long-12' })
+      .expect(200);
     expect(noCode.body.mfaRequired).toBe(true);
-    await request(server).post('/auth/login')
-      .send({ email: email2, password: 'motdepasse-long-12', totpCode: totp.generate() }).expect(200);
+    await request(server)
+      .post('/auth/login')
+      .send({
+        email: email2,
+        password: 'motdepasse-long-12',
+        totpCode: totp.generate(),
+      })
+      .expect(200);
   });
 });

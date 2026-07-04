@@ -1,9 +1,15 @@
 import { z } from 'zod';
 
 const optionalUuid = z.string().uuid().nullable().optional();
-const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
+const dateStr = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
 const amount = z.union([z.string(), z.number()]).transform(String);
-const color = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide (#RRGGBB)').nullable().optional();
+const color = z
+  .string()
+  .regex(/^#[0-9a-fA-F]{6}$/, 'Couleur invalide (#RRGGBB)')
+  .nullable()
+  .optional();
 
 const ENVELOPE_TYPES = ['épargne', 'impôts', 'équipement', 'vacances'] as const;
 

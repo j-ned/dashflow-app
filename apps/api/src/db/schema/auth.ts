@@ -1,4 +1,12 @@
-import { pgTable, uuid, varchar, text, timestamp, integer, boolean } from 'drizzle-orm/pg-core';
+import {
+  pgTable,
+  uuid,
+  varchar,
+  text,
+  timestamp,
+  integer,
+  boolean,
+} from 'drizzle-orm/pg-core';
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -14,10 +22,14 @@ export const users = pgTable('users', {
   wrappedMasterKey: text('wrapped_master_key'),
   recoveryWrappedKey: text('recovery_wrapped_key'),
   encryptionVersion: integer('encryption_version').notNull().default(0),
-  encryptionPassphrase: boolean('encryption_passphrase').notNull().default(false),
+  encryptionPassphrase: boolean('encryption_passphrase')
+    .notNull()
+    .default(false),
   isDemoAccount: boolean('is_demo_account').notNull().default(false),
   role: varchar('role', { length: 16 }).notNull().default('user'),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 export const verificationCodes = pgTable('verification_codes', {
@@ -25,5 +37,7 @@ export const verificationCodes = pgTable('verification_codes', {
   email: varchar('email', { length: 255 }).notNull(),
   code: varchar('code', { length: 6 }).notNull(),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });

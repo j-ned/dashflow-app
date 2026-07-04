@@ -13,7 +13,11 @@ describe('TwoFactorService', () => {
 
   it('verify accepte un code calculé depuis le secret, rejette un faux', () => {
     const { secret } = svc.generateSecret('a@b.com');
-    const totp = new OTPAuth.TOTP({ issuer: 'DashFlow', label: 'a@b.com', secret: OTPAuth.Secret.fromBase32(secret) });
+    const totp = new OTPAuth.TOTP({
+      issuer: 'DashFlow',
+      label: 'a@b.com',
+      secret: OTPAuth.Secret.fromBase32(secret),
+    });
     expect(svc.verify(secret, totp.generate())).toBe(true);
     expect(svc.verify(secret, '000000')).toBe(false);
   });

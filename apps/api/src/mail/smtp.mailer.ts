@@ -85,7 +85,11 @@ export class SmtpMailer implements Mailer {
     });
   }
 
-  async sendCalendarInvitation(to: string, senderName: string, calendarToken: string): Promise<void> {
+  async sendCalendarInvitation(
+    to: string,
+    senderName: string,
+    calendarToken: string,
+  ): Promise<void> {
     const calendarUrl = `${this.appUrl}/medical/calendar/${calendarToken}`;
     const webcalUrl = calendarUrl.replace(/^https?:\/\//, 'webcal://');
     const googleCalUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;

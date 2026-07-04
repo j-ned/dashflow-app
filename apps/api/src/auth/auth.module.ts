@@ -27,7 +27,16 @@ import type { Env } from '../config/env.schema';
     }),
   ],
   controllers: [AuthController, EncryptionController, OAuthController],
-  providers: [AuthService, AuthRepository, TokenService, TwoFactorService, EncryptionService, OAuthService, JwtAuthGuard, CsrfGuard],
+  providers: [
+    AuthService,
+    AuthRepository,
+    TokenService,
+    TwoFactorService,
+    EncryptionService,
+    OAuthService,
+    JwtAuthGuard,
+    CsrfGuard,
+  ],
   exports: [TokenService, JwtAuthGuard, CsrfGuard],
 })
 export class AuthModule {}

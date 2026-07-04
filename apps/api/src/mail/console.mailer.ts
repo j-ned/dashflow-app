@@ -9,24 +9,32 @@ export class ConsoleMailer implements Mailer {
 
   constructor(private readonly config: ConfigService<Env, true>) {}
 
-  async sendVerificationCode(to: string, code: string): Promise<void> {
+  sendVerificationCode(to: string, code: string): Promise<void> {
     this.logger.log(`[verification] ${to} → code ${code}`);
     console.log(`[verification] ${to} → code ${code}`);
+    return Promise.resolve();
   }
 
-  async sendAccountExists(to: string): Promise<void> {
+  sendAccountExists(to: string): Promise<void> {
     this.logger.log(`[account-exists] ${to}`);
     console.log(`[account-exists] ${to}`);
+    return Promise.resolve();
   }
 
-  async sendPasswordResetCode(to: string, code: string): Promise<void> {
+  sendPasswordResetCode(to: string, code: string): Promise<void> {
     this.logger.log(`[reset] ${to} → code ${code}`);
     console.log(`[reset] ${to} → code ${code}`);
+    return Promise.resolve();
   }
 
-  async sendCalendarInvitation(to: string, senderName: string, calendarToken: string): Promise<void> {
+  sendCalendarInvitation(
+    to: string,
+    senderName: string,
+    calendarToken: string,
+  ): Promise<void> {
     const url = `${this.config.get('APP_URL', { infer: true })}/medical/calendar/${calendarToken}`;
     this.logger.log(`[calendar-invite] ${to} (de ${senderName}) → ${url}`);
     console.log(`[calendar-invite] ${to} → ${url}`);
+    return Promise.resolve();
   }
 }

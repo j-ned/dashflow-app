@@ -16,11 +16,15 @@ describe('RemindersService', () => {
       const updatedRow = { ...existingRow, enabled: false };
 
       vi.spyOn(svc, 'getOne').mockResolvedValue(existingRow as any);
-      const updateSpy = vi.spyOn(svc, 'update').mockResolvedValue(updatedRow as any);
+      const updateSpy = vi
+        .spyOn(svc, 'update')
+        .mockResolvedValue(updatedRow as any);
 
       const result = await svc.toggle('user-1', 'uuid-1');
 
-      expect(updateSpy).toHaveBeenCalledWith('user-1', 'uuid-1', { enabled: false });
+      expect(updateSpy).toHaveBeenCalledWith('user-1', 'uuid-1', {
+        enabled: false,
+      });
       expect(result).toEqual(updatedRow);
     });
 
@@ -29,11 +33,15 @@ describe('RemindersService', () => {
       const updatedRow = { ...existingRow, enabled: true };
 
       vi.spyOn(svc, 'getOne').mockResolvedValue(existingRow as any);
-      const updateSpy = vi.spyOn(svc, 'update').mockResolvedValue(updatedRow as any);
+      const updateSpy = vi
+        .spyOn(svc, 'update')
+        .mockResolvedValue(updatedRow as any);
 
       const result = await svc.toggle('user-1', 'uuid-2');
 
-      expect(updateSpy).toHaveBeenCalledWith('user-1', 'uuid-2', { enabled: true });
+      expect(updateSpy).toHaveBeenCalledWith('user-1', 'uuid-2', {
+        enabled: true,
+      });
       expect(result).toEqual(updatedRow);
     });
 

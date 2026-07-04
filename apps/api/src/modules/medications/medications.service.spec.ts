@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { MedicationsService } from './medications.service';
 
 // ---------------------------------------------------------------------------
@@ -59,17 +59,38 @@ describe('MedicationsService.alerts', () => {
 
     // Med A: quantity=14, dailyRate=2, skipDays=[], alertDaysBefore=7
     //   weeklyRate = 2 * 7 = 14 pills/week → daysRemaining = (14/14)*7 = 7 → 7 <= 7 ✓ included
-    const medA = makeMed({ quantity: 14, dailyRate: '2', skipDays: [], alertDaysBefore: 7 });
+    const medA = makeMed({
+      quantity: 14,
+      dailyRate: '2',
+      skipDays: [],
+      alertDaysBefore: 7,
+    });
 
     // Med B: quantity=100, dailyRate=1, skipDays=[], alertDaysBefore=7
     //   weeklyRate = 7 → daysRemaining = (100/7)*7 = 100 → 100 > 7 ✗ excluded
-    const medB = makeMed({ id: 'med-2', quantity: 100, dailyRate: '1', skipDays: [], alertDaysBefore: 7 });
+    const medB = makeMed({
+      id: 'med-2',
+      quantity: 100,
+      dailyRate: '1',
+      skipDays: [],
+      alertDaysBefore: 7,
+    });
 
     // Med C: quantity=5, dailyRate=2, skipDays=[6], alertDaysBefore=3
     //   activeDays = 7-1=6, weeklyRate=2*6=12 → daysRemaining = (5/12)*7 ≈ 2.92 → 2.92 <= 3 ✓ included
-    const medC = makeMed({ id: 'med-3', quantity: 5, dailyRate: '2', skipDays: [6], alertDaysBefore: 3 });
+    const medC = makeMed({
+      id: 'med-3',
+      quantity: 5,
+      dailyRate: '2',
+      skipDays: [6],
+      alertDaysBefore: 3,
+    });
 
-    (fakeDb.limit as ReturnType<typeof vi.fn>).mockResolvedValue([medA, medB, medC]);
+    (fakeDb.limit as ReturnType<typeof vi.fn>).mockResolvedValue([
+      medA,
+      medB,
+      medC,
+    ]);
 
     const result = await svc.alerts('user-1');
 
@@ -83,7 +104,12 @@ describe('MedicationsService.alerts', () => {
     const { svc, fakeDb } = makeService();
 
     // quantity=5, dailyRate=2, skipDays=[6] → (5/12)*7 = 2.9166... → rounds to 2.92
-    const med = makeMed({ quantity: 5, dailyRate: '2', skipDays: [6], alertDaysBefore: 5 });
+    const med = makeMed({
+      quantity: 5,
+      dailyRate: '2',
+      skipDays: [6],
+      alertDaysBefore: 5,
+    });
     (fakeDb.limit as ReturnType<typeof vi.fn>).mockResolvedValue([med]);
 
     const [result] = await svc.alerts('user-1');
@@ -94,7 +120,12 @@ describe('MedicationsService.alerts', () => {
     const { svc, fakeDb } = makeService();
 
     // dailyRate=0 → weeklyRate=0 → daysRemaining=Infinity → never <= alertDaysBefore
-    const med = makeMed({ quantity: 0, dailyRate: '0', skipDays: [], alertDaysBefore: 999 });
+    const med = makeMed({
+      quantity: 0,
+      dailyRate: '0',
+      skipDays: [],
+      alertDaysBefore: 999,
+    });
     (fakeDb.limit as ReturnType<typeof vi.fn>).mockResolvedValue([med]);
 
     const result = await svc.alerts('user-1');
@@ -114,7 +145,9 @@ describe('MedicationsService.refill', () => {
     const updatedMed = makeMed({ quantity: currentQuantity + refillQuantity });
 
     // Chain for the initial SELECT (fetches current quantity)
-    const selectLimit = vi.fn().mockResolvedValue([{ quantity: currentQuantity }]);
+    const selectLimit = vi
+      .fn()
+      .mockResolvedValue([{ quantity: currentQuantity }]);
     const selectWhere = vi.fn().mockReturnValue({ limit: selectLimit });
     const selectFrom = vi.fn().mockReturnValue({ where: selectWhere });
     const selectFn = vi.fn().mockReturnValue({ from: selectFrom });
@@ -134,7 +167,9 @@ describe('MedicationsService.refill', () => {
     const result = await svc.refill('user-1', 'med-1', refillQuantity);
 
     // Assert the update was called with the summed quantity
-    expect(updateSet).toHaveBeenCalledWith({ quantity: currentQuantity + refillQuantity });
+    expect(updateSet).toHaveBeenCalledWith({
+      quantity: currentQuantity + refillQuantity,
+    });
     expect(result).toEqual(updatedMed);
   });
 

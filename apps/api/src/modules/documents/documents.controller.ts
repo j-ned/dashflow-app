@@ -18,9 +18,15 @@ import { DocumentsService } from './documents.service';
 import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { createDocumentSchema, createEncryptedDocumentSchema } from './dto/document.dto';
+import {
+  createDocumentSchema,
+  createEncryptedDocumentSchema,
+} from './dto/document.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 
 @UseGuards(JwtAuthGuard)
@@ -33,9 +39,14 @@ export class DocumentsController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, patientId, practitionerId } = parseBody(createEncryptedDocumentSchema, body);
+      const { encryptedData, patientId, practitionerId } = parseBody(
+        createEncryptedDocumentSchema,
+        body,
+      );
       return {
         patientId,
         practitionerId: practitionerId ?? null,
@@ -57,11 +68,16 @@ export class DocumentsController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
+      const patch: Record<string, unknown> = {
+        encryptedData: body.encryptedData,
+      };
       if (body.patientId !== undefined) patch.patientId = body.patientId;
-      if (body.practitionerId !== undefined) patch.practitionerId = body.practitionerId ?? null;
+      if (body.practitionerId !== undefined)
+        patch.practitionerId = body.practitionerId ?? null;
       return patch;
     }
     const { id: _i, userId: _u, ...rest } = body;
@@ -78,7 +94,9 @@ export class DocumentsController extends OwnedCrudController<unknown> {
 
   @UseGuards(CsrfGuard)
   @Post(':id/file')
-  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   async uploadFile(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
@@ -93,7 +111,11 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   }
 
   @Get(':id/file')
-  async getFile(@CurrentUser() u: AuthUser, @Param('id') id: string, @Res() res: Response): Promise<void> {
+  async getFile(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
     if (!doc?.fileUrl) throw new NotFoundException('Fichier introuvable');
     const obj = await this.storage.getStream(doc.fileUrl);
@@ -105,7 +127,10 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Delete(':id/file')
   @HttpCode(204)
-  async deleteFile(@CurrentUser() u: AuthUser, @Param('id') id: string): Promise<void> {
+  async deleteFile(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+  ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
     if (!doc) throw new NotFoundException('Non trouvé');
     if (doc.fileUrl) await this.storage.delete(doc.fileUrl);

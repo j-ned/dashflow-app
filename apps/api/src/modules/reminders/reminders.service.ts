@@ -14,6 +14,6 @@ export class RemindersService extends OwnedCrudService<Reminder> {
   async toggle(userId: string, id: string): Promise<Reminder | undefined> {
     const current = await this.getOne(userId, id);
     if (!current) return undefined;
-    return this.update(userId, id, { enabled: !(current as Reminder).enabled });
+    return this.update(userId, id, { enabled: !current.enabled });
   }
 }

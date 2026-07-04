@@ -12,4 +12,6 @@ export const createBankAccountSchema = z.object({
   dotColor: hexColor.optional(),
 });
 
-export const createEncryptedBankAccountSchema = z.object({ encryptedData: z.string().min(1) });
+export const createEncryptedBankAccountSchema = z.object({
+  encryptedData: z.string().min(1),
+});

@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import type { INestApplication, ExecutionContext } from '@nestjs/common';
@@ -63,13 +71,18 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
 
   beforeEach(() => {
     mockSvc.create.mockReset().mockResolvedValue({ id: 'arch-1' });
-    mockSvc.update.mockReset().mockResolvedValue({ id: 'arch-1', payslipKey: 'payslips/u1/arch-1.pdf' });
+    mockSvc.update.mockReset().mockResolvedValue({
+      id: 'arch-1',
+      payslipKey: 'payslips/u1/arch-1.pdf',
+    });
     mockStorage.payslipKey.mockClear();
     mockStorage.upload.mockReset().mockResolvedValue(undefined);
   });
 
   it('mode clair (sans fichier) → 201 et svc.create reçoit month + spendings en ARRAY', async () => {
-    const spendings = [{ label: 'x', amount: 50, date: '2026-06-10', category: 'c' }];
+    const spendings = [
+      { label: 'x', amount: 50, date: '2026-06-10', category: 'c' },
+    ];
 
     const res = await request(app.getHttpServer())
       .post('/salary-archives')
@@ -110,7 +123,9 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
   });
 
   it('payslip optionnel → storage.upload appelé, svc.update reçoit { payslipKey }, 201', async () => {
-    const spendings = [{ label: 'x', amount: 50, date: '2026-06-10', category: 'c' }];
+    const spendings = [
+      { label: 'x', amount: 50, date: '2026-06-10', category: 'c' },
+    ];
 
     const res = await request(app.getHttpServer())
       .post('/salary-archives')
@@ -143,7 +158,13 @@ describe('SalaryArchivesController — POST /salary-archives garde CSRF active',
     update: vi.fn(),
     remove: vi.fn(),
   };
-  const mockStorage = { payslipKey: vi.fn(), upload: vi.fn(), getStream: vi.fn(), delete: vi.fn(), deletePrefix: vi.fn() };
+  const mockStorage = {
+    payslipKey: vi.fn(),
+    upload: vi.fn(),
+    getStream: vi.fn(),
+    delete: vi.fn(),
+    deletePrefix: vi.fn(),
+  };
 
   beforeAll(async () => {
     const moduleRef = await Test.createTestingModule({

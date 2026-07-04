@@ -18,7 +18,10 @@ import { RecurringEntriesService } from './recurring-entries.service';
 import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
-import { CurrentUser, type AuthUser } from '../../common/decorators/current-user.decorator';
+import {
+  CurrentUser,
+  type AuthUser,
+} from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import {
   createRecurringEntrySchema,
@@ -37,9 +40,14 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     super();
   }
 
-  protected toCreateValues(body: Record<string, unknown>): Record<string, unknown> {
+  protected toCreateValues(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const { encryptedData, memberId, accountId, toAccountId } = parseBody(createEncryptedRecurringEntrySchema, body);
+      const { encryptedData, memberId, accountId, toAccountId } = parseBody(
+        createEncryptedRecurringEntrySchema,
+        body,
+      );
       return {
         memberId: memberId ?? null,
         accountId: accountId ?? null,
@@ -67,9 +75,13 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     };
   }
 
-  protected toUpdatePatch(body: Record<string, unknown>): Record<string, unknown> {
+  protected toUpdatePatch(
+    body: Record<string, unknown>,
+  ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = { encryptedData: body.encryptedData };
+      const patch: Record<string, unknown> = {
+        encryptedData: body.encryptedData,
+      };
       for (const k of ['memberId', 'accountId', 'toAccountId'] as const) {
         if (body[k] !== undefined) patch[k] = body[k];
       }
@@ -82,7 +94,9 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
 
   @UseGuards(CsrfGuard)
   @Post(':id/payslip')
-  @UseInterceptors(FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }))
+  @UseInterceptors(
+    FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }),
+  )
   async uploadPayslip(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
@@ -97,9 +111,14 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   }
 
   @Get(':id/payslip')
-  async getPayslip(@CurrentUser() u: AuthUser, @Param('id') id: string, @Res() res: Response): Promise<void> {
+  async getPayslip(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @Res() res: Response,
+  ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
-    if (!row?.payslipKey) throw new NotFoundException('Fiche de paie introuvable');
+    if (!row?.payslipKey)
+      throw new NotFoundException('Fiche de paie introuvable');
     const obj = await this.storage.getStream(row.payslipKey);
     if (!obj) throw new NotFoundException('Fiche de paie introuvable');
     res.setHeader('Content-Type', obj.contentType);
@@ -109,7 +128,10 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Delete(':id/payslip')
   @HttpCode(204)
-  async deletePayslip(@CurrentUser() u: AuthUser, @Param('id') id: string): Promise<void> {
+  async deletePayslip(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+  ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');
     if (row.payslipKey) await this.storage.delete(row.payslipKey);

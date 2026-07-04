@@ -1,9 +1,21 @@
 import { z } from 'zod';
 
 const PRACTITIONER_TYPES = [
-  'generaliste', 'pediatre', 'psychiatre', 'neurologue', 'ophtalmologue',
-  'dentiste', 'orthodontiste', 'orthophoniste', 'psychologue', 'psychomotricien',
-  'ergotherapeute', 'kinesitherapeute', 'dermatologue', 'cardiologue', 'autre',
+  'generaliste',
+  'pediatre',
+  'psychiatre',
+  'neurologue',
+  'ophtalmologue',
+  'dentiste',
+  'orthodontiste',
+  'orthophoniste',
+  'psychologue',
+  'psychomotricien',
+  'ergotherapeute',
+  'kinesitherapeute',
+  'dermatologue',
+  'cardiologue',
+  'autre',
 ] as const;
 
 export const createPractitionerSchema = z.object({

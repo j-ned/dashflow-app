@@ -2,9 +2,18 @@ import { z } from 'zod';
 
 const uuid = z.string().uuid();
 const optionalUuid = z.string().uuid().nullable().optional();
-const dateStr = z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
+const dateStr = z
+  .string()
+  .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
 
-const DOCUMENT_TYPES = ['compte_rendu', 'facture', 'bilan', 'certificat', 'courrier', 'autre'] as const;
+const DOCUMENT_TYPES = [
+  'compte_rendu',
+  'facture',
+  'bilan',
+  'certificat',
+  'courrier',
+  'autre',
+] as const;
 
 export const createDocumentSchema = z.object({
   patientId: uuid,

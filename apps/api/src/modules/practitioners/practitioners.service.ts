@@ -7,5 +7,7 @@ type Practitioner = typeof practitioners.$inferSelect;
 
 @Injectable()
 export class PractitionersService extends OwnedCrudService<Practitioner> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) { super(db, practitioners); }
+  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+    super(db, practitioners);
+  }
 }

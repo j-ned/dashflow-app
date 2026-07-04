@@ -1,4 +1,12 @@
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from 'vitest';
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
 import type { INestApplication, ExecutionContext } from '@nestjs/common';
@@ -63,7 +71,10 @@ describe('PrescriptionsController — POST /prescriptions/:id/document (multipar
 
   beforeEach(() => {
     mockSvc.getOne.mockReset().mockResolvedValue({ id: PRESC_ID });
-    mockSvc.update.mockReset().mockResolvedValue({ id: PRESC_ID, documentUrl: 'prescriptions/u1/presc-1.pdf' });
+    mockSvc.update.mockReset().mockResolvedValue({
+      id: PRESC_ID,
+      documentUrl: 'prescriptions/u1/presc-1.pdf',
+    });
     mockStorage.prescriptionKey.mockClear();
     mockStorage.upload.mockReset().mockResolvedValue(undefined);
   });
@@ -84,7 +95,9 @@ describe('PrescriptionsController — POST /prescriptions/:id/document (multipar
   });
 
   it('sans fichier → 400 (BadRequestException), storage.upload jamais appelé', async () => {
-    const res = await request(app.getHttpServer()).post(`/prescriptions/${PRESC_ID}/document`);
+    const res = await request(app.getHttpServer()).post(
+      `/prescriptions/${PRESC_ID}/document`,
+    );
 
     expect(res.status).toBe(400);
     expect(mockStorage.upload).not.toHaveBeenCalled();

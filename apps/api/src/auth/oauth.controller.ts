@@ -5,8 +5,11 @@ import type { Request, Response } from 'express';
 import { OAuthService } from './oauth.service';
 import { TokenService } from './token.service';
 import {
-  SESSION_COOKIE, OAUTH_STATE_COOKIE, OAUTH_VERIFIER_COOKIE,
-  sessionCookieOptions, oauthCookieOptions,
+  SESSION_COOKIE,
+  OAUTH_STATE_COOKIE,
+  OAUTH_VERIFIER_COOKIE,
+  sessionCookieOptions,
+  oauthCookieOptions,
 } from './cookie';
 import { STRICT_THROTTLE } from './throttle';
 import type { Env } from '../config/env.schema';
@@ -29,7 +32,11 @@ export class OAuthController {
   start(@Res({ passthrough: true }) res: Response): void {
     const { url, state, codeVerifier } = this.oauth.createAuthorization();
     res.cookie(OAUTH_STATE_COOKIE, state, oauthCookieOptions(this.isProd));
-    res.cookie(OAUTH_VERIFIER_COOKIE, codeVerifier, oauthCookieOptions(this.isProd));
+    res.cookie(
+      OAUTH_VERIFIER_COOKIE,
+      codeVerifier,
+      oauthCookieOptions(this.isProd),
+    );
     res.redirect(url);
   }
 
@@ -46,7 +53,13 @@ export class OAuthController {
     res.clearCookie(OAUTH_STATE_COOKIE, oauthCookieOptions(this.isProd));
     res.clearCookie(OAUTH_VERIFIER_COOKIE, oauthCookieOptions(this.isProd));
 
-    if (!code || !state || !cookieState || !codeVerifier || state !== cookieState) {
+    if (
+      !code ||
+      !state ||
+      !cookieState ||
+      !codeVerifier ||
+      state !== cookieState
+    ) {
       res.redirect(`${this.frontUrl}/auth/login?error=oauth_expired`);
       return;
     }
@@ -57,7 +70,10 @@ export class OAuthController {
       res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
       res.redirect(`${this.frontUrl}/auth/login?oauth=success`);
     } catch (err) {
-      const reason = err instanceof Error && err.message === 'oauth_no_email' ? 'oauth_no_email' : 'oauth_failed';
+      const reason =
+        err instanceof Error && err.message === 'oauth_no_email'
+          ? 'oauth_no_email'
+          : 'oauth_failed';
       res.redirect(`${this.frontUrl}/auth/login?error=${reason}`);
     }
   }

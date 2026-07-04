@@ -7,14 +7,24 @@ import { ok, fail, type Result } from './auth.result';
 import { TwoFactorService } from './two-factor.service';
 import { StorageService } from '../storage/storage.service';
 import type { users } from '../db/schema';
-import type { RegisterDto, VerifyDto, LoginDto, ResetPasswordDto, UpdatePasswordDto, SetPasswordDto } from './dto/auth.dto';
+import type {
+  RegisterDto,
+  VerifyDto,
+  LoginDto,
+  ResetPasswordDto,
+  UpdatePasswordDto,
+  SetPasswordDto,
+} from './dto/auth.dto';
 
 type User = typeof users.$inferSelect;
-export type LoginOutcome = { kind: 'authenticated'; user: User } | { kind: 'mfa_required' };
+export type LoginOutcome =
+  | { kind: 'authenticated'; user: User }
+  | { kind: 'mfa_required' };
 const CODE_TTL_MS = 10 * 60 * 1000;
 const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
 // hash factice précalculé : cible de argon2.verify sur le chemin « user inconnu » (anti-timing)
-const DUMMY_PASSWORD_HASH = '$argon2id$v=19$m=65536,t=3,p=4$nDnJoEKnqivb4YJYimLDew$LsQ3NFQxFz3z6loo2TfhGsD7UEA5TiG67s9tn/ynstM';
+const DUMMY_PASSWORD_HASH =
+  '$argon2id$v=19$m=65536,t=3,p=4$nDnJoEKnqivb4YJYimLDew$LsQ3NFQxFz3z6loo2TfhGsD7UEA5TiG67s9tn/ynstM';
 
 @Injectable()
 export class AuthService {
@@ -37,7 +47,11 @@ export class AuthService {
       return ok(existing);
     }
     const hash = await argon2.hash(dto.password);
-    const user = await this.repo.createUser({ email: dto.email, password: hash, displayName: dto.displayName });
+    const user = await this.repo.createUser({
+      email: dto.email,
+      password: hash,
+      displayName: dto.displayName,
+    });
     await this.sendCode(dto.email, 'verification');
     return ok(user);
   }
@@ -47,7 +61,9 @@ export class AuthService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
-    const updated = await this.repo.updateUser(user.id, { emailVerified: new Date() });
+    const updated = await this.repo.updateUser(user.id, {
+      emailVerified: new Date(),
+    });
     await this.repo.deleteCodes(dto.email);
     return ok(updated);
   }
@@ -58,13 +74,16 @@ export class AuthService {
       await argon2.verify(DUMMY_PASSWORD_HASH, dto.password); // anti-timing : égalise le coût avec le chemin « user trouvé »
       return fail(401, 'Identifiants invalides');
     }
-    if (!(await argon2.verify(user.password, dto.password))) return fail(401, 'Identifiants invalides');
-    if (!user.emailVerified) return fail(403, 'Email non vérifié', 'EMAIL_NOT_VERIFIED');
+    if (!(await argon2.verify(user.password, dto.password)))
+      return fail(401, 'Identifiants invalides');
+    if (!user.emailVerified)
+      return fail(403, 'Email non vérifié', 'EMAIL_NOT_VERIFIED');
     if (user.totpEnabled && user.totpSecret) {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
       if (!dto.totpCode) return ok({ kind: 'mfa_required' });
-      if (!this.twoFactor.verify(user.totpSecret, dto.totpCode)) return fail(401, 'Code 2FA invalide');
+      if (!this.twoFactor.verify(user.totpSecret, dto.totpCode))
+        return fail(401, 'Code 2FA invalide');
     }
     return ok({ kind: 'authenticated', user });
   }
@@ -87,27 +106,50 @@ export class AuthService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
-    await this.repo.updateUser(user.id, { password: await argon2.hash(dto.newPassword) });
+    await this.repo.updateUser(user.id, {
+      password: await argon2.hash(dto.newPassword),
+    });
     await this.repo.deleteCodes(dto.email);
     return ok(null);
   }
 
-  async changePassword(userId: string, dto: UpdatePasswordDto): Promise<Result<null>> {
+  async changePassword(
+    userId: string,
+    dto: UpdatePasswordDto,
+  ): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
-    if (!(await argon2.verify(user.password, dto.currentPassword))) return fail(401, 'Mot de passe actuel incorrect');
-    const rewrap = this.checkRewrap(user.encryptionVersion, dto.newSalt, dto.newWrappedMasterKey);
+    if (!(await argon2.verify(user.password, dto.currentPassword)))
+      return fail(401, 'Mot de passe actuel incorrect');
+    const rewrap = this.checkRewrap(
+      user.encryptionVersion,
+      dto.newSalt,
+      dto.newWrappedMasterKey,
+    );
     if (!rewrap.success) return rewrap;
-    await this.repo.updateUser(userId, { password: await argon2.hash(dto.newPassword), ...rewrap.data });
+    await this.repo.updateUser(userId, {
+      password: await argon2.hash(dto.newPassword),
+      ...rewrap.data,
+    });
     return ok(null);
   }
 
-  async setPassword(userId: string, dto: SetPasswordDto): Promise<Result<null>> {
+  async setPassword(
+    userId: string,
+    dto: SetPasswordDto,
+  ): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
     if (!user) return fail(404, 'Compte introuvable');
-    const rewrap = this.checkRewrap(user.encryptionVersion, dto.newSalt, dto.newWrappedMasterKey);
+    const rewrap = this.checkRewrap(
+      user.encryptionVersion,
+      dto.newSalt,
+      dto.newWrappedMasterKey,
+    );
     if (!rewrap.success) return rewrap;
-    await this.repo.updateUser(userId, { password: await argon2.hash(dto.newPassword), ...rewrap.data });
+    await this.repo.updateUser(userId, {
+      password: await argon2.hash(dto.newPassword),
+      ...rewrap.data,
+    });
     return ok(null);
   }
 
@@ -117,7 +159,9 @@ export class AuthService {
     return ok(null);
   }
 
-  async setupTotp(userId: string): Promise<Result<{ qrCode: string; secret: string; uri: string }>> {
+  async setupTotp(
+    userId: string,
+  ): Promise<Result<{ qrCode: string; secret: string; uri: string }>> {
     const user = await this.repo.findById(userId);
     if (!user) return fail(404, 'Compte introuvable');
     const { secret, otpauthUri } = this.twoFactor.generateSecret(user.email);
@@ -128,8 +172,10 @@ export class AuthService {
 
   async enableTotp(userId: string, code: string): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
-    if (!user || !user.totpSecret) return fail(400, 'Aucun secret 2FA en attente');
-    if (!this.twoFactor.verify(user.totpSecret, code)) return fail(400, 'Code 2FA invalide');
+    if (!user || !user.totpSecret)
+      return fail(400, 'Aucun secret 2FA en attente');
+    if (!this.twoFactor.verify(user.totpSecret, code))
+      return fail(400, 'Code 2FA invalide');
     await this.repo.updateUser(userId, { totpEnabled: new Date() });
     return ok(null);
   }
@@ -137,14 +183,16 @@ export class AuthService {
   async disableTotp(userId: string, password: string): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
-    if (!(await argon2.verify(user.password, password))) return fail(401, 'Mot de passe incorrect');
+    if (!(await argon2.verify(user.password, password)))
+      return fail(401, 'Mot de passe incorrect');
     await this.repo.updateUser(userId, { totpSecret: null, totpEnabled: null });
     return ok(null);
   }
 
   async deleteAccount(userId: string): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
-    if (user?.isDemoAccount) return fail(403, 'Le compte démo ne peut pas être supprimé');
+    if (user?.isDemoAccount)
+      return fail(403, 'Le compte démo ne peut pas être supprimé');
     await this.storage.deletePrefix(`avatars/${userId}`);
     await this.storage.deletePrefix(`prescriptions/${userId}/`);
     await this.storage.deletePrefix(`documents/${userId}/`);
@@ -156,23 +204,36 @@ export class AuthService {
   updateProfile(userId: string, displayName?: string): Promise<User> {
     return this.repo.updateUser(userId, { displayName: displayName ?? null });
   }
-  getById(userId: string): Promise<User | undefined> { return this.repo.findById(userId); }
+  getById(userId: string): Promise<User | undefined> {
+    return this.repo.findById(userId);
+  }
   setAvatar(userId: string, key: string): Promise<User> {
     return this.repo.updateUser(userId, { avatarUrl: key });
   }
 
-  private checkRewrap(version: number, newSalt?: string, newWrappedMasterKey?: string):
-    Result<{ encryptionSalt?: string; wrappedMasterKey?: string }> {
+  private checkRewrap(
+    version: number,
+    newSalt?: string,
+    newWrappedMasterKey?: string,
+  ): Result<{ encryptionSalt?: string; wrappedMasterKey?: string }> {
     if (version === 1 && (!newSalt || !newWrappedMasterKey)) {
       return fail(400, 'Re-wrap de la clé de chiffrement requis');
     }
-    return ok(newSalt && newWrappedMasterKey ? { encryptionSalt: newSalt, wrappedMasterKey: newWrappedMasterKey } : {});
+    return ok(
+      newSalt && newWrappedMasterKey
+        ? { encryptionSalt: newSalt, wrappedMasterKey: newWrappedMasterKey }
+        : {},
+    );
   }
 
-  private async sendCode(email: string, kind: 'verification' | 'reset'): Promise<void> {
+  private async sendCode(
+    email: string,
+    kind: 'verification' | 'reset',
+  ): Promise<void> {
     const code = genCode();
     await this.repo.insertCode(email, code, new Date(Date.now() + CODE_TTL_MS));
-    if (kind === 'verification') await this.mailer.sendVerificationCode(email, code);
+    if (kind === 'verification')
+      await this.mailer.sendVerificationCode(email, code);
     else await this.mailer.sendPasswordResetCode(email, code);
   }
 }
