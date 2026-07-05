@@ -1,3 +1,5 @@
+// IMPORTANT : en tout premier — initialise Sentry avant tout autre import (auto-instrumentation).
+import './instrument';
 import { NestFactory } from '@nestjs/core';
 import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';

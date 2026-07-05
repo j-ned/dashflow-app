@@ -14,6 +14,12 @@ export const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APP_URL: z.string().url().default('http://localhost:3001'),
+  // Observabilité Sentry (backend). Vide/absent → Sentry inactif (cf. src/instrument.ts qui lit
+  // process.env directement). Fourni en prod via l'env Dokploy. Chaîne vide tolérée.
+  SENTRY_DSN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().url().optional(),
+  ),
   // Active le compte démo public (login sans mot de passe + reset). À couper en prod si non souhaité.
   DEMO_ENABLED: z
     .string()

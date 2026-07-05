@@ -7,6 +7,7 @@ import {
   Logger,
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
+import * as Sentry from '@sentry/nestjs';
 
 @Catch()
 export class HttpExceptionFilter implements ExceptionFilter {
@@ -44,6 +45,9 @@ export class HttpExceptionFilter implements ExceptionFilter {
     }
 
     if (status >= 500) {
+      // Uniquement les erreurs serveur : on ne remonte PAS les 4xx (401/404/409…) à Sentry
+      // pour éviter le bruit. Inerte si Sentry n'est pas initialisé (SENTRY_DSN absent).
+      Sentry.captureException(exception);
       this.logger.error(
         exception instanceof Error ? exception.stack : String(exception),
       );

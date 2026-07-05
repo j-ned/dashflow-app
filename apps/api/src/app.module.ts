@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
+import { SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from './config/config.module';
@@ -29,6 +30,8 @@ import { StorageModule } from './storage/storage.module';
 
 @Module({
   imports: [
+    // Instrumentation Sentry (contexte requête sur les événements). Inerte si SENTRY_DSN absent.
+    SentryModule.forRoot(),
     ConfigModule,
     DrizzleModule,
     ScheduleModule.forRoot(),
