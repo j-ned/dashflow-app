@@ -48,8 +48,6 @@ import { HttpReminderGateway } from '@features/medical/infra/http-reminder.gatew
 import { DocumentGateway } from '@features/medical/domain/gateways/document.gateway';
 import { HttpDocumentGateway } from '@features/medical/infra/http-document.gateway';
 
-// ErrorHandler Sentry ajouté uniquement si un DSN est configuré (prod) ; en dev, comportement
-// Angular natif. Le TraceService (tracing/routing) viendra en phase 2 avec browserTracingIntegration.
 const sentryProviders: ApplicationConfig['providers'] = environment.sentryDsn
   ? [{ provide: ErrorHandler, useValue: Sentry.createErrorHandler() }]
   : [];
