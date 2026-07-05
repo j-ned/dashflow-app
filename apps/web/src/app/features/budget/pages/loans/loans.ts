@@ -13,6 +13,7 @@ import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Loan } from '../../domain/models/loan.model';
 import { buildLoanHistories, buildLoanVMs, HistoryEntry, LoanVM } from '../../domain/loan-vm';
 import { buildLoanRepaymentEntry } from '../../domain/loan-repayment-entry';
+import { loanJustSettled } from '../../domain/goal-celebration';
 import { LoanHistoryDetail } from '../../components/loan-history-detail/loan-history-detail';
 import { buildMemberMap } from '../../domain/member-map';
 import { activeMembers as activeMembersOf } from '../../domain/active-members';
@@ -28,6 +29,7 @@ import { LoanCard } from '../../components/loan-card/loan-card';
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
+import { Celebration } from '@shared/components/celebration/celebration';
 
 @Component({
   selector: 'app-loans',
@@ -303,6 +305,7 @@ export class Loans {
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
+  private readonly celebration = inject(Celebration);
 
   private readonly lentModalRef = viewChild.required<ModalDialog>('lentModal');
   private readonly borrowedModalRef = viewChild.required<ModalDialog>('borrowedModal');
@@ -446,11 +449,13 @@ export class Loans {
     const loan = this.selectedLoan();
     if (!loan) return;
     try {
+      const justSettled = loanJustSettled(loan, event.amount);
       await lastValueFrom(
         this.loanGateway.recordPayment(loan.id, event.amount, event.date, event.note),
       );
       this.paymentModalRef().close();
       this._refresh.update((v) => v + 1);
+      if (justSettled) this.celebration.celebrate();
       this.toaster.success('budget.loan.messages.paymentRecorded');
 
       if (event.accountId) {

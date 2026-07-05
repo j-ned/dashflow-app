@@ -836,6 +836,7 @@
       "dueDayLabel": "dépôt récurrent le {{day}}",
       "remainingShort": "reste {{amount}}€",
       "reached": "objectif atteint",
+      "ribbon": "Atteint",
       "modal": {
         "create": "Nouvelle enveloppe",
         "edit": "Modifier l'enveloppe",

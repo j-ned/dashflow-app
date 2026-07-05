@@ -8,6 +8,7 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { Celebration } from '@shared/components/celebration/celebration';
 import { Envelope } from '../../domain/models/envelope.model';
 import { EnvelopeTransaction } from '../../domain/models/envelope-transaction.model';
 import { Envelopes } from './envelopes';
@@ -70,6 +71,7 @@ function make(
   const createClose = vi.fn();
   const editClose = vi.fn();
   const creditClose = vi.fn();
+  const celebrate = vi.fn();
 
   TestBed.configureTestingModule({
     providers: [
@@ -86,6 +88,7 @@ function make(
         useValue: { delete: opts.confirmDelete ?? (() => Promise.resolve(true)) },
       },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
+      { provide: Celebration, useValue: { celebrate } },
     ],
   });
   TestBed.overrideComponent(Envelopes, { set: { template: '', imports: [] } });
@@ -114,6 +117,7 @@ function make(
     error,
     createClose,
     editClose,
+    celebrate,
   };
 }
 
@@ -221,5 +225,19 @@ describe('Envelopes', () => {
       ],
     });
     expect(cmp.recentByEnvelope().get('e1')?.length).toBe(2);
+  });
+
+  it('creditEnvelope qui franchit l’objectif → celebrate()', async () => {
+    const { cmp, celebrate } = make();
+    cmp.selectedEnvelope.set({ ...ENV, target: 500, balance: 480 });
+    await cmp.creditEnvelope({ amount: 50, date: '2026-06-01', note: null, accountId: null });
+    expect(celebrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('creditEnvelope sans franchissement (déjà atteint) → pas de celebrate()', async () => {
+    const { cmp, celebrate } = make();
+    cmp.selectedEnvelope.set({ ...ENV, target: 500, balance: 500 });
+    await cmp.creditEnvelope({ amount: 50, date: '2026-06-01', note: null, accountId: null });
+    expect(celebrate).not.toHaveBeenCalled();
   });
 });

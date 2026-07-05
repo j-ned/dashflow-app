@@ -836,6 +836,7 @@
       "dueDayLabel": "recurring deposit on the {{day}}",
       "remainingShort": "{{amount}}€ left",
       "reached": "goal reached",
+      "ribbon": "Reached",
       "modal": {
         "create": "New envelope",
         "edit": "Edit envelope",
