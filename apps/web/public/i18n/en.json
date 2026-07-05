@@ -398,7 +398,10 @@
       "ariaLabel": "Main navigation",
       "logoLabel": "DashFlow, home",
       "login": "Sign in",
-      "cta": "Start for free"
+      "cta": "Start for free",
+      "openMenu": "Open menu",
+      "closeMenu": "Close menu",
+      "preferences": "Language and theme"
     },
     "hero": {
       "eyebrow": "Family budget and health",
