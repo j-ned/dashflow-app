@@ -5,16 +5,20 @@ import { Envelope } from '../../domain/models/envelope.model';
 import { HistoryEntry } from '../../domain/envelope-history';
 import { MemberDisplay } from '../../domain/member-map';
 import { Icon } from '@shared/components/icon/icon';
+import { AchievementRibbon } from '@shared/components/achievement-ribbon/achievement-ribbon';
 
 @Component({
   selector: 'app-envelope-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, Icon, TranslocoPipe],
+  imports: [DatePipe, DecimalPipe, Icon, TranslocoPipe, AchievementRibbon],
   host: { class: 'contents' },
   template: `
     <article
-      class="flex flex-col rounded-lg border border-border bg-surface transition hover:border-border/80"
+      class="relative flex flex-col overflow-hidden rounded-lg border border-border bg-surface transition hover:border-border/80"
     >
+      @if (reached()) {
+        <app-achievement-ribbon [label]="'budget.envelope.ribbon' | transloco" />
+      }
       <div class="p-5">
         <div class="flex items-start justify-between gap-3">
           <div class="flex items-center gap-3 min-w-0">
@@ -185,4 +189,9 @@ export class EnvelopeCard {
   readonly history = output<void>();
 
   protected readonly recentEntries = computed(() => this.entries().slice(0, 3));
+
+  protected readonly reached = computed(() => {
+    const e = this.envelope();
+    return e.target != null && e.balance >= e.target;
+  });
 }

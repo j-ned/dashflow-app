@@ -15,6 +15,7 @@ import { buildMemberMap } from '../../domain/member-map';
 import { activeMembers as activeMembersOf } from '../../domain/active-members';
 import { buildEnvelopeHistories, HistoryEntry } from '../../domain/envelope-history';
 import { buildEnvelopeCreditEntry } from '../../domain/envelope-credit-entry';
+import { envelopeGoalJustReached } from '../../domain/goal-celebration';
 import { EnvelopeCard } from '../../components/envelope-card/envelope-card';
 import { EnvelopeHistoryList } from '../../components/envelope-history-list/envelope-history-list';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
@@ -28,6 +29,7 @@ import { MemberFilter } from '../../components/member-filter/member-filter';
 import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
+import { Celebration } from '@shared/components/celebration/celebration';
 
 @Component({
   selector: 'app-envelopes',
@@ -174,6 +176,7 @@ export class Envelopes {
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
+  private readonly celebration = inject(Celebration);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -279,6 +282,7 @@ export class Envelopes {
     const envelope = this.selectedEnvelope();
     if (!envelope) return;
     try {
+      const justReached = envelopeGoalJustReached(envelope, event.amount);
       await lastValueFrom(
         this.envelopeGateway.updateBalance(
           envelope.id,
@@ -290,6 +294,7 @@ export class Envelopes {
       );
       this.creditModalRef().close();
       this._refresh.update((v) => v + 1);
+      if (justReached) this.celebration.celebrate();
       this.toaster.success(
         event.amount >= 0
           ? 'budget.envelope.messages.credited'

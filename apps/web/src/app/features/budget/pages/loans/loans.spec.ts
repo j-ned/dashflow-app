@@ -8,6 +8,7 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { Celebration } from '@shared/components/celebration/celebration';
 import { Loan } from '../../domain/models/loan.model';
 import { Loans } from './loans';
 
@@ -65,6 +66,7 @@ function make(
   const borrowedClose = vi.fn();
   const editClose = vi.fn();
   const paymentClose = vi.fn();
+  const celebrate = vi.fn();
 
   TestBed.configureTestingModule({
     providers: [
@@ -88,6 +90,7 @@ function make(
         useValue: { delete: opts.confirmDelete ?? (() => Promise.resolve(true)) },
       },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
+      { provide: Celebration, useValue: { celebrate } },
     ],
   });
   TestBed.overrideComponent(Loans, { set: { template: '', imports: [] } });
@@ -117,6 +120,7 @@ function make(
     error,
     lentClose,
     borrowedClose,
+    celebrate,
   };
 }
 
@@ -195,5 +199,19 @@ describe('Loans', () => {
     expect(cmp.lentTotal()).toBe(600);
     expect(cmp.borrowedTotal()).toBe(200);
     expect(cmp.netDirection()).toBe('positive');
+  });
+
+  it('recordPayment qui solde le prêt → celebrate()', async () => {
+    const { cmp, celebrate } = make();
+    cmp.selectedLoan.set({ ...LENT, remaining: 100 });
+    await cmp.recordPayment({ amount: 100, date: '2026-06-01', accountId: null, note: null });
+    expect(celebrate).toHaveBeenCalledTimes(1);
+  });
+
+  it('recordPayment partiel → pas de celebrate()', async () => {
+    const { cmp, celebrate } = make();
+    cmp.selectedLoan.set({ ...LENT, remaining: 100 });
+    await cmp.recordPayment({ amount: 40, date: '2026-06-01', accountId: null, note: null });
+    expect(celebrate).not.toHaveBeenCalled();
   });
 });

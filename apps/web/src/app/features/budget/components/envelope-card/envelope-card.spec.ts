@@ -15,7 +15,7 @@ const ENV: Envelope = {
   dueDay: null,
 };
 
-function mount() {
+function mount(envelope: Envelope = ENV) {
   TestBed.configureTestingModule({
     imports: [
       EnvelopeCard,
@@ -26,7 +26,7 @@ function mount() {
     ],
   });
   const fixture = TestBed.createComponent(EnvelopeCard);
-  fixture.componentRef.setInput('envelope', ENV);
+  fixture.componentRef.setInput('envelope', envelope);
   fixture.componentRef.setInput('entries', []);
   fixture.componentRef.setInput('member', null);
   fixture.detectChanges();
@@ -59,5 +59,29 @@ describe('EnvelopeCard', () => {
     expect(credited).toBe(true);
     expect(edited).toBe(true);
     expect(removed).toBe(true);
+  });
+
+  it('affiche le ruban quand le solde atteint l’objectif', () => {
+    const fixture = mount({ ...ENV, target: 300, balance: 300 });
+    const ribbon = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="achievement-ribbon"]',
+    );
+    expect(ribbon).not.toBeNull();
+  });
+
+  it('pas de ruban si le solde est sous l’objectif', () => {
+    const fixture = mount({ ...ENV, target: 500, balance: 300 });
+    const ribbon = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="achievement-ribbon"]',
+    );
+    expect(ribbon).toBeNull();
+  });
+
+  it('pas de ruban sans objectif', () => {
+    const fixture = mount({ ...ENV, target: null });
+    const ribbon = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="achievement-ribbon"]',
+    );
+    expect(ribbon).toBeNull();
   });
 });

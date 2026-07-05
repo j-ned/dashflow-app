@@ -5,17 +5,21 @@ import { Loan } from '../../domain/models/loan.model';
 import { LoanVM } from '../../domain/loan-vm';
 import { MemberDisplay } from '../../domain/member-map';
 import { Icon } from '@shared/components/icon/icon';
+import { AchievementRibbon } from '@shared/components/achievement-ribbon/achievement-ribbon';
 
 @Component({
   selector: 'app-loan-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DatePipe, DecimalPipe, Icon, TranslocoPipe],
+  imports: [DatePipe, DecimalPipe, Icon, TranslocoPipe, AchievementRibbon],
   host: { class: 'contents' },
   template: `
     <article
       class="group relative overflow-hidden border-b border-r border-border/30 p-5 transition"
       [class]="hoverClass()"
     >
+      @if (vm().status === 'settled') {
+        <app-achievement-ribbon [label]="'budget.loan.status.settled' | transloco" />
+      }
       <div class="flex items-start justify-between mb-3">
         <div class="flex items-center gap-3">
           <div
@@ -76,13 +80,6 @@ import { Icon } from '@shared/components/icon/icon';
             class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-yellow/10 px-2 py-0.5 text-[11px] font-semibold text-ib-yellow"
           >
             <app-icon name="clock" size="12" /> {{ 'budget.loan.status.dueSoon' | transloco }}
-          </span>
-        }
-        @case ('settled') {
-          <span
-            class="mb-3 inline-flex items-center gap-1 rounded-md bg-ib-green/10 px-2 py-0.5 text-[11px] font-semibold text-ib-green"
-          >
-            <app-icon name="check" size="12" /> {{ 'budget.loan.status.settled' | transloco }}
           </span>
         }
       }
