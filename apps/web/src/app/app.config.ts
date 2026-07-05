@@ -8,7 +8,7 @@ import {
   PreloadAllModules,
 } from '@angular/router';
 import * as Sentry from '@sentry/angular';
-import { environment } from '../environments/environment';
+import { environment } from '@env/environment';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { credentialsInterceptor } from '@core/interceptors/credentials.interceptor';
 import { csrfInterceptor } from '@core/interceptors/csrf.interceptor';
