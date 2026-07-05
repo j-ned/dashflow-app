@@ -35,6 +35,9 @@ importers:
       '@jsverse/transloco':
         specifier: ^8.3.0
         version: 8.3.0(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2)(typescript@6.0.3)
+      '@sentry/angular':
+        specifier: ^10.63.0
+        version: 10.63.0(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(@angular/router@22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(@angular/platform-browser@22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2)
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -1553,6 +1556,39 @@ packages:
   '@schematics/angular@22.0.4':
     resolution: {integrity: sha512-P3V3tkqIR+n0GJSv0ibf34/zMtKbFp6kaTjBe5cm/RyXuHbmdaPYjk8PNphkGMypDtWCof1RtNnW/hl832Wnew==}
     engines: {node: ^22.22.3 || ^24.15.0 || >=26.0.0, npm: ^6.11.0 || ^7.5.6 || >=8.0.0, yarn: '>= 1.13.0'}
+
+  '@sentry/angular@10.63.0':
+    resolution: {integrity: sha512-PcEEyhhWupnsycilD1t1Lyf9aQZMUIg6s2gxHekw2l4vZcKRjrQnVld2EDZ8Xi4cCFiSGr5CkJxyX/+jIXm5ng==}
+    engines: {node: '>=18'}
+    peerDependencies:
+      '@angular/common': '>= 14.x <= 22.x'
+      '@angular/core': '>= 14.x <= 22.x'
+      '@angular/router': '>= 14.x <= 22.x'
+      rxjs: ^6.5.5 || ^7.x
+
+  '@sentry/browser-utils@10.63.0':
+    resolution: {integrity: sha512-DhUGNN+CH8fzAs6qAsueKPU70qShyTX3NxLhIP+l5DbGXDSXpYXBT6s8ubZus0/LhxpLvI0iSyNIDvZRD/gZaA==}
+    engines: {node: '>=18'}
+
+  '@sentry/browser@10.63.0':
+    resolution: {integrity: sha512-0mi56YOkwgyjdLOcN5cB1//EcYzEOt3NZ2GLygE92B3zAAwVM1WgbmibZCXToKFClH7z1uH3VWVfBffmkwIMYw==}
+    engines: {node: '>=18'}
+
+  '@sentry/core@10.63.0':
+    resolution: {integrity: sha512-OtUbsrnbEHffOF2S2+M5zXa3HIM0U2b4CDVLKMY1dgS0J3ivRF8XvkjvyIcEG/y8JXnwXbnprLyjhG+AqMdUZQ==}
+    engines: {node: '>=18'}
+
+  '@sentry/feedback@10.63.0':
+    resolution: {integrity: sha512-If/+72xFg9ylz4twUo3U9gUpZ+Ys+T/3Y09WH7r2gGhWEOF9bp+ta94+Pg7Lb0M2nVD7waz4OxIvB49GEvtLDA==}
+    engines: {node: '>=18'}
+
+  '@sentry/replay-canvas@10.63.0':
+    resolution: {integrity: sha512-1Dg6yo+KDNZcE9M6V2EP4DGgTDJMcUgg5ui69w/E96ZZPWErS/bibK2bGj20H3qwpJXlnEwXB5YAJ2fZ620T1A==}
+    engines: {node: '>=18'}
+
+  '@sentry/replay@10.63.0':
+    resolution: {integrity: sha512-u4fDaLbd4QmJbU0qGzV5g2B2hjw5utdeZzpTrmq565AS5o6mfaZdCz30zF9R2Unkn0g9SJr90piTN2RMwvDrkw==}
+    engines: {node: '>=18'}
 
   '@sigstore/bundle@4.0.0':
     resolution: {integrity: sha512-NwCl5Y0V6Di0NexvkTqdoVfmjTaQwoLM236r89KEojGmq/jMls8S+zb7yOwAPdXvbwfKDlP+lmXgAL4vKSQT+A==}
@@ -4738,6 +4774,44 @@ snapshots:
     transitivePeerDependencies:
       - chokidar
 
+  '@sentry/angular@10.63.0(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(@angular/router@22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(@angular/platform-browser@22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2)':
+    dependencies:
+      '@angular/common': 22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2)
+      '@angular/router': 22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(@angular/platform-browser@22.0.3(@angular/common@22.0.3(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.0.3(@angular/compiler@22.0.3)(rxjs@7.8.2)))(rxjs@7.8.2)
+      '@sentry/browser': 10.63.0
+      '@sentry/core': 10.63.0
+      rxjs: 7.8.2
+      tslib: 2.8.1
+
+  '@sentry/browser-utils@10.63.0':
+    dependencies:
+      '@sentry/core': 10.63.0
+
+  '@sentry/browser@10.63.0':
+    dependencies:
+      '@sentry/browser-utils': 10.63.0
+      '@sentry/core': 10.63.0
+      '@sentry/feedback': 10.63.0
+      '@sentry/replay': 10.63.0
+      '@sentry/replay-canvas': 10.63.0
+
+  '@sentry/core@10.63.0': {}
+
+  '@sentry/feedback@10.63.0':
+    dependencies:
+      '@sentry/core': 10.63.0
+
+  '@sentry/replay-canvas@10.63.0':
+    dependencies:
+      '@sentry/core': 10.63.0
+      '@sentry/replay': 10.63.0
+
+  '@sentry/replay@10.63.0':
+    dependencies:
+      '@sentry/browser-utils': 10.63.0
+      '@sentry/core': 10.63.0
+
   '@sigstore/bundle@4.0.0':
     dependencies:
       '@sigstore/protobuf-specs': 0.5.1
@@ -5791,11 +5865,11 @@ snapshots:
 
   istanbul-lib-instrument@6.0.3:
     dependencies:
-      '@babel/core': 7.29.0
-      '@babel/parser': 7.29.2
+      '@babel/core': 7.29.7
+      '@babel/parser': 7.29.7
       '@istanbuljs/schema': 0.1.6
       istanbul-lib-coverage: 3.2.2
-      semver: 7.7.4
+      semver: 7.8.0
     transitivePeerDependencies:
       - supports-color
     optional: true
