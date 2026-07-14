@@ -48,14 +48,22 @@ describe('buildPendingCharges', () => {
     });
   });
 
-  it('mappe direction selon le type', () => {
+  it('mappe direction income', () => {
     const inc = buildPendingCharges({ ...BASE, incomes: [re({ id: 'i', type: 'income' })] })[0];
-    const tr = buildPendingCharges({
-      ...BASE,
-      recurringTransfers: [re({ id: 't', type: 'transfer' })],
-    })[0];
     expect(inc.direction).toBe('income');
-    expect(tr.direction).toBe('transfer');
+  });
+
+  it('exclut les virements récurrents (toujours auto, jamais à confirmer)', () => {
+    const out = buildPendingCharges({
+      ...BASE,
+      recurringTransfers: [re({ id: 't', type: 'transfer', toAccountId: 'b', autoPost: false })],
+    });
+    expect(out).toEqual([]);
+  });
+
+  it('inclut toujours une dépense non auto-pointée éligible (non-régression)', () => {
+    const out = buildPendingCharges({ ...BASE, monthlyExpenses: [re({ id: 'e', dayOfMonth: 5 })] });
+    expect(out).toHaveLength(1);
   });
 
   it.each([

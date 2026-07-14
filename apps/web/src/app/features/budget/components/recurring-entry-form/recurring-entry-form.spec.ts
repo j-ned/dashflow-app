@@ -300,3 +300,32 @@ describe('RecurringEntryForm — mode virement, patch & fichier', () => {
     expect(attached).toBe(file);
   });
 });
+
+describe('RecurringEntryForm — case auto-pointage selon le type', () => {
+  function mountForced(type: 'transfer' | 'expense') {
+    TestBed.configureTestingModule({
+      imports: [
+        RecurringEntryForm,
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+    });
+    const fixture = TestBed.createComponent(RecurringEntryForm);
+    fixture.componentRef.setInput('forcedType', type);
+    fixture.componentRef.setInput('accounts', []);
+    fixture.detectChanges();
+    return fixture;
+  }
+
+  it('mode virement : la case auto-pointage n’est pas rendue', () => {
+    const el: HTMLElement = mountForced('transfer').nativeElement;
+    expect(el.querySelector('input[type="checkbox"]')).toBeNull();
+  });
+
+  it('mode dépense : la case auto-pointage reste rendue (non-régression)', () => {
+    const el: HTMLElement = mountForced('expense').nativeElement;
+    expect(el.querySelector('input[type="checkbox"]')).not.toBeNull();
+  });
+});

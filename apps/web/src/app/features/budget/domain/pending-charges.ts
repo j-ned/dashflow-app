@@ -3,6 +3,7 @@ import { AccountTransaction } from './models/account-transaction.model';
 import { PendingCharge } from './pending-charge';
 import { isRecurrencePosted } from './account-balance';
 import { isExpensePassed } from './salary-cycle';
+import { isAutoEntry } from './auto-post';
 
 export type PendingChargesInput = {
   readonly incomes: readonly RecurringEntry[];
@@ -22,7 +23,7 @@ export function buildPendingCharges(p: PendingChargesInput): PendingCharge[] {
       (e) =>
         e.accountId != null &&
         e.dayOfMonth != null &&
-        !e.autoPost &&
+        !isAutoEntry(e) &&
         isExpensePassed(e, p.salaryDay, p.currentDay) &&
         !isRecurrencePosted(e.id, p.currentMonth, p.txs) &&
         !p.ignored.has(e.id),

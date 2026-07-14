@@ -379,9 +379,7 @@ const EMPTY_MODEL: RecurringEntryModel = {
           }
         }
 
-        @if (
-          activeType() === 'income' || activeType() === 'expense' || activeType() === 'transfer'
-        ) {
+        @if (activeType() === 'income' || activeType() === 'expense') {
           <label
             class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
           >

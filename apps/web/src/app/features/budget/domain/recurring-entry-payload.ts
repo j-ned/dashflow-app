@@ -21,7 +21,9 @@ export function buildRecurringEntryPayload(
     currentMonth: string;
   },
 ): Omit<RecurringEntry, 'id'> {
-  const autoPostSince = value.autoPost ? (ctx.initial?.autoPostSince ?? ctx.currentMonth) : null;
+  // Un virement est toujours auto : on force le flag pour la cohérence des données et le badge.
+  const autoPost = ctx.type === 'transfer' ? true : value.autoPost;
+  const autoPostSince = autoPost ? (ctx.initial?.autoPostSince ?? ctx.currentMonth) : null;
   return {
     label: value.label,
     amount: value.amount,
@@ -34,7 +36,7 @@ export function buildRecurringEntryPayload(
     memberId: value.memberId || null,
     accountId: ctx.initial?.accountId ?? ctx.forcedAccountId ?? null,
     payslipKey: ctx.initial?.payslipKey ?? null,
-    autoPost: value.autoPost,
+    autoPost,
     autoPostSince,
   };
 }
