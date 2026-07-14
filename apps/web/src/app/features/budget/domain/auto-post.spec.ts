@@ -1,4 +1,4 @@
-import { duePostings } from './auto-post';
+import { duePostings, isAutoEntry } from './auto-post';
 import { RecurringEntry } from './models/recurring-entry.model';
 import { AccountTransaction } from './models/account-transaction.model';
 
@@ -108,5 +108,40 @@ describe('duePostings', () => {
   it('autoPostSince null → pas de rattrapage, mois courant seulement', () => {
     const res = duePostings([entry({ dayOfMonth: 5, autoPostSince: null })], [], CTX);
     expect(res.map((r) => r.month)).toEqual(['2026-06']);
+  });
+});
+
+describe('isAutoEntry', () => {
+  it('true pour un virement quel que soit autoPost', () => {
+    expect(isAutoEntry(entry({ type: 'transfer', toAccountId: 'b', autoPost: false }))).toBe(true);
+  });
+
+  it('reflète autoPost pour income/expense', () => {
+    expect(isAutoEntry(entry({ type: 'expense', autoPost: true }))).toBe(true);
+    expect(isAutoEntry(entry({ type: 'expense', autoPost: false }))).toBe(false);
+  });
+});
+
+describe('duePostings — virements toujours auto', () => {
+  it('poste un virement récurrent même si autoPost est false', () => {
+    const res = duePostings(
+      [
+        entry({
+          type: 'transfer',
+          toAccountId: 'b',
+          dayOfMonth: 5,
+          autoPost: false,
+          autoPostSince: null,
+        }),
+      ],
+      [],
+      CTX,
+    );
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({ month: '2026-06', date: '2026-06-05', direction: 'transfer' });
+  });
+
+  it('une dépense non auto-pointée reste ignorée (non-régression)', () => {
+    expect(duePostings([entry({ type: 'expense', autoPost: false })], [], CTX)).toEqual([]);
   });
 });

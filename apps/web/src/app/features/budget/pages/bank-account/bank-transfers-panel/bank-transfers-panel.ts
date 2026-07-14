@@ -5,6 +5,7 @@ import { EntryRowActions } from '../../../components/entry-row-actions/entry-row
 import { MonthNav } from '../../../components/month-nav/month-nav';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
+import { isAutoEntry } from '../../../domain/auto-post';
 
 @Component({
   selector: 'app-bank-transfers-panel',
@@ -57,7 +58,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                       [class.line-through]="passed"
                     >
                       {{ entry.label }}
-                      @if (entry.autoPost) {
+                      @if (isAutoEntry(entry)) {
                         <span
                           data-testid="auto-badge"
                           class="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ib-green bg-ib-green/10"
@@ -246,6 +247,8 @@ export class BankTransfersPanel {
   readonly isExpensePassed = input.required<(entry: RecurringEntry) => boolean>();
   readonly spendingMonthLabel = input.required<string>();
   readonly accountsCount = input.required<number>();
+
+  protected readonly isAutoEntry = isAutoEntry;
 
   readonly createOneTime = output<void>();
   readonly edit = output<RecurringEntry>();

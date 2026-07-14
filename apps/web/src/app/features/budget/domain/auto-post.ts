@@ -26,6 +26,11 @@ export const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set([
 export const directionOf = (entry: RecurringEntry): DuePostingDirection =>
   entry.type === 'income' ? 'income' : entry.type === 'transfer' ? 'transfer' : 'expense';
 
+/** Une entrée est auto-postée si son flag autoPost est vrai OU si c'est un virement
+ *  (un virement récurrent s'exécute toujours automatiquement — jamais de confirmation manuelle). */
+export const isAutoEntry = (entry: RecurringEntry): boolean =>
+  entry.autoPost || entry.type === 'transfer';
+
 /** Liste des mois 'YYYY-MM' de `from` à `to` inclus (from ≤ to). */
 function monthsBetween(from: string, to: string): string[] {
   const months: string[] = [];
@@ -57,7 +62,7 @@ export function duePostings(
 ): DuePosting[] {
   const result: DuePosting[] = [];
   for (const entry of entries) {
-    if (!entry.autoPost) continue;
+    if (!isAutoEntry(entry)) continue;
     if (entry.accountId == null || entry.dayOfMonth == null) continue;
     if (!AUTO_POST_TYPES.has(entry.type)) continue;
 

@@ -122,4 +122,36 @@ describe('buildRecurringEntryPayload', () => {
     expect(p.memberId).toBeNull();
     expect(p.payslipKey).toBe('k1');
   });
+
+  it('transfer → autoPost forcé à true + autoPostSince au mois courant', () => {
+    const p = buildRecurringEntryPayload(
+      { ...VALUE, toAccountId: 'acc2', autoPost: false },
+      { type: 'transfer', initial: null, forcedAccountId: 'accSrc', currentMonth: '2026-06' },
+    );
+    expect(p.autoPost).toBe(true);
+    expect(p.autoPostSince).toBe('2026-06');
+  });
+
+  it('transfer en édition → autoPostSince conservé depuis initial', () => {
+    const p = buildRecurringEntryPayload(
+      { ...VALUE, toAccountId: 'acc2', autoPost: false },
+      {
+        type: 'transfer',
+        initial: initial({ type: 'transfer', autoPostSince: '2026-01' }),
+        forcedAccountId: 'accSrc',
+        currentMonth: '2026-06',
+      },
+    );
+    expect(p.autoPost).toBe(true);
+    expect(p.autoPostSince).toBe('2026-01');
+  });
+
+  it('expense → autoPost reste piloté par la case (non-régression)', () => {
+    const p = buildRecurringEntryPayload(
+      { ...VALUE, autoPost: false },
+      { type: 'expense', initial: null, forcedAccountId: null, currentMonth: '2026-06' },
+    );
+    expect(p.autoPost).toBe(false);
+    expect(p.autoPostSince).toBeNull();
+  });
 });
