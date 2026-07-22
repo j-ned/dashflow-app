@@ -7,6 +7,7 @@ import {
   Param,
   Patch,
   Post,
+  Put,
   UseGuards,
 } from '@nestjs/common';
 import { EnvelopesService } from './envelopes.service';
@@ -22,16 +23,55 @@ import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import {
   createEnvelopeSchema,
   createEncryptedEnvelopeSchema,
+  updateEnvelopeSchema,
+  updateEncryptedEnvelopeSchema,
   envelopeTransactionSchema,
   creditEnvelopeSchema,
   creditEncryptedEnvelopeSchema,
 } from './dto/envelope.dto';
+import { toEnvelopeResponse } from './envelope.response';
 
 @UseGuards(JwtAuthGuard)
 @Controller('envelopes')
 export class EnvelopesController extends OwnedCrudController<unknown> {
   constructor(protected readonly svc: EnvelopesService) {
     super();
+  }
+
+  @Get()
+  override async list(@CurrentUser() u: AuthUser) {
+    const rows = await this.svc.list(u.id);
+    return rows.map(toEnvelopeResponse);
+  }
+
+  @Get(':id')
+  override async getOne(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+    const row = await this.svc.getOne(u.id, id);
+    if (!row) throw new NotFoundException('Non trouvé');
+    return toEnvelopeResponse(row);
+  }
+
+  @UseGuards(CsrfGuard)
+  @Post()
+  @HttpCode(201)
+  override async create(
+    @CurrentUser() u: AuthUser,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const row = await this.svc.create(u.id, this.toCreateValues(body));
+    return toEnvelopeResponse(row);
+  }
+
+  @UseGuards(CsrfGuard)
+  @Put(':id')
+  override async update(
+    @CurrentUser() u: AuthUser,
+    @Param('id') id: string,
+    @Body() body: Record<string, unknown>,
+  ) {
+    const row = await this.svc.update(u.id, id, this.toUpdatePatch(body));
+    if (!row) throw new NotFoundException('Non trouvé');
+    return toEnvelopeResponse(row);
   }
 
   protected toCreateValues(
@@ -65,14 +105,21 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      if (body.memberId !== undefined) patch.memberId = body.memberId;
+      const d = parseBody(updateEncryptedEnvelopeSchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.memberId !== undefined) patch.memberId = d.memberId;
       return patch;
     }
-    const { id: _i, userId: _u, ...rest } = body;
-    return rest;
+    const d = parseBody(updateEnvelopeSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.memberId !== undefined) patch.memberId = d.memberId;
+    if (d.name !== undefined) patch.name = d.name;
+    if (d.type !== undefined) patch.type = d.type;
+    if (d.balance !== undefined) patch.balance = d.balance;
+    if (d.target !== undefined) patch.target = d.target;
+    if (d.color !== undefined) patch.color = d.color;
+    if (d.dueDay !== undefined) patch.dueDay = d.dueDay;
+    return patch;
   }
 
   // Static path must come before /:id to avoid capture by param route
@@ -126,7 +173,7 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
       const { encryptedData } = parseBody(creditEncryptedEnvelopeSchema, body);
       const row = await this.svc.credit(u.id, id, { encryptedData });
       if (row === undefined) throw new NotFoundException('Non trouvé');
-      return row;
+      return toEnvelopeResponse(row);
     }
     const d = parseBody(creditEnvelopeSchema, body);
     const row = await this.svc.credit(u.id, id, {
@@ -135,6 +182,6 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
       note: d.note ?? null,
     });
     if (row === undefined) throw new NotFoundException('Non trouvé');
-    return row;
+    return toEnvelopeResponse(row);
   }
 }

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { ENVELOPE_TYPES } from '../../../db/schema';
 
 const optionalUuid = z.string().uuid().nullable().optional();
 const dateStr = z
@@ -11,8 +12,6 @@ const color = z
   .nullable()
   .optional();
 
-const ENVELOPE_TYPES = ['épargne', 'impôts', 'équipement', 'vacances'] as const;
-
 export const createEnvelopeSchema = z.object({
   memberId: optionalUuid,
   name: z.string().min(1).max(255),
@@ -24,6 +23,21 @@ export const createEnvelopeSchema = z.object({
 });
 
 export const createEncryptedEnvelopeSchema = z.object({
+  memberId: optionalUuid,
+  encryptedData: z.string().min(1),
+});
+
+export const updateEnvelopeSchema = z.object({
+  memberId: optionalUuid,
+  name: z.string().min(1).max(255).optional(),
+  type: z.enum(ENVELOPE_TYPES).optional(),
+  balance: amount.optional(),
+  target: amount.nullable().optional(),
+  color,
+  dueDay: z.number().int().min(1).max(31).nullable().optional(),
+});
+
+export const updateEncryptedEnvelopeSchema = z.object({
   memberId: optionalUuid,
   encryptedData: z.string().min(1),
 });

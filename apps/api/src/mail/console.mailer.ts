@@ -11,19 +11,16 @@ export class ConsoleMailer implements Mailer {
 
   sendVerificationCode(to: string, code: string): Promise<void> {
     this.logger.log(`[verification] ${to} → code ${code}`);
-    console.log(`[verification] ${to} → code ${code}`);
     return Promise.resolve();
   }
 
   sendAccountExists(to: string): Promise<void> {
     this.logger.log(`[account-exists] ${to}`);
-    console.log(`[account-exists] ${to}`);
     return Promise.resolve();
   }
 
   sendPasswordResetCode(to: string, code: string): Promise<void> {
     this.logger.log(`[reset] ${to} → code ${code}`);
-    console.log(`[reset] ${to} → code ${code}`);
     return Promise.resolve();
   }
 
@@ -34,7 +31,6 @@ export class ConsoleMailer implements Mailer {
   ): Promise<void> {
     const url = `${this.config.get('APP_URL', { infer: true })}/medical/calendar/${calendarToken}`;
     this.logger.log(`[calendar-invite] ${to} (de ${senderName}) → ${url}`);
-    console.log(`[calendar-invite] ${to} → ${url}`);
     return Promise.resolve();
   }
 }

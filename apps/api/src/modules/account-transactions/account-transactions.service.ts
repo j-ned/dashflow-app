@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import { and, desc, eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
@@ -80,6 +80,12 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
     values: NewTransactionValues,
   ) {
     if (!(await this.ownsAccount(userId, accountId))) return undefined;
+    if (
+      values.toAccountId &&
+      !(await this.ownsAccount(userId, values.toAccountId))
+    ) {
+      throw new NotFoundException('Compte destination non trouvé');
+    }
     const rows = await this.db
       .insert(accountTransactions)
       .values({ ...values, userId, accountId })
@@ -93,9 +99,31 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
     items: NewTransactionValues[],
   ) {
     if (!(await this.ownsAccount(userId, accountId))) return undefined;
+    for (const item of items) {
+      if (
+        item.toAccountId &&
+        !(await this.ownsAccount(userId, item.toAccountId))
+      ) {
+        throw new NotFoundException('Compte destination non trouvé');
+      }
+    }
     return this.db
       .insert(accountTransactions)
       .values(items.map((v) => ({ ...v, userId, accountId })))
       .returning();
+  }
+
+  override async update(
+    userId: string,
+    id: string,
+    patch: Record<string, unknown>,
+  ): Promise<AccountTransaction | undefined> {
+    if (
+      typeof patch.toAccountId === 'string' &&
+      !(await this.ownsAccount(userId, patch.toAccountId))
+    ) {
+      throw new NotFoundException('Compte destination non trouvé');
+    }
+    return super.update(userId, id, patch);
   }
 }

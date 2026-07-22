@@ -15,3 +15,15 @@ export const createBankAccountSchema = z.object({
 export const createEncryptedBankAccountSchema = z.object({
   encryptedData: z.string().min(1),
 });
+
+export const updateBankAccountSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  type: z.enum(BANK_ACCOUNT_TYPES).optional(),
+  initialBalance: z.coerce.number().optional(),
+  color: hexColor.nullable().optional(),
+  dotColor: hexColor.nullable().optional(),
+});
+
+export const updateEncryptedBankAccountSchema = z.object({
+  encryptedData: z.string().min(1),
+});

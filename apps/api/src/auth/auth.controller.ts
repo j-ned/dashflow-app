@@ -316,6 +316,7 @@ export class AuthController {
     return { ...toPublicUser(updated), keyMaterial: toKeyMaterial(updated) };
   }
 
+  @UseGuards(JwtAuthGuard)
   @Get('avatar/:userId')
   async getAvatar(
     @Param('userId') userId: string,

@@ -4,9 +4,10 @@ import { parseBody } from '../../common/parse-body';
 import {
   createPatientSchema,
   createEncryptedPatientSchema,
+  updatePatientSchema,
+  updateEncryptedPatientSchema,
 } from './dto/patient.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
-import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @UseGuards(JwtAuthGuard)
@@ -37,8 +38,17 @@ export class PatientsController extends OwnedCrudController<unknown> {
   }
 
   protected toUpdatePatch(body: Record<string, unknown>) {
-    return body.encryptedData
-      ? { encryptedData: body.encryptedData }
-      : excludeSystemFields(body);
+    if (body.encryptedData) {
+      const { encryptedData } = parseBody(updateEncryptedPatientSchema, body);
+      return { encryptedData };
+    }
+    const d = parseBody(updatePatientSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.firstName !== undefined) patch.firstName = d.firstName;
+    if (d.lastName !== undefined) patch.lastName = d.lastName;
+    if (d.birthDate !== undefined) patch.birthDate = d.birthDate;
+    if (d.color !== undefined) patch.color = d.color;
+    if (d.notes !== undefined) patch.notes = d.notes;
+    return patch;
   }
 }

@@ -1,7 +1,10 @@
 import { randomInt } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
-import { AuthRepository } from './auth.repository';
+import {
+  AuthRepository,
+  type VerificationCodePurpose,
+} from './auth.repository';
 import { MAILER, type Mailer } from '../mail/mailer';
 import { ok, fail, type Result } from './auth.result';
 import { TwoFactorService } from './two-factor.service';
@@ -57,14 +60,18 @@ export class AuthService {
   }
 
   async verify(dto: VerifyDto): Promise<Result<User>> {
-    const valid = await this.repo.findValidCode(dto.email, dto.code);
+    const valid = await this.repo.findValidCode(
+      dto.email,
+      dto.code,
+      'verification',
+    );
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
     const updated = await this.repo.updateUser(user.id, {
       emailVerified: new Date(),
     });
-    await this.repo.deleteCodes(dto.email);
+    await this.repo.deleteCodes(dto.email, 'verification');
     return ok(updated);
   }
 
@@ -102,14 +109,14 @@ export class AuthService {
   }
 
   async resetPassword(dto: ResetPasswordDto): Promise<Result<null>> {
-    const valid = await this.repo.findValidCode(dto.email, dto.code);
+    const valid = await this.repo.findValidCode(dto.email, dto.code, 'reset');
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
     await this.repo.updateUser(user.id, {
       password: await argon2.hash(dto.newPassword),
     });
-    await this.repo.deleteCodes(dto.email);
+    await this.repo.deleteCodes(dto.email, 'reset');
     return ok(null);
   }
 
@@ -228,10 +235,15 @@ export class AuthService {
 
   private async sendCode(
     email: string,
-    kind: 'verification' | 'reset',
+    kind: VerificationCodePurpose,
   ): Promise<void> {
     const code = genCode();
-    await this.repo.insertCode(email, code, new Date(Date.now() + CODE_TTL_MS));
+    await this.repo.insertCode(
+      email,
+      code,
+      new Date(Date.now() + CODE_TTL_MS),
+      kind,
+    );
     if (kind === 'verification')
       await this.mailer.sendVerificationCode(email, code);
     else await this.mailer.sendPasswordResetCode(email, code);

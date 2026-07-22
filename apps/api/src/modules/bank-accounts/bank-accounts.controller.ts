@@ -18,11 +18,13 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import {
   createBankAccountSchema,
   createEncryptedBankAccountSchema,
+  updateBankAccountSchema,
+  updateEncryptedBankAccountSchema,
 } from './dto/bank-account.dto';
+import { toBankAccountResponse } from './bank-account.response';
 
 @UseGuards(JwtAuthGuard)
 @Controller('bank-accounts')
@@ -30,8 +32,9 @@ export class BankAccountsController {
   constructor(private readonly svc: BankAccountsService) {}
 
   @Get()
-  list(@CurrentUser() u: AuthUser) {
-    return this.svc.list(u.id);
+  async list(@CurrentUser() u: AuthUser) {
+    const rows = await this.svc.list(u.id);
+    return rows.map(toBankAccountResponse);
   }
 
   @UseGuards(CsrfGuard)
@@ -46,16 +49,18 @@ export class BankAccountsController {
         createEncryptedBankAccountSchema,
         body,
       );
-      return this.svc.create(u.id, { name: '', encryptedData });
+      const row = await this.svc.create(u.id, { name: '', encryptedData });
+      return toBankAccountResponse(row);
     }
     const d = parseBody(createBankAccountSchema, body);
-    return this.svc.create(u.id, {
+    const row = await this.svc.create(u.id, {
       name: d.name,
       type: d.type ?? 'courant',
       initialBalance: String(d.initialBalance ?? 0),
       color: d.color ?? null,
       dotColor: d.dotColor ?? null,
     });
+    return toBankAccountResponse(row);
   }
 
   @UseGuards(CsrfGuard)
@@ -65,12 +70,23 @@ export class BankAccountsController {
     @Param('id') id: string,
     @Body() body: Record<string, unknown>,
   ) {
-    const patch = body.encryptedData
-      ? { encryptedData: body.encryptedData }
-      : excludeSystemFields(body);
+    let patch: Record<string, unknown>;
+    if (body.encryptedData) {
+      const d = parseBody(updateEncryptedBankAccountSchema, body);
+      patch = { encryptedData: d.encryptedData };
+    } else {
+      const d = parseBody(updateBankAccountSchema, body);
+      patch = {};
+      if (d.name !== undefined) patch.name = d.name;
+      if (d.type !== undefined) patch.type = d.type;
+      if (d.initialBalance !== undefined)
+        patch.initialBalance = String(d.initialBalance);
+      if (d.color !== undefined) patch.color = d.color;
+      if (d.dotColor !== undefined) patch.dotColor = d.dotColor;
+    }
     const row = await this.svc.update(u.id, id, patch);
     if (!row) throw new NotFoundException('Non trouvé');
-    return row;
+    return toBankAccountResponse(row);
   }
 
   @UseGuards(CsrfGuard)

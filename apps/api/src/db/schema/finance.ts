@@ -13,12 +13,13 @@ import {
 import { users } from './auth';
 import { patients } from './medical';
 
-export const envelopeTypeEnum = pgEnum('envelope_type', [
+export const ENVELOPE_TYPES = [
   'épargne',
   'impôts',
   'équipement',
   'vacances',
-]);
+] as const;
+export const envelopeTypeEnum = pgEnum('envelope_type', ENVELOPE_TYPES);
 
 export const loanDirectionEnum = pgEnum('loan_direction', ['lent', 'borrowed']);
 

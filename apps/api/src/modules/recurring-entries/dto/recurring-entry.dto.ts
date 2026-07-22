@@ -33,3 +33,23 @@ export const createEncryptedRecurringEntrySchema = z.object({
   toAccountId: optionalUuid,
   encryptedData: z.string().min(1),
 });
+
+export const updateRecurringEntrySchema = z.object({
+  memberId: optionalUuid,
+  accountId: optionalUuid,
+  toAccountId: optionalUuid,
+  label: z.string().min(1).max(255).optional(),
+  amount: amount.optional(),
+  type: z.enum(RECURRING_TYPES).optional(),
+  dayOfMonth: z.number().int().min(1).max(31).nullable().optional(),
+  date: dateStr.nullable().optional(),
+  endDate: dateStr.nullable().optional(),
+  category: z.string().max(100).nullable().optional(),
+});
+
+export const updateEncryptedRecurringEntrySchema = z.object({
+  memberId: optionalUuid,
+  accountId: optionalUuid,
+  toAccountId: optionalUuid,
+  encryptedData: z.string().min(1),
+});

@@ -36,3 +36,21 @@ export const loanPaymentSchema = z.object({
   date: dateStr.optional(),
   note: z.string().max(255).nullable().optional(),
 });
+
+export const updateLoanSchema = z.object({
+  memberId: optionalUuid,
+  person: z.string().min(1).max(255).optional(),
+  direction: z.enum(LOAN_DIRECTIONS).optional(),
+  amount: amount.optional(),
+  remaining: amount.optional(),
+  description: z.string().max(1000).nullable().optional(),
+  date: dateStr.optional(),
+  dueDate: dateStr.nullable().optional(),
+  dueDay: z.number().int().min(1).max(31).nullable().optional(),
+});
+
+export const updateEncryptedLoanSchema = z.object({
+  memberId: optionalUuid,
+  direction: z.enum(LOAN_DIRECTIONS).optional(),
+  encryptedData: z.string().min(1),
+});

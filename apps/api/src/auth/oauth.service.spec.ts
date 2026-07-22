@@ -1,17 +1,18 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import type { ConfigService } from '@nestjs/config';
 import { OAuthService } from './oauth.service';
+import type { AuthRepository } from './auth.repository';
+import type { Env } from '../config/env.schema';
 
 const config = (id?: string) => ({
-  get: vi.fn(
-    (k: string) =>
-      (
-        ({
-          GOOGLE_CLIENT_ID: id,
-          GOOGLE_CLIENT_SECRET: id ? 'secret' : undefined,
-          APP_URL: 'http://localhost:3001',
-        }) as any
-      )[k],
-  ),
+  get: vi.fn((k: string) => {
+    const values: Record<string, string | undefined> = {
+      GOOGLE_CLIENT_ID: id,
+      GOOGLE_CLIENT_SECRET: id ? 'secret' : undefined,
+      APP_URL: 'http://localhost:3001',
+    };
+    return values[k];
+  }),
 });
 const repo = () => ({
   findByGoogleId: vi.fn(),
@@ -27,7 +28,10 @@ describe('OAuthService', () => {
   });
 
   it('createAuthorization : URL Google + state + verifier', () => {
-    const svc = new OAuthService(config('cid') as any, r as any);
+    const svc = new OAuthService(
+      config('cid') as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
     const { url, state, codeVerifier } = svc.createAuthorization();
     expect(url).toContain('accounts.google.com');
     expect(state.length).toBeGreaterThan(0);
@@ -35,12 +39,18 @@ describe('OAuthService', () => {
   });
 
   it('createAuthorization : lance si non configuré', () => {
-    const svc = new OAuthService(config(undefined) as any, r as any);
+    const svc = new OAuthService(
+      config(undefined) as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
     expect(() => svc.createAuthorization()).toThrow();
   });
 
   it('findOrCreate : googleId existant → renvoie le user', async () => {
-    const svc = new OAuthService(config('cid') as any, r as any);
+    const svc = new OAuthService(
+      config('cid') as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
     r.findByGoogleId.mockResolvedValue({ id: 'u1', email: 'a@b.com' });
     const user = await svc.findOrCreateGoogleUser({
       googleId: 'g1',
@@ -52,7 +62,10 @@ describe('OAuthService', () => {
   });
 
   it('findOrCreate : email existant sans googleId → lien', async () => {
-    const svc = new OAuthService(config('cid') as any, r as any);
+    const svc = new OAuthService(
+      config('cid') as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
     r.findByGoogleId.mockResolvedValue(undefined);
     r.findByEmail.mockResolvedValue({
       id: 'u2',
@@ -75,7 +88,10 @@ describe('OAuthService', () => {
   });
 
   it('findOrCreate : inconnu → création sans password', async () => {
-    const svc = new OAuthService(config('cid') as any, r as any);
+    const svc = new OAuthService(
+      config('cid') as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
     r.findByGoogleId.mockResolvedValue(undefined);
     r.findByEmail.mockResolvedValue(undefined);
     r.createUser.mockResolvedValue({ id: 'u3', email: 'a@b.com' });

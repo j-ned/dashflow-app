@@ -5,8 +5,7 @@ import { envelopes, envelopeTransactions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { addMoney } from '../../common/money';
 import { today } from '../../common/today';
-
-type Envelope = typeof envelopes.$inferSelect;
+import type { Envelope } from './envelope.response';
 
 @Injectable()
 export class EnvelopesService extends OwnedCrudService<Envelope> {

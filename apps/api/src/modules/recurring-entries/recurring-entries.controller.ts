@@ -23,12 +23,14 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { assertValidUpload } from '../../common/files/validate-upload';
 import {
   createRecurringEntrySchema,
   createEncryptedRecurringEntrySchema,
+  updateRecurringEntrySchema,
+  updateEncryptedRecurringEntrySchema,
 } from './dto/recurring-entry.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
-import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 
 @UseGuards(JwtAuthGuard)
 @Controller('recurring-entries')
@@ -79,15 +81,26 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      for (const k of ['memberId', 'accountId', 'toAccountId'] as const) {
-        if (body[k] !== undefined) patch[k] = body[k];
-      }
+      const d = parseBody(updateEncryptedRecurringEntrySchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.memberId !== undefined) patch.memberId = d.memberId;
+      if (d.accountId !== undefined) patch.accountId = d.accountId;
+      if (d.toAccountId !== undefined) patch.toAccountId = d.toAccountId;
       return patch;
     }
-    return excludeSystemFields(body);
+    const d = parseBody(updateRecurringEntrySchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.memberId !== undefined) patch.memberId = d.memberId;
+    if (d.accountId !== undefined) patch.accountId = d.accountId;
+    if (d.toAccountId !== undefined) patch.toAccountId = d.toAccountId;
+    if (d.label !== undefined) patch.label = d.label;
+    if (d.amount !== undefined) patch.amount = d.amount;
+    if (d.type !== undefined) patch.type = d.type;
+    if (d.dayOfMonth !== undefined) patch.dayOfMonth = d.dayOfMonth;
+    if (d.date !== undefined) patch.date = d.date;
+    if (d.endDate !== undefined) patch.endDate = d.endDate;
+    if (d.category !== undefined) patch.category = d.category;
+    return patch;
   }
 
   // --- Payslip file sub-routes ---
@@ -103,6 +116,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
+    await assertValidUpload(file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.payslipKey(u.id, id, file.mimetype);
@@ -122,6 +136,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     const obj = await this.storage.getStream(row.payslipKey);
     if (!obj) throw new NotFoundException('Fiche de paie introuvable');
     res.setHeader('Content-Type', obj.contentType);
+    res.setHeader('Content-Disposition', 'attachment');
     obj.stream.pipe(res);
   }
 

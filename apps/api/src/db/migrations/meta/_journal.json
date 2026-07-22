@@ -50,6 +50,13 @@
       "when": 1781638221215,
       "tag": "0006_drop_monetisation",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1784739450536,
+      "tag": "0007_nosy_randall_flagg",
+      "breakpoints": true
     }
   ]
 }

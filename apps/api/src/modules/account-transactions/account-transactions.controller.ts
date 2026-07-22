@@ -21,6 +21,8 @@ import { parseBody } from '../../common/parse-body';
 import {
   createTransactionSchema,
   createEncryptedTransactionSchema,
+  updateTransactionSchema,
+  updateEncryptedTransactionSchema,
   batchTransactionSchema,
 } from './dto/account-transaction.dto';
 import { today } from '../../common/today';
@@ -128,24 +130,25 @@ export class AccountTransactionsController {
   ) {
     let patch: Record<string, unknown>;
     if (body.encryptedData) {
-      patch = { encryptedData: body.encryptedData };
-      for (const k of [
-        'direction',
-        'toAccountId',
-        'memberId',
-        'recurringEntryId',
-      ] as const) {
-        if (body[k] !== undefined) patch[k] = body[k];
-      }
+      const d = parseBody(updateEncryptedTransactionSchema, body);
+      patch = { encryptedData: d.encryptedData };
+      if (d.direction !== undefined) patch.direction = d.direction;
+      if (d.toAccountId !== undefined) patch.toAccountId = d.toAccountId;
+      if (d.memberId !== undefined) patch.memberId = d.memberId;
+      if (d.recurringEntryId !== undefined)
+        patch.recurringEntryId = d.recurringEntryId;
     } else {
-      const {
-        id: _i,
-        userId: _u,
-        accountId: _a,
-        createdAt: _c,
-        ...rest
-      } = body;
-      patch = rest;
+      const d = parseBody(updateTransactionSchema, body);
+      patch = {};
+      if (d.amount !== undefined) patch.amount = d.amount;
+      if (d.direction !== undefined) patch.direction = d.direction;
+      if (d.toAccountId !== undefined) patch.toAccountId = d.toAccountId;
+      if (d.date !== undefined) patch.date = d.date;
+      if (d.category !== undefined) patch.category = d.category;
+      if (d.note !== undefined) patch.note = d.note;
+      if (d.memberId !== undefined) patch.memberId = d.memberId;
+      if (d.recurringEntryId !== undefined)
+        patch.recurringEntryId = d.recurringEntryId;
     }
     const row = await this.svc.update(u.id, id, patch);
     if (!row) throw new NotFoundException('Non trouvé');

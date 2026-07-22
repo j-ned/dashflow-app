@@ -18,6 +18,8 @@ import { parseBody } from '../../common/parse-body';
 import {
   createMedicationSchema,
   createEncryptedMedicationSchema,
+  updateMedicationSchema,
+  updateEncryptedMedicationSchema,
   refillMedicationSchema,
 } from './dto/medication.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
@@ -66,16 +68,28 @@ export class MedicationsController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      if (body.prescriptionId !== undefined)
-        patch.prescriptionId = body.prescriptionId ?? null;
-      if (body.patientId !== undefined) patch.patientId = body.patientId;
+      const d = parseBody(updateEncryptedMedicationSchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.prescriptionId !== undefined)
+        patch.prescriptionId = d.prescriptionId ?? null;
+      if (d.patientId !== undefined) patch.patientId = d.patientId;
       return patch;
     }
-    const { id: _i, userId: _u, ...rest } = body;
-    return rest;
+    const d = parseBody(updateMedicationSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.prescriptionId !== undefined)
+      patch.prescriptionId = d.prescriptionId ?? null;
+    if (d.patientId !== undefined) patch.patientId = d.patientId;
+    if (d.name !== undefined) patch.name = d.name;
+    if (d.type !== undefined) patch.type = d.type;
+    if (d.dosage !== undefined) patch.dosage = d.dosage;
+    if (d.quantity !== undefined) patch.quantity = d.quantity;
+    if (d.dailyRate !== undefined) patch.dailyRate = d.dailyRate;
+    if (d.startDate !== undefined) patch.startDate = d.startDate;
+    if (d.alertDaysBefore !== undefined)
+      patch.alertDaysBefore = d.alertDaysBefore;
+    if (d.skipDays !== undefined) patch.skipDays = d.skipDays;
+    return patch;
   }
 
   // Static route must come before /:id to avoid param capture

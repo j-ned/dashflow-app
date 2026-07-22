@@ -5,15 +5,19 @@ import { drizzle } from 'drizzle-orm/postgres-js';
 import { eq } from 'drizzle-orm';
 import * as schema from '../src/db/schema';
 import { EncryptionService } from '../src/auth/encryption.service';
+import type { AuthRepository } from '../src/auth/auth.repository';
 
 const sql = postgres(process.env.DATABASE_URL!);
 const db = drizzle(sql, { schema });
 const repo = {
-  updateUser: async (id: string, patch: any) => {
+  updateUser: async (
+    id: string,
+    patch: Partial<typeof schema.users.$inferInsert>,
+  ) => {
     await db.update(schema.users).set(patch).where(eq(schema.users.id, id));
-    return undefined as any;
+    return undefined;
   },
-} as any;
+} as unknown as AuthRepository;
 const enc = new EncryptionService(repo, db);
 
 async function makeUser(): Promise<string> {

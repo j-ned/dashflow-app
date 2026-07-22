@@ -24,10 +24,12 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
+import { assertValidUpload } from '../../common/files/validate-upload';
 import {
   createSalaryArchiveSchema,
   createEncryptedSalaryArchiveSchema,
+  updateSalaryArchiveSchema,
+  updateEncryptedSalaryArchiveSchema,
 } from './dto/salary-archive.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 
@@ -73,13 +75,20 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      if (body.accountId !== undefined) patch.accountId = body.accountId;
+      const d = parseBody(updateEncryptedSalaryArchiveSchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.accountId !== undefined) patch.accountId = d.accountId;
       return patch;
     }
-    return excludeSystemFields(body);
+    const d = parseBody(updateSalaryArchiveSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.month !== undefined) patch.month = d.month;
+    if (d.salary !== undefined) patch.salary = d.salary;
+    if (d.totalExpenses !== undefined) patch.totalExpenses = d.totalExpenses;
+    if (d.totalSpendings !== undefined) patch.totalSpendings = d.totalSpendings;
+    if (d.spendings !== undefined) patch.spendings = d.spendings;
+    if (d.accountId !== undefined) patch.accountId = d.accountId;
+    return patch;
   }
 
   @UseGuards(CsrfGuard)
@@ -97,6 +106,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
       id: string;
     };
     if (!file) return row;
+    await assertValidUpload(file);
     const key = this.storage.payslipKey(u.id, row.id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype);
     return this.svc.update(u.id, row.id, { payslipKey: key });
@@ -124,6 +134,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
+    await assertValidUpload(file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.payslipKey(u.id, id, file.mimetype);
@@ -143,6 +154,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
     const obj = await this.storage.getStream(row.payslipKey);
     if (!obj) throw new NotFoundException('Fiche de paie introuvable');
     res.setHeader('Content-Type', obj.contentType);
+    res.setHeader('Content-Disposition', 'attachment');
     obj.stream.pipe(res);
   }
 

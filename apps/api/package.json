@@ -37,9 +37,10 @@
     "arctic": "^3.7.0",
     "argon2": "^0.43.1",
     "cookie-parser": "^1.4.7",
-    "drizzle-orm": "^0.44.7",
+    "drizzle-orm": "^0.45.2",
+    "file-type": "^22.0.1",
     "helmet": "^8.2.0",
-    "nodemailer": "^8.0.10",
+    "nodemailer": "^9.0.3",
     "otpauth": "^9.5.1",
     "postgres": "^3.4.9",
     "qrcode": "^1.5.4",
@@ -77,6 +78,9 @@
       "argon2",
       "@swc/core",
       "esbuild"
-    ]
+    ],
+    "overrides": {
+      "multer": "^2.2.0"
+    }
   }
 }

@@ -34,3 +34,19 @@ export const createEncryptedAppointmentSchema = z.object({
 export const updateAppointmentStatusSchema = z.object({
   status: z.enum(APPOINTMENT_STATUSES),
 });
+
+export const updateAppointmentSchema = z.object({
+  patientId: uuid.optional(),
+  practitionerId: uuid.optional(),
+  date: dateStr.optional(),
+  time: timeStr.optional(),
+  status: z.enum(APPOINTMENT_STATUSES).optional(),
+  reason: z.string().max(1000).nullable().optional(),
+  outcome: z.string().max(2000).nullable().optional(),
+});
+
+export const updateEncryptedAppointmentSchema = z.object({
+  patientId: uuid.optional(),
+  practitionerId: uuid.optional(),
+  encryptedData: z.string().min(1),
+});

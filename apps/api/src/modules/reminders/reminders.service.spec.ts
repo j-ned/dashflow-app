@@ -1,13 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { RemindersService } from './reminders.service';
+import type { DrizzleDB } from '../../db/drizzle.constants';
+import type { reminders } from '../../db/schema';
+
+type Reminder = typeof reminders.$inferSelect;
 
 describe('RemindersService', () => {
   let svc: RemindersService;
 
   beforeEach(() => {
-    // We construct RemindersService manually bypassing DI
-    // OwnedCrudService takes (db, table) in constructor
-    svc = new (RemindersService as any)({} as any, {} as any);
+    svc = new RemindersService({} as unknown as DrizzleDB);
   });
 
   describe('toggle', () => {
@@ -15,10 +17,12 @@ describe('RemindersService', () => {
       const existingRow = { id: 'uuid-1', userId: 'user-1', enabled: true };
       const updatedRow = { ...existingRow, enabled: false };
 
-      vi.spyOn(svc, 'getOne').mockResolvedValue(existingRow as any);
+      vi.spyOn(svc, 'getOne').mockResolvedValue(
+        existingRow as unknown as Reminder,
+      );
       const updateSpy = vi
         .spyOn(svc, 'update')
-        .mockResolvedValue(updatedRow as any);
+        .mockResolvedValue(updatedRow as unknown as Reminder);
 
       const result = await svc.toggle('user-1', 'uuid-1');
 
@@ -32,10 +36,12 @@ describe('RemindersService', () => {
       const existingRow = { id: 'uuid-2', userId: 'user-1', enabled: false };
       const updatedRow = { ...existingRow, enabled: true };
 
-      vi.spyOn(svc, 'getOne').mockResolvedValue(existingRow as any);
+      vi.spyOn(svc, 'getOne').mockResolvedValue(
+        existingRow as unknown as Reminder,
+      );
       const updateSpy = vi
         .spyOn(svc, 'update')
-        .mockResolvedValue(updatedRow as any);
+        .mockResolvedValue(updatedRow as unknown as Reminder);
 
       const result = await svc.toggle('user-1', 'uuid-2');
 

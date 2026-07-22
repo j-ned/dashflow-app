@@ -26,3 +26,30 @@ export const createEncryptedSalaryArchiveSchema = z.object({
   accountId: z.string().uuid().nullable().optional(),
   encryptedData: z.string().min(1),
 });
+
+export const updateSalaryArchiveSchema = z.object({
+  month: z
+    .string()
+    .regex(/^\d{4}-\d{2}$/, 'Format mois invalide (YYYY-MM)')
+    .optional(),
+  salary: amount.optional(),
+  totalExpenses: amount.optional(),
+  totalSpendings: amount.optional(),
+  spendings: z
+    .preprocess((v) => {
+      if (typeof v !== 'string') return v;
+      try {
+        const parsed: unknown = JSON.parse(v);
+        return parsed;
+      } catch {
+        return v;
+      }
+    }, z.array(z.unknown()))
+    .optional(),
+  accountId: z.string().uuid().nullable().optional(),
+});
+
+export const updateEncryptedSalaryArchiveSchema = z.object({
+  accountId: z.string().uuid().nullable().optional(),
+  encryptedData: z.string().min(1),
+});

@@ -1,23 +1,24 @@
 import { describe, it, expect, vi } from 'vitest';
+import type { ConfigService } from '@nestjs/config';
 import { StorageService } from './storage.service';
+import type { Env } from '../config/env.schema';
 
-const cfg = (configured: boolean) => ({
-  get: (k: string) =>
-    configured
-      ? (
-          {
-            S3_ENDPOINT: 'https://x.r2.cloudflarestorage.com',
-            S3_REGION: 'auto',
-            S3_ACCESS_KEY_ID: 'a',
-            S3_SECRET_ACCESS_KEY: 'b',
-            S3_BUCKET: 'dashflow-app',
-          } as any
-        )[k]
-      : ({ S3_REGION: 'auto' } as any)[k],
-});
+const cfg = (configured: boolean) => {
+  const configuredValues: Record<string, string> = {
+    S3_ENDPOINT: 'https://x.r2.cloudflarestorage.com',
+    S3_REGION: 'auto',
+    S3_ACCESS_KEY_ID: 'a',
+    S3_SECRET_ACCESS_KEY: 'b',
+    S3_BUCKET: 'dashflow-app',
+  };
+  const unconfiguredValues: Record<string, string> = { S3_REGION: 'auto' };
+  return {
+    get: (k: string) => (configured ? configuredValues : unconfiguredValues)[k],
+  } as unknown as ConfigService<Env, true>;
+};
 
 describe('StorageService key builders', () => {
-  const svc = new StorageService(cfg(true) as any);
+  const svc = new StorageService(cfg(true));
   it('avatarKey png', () => {
     expect(svc.avatarKey('u1', 'image/png')).toBe('avatars/u1.png');
   });
@@ -43,13 +44,13 @@ describe('StorageService key builders', () => {
 
 describe('StorageService non configuré', () => {
   it('upload lance si pas de client', async () => {
-    const svc = new StorageService(cfg(false) as any);
+    const svc = new StorageService(cfg(false));
     await expect(
       svc.upload('k', Buffer.from('x'), 'text/plain'),
     ).rejects.toThrow();
   });
   it('delete ne lance pas si pas de client', async () => {
-    const svc = new StorageService(cfg(false) as any);
+    const svc = new StorageService(cfg(false));
     await expect(svc.delete('k')).resolves.toBeUndefined();
   });
 });
@@ -66,7 +67,7 @@ describe('StorageService.deletePrefix', () => {
   };
 
   it('liste sous le bon Prefix/Bucket (paginé via ContinuationToken) puis supprime les clés trouvées', async () => {
-    const svc = new StorageService(cfg(true) as any) as WithDeletePrefix;
+    const svc = new StorageService(cfg(true)) as WithDeletePrefix;
     const send = vi.fn((cmd: S3Command) => {
       if (cmd.constructor.name === 'ListObjectsV2Command') {
         return cmd.input.ContinuationToken
@@ -108,7 +109,7 @@ describe('StorageService.deletePrefix', () => {
   });
 
   it('no-op si client/bucket non configuré (aucun send émis, pas d’erreur)', async () => {
-    const svc = new StorageService(cfg(false) as any) as WithDeletePrefix;
+    const svc = new StorageService(cfg(false)) as WithDeletePrefix;
     await expect(svc.deletePrefix('documents/u1/')).resolves.toBeUndefined();
   });
 });

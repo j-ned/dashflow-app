@@ -30,3 +30,22 @@ export const createEncryptedTransactionSchema = z.object({
 export const batchTransactionSchema = z.object({
   items: z.array(z.record(z.string(), z.unknown())).min(1).max(1000),
 });
+
+export const updateTransactionSchema = z.object({
+  amount: amount.optional(),
+  direction: z.enum(DIRECTIONS).optional(),
+  toAccountId: optionalUuid,
+  date: dateStr.optional(),
+  category: z.string().max(100).nullable().optional(),
+  note: z.string().max(255).nullable().optional(),
+  memberId: optionalUuid,
+  recurringEntryId: optionalUuid,
+});
+
+export const updateEncryptedTransactionSchema = z.object({
+  direction: z.enum(DIRECTIONS).optional(),
+  toAccountId: optionalUuid,
+  memberId: optionalUuid,
+  recurringEntryId: optionalUuid,
+  encryptedData: z.string().min(1),
+});

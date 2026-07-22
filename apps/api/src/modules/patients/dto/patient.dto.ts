@@ -20,3 +20,15 @@ export const createPatientSchema = z.object({
 export const createEncryptedPatientSchema = z.object({
   encryptedData: z.string().min(1),
 });
+
+export const updatePatientSchema = z.object({
+  firstName: z.string().min(1).max(255).optional(),
+  lastName: z.string().min(1).max(255).optional(),
+  birthDate: dateStr.optional(),
+  color: hexColor,
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+export const updateEncryptedPatientSchema = z.object({
+  encryptedData: z.string().min(1),
+});

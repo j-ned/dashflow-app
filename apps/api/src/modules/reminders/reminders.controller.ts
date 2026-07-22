@@ -13,7 +13,7 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { createReminderSchema } from './dto/reminder.dto';
+import { createReminderSchema, updateReminderSchema } from './dto/reminder.dto';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 
 @UseGuards(JwtAuthGuard)
@@ -40,7 +40,14 @@ export class RemindersController extends OwnedCrudController<unknown> {
   protected toUpdatePatch(
     body: Record<string, unknown>,
   ): Record<string, unknown> {
-    const { id: _i, userId: _u, ...patch } = body;
+    const d = parseBody(updateReminderSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.type !== undefined) patch.type = d.type;
+    if (d.target !== undefined) patch.target = d.target;
+    if (d.medicationId !== undefined) patch.medicationId = d.medicationId;
+    if (d.appointmentId !== undefined) patch.appointmentId = d.appointmentId;
+    if (d.recipientEmail !== undefined) patch.recipientEmail = d.recipientEmail;
+    if (d.enabled !== undefined) patch.enabled = d.enabled;
     return patch;
   }
 

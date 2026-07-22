@@ -1,2 +1,2 @@
-DROP TABLE "stripe_events" CASCADE;--> statement-breakpoint
-DROP TABLE "subscriptions" CASCADE;
+DROP TABLE IF EXISTS "stripe_events" CASCADE;--> statement-breakpoint
+DROP TABLE IF EXISTS "subscriptions" CASCADE;

@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import argon2 from 'argon2';
 import { EncryptionService } from './encryption.service';
+import type { AuthRepository } from './auth.repository';
+import type { DrizzleDB } from '../db/drizzle.constants';
 
 const repo = () => ({
   findByEmail: vi.fn(),
@@ -15,7 +17,10 @@ describe('EncryptionService (ops user)', () => {
   let svc: EncryptionService;
   beforeEach(() => {
     r = repo();
-    svc = new EncryptionService(r as any, {} as any);
+    svc = new EncryptionService(
+      r as unknown as AuthRepository,
+      {} as unknown as DrizzleDB,
+    );
   });
 
   it('setKeys : update les 3 clés + version=1', async () => {

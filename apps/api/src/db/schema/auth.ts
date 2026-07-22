@@ -6,7 +6,13 @@ import {
   timestamp,
   integer,
   boolean,
+  pgEnum,
 } from 'drizzle-orm/pg-core';
+
+export const verificationCodePurposeEnum = pgEnum('verification_code_purpose', [
+  'verification',
+  'reset',
+]);
 
 export const users = pgTable('users', {
   id: uuid('id').primaryKey().defaultRandom(),
@@ -36,6 +42,9 @@ export const verificationCodes = pgTable('verification_codes', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull(),
   code: varchar('code', { length: 6 }).notNull(),
+  purpose: verificationCodePurposeEnum('purpose')
+    .notNull()
+    .default('verification'),
   expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()

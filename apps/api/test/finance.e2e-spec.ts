@@ -79,7 +79,9 @@ describe('Finance e2e', () => {
       .get('/bank-accounts')
       .set('Cookie', a.cookies)
       .expect(200);
-    expect(list.body.some((x: any) => x.id === id)).toBe(true);
+    expect(
+      list.body.some((x: unknown) => (x as { id: string }).id === id),
+    ).toBe(true);
 
     // second user cannot touch the first user's account
     const b = await authedClient();
@@ -87,7 +89,9 @@ describe('Finance e2e', () => {
       .get('/bank-accounts')
       .set('Cookie', b.cookies)
       .expect(200);
-    expect(otherList.body.some((x: any) => x.id === id)).toBe(false);
+    expect(
+      otherList.body.some((x: unknown) => (x as { id: string }).id === id),
+    ).toBe(false);
     await request(a.s)
       .put(`/bank-accounts/${id}`)
       .set('Cookie', b.cookies)

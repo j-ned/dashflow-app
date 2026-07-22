@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { SharedAccessService } from './shared-access.service';
+import type { DrizzleDB } from '../../db/drizzle.constants';
+import type { Mailer } from '../../mail/mailer';
 
 describe('SharedAccessService', () => {
   let svc: SharedAccessService;
-  let mockDb: any;
-  let mockMailer: any;
+  let mockDb;
+  let mockMailer;
 
   beforeEach(() => {
     mockMailer = {
@@ -37,7 +39,10 @@ describe('SharedAccessService', () => {
       select: selectFn,
     };
 
-    svc = new SharedAccessService(mockDb, mockMailer);
+    svc = new SharedAccessService(
+      mockDb as unknown as DrizzleDB,
+      mockMailer as unknown as Mailer,
+    );
   });
 
   describe('create', () => {

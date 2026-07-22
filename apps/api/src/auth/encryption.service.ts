@@ -169,7 +169,7 @@ export class EncryptionService {
   async resetPasswordWithRecovery(
     dto: ResetWithRecoveryDto,
   ): Promise<Result<null>> {
-    const valid = await this.repo.findValidCode(dto.email, dto.code);
+    const valid = await this.repo.findValidCode(dto.email, dto.code, 'reset');
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
@@ -181,7 +181,7 @@ export class EncryptionService {
       patch.wrappedMasterKey = dto.newWrappedMasterKey;
     }
     await this.repo.updateUser(user.id, patch);
-    await this.repo.deleteCodes(dto.email);
+    await this.repo.deleteCodes(dto.email, 'reset');
     return ok(null);
   }
 

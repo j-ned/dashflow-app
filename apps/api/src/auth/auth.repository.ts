@@ -4,6 +4,7 @@ import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
 import { users, verificationCodes } from '../db/schema';
 
 type User = typeof users.$inferSelect;
+export type VerificationCodePurpose = 'verification' | 'reset';
 
 @Injectable()
 export class AuthRepository {
@@ -71,15 +72,24 @@ export class AuthRepository {
     email: string,
     code: string,
     expiresAt: Date,
+    purpose: VerificationCodePurpose,
   ): Promise<void> {
     await this.db
       .delete(verificationCodes)
-      .where(eq(verificationCodes.email, email));
-    await this.db.insert(verificationCodes).values({ email, code, expiresAt });
+      .where(
+        and(
+          eq(verificationCodes.email, email),
+          eq(verificationCodes.purpose, purpose),
+        ),
+      );
+    await this.db
+      .insert(verificationCodes)
+      .values({ email, code, expiresAt, purpose });
   }
   findValidCode(
     email: string,
     code: string,
+    purpose: VerificationCodePurpose,
   ): Promise<{ id: string } | undefined> {
     return this.db
       .select({ id: verificationCodes.id })
@@ -88,16 +98,25 @@ export class AuthRepository {
         and(
           eq(verificationCodes.email, email),
           eq(verificationCodes.code, code),
+          eq(verificationCodes.purpose, purpose),
           gt(verificationCodes.expiresAt, new Date()),
         ),
       )
       .limit(1)
       .then((r) => r[0]);
   }
-  async deleteCodes(email: string): Promise<void> {
+  async deleteCodes(
+    email: string,
+    purpose: VerificationCodePurpose,
+  ): Promise<void> {
     await this.db
       .delete(verificationCodes)
-      .where(eq(verificationCodes.email, email));
+      .where(
+        and(
+          eq(verificationCodes.email, email),
+          eq(verificationCodes.purpose, purpose),
+        ),
+      );
   }
 
   async deleteUser(userId: string): Promise<void> {

@@ -2,10 +2,11 @@ import { Controller, UseGuards } from '@nestjs/common';
 import { PractitionersService } from './practitioners.service';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { parseBody } from '../../common/parse-body';
-import { excludeSystemFields } from '../../common/crud/exclude-system-fields';
 import {
   createPractitionerSchema,
   createEncryptedPractitionerSchema,
+  updatePractitionerSchema,
+  updateEncryptedPractitionerSchema,
 } from './dto/practitioner.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
@@ -40,8 +41,21 @@ export class PractitionersController extends OwnedCrudController<unknown> {
   protected toUpdatePatch(
     body: Record<string, unknown>,
   ): Record<string, unknown> {
-    return body.encryptedData
-      ? { encryptedData: body.encryptedData }
-      : excludeSystemFields(body);
+    if (body.encryptedData) {
+      const { encryptedData } = parseBody(
+        updateEncryptedPractitionerSchema,
+        body,
+      );
+      return { encryptedData };
+    }
+    const d = parseBody(updatePractitionerSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.name !== undefined) patch.name = d.name;
+    if (d.type !== undefined) patch.type = d.type;
+    if (d.phone !== undefined) patch.phone = d.phone;
+    if (d.email !== undefined) patch.email = d.email;
+    if (d.address !== undefined) patch.address = d.address;
+    if (d.bookingUrl !== undefined) patch.bookingUrl = d.bookingUrl;
+    return patch;
   }
 }

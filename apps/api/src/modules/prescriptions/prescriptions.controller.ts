@@ -24,9 +24,12 @@ import {
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { parseBody } from '../../common/parse-body';
+import { assertValidUpload } from '../../common/files/validate-upload';
 import {
   createPrescriptionSchema,
   createEncryptedPrescriptionSchema,
+  updatePrescriptionSchema,
+  updateEncryptedPrescriptionSchema,
 } from './dto/prescription.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -69,18 +72,27 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      if (body.appointmentId !== undefined)
-        patch.appointmentId = body.appointmentId ?? null;
-      if (body.practitionerId !== undefined)
-        patch.practitionerId = body.practitionerId ?? null;
-      if (body.patientId !== undefined) patch.patientId = body.patientId;
+      const d = parseBody(updateEncryptedPrescriptionSchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.appointmentId !== undefined)
+        patch.appointmentId = d.appointmentId ?? null;
+      if (d.practitionerId !== undefined)
+        patch.practitionerId = d.practitionerId ?? null;
+      if (d.patientId !== undefined) patch.patientId = d.patientId;
       return patch;
     }
-    const { id: _i, userId: _u, ...rest } = body;
-    return rest;
+    const d = parseBody(updatePrescriptionSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.appointmentId !== undefined)
+      patch.appointmentId = d.appointmentId ?? null;
+    if (d.practitionerId !== undefined)
+      patch.practitionerId = d.practitionerId ?? null;
+    if (d.patientId !== undefined) patch.patientId = d.patientId;
+    if (d.issuedDate !== undefined) patch.issuedDate = d.issuedDate;
+    if (d.validUntil !== undefined) patch.validUntil = d.validUntil;
+    if (d.documentUrl !== undefined) patch.documentUrl = d.documentUrl;
+    if (d.notes !== undefined) patch.notes = d.notes;
+    return patch;
   }
 
   // Static route must come before /:id to avoid param capture
@@ -105,6 +117,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
+    await assertValidUpload(file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.prescriptionKey(u.id, id, file.mimetype);
@@ -124,6 +137,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     const obj = await this.storage.getStream(presc.documentUrl);
     if (!obj) throw new NotFoundException('Document introuvable');
     res.setHeader('Content-Type', obj.contentType);
+    res.setHeader('Content-Disposition', 'attachment');
     obj.stream.pipe(res);
   }
 

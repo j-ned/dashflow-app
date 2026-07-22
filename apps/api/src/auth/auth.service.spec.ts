@@ -4,6 +4,8 @@ import * as OTPAuth from 'otpauth';
 import { AuthService } from './auth.service';
 import { TwoFactorService } from './two-factor.service';
 import type { Result } from './auth.result';
+import type { AuthRepository } from './auth.repository';
+import type { Mailer } from '../mail/mailer';
 
 const repo = () => ({
   findByEmail: vi.fn(),
@@ -15,7 +17,7 @@ const repo = () => ({
   deleteCodes: vi.fn(),
 });
 // `sendAccountExists` est la NOUVELLE méthode du Mailer (point 1 du spec) : le mock l'expose
-// pour que le service puisse l'appeler une fois implémentée (le mock est casté `as any`).
+// pour que le service puisse l'appeler une fois implémentée (le mock est casté via `unknown`).
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
   sendPasswordResetCode: vi.fn(),
@@ -29,7 +31,11 @@ describe('AuthService', () => {
   beforeEach(() => {
     r = repo();
     m = mailer();
-    svc = new AuthService(r as any, m as any, new TwoFactorService());
+    svc = new AuthService(
+      r as unknown as AuthRepository,
+      m as unknown as Mailer,
+      new TwoFactorService(),
+    );
   });
   afterEach(() => vi.restoreAllMocks());
 
@@ -232,7 +238,11 @@ describe('AuthService', () => {
   it('enableTotp : code valide → totpEnabled set', async () => {
     const tf = new TwoFactorService();
     const { secret } = tf.generateSecret('a@b.com');
-    svc = new AuthService(r as any, m as any, tf);
+    svc = new AuthService(
+      r as unknown as AuthRepository,
+      m as unknown as Mailer,
+      tf,
+    );
     r.findById.mockResolvedValue({
       id: 'u1',
       totpSecret: secret,
@@ -254,7 +264,11 @@ describe('AuthService', () => {
   it('enableTotp : code invalide → fail', async () => {
     const tf = new TwoFactorService();
     const { secret } = tf.generateSecret('a@b.com');
-    svc = new AuthService(r as any, m as any, tf);
+    svc = new AuthService(
+      r as unknown as AuthRepository,
+      m as unknown as Mailer,
+      tf,
+    );
     r.findById.mockResolvedValue({
       id: 'u1',
       totpSecret: secret,

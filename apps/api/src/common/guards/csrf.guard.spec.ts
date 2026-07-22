@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
 import { CsrfGuard } from './csrf.guard';
 import { CSRF_COOKIE } from '../../auth/cookie';
 
 function ctx(cookie?: string, header?: string) {
-  const req: any = {
+  const req = {
     cookies: cookie ? { [CSRF_COOKIE]: cookie } : {},
     headers: header ? { 'x-csrf-token': header } : {},
   };
-  return { switchToHttp: () => ({ getRequest: () => req }) } as any;
+  return {
+    switchToHttp: () => ({ getRequest: () => req }),
+  } as unknown as ExecutionContext;
 }
 
 describe('CsrfGuard', () => {

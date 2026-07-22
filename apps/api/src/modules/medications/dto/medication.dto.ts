@@ -37,6 +37,25 @@ export const createEncryptedMedicationSchema = z.object({
   encryptedData: z.string().min(1),
 });
 
+export const updateMedicationSchema = z.object({
+  prescriptionId: optionalUuid,
+  patientId: uuid.optional(),
+  name: z.string().min(1).max(255).optional(),
+  type: z.enum(MEDICATION_TYPES).optional(),
+  dosage: z.string().min(1).max(100).optional(),
+  quantity: z.number().int().min(0).optional(),
+  dailyRate: amount.optional(),
+  startDate: dateStr.optional(),
+  alertDaysBefore: z.number().int().min(0).max(90).optional(),
+  skipDays: z.array(z.number().int().min(0).max(6)).optional(),
+});
+
+export const updateEncryptedMedicationSchema = z.object({
+  prescriptionId: optionalUuid,
+  patientId: uuid.optional(),
+  encryptedData: z.string().min(1),
+});
+
 export const refillMedicationSchema = z.object({
   quantity: z.number().int().positive('La quantite doit etre positive'),
 });

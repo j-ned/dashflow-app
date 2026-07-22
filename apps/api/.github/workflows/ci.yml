@@ -69,5 +69,8 @@ jobs:
       - name: Migrate DB
         run: pnpm db:migrate # applique les migrations drizzle sur la base éphémère
 
+      - name: Integration tests
+        run: pnpm test:integration # filet anti-régression migration (schema-integrity, ...)
+
       - name: E2E tests
         run: pnpm test:e2e # vitest e2e — boote le vrai AppModule contre Postgres

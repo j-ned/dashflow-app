@@ -22,3 +22,20 @@ export const createEncryptedPrescriptionSchema = z.object({
   patientId: uuid,
   encryptedData: z.string().min(1),
 });
+
+export const updatePrescriptionSchema = z.object({
+  appointmentId: optionalUuid,
+  practitionerId: optionalUuid,
+  patientId: uuid.optional(),
+  issuedDate: dateStr.optional(),
+  validUntil: dateStr.nullable().optional(),
+  documentUrl: z.string().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+export const updateEncryptedPrescriptionSchema = z.object({
+  appointmentId: optionalUuid,
+  practitionerId: optionalUuid,
+  patientId: uuid.optional(),
+  encryptedData: z.string().min(1),
+});

@@ -30,3 +30,19 @@ export const createEncryptedDocumentSchema = z.object({
   practitionerId: optionalUuid,
   encryptedData: z.string().min(1),
 });
+
+export const updateDocumentSchema = z.object({
+  patientId: uuid.optional(),
+  practitionerId: optionalUuid,
+  type: z.enum(DOCUMENT_TYPES).optional(),
+  title: z.string().min(1).max(255).optional(),
+  date: dateStr.optional(),
+  fileUrl: z.string().nullable().optional(),
+  notes: z.string().max(2000).nullable().optional(),
+});
+
+export const updateEncryptedDocumentSchema = z.object({
+  patientId: uuid.optional(),
+  practitionerId: optionalUuid,
+  encryptedData: z.string().min(1),
+});

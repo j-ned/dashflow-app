@@ -18,6 +18,8 @@ import { parseBody } from '../../common/parse-body';
 import {
   createAppointmentSchema,
   createEncryptedAppointmentSchema,
+  updateAppointmentSchema,
+  updateEncryptedAppointmentSchema,
   updateAppointmentStatusSchema,
 } from './dto/appointment.dto';
 
@@ -60,16 +62,23 @@ export class AppointmentsController extends OwnedCrudController<unknown> {
     body: Record<string, unknown>,
   ): Record<string, unknown> {
     if (body.encryptedData) {
-      const patch: Record<string, unknown> = {
-        encryptedData: body.encryptedData,
-      };
-      if (body.patientId !== undefined) patch.patientId = body.patientId;
-      if (body.practitionerId !== undefined)
-        patch.practitionerId = body.practitionerId;
+      const d = parseBody(updateEncryptedAppointmentSchema, body);
+      const patch: Record<string, unknown> = { encryptedData: d.encryptedData };
+      if (d.patientId !== undefined) patch.patientId = d.patientId;
+      if (d.practitionerId !== undefined)
+        patch.practitionerId = d.practitionerId;
       return patch;
     }
-    const { id: _i, userId: _u, ...rest } = body;
-    return rest;
+    const d = parseBody(updateAppointmentSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.patientId !== undefined) patch.patientId = d.patientId;
+    if (d.practitionerId !== undefined) patch.practitionerId = d.practitionerId;
+    if (d.date !== undefined) patch.date = d.date;
+    if (d.time !== undefined) patch.time = d.time;
+    if (d.status !== undefined) patch.status = d.status;
+    if (d.reason !== undefined) patch.reason = d.reason;
+    if (d.outcome !== undefined) patch.outcome = d.outcome;
+    return patch;
   }
 
   @UseGuards(CsrfGuard)

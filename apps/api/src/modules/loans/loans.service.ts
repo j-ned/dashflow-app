@@ -5,8 +5,7 @@ import { loans, loanTransactions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { addMoney } from '../../common/money';
 import { today } from '../../common/today';
-
-type Loan = typeof loans.$inferSelect;
+import type { Loan } from './loan.response';
 
 @Injectable()
 export class LoansService extends OwnedCrudService<Loan> {

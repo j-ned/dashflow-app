@@ -1,8 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
-import { OwnedCrudService } from './owned-crud.service';
+import { OwnedCrudService, type OwnedTable } from './owned-crud.service';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 
-function fakeDb(rows: any[]) {
-  const chain: any = {
+function fakeDb(rows: unknown[]) {
+  const chain = {
     _rows: rows,
     select: vi.fn(() => chain),
     from: vi.fn(() => chain),
@@ -17,16 +18,16 @@ function fakeDb(rows: any[]) {
   };
   return chain;
 }
-const table = { id: 'idcol', userId: 'usercol' } as any;
+const table = { id: 'idcol', userId: 'usercol' } as unknown as OwnedTable;
 
 describe('OwnedCrudService', () => {
   it('getOne renvoie undefined si non possédé', async () => {
-    const svc = new OwnedCrudService(fakeDb([]), table);
+    const svc = new OwnedCrudService(fakeDb([]) as unknown as DrizzleDB, table);
     expect(await svc.getOne('u1', 'x')).toBeUndefined();
   });
   it('create injecte userId', async () => {
     const db = fakeDb([{ id: 'r1' }]);
-    const svc = new OwnedCrudService(db, table);
+    const svc = new OwnedCrudService(db as unknown as DrizzleDB, table);
     const row = await svc.create('u1', { name: 'A' });
     expect(db.values).toHaveBeenCalledWith({ name: 'A', userId: 'u1' });
     expect(row).toEqual({ id: 'r1' });
