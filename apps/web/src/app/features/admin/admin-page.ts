@@ -24,7 +24,9 @@ const SEARCH_DEBOUNCE_MS = 250;
         </h1>
       </header>
 
-      <dl class="mb-8 flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-border bg-surface p-4">
+      <dl
+        class="mb-8 flex flex-wrap gap-x-8 gap-y-3 rounded-lg border border-border bg-surface p-4"
+      >
         <div class="flex flex-col">
           <dt class="font-mono text-xs uppercase tracking-[0.18em] text-text-muted">
             {{ 'admin.metrics.totalUsers' | transloco }}

@@ -23,6 +23,7 @@ import {
 } from '../../components/prescription-form/prescription-form';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 
 @Component({
   selector: 'app-prescriptions',
@@ -67,9 +68,9 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
                 <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-cyan/10">
                   <app-icon name="file-text" size="16" class="text-ib-cyan" />
                 </div>
-                <h3 class="font-semibold text-text-primary">{{
-                  presc.patientName ?? ('medical.dashboard.unknownPractitioner' | transloco)
-                }}</h3>
+                <h3 class="font-semibold text-text-primary">
+                  {{ presc.patientName ?? ('medical.dashboard.unknownPractitioner' | transloco) }}
+                </h3>
               </div>
               @if (isExpired(presc)) {
                 <span
@@ -317,9 +318,7 @@ export class Prescriptions {
 
   protected async openDocument(id: string) {
     const blob = await lastValueFrom(this.prescriptionGw.downloadDocument(id));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    openBlobInNewTab(blob);
   }
 
   protected async uploadDocument(prescriptionId: string, event: Event) {

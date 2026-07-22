@@ -62,7 +62,9 @@ const COLUMN_COUNT = 4;
                 <span
                   class="inline-flex items-center rounded-sm border border-border px-2 py-0.5 text-[11px] font-semibold leading-tight"
                   [class]="
-                    u.role === 'admin' ? 'border-ib-blue-20 bg-ib-blue-10 text-ib-blue' : 'text-text-muted'
+                    u.role === 'admin'
+                      ? 'border-ib-blue-20 bg-ib-blue-10 text-ib-blue'
+                      : 'text-text-muted'
                   "
                 >
                   {{ 'admin.role.' + u.role | transloco }}

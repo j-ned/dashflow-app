@@ -41,6 +41,12 @@ describe('ProfileSection', () => {
     expect((fixture.nativeElement as HTMLElement).textContent).toContain('A');
   });
 
+  it("l'avatar porte crossorigin=use-credentials (régression : /auth/avatar exige désormais le cookie de session, cross-origin sans cet attribut)", () => {
+    const { fixture } = mount({ avatarUrl: () => 'https://api-dashflow.example/auth/avatar/u1' });
+    const img = (fixture.nativeElement as HTMLElement).querySelector('img');
+    expect(img?.getAttribute('crossorigin')).toBe('use-credentials');
+  });
+
   it('saveProfile appelle auth.updateProfile et passe le form pristine', async () => {
     const { fixture, updateProfile } = mount();
     const cmp = fixture.componentInstance as unknown as {

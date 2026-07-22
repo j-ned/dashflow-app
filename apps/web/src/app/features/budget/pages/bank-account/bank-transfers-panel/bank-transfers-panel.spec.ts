@@ -55,3 +55,9 @@ describe('BankTransfersPanel — badge auto', () => {
     expect(el.querySelector('[data-testid="auto-badge"]')).not.toBeNull();
   });
 });
+
+describe('BankTransfersPanel — badge date de fin (régression pipe imbriqué dans transloco)', () => {
+  it("n'explose pas quand un virement récurrent a une endDate", () => {
+    expect(() => mount([re({ endDate: '2026-12-31' })])).not.toThrow();
+  });
+});

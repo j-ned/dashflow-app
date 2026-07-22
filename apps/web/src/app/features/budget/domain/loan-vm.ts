@@ -13,7 +13,7 @@ export type LoanVM = {
   readonly status: LoanStatus;
 };
 
-export const STATUS_RANK: Record<LoanStatus, number> = {
+const STATUS_RANK: Record<LoanStatus, number> = {
   overdue: 0,
   dueSoon: 1,
   ongoing: 2,

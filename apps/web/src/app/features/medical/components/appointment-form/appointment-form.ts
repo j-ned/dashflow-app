@@ -95,8 +95,7 @@ const APPOINTMENT_STATUSES: AppointmentStatus[] = [
             }
           </select>
           @if (
-            appointmentForm.practitionerId().touched() &&
-            appointmentForm.practitionerId().invalid()
+            appointmentForm.practitionerId().touched() && appointmentForm.practitionerId().invalid()
           ) {
             @for (err of appointmentForm.practitionerId().errors(); track err.message) {
               <small class="error" role="alert">{{ err.message | transloco }}</small>

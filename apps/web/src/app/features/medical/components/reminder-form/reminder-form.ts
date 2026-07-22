@@ -37,7 +37,12 @@ const EMPTY_MODEL: ReminderModel = {
               {{ 'medical.reminder.form.type' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="rem-type" [formField]="reminderForm.type" aria-required="true" class="form-select">
+            <select
+              id="rem-type"
+              [formField]="reminderForm.type"
+              aria-required="true"
+              class="form-select"
+            >
               <option value="email">{{ 'medical.reminder.typeEmail' | transloco }}</option>
               <option value="ical">{{ 'medical.reminder.typeIcal' | transloco }}</option>
             </select>

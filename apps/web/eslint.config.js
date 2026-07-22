@@ -69,7 +69,7 @@ module.exports = defineConfig([
         {
           selector: 'ExportDefaultDeclaration',
           message:
-            "export default est réservé aux pages routées (*-page.ts). Tout autre symbole " +
+            'export default est réservé aux pages routées (*-page.ts). Tout autre symbole ' +
             '(composant non-page, service, store, directive, pipe, InjectionToken, const, type) ' +
             'doit être un export nommé.',
         },

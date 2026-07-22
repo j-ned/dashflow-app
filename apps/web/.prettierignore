@@ -1,0 +1,4 @@
+# Outillage vendoré (agents/skills AAK, specs superpowers) : géré par /aak-sync et les skills
+# dédiées, jamais par le formatter applicatif -- sinon divergence bruyante avec la source vendorée.
+.claude/
+.superpowers/

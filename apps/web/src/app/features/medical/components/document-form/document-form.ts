@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { formatFileSize } from '@shared/forms/format-file-size';
@@ -80,7 +87,11 @@ const DOCUMENT_TYPES: DocumentType[] = [
           <label for="doc-practitioner" class="form-label">{{
             'medical.document.form.practitioner' | transloco
           }}</label>
-          <select id="doc-practitioner" [formField]="documentForm.practitionerId" class="form-select">
+          <select
+            id="doc-practitioner"
+            [formField]="documentForm.practitionerId"
+            class="form-select"
+          >
             <option value="">
               {{ 'medical.document.form.practitionerPlaceholder' | transloco }}
             </option>
@@ -98,7 +109,12 @@ const DOCUMENT_TYPES: DocumentType[] = [
               {{ 'medical.document.form.type' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="doc-type" [formField]="documentForm.type" aria-required="true" class="form-select">
+            <select
+              id="doc-type"
+              [formField]="documentForm.type"
+              aria-required="true"
+              class="form-select"
+            >
               @for (t of documentTypes; track t) {
                 <option [value]="t">{{ 'medical.document.types.' + t | transloco }}</option>
               }
@@ -148,7 +164,12 @@ const DOCUMENT_TYPES: DocumentType[] = [
           <label for="doc-notes" class="form-label">{{
             'medical.document.form.notes' | transloco
           }}</label>
-          <textarea id="doc-notes" [formField]="documentForm.notes" rows="2" class="form-input"></textarea>
+          <textarea
+            id="doc-notes"
+            [formField]="documentForm.notes"
+            rows="2"
+            class="form-input"
+          ></textarea>
         </div>
 
         <!-- Drag & drop file -->

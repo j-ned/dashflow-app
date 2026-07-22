@@ -42,9 +42,7 @@ describe('adminGuard', () => {
   function runGuard() {
     return TestBed.runInInjectionContext(() =>
       adminGuard(EMPTY_ROUTE, SEGMENTS, MATCH_SNAPSHOT),
-    ) as Promise<
-      boolean | UrlTree
-    >;
+    ) as Promise<boolean | UrlTree>;
   }
 
   it('retourne true pour un admin', async () => {

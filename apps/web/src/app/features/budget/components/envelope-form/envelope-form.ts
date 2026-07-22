@@ -87,7 +87,12 @@ const ENVELOPE_COLORS = [
             {{ 'budget.envelope.form.type' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select id="env-type" [formField]="envelopeForm.type" aria-required="true" class="form-select">
+          <select
+            id="env-type"
+            [formField]="envelopeForm.type"
+            aria-required="true"
+            class="form-select"
+          >
             <option value="épargne">{{ 'budget.envelope.form.typeSavings' | transloco }}</option>
             <option value="impôts">{{ 'budget.envelope.form.typeTaxes' | transloco }}</option>
             <option value="équipement">

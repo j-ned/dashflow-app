@@ -49,7 +49,10 @@ describe('immediatePostingFor', () => {
     });
 
     it('When c’est une dépense due Then poste avec direction expense', () => {
-      const posting = immediatePostingFor(entry({ type: 'expense', dayOfMonth: 5, amount: 800 }), CTX);
+      const posting = immediatePostingFor(
+        entry({ type: 'expense', dayOfMonth: 5, amount: 800 }),
+        CTX,
+      );
 
       expect(posting).toMatchObject({ direction: 'expense', date: '2026-06-05', amount: 800 });
     });
@@ -65,9 +68,7 @@ describe('immediatePostingFor', () => {
     });
 
     it('When endDate est antérieure au mois de post Then null', () => {
-      expect(
-        immediatePostingFor(entry({ dayOfMonth: 5, endDate: '2026-05-31' }), CTX),
-      ).toBeNull();
+      expect(immediatePostingFor(entry({ dayOfMonth: 5, endDate: '2026-05-31' }), CTX)).toBeNull();
     });
 
     it('When endDate couvre le mois de post Then poste normalement', () => {
@@ -95,15 +96,13 @@ describe('immediatePostingFor', () => {
     );
 
     it('When date == today Then l’échéance est due (borne inclusive)', () => {
-      expect(
-        immediatePostingFor(entry({ dayOfMonth: null, date: '2026-06-10' }), CTX)?.date,
-      ).toBe('2026-06-10');
+      expect(immediatePostingFor(entry({ dayOfMonth: null, date: '2026-06-10' }), CTX)?.date).toBe(
+        '2026-06-10',
+      );
     });
 
     it('When date > today Then null (échéance future)', () => {
-      expect(
-        immediatePostingFor(entry({ dayOfMonth: null, date: '2026-06-15' }), CTX),
-      ).toBeNull();
+      expect(immediatePostingFor(entry({ dayOfMonth: null, date: '2026-06-15' }), CTX)).toBeNull();
     });
 
     it('When date null et dayOfMonth null Then null', () => {
@@ -111,10 +110,7 @@ describe('immediatePostingFor', () => {
     });
 
     it('When date d’un mois passé Then month est dérivé de la date, pas de currentMonth', () => {
-      const posting = immediatePostingFor(
-        entry({ dayOfMonth: null, date: '2026-05-20' }),
-        CTX,
-      );
+      const posting = immediatePostingFor(entry({ dayOfMonth: null, date: '2026-05-20' }), CTX);
 
       expect(posting).toMatchObject({ month: '2026-05', date: '2026-05-20' });
     });

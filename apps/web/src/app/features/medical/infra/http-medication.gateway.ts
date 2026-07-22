@@ -66,11 +66,8 @@ export class HttpMedicationGateway implements MedicationGateway {
   }
 
   refill(id: string, quantity: number): Observable<Medication> {
-    return mutateEncrypted(
-      { quantity },
-      CLEARTEXT_KEYS,
-      this.crypto.getMasterKey(),
-      (body) => this.api.patch<ApiRow>(`/medications/${id}/refill`, body),
+    return mutateEncrypted({ quantity }, CLEARTEXT_KEYS, this.crypto.getMasterKey(), (body) =>
+      this.api.patch<ApiRow>(`/medications/${id}/refill`, body),
     );
   }
 

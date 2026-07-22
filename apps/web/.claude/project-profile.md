@@ -1,9 +1,9 @@
-# Profil-projet jned-team — dash-flow
+# Profil-projet AAK — dash-flow
 
-> Généré par `/jned-init-profile`. Adapté à la main si besoin.
-> Les 5 agents jned-team (`architect`, `qa`, `implementer`, `reviewer`, `auditor`)
-> lisent ce fichier à chaque invocation.
-> Dernier rafraîchissement : 2026-07-04.
+> Généré par `/aak-init-profile`. Adapté à la main si besoin.
+> Les agents AAK `angular-team` (`architect`, `qa`, `angular-expert`, `code-reviewer`,
+> `intake-auditor`) lisent ce fichier à chaque invocation.
+> Dernier rafraîchissement : 2026-07-22.
 
 ## Projet & langue
 

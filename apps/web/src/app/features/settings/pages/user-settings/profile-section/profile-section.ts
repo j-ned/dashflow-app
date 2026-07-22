@@ -40,6 +40,7 @@ type ProfileFormShape = {
                 <img
                   [src]="avatarPreview() || auth.avatarUrl()"
                   [alt]="'settings.profile.avatarAlt' | transloco"
+                  crossorigin="use-credentials"
                   class="w-24 h-24 rounded-full object-cover border-4 border-surface shadow-sm"
                 />
                 <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->

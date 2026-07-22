@@ -101,10 +101,10 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 
 ```mermaid
 graph LR
-  A[Mot de passe utilisateur] -->|PBKDF2 100k itérations| B[Clé de chiffrement dérivée KEK]
+  A[Mot de passe utilisateur] -->|PBKDF2 600k itérations| B[Clé de chiffrement dérivée KEK]
   B -->|AES-256-GCM| C[Clé de données DEK chiffrée]
   D[Données métier] -->|AES-256-GCM avec DEK| E[Payload chiffré]
-  E -->|HTTPS| F[(PostgreSQL — payload opaque)]
+  E -->|HTTPS| F[(PostgreSQL - payload opaque)]
   C -->|HTTPS| F
 ```
 
@@ -253,7 +253,7 @@ git clone https://github.com/j-ned/dash-flow.git
 cd dash-flow
 pnpm install
 pnpm start
-# → http://localhost:4200 (proxy /api → NestJS :3001)
+# → http://localhost:4200 (appelle directement NestJS sur http://localhost:3001, cf. apiUrl ci-dessous)
 ```
 
 ### Backend (repo séparé)
@@ -264,7 +264,7 @@ make db-up          # démarre PostgreSQL via Docker/Podman
 pnpm start:dev      # → http://localhost:3001
 ```
 
-Le frontend proxifie `/api` vers `:3001` via `proxy.conf.json` (Angular dev server). Aucune variable d'environnement n'est requise côté Angular.
+Le frontend appelle directement le backend via une URL absolue (`apiUrl: 'http://localhost:3001'` dans `src/environments/environment.ts`, pas de proxy dev). Le backend doit donc autoriser `http://localhost:4200` dans son CORS (`CORS_ORIGIN`, cf. `nest-dashflow-app`). Aucune variable d'environnement n'est requise côté Angular.
 
 ### Docker (image frontend uniquement)
 
@@ -273,7 +273,7 @@ docker build -t dashflow-front .
 docker run -p 80:80 dashflow-front
 ```
 
-> Le déploiement prod complet (proxy `/api` → NestJS) sera configuré dans Dokploy avec 2 services séparés.
+> Prod : 2 services Dokploy séparés, pas de proxy — le frontend (`dashflow.nedellec-julien.fr`) appelle directement le backend sur son propre sous-domaine (`api-dashflow.nedellec-julien.fr`), autorisé via CORS.
 
 ---
 

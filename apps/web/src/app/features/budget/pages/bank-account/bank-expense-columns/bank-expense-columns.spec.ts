@@ -84,3 +84,9 @@ describe('BankExpenseColumns — versement épargne', () => {
     expect(fixture.nativeElement.querySelector('[data-testid="savings-subtotal"]')).toBeNull();
   });
 });
+
+describe('BankExpenseColumns — badge date de fin (régression pipe imbriqué dans transloco)', () => {
+  it("n'explose pas quand une dépense récurrente a une endDate", () => {
+    expect(() => mount([{ ...EXPENSE, endDate: '2026-12-31' }], 0)).not.toThrow();
+  });
+});

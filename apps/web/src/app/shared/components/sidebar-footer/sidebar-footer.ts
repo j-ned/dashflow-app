@@ -20,6 +20,7 @@ import { Toaster } from '@shared/components/toast/toast';
             <img
               [src]="auth.avatarUrl()"
               [alt]="auth.displayName()"
+              crossorigin="use-credentials"
               class="w-8 h-8 rounded-full object-cover border border-border shrink-0"
             />
             <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->
@@ -62,6 +63,7 @@ import { Toaster } from '@shared/components/toast/toast';
               <img
                 [src]="auth.avatarUrl()"
                 [alt]="auth.displayName()"
+                crossorigin="use-credentials"
                 class="w-8 h-8 rounded-full object-cover border border-border"
               />
               <!-- eslint-enable @angular-eslint/template/prefer-ngsrc -->

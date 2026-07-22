@@ -15,7 +15,9 @@ import { LocaleThemeToggle } from '@shared/components/locale-theme-toggle/locale
       class="sticky top-0 z-50 border-b border-border bg-canvas"
       [attr.aria-label]="'landing.nav.ariaLabel' | transloco"
     >
-      <div class="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
+      <div
+        class="relative mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6"
+      >
         <a
           routerLink="/"
           class="inline-flex items-center gap-2.5 rounded-md outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas"
@@ -48,7 +50,9 @@ import { LocaleThemeToggle } from '@shared/components/locale-theme-toggle/locale
           class="-mr-1 inline-flex min-h-11 min-w-11 items-center justify-center rounded-md text-text-muted transition-colors hover:bg-hover hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-canvas sm:hidden"
           [attr.aria-expanded]="menuOpen()"
           aria-controls="landing-mobile-menu"
-          [attr.aria-label]="(menuOpen() ? 'landing.nav.closeMenu' : 'landing.nav.openMenu') | transloco"
+          [attr.aria-label]="
+            (menuOpen() ? 'landing.nav.closeMenu' : 'landing.nav.openMenu') | transloco
+          "
           (click)="toggleMenu()"
         >
           @if (menuOpen()) {

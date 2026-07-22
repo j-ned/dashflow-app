@@ -18,6 +18,7 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { DocumentForm, DocumentSubmitData } from '../../components/document-form/document-form';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { Icon } from '@shared/components/icon/icon';
 
 @Component({
@@ -291,9 +292,7 @@ export class Documents {
 
   protected async openFile(id: string) {
     const blob = await lastValueFrom(this.documentGw.downloadFile(id));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    openBlobInNewTab(blob);
   }
 
   protected async uploadFile(documentId: string, event: Event) {

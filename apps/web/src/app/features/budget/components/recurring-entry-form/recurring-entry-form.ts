@@ -383,7 +383,11 @@ const EMPTY_MODEL: RecurringEntryModel = {
           <label
             class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
           >
-            <input type="checkbox" [formField]="entryForm.autoPost" class="mt-0.5 h-4 w-4 accent-ib-green" />
+            <input
+              type="checkbox"
+              [formField]="entryForm.autoPost"
+              class="mt-0.5 h-4 w-4 accent-ib-green"
+            />
             <span class="text-sm">
               <span class="font-medium text-text-primary">{{
                 'budget.recurringForm.autoPost' | transloco

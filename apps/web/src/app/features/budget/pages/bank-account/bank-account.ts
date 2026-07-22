@@ -28,6 +28,7 @@ import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
 import { computeForecastDelta } from '../../domain/forecast-delta';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
+import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
@@ -948,9 +949,7 @@ export class BankAccount {
 
   protected async openPayslipById(id: string) {
     const blob = await lastValueFrom(this.entryGateway.downloadPayslip(id));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    openBlobInNewTab(blob);
   }
 
   protected async deletePayslip() {

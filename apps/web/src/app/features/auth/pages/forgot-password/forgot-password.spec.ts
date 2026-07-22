@@ -3,6 +3,7 @@ import { TranslocoService } from '@jsverse/transloco';
 import { Observable, of, throwError } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { AuthStore } from '../../domain/auth.store';
 import { ForgotPassword } from './forgot-password';
 
@@ -63,8 +64,10 @@ function makeComponent(
     crypto?: Partial<CryptoStoreMock>;
     apiPatch?: () => Observable<unknown>;
     apiPost?: () => Observable<unknown>;
+    confirmed?: boolean;
   } = {},
 ) {
+  const confirmService = { confirm: vi.fn(() => Promise.resolve(opts.confirmed ?? true)) };
   const auth: AuthStoreMock = {
     forgotPassword: vi.fn(opts.forgotPassword ?? (() => Promise.resolve())),
     resetPassword: vi.fn(opts.resetPassword ?? (() => Promise.resolve())),
@@ -98,6 +101,7 @@ function makeComponent(
       { provide: CryptoStore, useValue: crypto },
       { provide: ApiClient, useValue: api },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
+      { provide: ConfirmService, useValue: confirmService },
     ],
   });
   TestBed.overrideComponent(ForgotPassword, { set: { template: '', imports: [] } });
@@ -107,6 +111,7 @@ function makeComponent(
     auth,
     crypto,
     api,
+    confirmService,
   };
 }
 
@@ -414,22 +419,22 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
     });
   });
 
-  describe('skipRecovery — confirmation native + wipe chiffrement', () => {
-    it('confirm refusé → return immédiat, aucun appel API', async () => {
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
-      const { cmp, api, auth } = makeComponent();
+  describe('skipRecovery — confirmation via ConfirmService (régression F008 : plus de confirm() natif) + wipe chiffrement', () => {
+    it('confirmation refusée → return immédiat, aucun appel API', async () => {
+      const { cmp, api, auth, confirmService } = makeComponent({ confirmed: false });
 
       await cmp.skipRecovery();
 
+      expect(confirmService.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({ variant: 'danger' }),
+      );
       expect(api.post).not.toHaveBeenCalled();
       expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
-      confirmSpy.mockRestore();
     });
 
-    it('confirm accepté → POST wipe-encryption, logout puis étape done', async () => {
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
-      const { cmp, api, auth } = makeComponent();
+    it('confirmation acceptée → POST wipe-encryption, logout puis étape done', async () => {
+      const { cmp, api, auth } = makeComponent({ confirmed: true });
 
       await cmp.skipRecovery();
 
@@ -438,12 +443,11 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.step()).toBe('done');
       expect(cmp.error()).toBe('');
       expect(cmp.loading()).toBe(false);
-      confirmSpy.mockRestore();
     });
 
-    it('confirm accepté mais wipe échoue → erreur wipeFailed, pas de logout', async () => {
-      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
+    it('confirmation acceptée mais wipe échoue → erreur wipeFailed, pas de logout', async () => {
       const { cmp, auth } = makeComponent({
+        confirmed: true,
         apiPost: () => throwError(() => new Error('boom')),
       });
 
@@ -452,7 +456,6 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.error()).toBe('auth.forgot.errors.wipeFailed');
       expect(cmp.loading()).toBe(false);
-      confirmSpy.mockRestore();
     });
   });
 });

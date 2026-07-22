@@ -36,4 +36,13 @@ describe('validate-decrypted', () => {
   it('validateOne throw quand invalide', () => {
     expect(() => validateOne(Schema, { id: 'a' }, { entity: 'Test' })).toThrow();
   });
+
+  it('ne logge jamais la valeur brute déchiffrée (defense-in-depth fuite Sentry via breadcrumb console)', () => {
+    const spy = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    validateList(Schema, [{ id: 'secret-medical-note', amount: 'NaN' }], { entity: 'Test' });
+    const [, loggedIssues] = spy.mock.calls[0] as [string, { code: string; path: PropertyKey[] }[]];
+    expect(JSON.stringify(loggedIssues)).not.toContain('secret-medical-note');
+    expect(loggedIssues[0]).toEqual({ code: 'invalid_type', path: ['amount'] });
+    spy.mockRestore();
+  });
 });

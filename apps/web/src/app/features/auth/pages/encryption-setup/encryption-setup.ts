@@ -1,5 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
+import * as Sentry from '@sentry/angular';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
@@ -8,6 +9,7 @@ import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '../../domain/auth.store';
 import { RecoveryKeyModal } from '../../components/recovery-key-modal/recovery-key-modal';
 import { EncryptionPassphraseModal } from '../../components/encryption-passphrase-modal/encryption-passphrase-modal';
+import { ConfirmPasswordModal } from '../../components/confirm-password-modal/confirm-password-modal';
 
 const CLEARTEXT_KEYS: Record<string, readonly string[]> = {
   bankAccounts: ['id', 'userId', 'createdAt'],
@@ -44,7 +46,7 @@ const API_PATHS: Record<string, string> = {
 @Component({
   selector: 'app-encryption-setup',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [RecoveryKeyModal, EncryptionPassphraseModal, TranslocoPipe],
+  imports: [RecoveryKeyModal, EncryptionPassphraseModal, ConfirmPasswordModal, TranslocoPipe],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
@@ -164,6 +166,8 @@ const API_PATHS: Record<string, string> = {
       />
 
       <app-encryption-passphrase-modal (passphraseSet)="onPassphraseSet($event)" />
+
+      <app-confirm-password-modal (confirmed)="onPasswordConfirmed($event)" />
     </main>
   `,
 })
@@ -176,6 +180,7 @@ export class EncryptionSetup {
 
   private readonly recoveryModal = viewChild.required(RecoveryKeyModal);
   private readonly passphraseModal = viewChild.required(EncryptionPassphraseModal);
+  private readonly confirmPasswordModal = viewChild.required(ConfirmPasswordModal);
 
   protected readonly step = signal<'init' | 'migrating' | 'done'>('init');
   protected readonly loading = signal(false);
@@ -190,7 +195,7 @@ export class EncryptionSetup {
     this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.preparing'));
   }
 
-  protected async startSetup(): Promise<void> {
+  protected startSetup(): void {
     const user = this.auth.user();
     if (!user) return;
 
@@ -199,16 +204,15 @@ export class EncryptionSetup {
       return;
     }
 
+    this.confirmPasswordModal().open();
+  }
+
+  protected async onPasswordConfirmed(password: string): Promise<void> {
     this._password = '';
     this.loading.set(true);
     this.error.set('');
 
     try {
-      const password = prompt(this._i18n.translate('auth.encryptionSetup.confirmPasswordPrompt'));
-      if (!password) {
-        this.loading.set(false);
-        return;
-      }
       this._password = password;
 
       const key = await this.auth.setupEncryption(password);
@@ -298,6 +302,7 @@ export class EncryptionSetup {
           }
         } catch (e) {
           console.error(`Encryption migration failed for table "${tableName}":`, e);
+          Sentry.captureException(e, { tags: { flow: 'e2ee-migration', table: tableName } });
           failedTables.push(tableName);
         }
 
@@ -323,8 +328,13 @@ export class EncryptionSetup {
       this.step.set('done');
     } catch (e) {
       console.error('Migration error:', e);
+      Sentry.captureException(e, { tags: { flow: 'e2ee-migration' } });
       this.step.set('init');
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.migrationFailed'));
+    } finally {
+      // Le mot de passe n'est nécessaire qu'au tout début (unlock ci-dessus) : zéroisé dès la fin
+      // de la migration, succès ou échec, pour limiter sa durée de vie en mémoire.
+      this._password = '';
     }
   }
 

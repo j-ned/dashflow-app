@@ -128,7 +128,12 @@ const EMPTY_MODEL: LoanFormModel = {
             <label for="loan-due-date" class="form-label">{{
               'budget.loan.form.dueDate' | transloco
             }}</label>
-            <input id="loan-due-date" type="date" [formField]="loanForm.dueDate" class="form-input" />
+            <input
+              id="loan-due-date"
+              type="date"
+              [formField]="loanForm.dueDate"
+              class="form-input"
+            />
           </div>
           <div>
             <label for="loan-due-day" class="form-label">{{

@@ -9,10 +9,13 @@ import { BankAccount, BankAccountType } from '../domain/models/bank-account.mode
 import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
 import { BankAccountSchema } from './schemas/bank-account.schema';
 
-const CLEARTEXT_KEYS = ['id', 'userId', 'initialBalance', 'createdAt'] as const;
+const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
 
 // `type` est chiffré : les comptes créés avant A3-type n'en ont pas → défaut 'courant'.
-// initialBalance est en clair (numeric → string côté postgres) → coercition en number.
+// initialBalance est désormais chiffré aussi (comme envelope.balance/loan.amount) ; la colonne Postgres
+// `initial_balance` garde son défaut '0' pour les nouveaux comptes (cf. schéma backend), la vraie valeur
+// vit dans encryptedData. Coercition en number nécessaire dans tous les cas : legacy = string Postgres
+// (comptes créés avant ce fix, jamais backfillés), E2EE = déjà un number réel après décryptage (no-op).
 function coerceBankAccount(row: ApiRow): BankAccount {
   const a = row as Record<string, unknown>;
   return {

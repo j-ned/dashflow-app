@@ -1,6 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import * as Sentry from '@sentry/angular';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { bytesToHex, CryptoStore } from '@core/services/crypto/crypto.store';
@@ -8,6 +9,7 @@ import { AuthStore } from '../../domain/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { firstValueFrom } from 'rxjs';
 import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { ConfirmDialog, ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 
 type EmailFormShape = {
   email: FormControl<string>;
@@ -22,7 +24,7 @@ type ResetFormShape = {
 @Component({
   selector: 'app-forgot-password',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ReactiveFormsModule, RouterLink, Icon, TranslocoPipe],
+  imports: [ReactiveFormsModule, RouterLink, Icon, TranslocoPipe, ConfirmDialog],
   host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
   template: `
     <main>
@@ -306,11 +308,14 @@ type ResetFormShape = {
           </div>
         }
       </article>
+
+      <app-confirm-dialog />
     </main>
   `,
 })
 export class ForgotPassword {
   private readonly auth = inject(AuthStore);
+  private readonly confirmService = inject(ConfirmService);
   private readonly cryptoStore = inject(CryptoStore);
   private readonly api = inject(ApiClient);
   private readonly _i18n = inject(TranslocoService);
@@ -398,6 +403,7 @@ export class ForgotPassword {
         }
       } catch (e) {
         console.error('[forgot-password] auto-login après reset échoué :', e);
+        Sentry.captureException(e, { tags: { flow: 'reset-password-auto-login' } });
         this.step.set('done');
       }
     } catch {
@@ -468,6 +474,7 @@ export class ForgotPassword {
       this.step.set('done');
     } catch (e) {
       console.error('[forgot-password] récupération E2EE échouée :', e);
+      Sentry.captureException(e, { tags: { flow: 'e2ee-recovery' } });
       this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
     } finally {
       this.loading.set(false);
@@ -475,7 +482,13 @@ export class ForgotPassword {
   }
 
   protected async skipRecovery(): Promise<void> {
-    if (!confirm(this._i18n.translate('auth.forgot.skipConfirm'))) return;
+    const confirmed = await this.confirmService.confirm({
+      title: this._i18n.translate('auth.forgot.skipConfirmTitle'),
+      message: this._i18n.translate('auth.forgot.skipConfirm'),
+      confirmLabel: this._i18n.translate('auth.forgot.skip'),
+      variant: 'danger',
+    });
+    if (!confirmed) return;
 
     this.loading.set(true);
     this.error.set('');

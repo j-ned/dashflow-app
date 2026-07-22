@@ -163,6 +163,7 @@
       "or": "or",
       "skip": "Continue without key (data lost)",
       "skipWarning": "Without a recovery key, all your encrypted data will be permanently lost.",
+      "skipConfirmTitle": "Continue without a recovery key?",
       "skipConfirm": "Are you sure? All your encrypted data will be permanently lost.",
       "doneMessage": "Your password has been reset successfully.",
       "doneSignIn": "Sign in",
@@ -221,7 +222,6 @@
       "sendingEncrypted": "Sending encrypted data...",
       "doneTitle": "Encryption enabled successfully!",
       "goToDashboard": "Go to dashboard",
-      "confirmPasswordPrompt": "Confirm your password to enable encryption:",
       "errors": {
         "prepareFailed": "Failed to prepare encryption.",
         "passphraseFailed": "Failed to set up passphrase.",
@@ -229,6 +229,13 @@
         "migrationFailed": "Data migration failed. Please try again.",
         "tablesFailed": "Encryption failed for: {{tables}}. Migration aborted, no data was marked as encrypted. Please try again."
       }
+    },
+    "confirmPasswordModal": {
+      "title": "Confirm your password",
+      "label": "Password",
+      "placeholder": "Your password",
+      "required": "Password is required.",
+      "submit": "Confirm"
     },
     "passphraseModal": {
       "title": "Encryption passphrase",

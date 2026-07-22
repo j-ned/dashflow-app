@@ -77,7 +77,6 @@ export class CryptoStore {
     );
   }
 
-
   async encrypt(plaintext: string): Promise<string> {
     const key = this._masterKey();
     if (!key) throw new Error('CryptoStore is locked');
@@ -89,7 +88,6 @@ export class CryptoStore {
     if (!key) throw new Error('CryptoStore is locked');
     return decryptWithKey(ciphertext, key);
   }
-
 
   async encryptBuffer(data: ArrayBuffer): Promise<ArrayBuffer> {
     const key = this._masterKey();
@@ -147,7 +145,6 @@ export class CryptoStore {
   getMasterKey(): CryptoKey | null {
     return this._masterKey();
   }
-
 
   private async saveToSession(key: CryptoKey): Promise<void> {
     const raw = await crypto.subtle.exportKey('raw', key);

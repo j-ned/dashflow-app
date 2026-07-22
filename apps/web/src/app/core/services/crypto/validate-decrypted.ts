@@ -3,7 +3,9 @@ import * as z from 'zod/mini';
 export type ValidateCtx = { entity: string };
 
 function reportInvalid(ctx: ValidateCtx, issues: readonly z.core.$ZodIssue[]): void {
-  console.error(`[E2EE] ${ctx.entity} : ligne déchiffrée invalide, exclue.`, issues);
+  // Ne jamais logger `issues` brut : un futur `reportInput: true` attacherait la valeur déchiffrée fautive.
+  const safeIssues = issues.map((i) => ({ code: i.code, path: i.path }));
+  console.error(`[E2EE] ${ctx.entity} : ligne déchiffrée invalide, exclue.`, safeIssues);
 }
 
 export function validateList<T>(

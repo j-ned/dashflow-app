@@ -1,7 +1,8 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
 import { of } from 'rxjs';
 import { describe, expect, it, vi } from 'vitest';
-import { TranslocoService } from '@jsverse/transloco';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { PatientGateway } from '../../domain/gateways/patient.gateway';
 import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway';
 import { AppointmentGateway } from '../../domain/gateways/appointment.gateway';
@@ -157,6 +158,43 @@ function make(
   fixture.detectChanges();
   return { fixture, cmp: fixture.componentInstance as unknown as Cmp };
 }
+
+describe('MedicalDashboard — rendu réel du template (régression pipes imbriqués)', () => {
+  it("n'explose pas quand un patient a médicaments, RDV et ordonnance avec validUntil", () => {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: PatientGateway, useValue: { getAll: () => of([patient()]) } },
+        { provide: PractitionerGateway, useValue: { getAll: () => of([practitioner()]) } },
+        { provide: AppointmentGateway, useValue: { getAll: () => of([appointment()]) } },
+        {
+          provide: PrescriptionGateway,
+          useValue: {
+            // validUntil non-null pour exercer la branche `presc.validUntil | date`
+            // (jamais rendue par les tests logique-only, qui n'affichent pas le vrai template).
+            getAll: () => of([prescription({ practitionerId: practitioner().id })]),
+            downloadDocument: () => of(new Blob()),
+          },
+        },
+        {
+          provide: MedicationGateway,
+          useValue: { getAll: () => of([okMed(), lowMed()]) },
+        },
+      ],
+    });
+
+    expect(() => {
+      const fixture = TestBed.createComponent(MedicalDashboard);
+      fixture.detectChanges();
+    }).not.toThrow();
+  });
+});
 
 describe('MedicalDashboard', () => {
   it('recalcule patientSummaries quand le jour bascule (today réactif à minuit UTC)', () => {

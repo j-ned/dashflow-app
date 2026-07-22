@@ -69,7 +69,12 @@ describe('RecordPaymentForm (Signal Forms)', () => {
     const { fixture, cmp } = make();
     let emitted: PaymentPayload | undefined;
     cmp.submitted.subscribe((v) => (emitted = v));
-    cmp.model.set({ amount: 50, date: '2026-06-26', accountId: 'acc-1', note: '  remboursement  ' });
+    cmp.model.set({
+      amount: 50,
+      date: '2026-06-26',
+      accountId: 'acc-1',
+      note: '  remboursement  ',
+    });
     fixture.detectChanges();
 
     await cmp.submitForm(new Event('submit'));

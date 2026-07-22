@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, output, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  linkedSignal,
+  output,
+  signal,
+} from '@angular/core';
 import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { formatFileSize } from '@shared/forms/format-file-size';

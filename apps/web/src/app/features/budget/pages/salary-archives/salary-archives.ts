@@ -26,6 +26,7 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
+import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { SalaryYearFilter } from './salary-year-filter/salary-year-filter';
 import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
 
@@ -337,9 +338,7 @@ export class SalaryArchives {
 
   protected async openPayslip(id: string) {
     const blob = await lastValueFrom(this.gateway.downloadPayslip(id));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    openBlobInNewTab(blob);
   }
 
   protected onFileSelected(event: Event) {

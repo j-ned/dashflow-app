@@ -74,7 +74,12 @@ const MEDICATION_TYPES: MedicationType[] = [
             {{ 'medical.medication.form.patient' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <select id="med-patient" [formField]="medicationForm.patientId" aria-required="true" class="form-select">
+          <select
+            id="med-patient"
+            [formField]="medicationForm.patientId"
+            aria-required="true"
+            class="form-select"
+          >
             <option value="">{{ 'medical.medication.form.patientPlaceholder' | transloco }}</option>
             @for (p of patients(); track p.id) {
               <option [value]="p.id">{{ p.firstName }} {{ p.lastName }}</option>
@@ -91,7 +96,11 @@ const MEDICATION_TYPES: MedicationType[] = [
           <label for="med-prescription" class="form-label">{{
             'medical.medication.form.prescription' | transloco
           }}</label>
-          <select id="med-prescription" [formField]="medicationForm.prescriptionId" class="form-select">
+          <select
+            id="med-prescription"
+            [formField]="medicationForm.prescriptionId"
+            class="form-select"
+          >
             <option value="">
               {{ 'medical.medication.form.prescriptionPlaceholder' | transloco }}
             </option>
@@ -109,7 +118,13 @@ const MEDICATION_TYPES: MedicationType[] = [
             {{ 'medical.medication.form.name' | transloco }}
             <span aria-hidden="true" class="text-ib-red">*</span>
           </label>
-          <input id="med-name" type="text" [formField]="medicationForm.name" aria-required="true" class="form-input" />
+          <input
+            id="med-name"
+            type="text"
+            [formField]="medicationForm.name"
+            aria-required="true"
+            class="form-input"
+          />
           @if (medicationForm.name().touched() && medicationForm.name().invalid()) {
             @for (err of medicationForm.name().errors(); track err.message) {
               <small class="error" role="alert">{{ err.message | transloco }}</small>
@@ -123,7 +138,12 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.type' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <select id="med-type" [formField]="medicationForm.type" aria-required="true" class="form-select">
+            <select
+              id="med-type"
+              [formField]="medicationForm.type"
+              aria-required="true"
+              class="form-select"
+            >
               @for (t of medicationTypes; track t) {
                 <option [value]="t">{{ 'medical.medication.types.' + t | transloco }}</option>
               }
@@ -156,7 +176,13 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.quantity' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input id="med-quantity" type="number" [formField]="medicationForm.quantity" aria-required="true" class="form-input mono" />
+            <input
+              id="med-quantity"
+              type="number"
+              [formField]="medicationForm.quantity"
+              aria-required="true"
+              class="form-input mono"
+            />
             @if (medicationForm.quantity().touched() && medicationForm.quantity().invalid()) {
               @for (err of medicationForm.quantity().errors(); track err.message) {
                 <small class="error" role="alert">{{ err.message | transloco }}</small>
@@ -190,7 +216,13 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.startDate' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input id="med-start-date" type="date" [formField]="medicationForm.startDate" aria-required="true" class="form-input" />
+            <input
+              id="med-start-date"
+              type="date"
+              [formField]="medicationForm.startDate"
+              aria-required="true"
+              class="form-input"
+            />
             @if (medicationForm.startDate().touched() && medicationForm.startDate().invalid()) {
               @for (err of medicationForm.startDate().errors(); track err.message) {
                 <small class="error" role="alert">{{ err.message | transloco }}</small>
@@ -202,8 +234,17 @@ const MEDICATION_TYPES: MedicationType[] = [
               {{ 'medical.medication.form.alertDays' | transloco }}
               <span aria-hidden="true" class="text-ib-red">*</span>
             </label>
-            <input id="med-alert" type="number" [formField]="medicationForm.alertDaysBefore" aria-required="true" class="form-input mono" />
-            @if (medicationForm.alertDaysBefore().touched() && medicationForm.alertDaysBefore().invalid()) {
+            <input
+              id="med-alert"
+              type="number"
+              [formField]="medicationForm.alertDaysBefore"
+              aria-required="true"
+              class="form-input mono"
+            />
+            @if (
+              medicationForm.alertDaysBefore().touched() &&
+              medicationForm.alertDaysBefore().invalid()
+            ) {
               @for (err of medicationForm.alertDaysBefore().errors(); track err.message) {
                 <small class="error" role="alert">{{ err.message | transloco }}</small>
               }
@@ -242,7 +283,11 @@ const MEDICATION_TYPES: MedicationType[] = [
         <button type="button" class="btn-cancel" (click)="cancelled.emit()">
           {{ 'common.cancel' | transloco }}
         </button>
-        <button type="submit" [disabled]="medicationForm().invalid()" class="btn-submit bg-ib-purple">
+        <button
+          type="submit"
+          [disabled]="medicationForm().invalid()"
+          class="btn-submit bg-ib-purple"
+        >
           {{
             (initial() ? 'medical.medication.form.save' : 'medical.medication.form.create')
               | transloco

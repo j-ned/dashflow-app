@@ -163,6 +163,7 @@
       "or": "ou",
       "skip": "Continuer sans clé (données perdues)",
       "skipWarning": "Sans clé de récupération, toutes vos données chiffrées seront définitivement perdues.",
+      "skipConfirmTitle": "Continuer sans clé de récupération ?",
       "skipConfirm": "Êtes-vous sûr ? Toutes vos données chiffrées seront définitivement perdues.",
       "doneMessage": "Votre mot de passe a été réinitialisé avec succès.",
       "doneSignIn": "Se connecter",
@@ -221,7 +222,6 @@
       "sendingEncrypted": "Envoi des données chiffrées...",
       "doneTitle": "Chiffrement activé avec succès !",
       "goToDashboard": "Accéder au tableau de bord",
-      "confirmPasswordPrompt": "Confirmez votre mot de passe pour activer le chiffrement :",
       "errors": {
         "prepareFailed": "Erreur lors de la préparation du chiffrement.",
         "passphraseFailed": "Erreur lors de la configuration de la passphrase.",
@@ -229,6 +229,13 @@
         "migrationFailed": "Erreur lors de la migration des données. Réessayez.",
         "tablesFailed": "Le chiffrement a échoué pour : {{tables}}. Migration interrompue, aucune donnée n'a été marquée chiffrée. Réessayez."
       }
+    },
+    "confirmPasswordModal": {
+      "title": "Confirmer votre mot de passe",
+      "label": "Mot de passe",
+      "placeholder": "Votre mot de passe",
+      "required": "Le mot de passe est obligatoire.",
+      "submit": "Confirmer"
     },
     "passphraseModal": {
       "title": "Passphrase de chiffrement",

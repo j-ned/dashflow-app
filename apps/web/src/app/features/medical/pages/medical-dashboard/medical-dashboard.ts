@@ -20,6 +20,7 @@ import { computeMedicationStock } from '../../domain/medication-calculator';
 import { PatientSummary, buildPatientSummary } from '../../domain/patient-summary';
 import { MedicationStockBar } from '../../components/medication-stock-bar/medication-stock-bar';
 import { Icon } from '@shared/components/icon/icon';
+import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 
 const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
 
@@ -347,7 +348,7 @@ const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
                                   : {
                                       remaining: med.remainingQuantity,
                                       total: med.quantity,
-                                      date: (med.estimatedRunOut | date: 'd MMMM yyyy'),
+                                      date: med.estimatedRunOut,
                                     }
                             }}</span>
                             @if (med.skipDays.length > 0) {
@@ -451,9 +452,7 @@ export class MedicalDashboard {
 
   protected async openDocument(id: string) {
     const blob = await lastValueFrom(this.prescriptionGw.downloadDocument(id));
-    const url = URL.createObjectURL(blob);
-    window.open(url, '_blank');
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    openBlobInNewTab(blob);
   }
 
   private currentDay(): string {
