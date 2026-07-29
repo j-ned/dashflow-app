@@ -60,4 +60,16 @@ describe('normalizeSalaryArchive', () => {
 
     expect(result.spendings).toEqual([]);
   });
+
+  it('renvoie [] quand spendings n est pas un tableau (ex: objet)', () => {
+    const result = normalizeSalaryArchive({ ...CLEARTEXT_API_ARCHIVE, spendings: {} } as never);
+
+    expect(result.spendings).toEqual([]);
+  });
+
+  it('renvoie [] quand spendings est une chaine', () => {
+    const result = normalizeSalaryArchive({ ...CLEARTEXT_API_ARCHIVE, spendings: '' } as never);
+
+    expect(result.spendings).toEqual([]);
+  });
 });
