@@ -12,6 +12,9 @@ export function normalizeSalaryArchive(raw: SalaryArchive): SalaryArchive {
     salary: Number(raw.salary),
     totalExpenses: Number(raw.totalExpenses),
     totalSpendings: Number(raw.totalSpendings),
-    spendings: (Array.isArray(raw.spendings) ? raw.spendings : []).map((s) => ({ ...s, amount: Number(s.amount) })),
+    spendings: (Array.isArray(raw.spendings) ? raw.spendings : []).map((s) => ({
+      ...s,
+      amount: Number(s.amount),
+    })),
   };
 }
