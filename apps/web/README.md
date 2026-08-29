@@ -39,7 +39,7 @@
 
 ## 🎯 Le problème
 
-Gérer le budget familial **et** le suivi médical de toute la maisonnée dans la même appli **sans confier ses données financières ou médicales à un service cloud tiers** — ça n'existait pas.
+Gérer le budget familial **et** le suivi médical de toute la maison dans la même appli **sans confier ses données financières ou médicales à un service cloud tiers** ! ça n'existait pas.
 
 Les solutions du marché font l'un ou l'autre, ou imposent de stocker des documents sensibles (ordonnances, fiches de paie) sur des serveurs dont on ne contrôle ni la juridiction, ni l'accès.
 
