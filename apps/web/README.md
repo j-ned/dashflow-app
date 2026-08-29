@@ -4,7 +4,7 @@
 
 # ⚡ DashFlow
 
-### Tableau de bord personnel **tout-en-un** — budget & suivi médical familial
+### Tableau de bord personnel **tout-en-un** - budget & suivi médical familial
 
 **Self-hosted · Chiffré de bout en bout · Zéro cloud tiers**
 
@@ -47,9 +47,9 @@ Les solutions du marché font l'un ou l'autre, ou imposent de stocker des docume
 
 Une application **self-hosted**, **chiffrée côté client** (AES-256-GCM + PBKDF2), qui centralise :
 
-- 💰 **Budget** — comptes, enveloppes, prêts, récurrences, archives salaires, projections 12 mois
-- 🏥 **Médical** — patients, praticiens, médicaments, ordonnances, documents, alertes
-- 🔐 **E2EE** — le serveur ne voit **jamais** les données en clair
+- 💰 **Budget** - comptes, enveloppes, prêts, récurrences, archives salaires, projections 12 mois
+- 🏥 **Médical** - patients, praticiens, médicaments, ordonnances, documents, alertes
+- 🔐 **E2EE** - le serveur ne voit **jamais** les données en clair
 
 Même en cas de compromission serveur : aucune donnée exploitable.
 
@@ -62,7 +62,7 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 | Fonctionnalité            | Détails                                                           |
 | ------------------------- | ----------------------------------------------------------------- |
 | **Compte bancaire**       | Revenus, prélèvements, charges annuelles, dépenses, solde restant |
-| **Enveloppes virtuelles** | Épargne, vacances, équipement, impôts — progression et objectifs  |
+| **Enveloppes virtuelles** | Épargne, vacances, équipement, impôts - progression et objectifs  |
 | **Prêts & Dettes**        | Suivi des emprunts, remboursements, historique complet            |
 | **Entrées récurrentes**   | Charges mensuelles et annuelles par membre du foyer               |
 | **Archives salaires**     | Fiches de paie historisées (stockage S3 chiffré)                  |
@@ -83,13 +83,13 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 
 ### ⚙️ Transversal
 
-- 🔐 **Chiffrement E2EE** — AES-256-GCM + PBKDF2 + double enveloppe de clés
-- ⌨️ **Command Palette** — `Ctrl+K` avec recherche fuzzy
+- 🔐 **Chiffrement E2EE** - AES-256-GCM + PBKDF2 + double enveloppe de clés
+- ⌨️ **Command Palette** - `Ctrl+K` avec recherche fuzzy
 - 🔔 **Toasts & Confirm Dialogs** — UI system complète
 - 📊 **Charts SVG** custom — area, donut, bar, **zéro dépendance externe**
-- 🔑 **2FA (TOTP)** — compatible Google Authenticator / Authy
+- 🔑 **2FA (TOTP)** - compatible Google Authenticator / Authy
 - 🌙 **Dark mode** optimisé
-- 🌍 **i18n FR/EN** — bascule de langue runtime avec listener `prefers-language`
+- 🌍 **i18n FR/EN** - bascule de langue runtime avec listener `prefers-language`
 
 ---
 
