@@ -1,9 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { MedicationsService } from './medications.service';
 
-// ---------------------------------------------------------------------------
 // Helpers
-// ---------------------------------------------------------------------------
 
 const makeMed = (overrides: Partial<Record<string, unknown>> = {}) => ({
   id: 'med-1',
@@ -23,9 +21,7 @@ const makeMed = (overrides: Partial<Record<string, unknown>> = {}) => ({
   ...overrides,
 });
 
-// ---------------------------------------------------------------------------
 // Factory — builds a MedicationsService with an injectable fake DB
-// ---------------------------------------------------------------------------
 
 function makeService(dbOverride?: Partial<Record<string, unknown>>) {
   const fakeDb: Record<string, unknown> = {
@@ -49,9 +45,7 @@ function makeService(dbOverride?: Partial<Record<string, unknown>>) {
   return { svc, fakeDb };
 }
 
-// ---------------------------------------------------------------------------
 // Tests: alerts threshold computation (in-memory logic)
-// ---------------------------------------------------------------------------
 
 describe('MedicationsService.alerts', () => {
   it('returns medications where daysRemaining <= alertDaysBefore', async () => {
@@ -133,9 +127,7 @@ describe('MedicationsService.alerts', () => {
   });
 });
 
-// ---------------------------------------------------------------------------
 // Tests: refill (calls update with increased quantity)
-// ---------------------------------------------------------------------------
 
 describe('MedicationsService.refill', () => {
   it('adds refill quantity to the existing quantity and calls update', async () => {

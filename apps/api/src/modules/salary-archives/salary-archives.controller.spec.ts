@@ -19,7 +19,6 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // Le front poste TOUJOURS l'archive en multipart/form-data (postForm). Le create
 // hérité d'OwnedCrudController n'a pas d'interceptor multer → le body multipart
 // n'est pas parsé → 500. Ces tests décrivent le comportement attendu (201 + parsing).
-// RED attendu tant que create n'est pas surchargé avec FileInterceptor('payslip').
 
 const ACCOUNT_ID = '11111111-1111-4111-8111-111111111111';
 

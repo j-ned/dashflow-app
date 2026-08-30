@@ -1,99 +1,143 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# DashFlow API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+API backend de l'application DashFlow, construite avec NestJS, Drizzle ORM et PostgreSQL. Elle expose la gestion budgétaire (comptes, enveloppes, transactions, prêts, virements récurrents) et la gestion santé/famille (patients, praticiens, rendez-vous, traitements, ordonnances, documents).
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+## Stack technique
 
-## Description
+- Runtime : Node.js, TypeScript (mode strict)
+- Framework : NestJS 11
+- Base de données : PostgreSQL, accès via Drizzle ORM
+- Validation : Zod (pipes de validation Nest)
+- Authentification : JWT (access token court + refresh token), 2FA TOTP, guard global via Throttler
+- Stockage fichiers : S3 compatible (Cloudflare R2)
+- Observabilité : Sentry
+- Tests : Vitest (unitaires, intégration, end-to-end)
+- Gestionnaire de paquets : pnpm
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+## Prérequis
 
-## Project setup
+- Node.js 22 ou supérieur
+- pnpm
+- PostgreSQL 18 (ou Docker/Podman pour l'environnement de développement fourni)
+
+## Installation
 
 ```bash
-$ pnpm install
+pnpm install
+cp .env.example .env
 ```
 
-## Compile and run the project
+Renseigner les variables d'environnement dans `.env` (voir la section Configuration ci-dessous).
+
+## Base de données locale
+
+Un environnement PostgreSQL de développement est fourni via Compose :
 
 ```bash
-# development
-$ pnpm run start
-
-# watch mode
-$ pnpm run start:dev
-
-# production mode
-$ pnpm run start:prod
+docker compose -f compose.dev.yaml up -d
 ```
 
-## Run tests
+Appliquer ensuite les migrations :
 
 ```bash
-# unit tests
-$ pnpm run test
-
-# e2e tests
-$ pnpm run test:e2e
-
-# test coverage
-$ pnpm run test:cov
+pnpm db:migrate
 ```
 
-## Deployment
-
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+## Démarrage
 
 ```bash
-$ pnpm install -g @nestjs/mau
-$ mau deploy
+# développement, avec rechargement à chaud
+pnpm start:dev
+
+# développement, sans rechargement
+pnpm start
+
+# débogage
+pnpm start:debug
+
+# production (nécessite un build préalable)
+pnpm build
+pnpm start:prod
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Le serveur écoute par défaut sur le port défini par `PORT` (3001 en développement).
 
-## Resources
+## Configuration
 
-Check out a few resources that may come in handy when working with NestJS:
+Variables d'environnement principales (voir `.env.example` pour la liste complète) :
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+| Variable | Rôle |
+|---|---|
+| `NODE_ENV` | Environnement d'exécution (`development`, `production`) |
+| `PORT` | Port HTTP du serveur |
+| `DATABASE_URL` | Chaîne de connexion PostgreSQL |
+| `CORS_ORIGIN` | Origine(s) autorisée(s) pour le frontend, séparées par des virgules |
+| `JWT_SECRET` | Secret de signature des tokens JWT (minimum 32 caractères) |
+| `APP_URL` | URL publique de l'API, utilisée notamment dans les liens transmis par email |
+| `MAILER` | Fournisseur d'envoi d'email (`console` ou `smtp`) |
+| `DEMO_ENABLED` | Active le compte de démonstration en accès public |
+| `S3_*` | Configuration du stockage de fichiers compatible S3 |
+| `SMTP_*` | Configuration SMTP, utilisée quand `MAILER=smtp` |
 
-## Support
+La configuration est validée au démarrage (schéma Zod) : une variable manquante ou invalide empêche le serveur de démarrer.
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+## Scripts disponibles
 
-## Stay in touch
+| Commande | Description |
+|---|---|
+| `pnpm start:dev` | Démarrage en mode développement avec rechargement à chaud |
+| `pnpm build` | Compilation du projet |
+| `pnpm start:prod` | Démarrage depuis le build de production |
+| `pnpm lint` | Lint avec correction automatique |
+| `pnpm lint:check` | Lint sans correction, pour la CI |
+| `pnpm format` | Formatage du code avec Prettier |
+| `pnpm test` | Tests unitaires |
+| `pnpm test:integration` | Tests d'intégration |
+| `pnpm test:e2e` | Tests end-to-end |
+| `pnpm test:cov` | Tests unitaires avec couverture |
+| `pnpm db:generate` | Génération d'une migration Drizzle à partir du schéma |
+| `pnpm db:migrate` | Application des migrations en attente |
+| `pnpm db:check` | Vérification de cohérence du schéma Drizzle |
+| `pnpm db:baseline` | Adoption d'une base existante sans rejouer l'historique des migrations |
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+## Architecture
 
-## License
+Le code applicatif est organisé par domaine sous `src/` :
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
-# nest-dashflow-app
+- `auth/` : authentification, JWT, 2FA, gestion de session
+- `db/` : configuration Drizzle, schéma, migrations
+- `config/` : chargement et validation de la configuration
+- `common/` : guards, pipes, filtres et éléments transverses
+- `mail/` : envoi d'email
+- `storage/` : stockage de fichiers (S3)
+- `health/` : endpoint de supervision
+- `modules/` : modules métier, un dossier par domaine fonctionnel :
+  - Budget : `bank-accounts`, `envelopes`, `account-transactions`, `loans`, `recurring-entries`, `salary-archives`
+  - Santé et famille : `patients`, `members`, `practitioners`, `appointments`, `medications`, `prescriptions`, `documents`, `reminders`, `shared-access`, `medical-calendar`
+  - Administration : `admin`, `demo`, `consumables`
+
+Chaque module suit la structure standard NestJS : contrôleur, service, DTO/schéma de validation, tests colocalisés (`*.spec.ts`).
+
+## Tests
+
+```bash
+pnpm test              # unitaires
+pnpm test:integration  # intégration (nécessite une base de données)
+pnpm test:e2e          # end-to-end
+```
+
+Les tests sont écrits avec Vitest et colocalisés avec le code qu'ils couvrent.
+
+## Sécurité
+
+- En-têtes de sécurité via Helmet
+- Limitation de débit globale via `ThrottlerGuard`
+- Mots de passe hachés avec Argon2
+- Tokens JWT à durée de vie courte, avec rotation du refresh token
+- Application derrière un reverse proxy : `trust proxy` est activé pour que la limitation de débit s'applique par IP réelle, pas par IP du proxy
+
+Toute variable sensible (secrets, identifiants) doit être fournie via variables d'environnement, jamais commitée dans le dépôt.
+
+## Licence
+
+Usage privé, non destiné à la redistribution.

@@ -16,8 +16,6 @@ const repo = () => ({
   findValidCode: vi.fn(),
   deleteCodes: vi.fn(),
 });
-// `sendAccountExists` est la NOUVELLE méthode du Mailer (point 1 du spec) : le mock l'expose
-// pour que le service puisse l'appeler une fois implémentée (le mock est casté via `unknown`).
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
   sendPasswordResetCode: vi.fn(),
@@ -39,7 +37,7 @@ describe('AuthService', () => {
   });
   afterEach(() => vi.restoreAllMocks());
 
-  // ───────────────────────── register (point 1) ─────────────────────────
+  // register
 
   it('register : email inconnu → createUser + sendVerificationCode, retour générique ok', async () => {
     r.findByEmail.mockResolvedValue(undefined);
@@ -114,7 +112,7 @@ describe('AuthService', () => {
     expect(hashSpy).toHaveBeenCalled();
   });
 
-  // ───────────────────────── login (point 2) ─────────────────────────
+  // login
 
   it('login : email inconnu → fail générique (identifiants invalides), sans code', async () => {
     r.findByEmail.mockResolvedValue(undefined);
@@ -194,7 +192,7 @@ describe('AuthService', () => {
     });
   });
 
-  // ───────────────────────── genCode (point 3) ─────────────────────────
+  // genCode
 
   it('genCode : le code transmis à insertCode fait 6 chiffres exactement (contrat de format)', async () => {
     r.findByEmail.mockResolvedValue(undefined);
@@ -213,7 +211,7 @@ describe('AuthService', () => {
     expect(randSpy).not.toHaveBeenCalled();
   });
 
-  // ───────────────────────── régressions inchangées ─────────────────────────
+  // régressions inchangées
 
   it('changePassword : compte chiffré sans re-wrap → fail 400', async () => {
     r.findById.mockResolvedValue({
@@ -326,8 +324,6 @@ describe('AuthService', () => {
   });
 });
 
-// ───────────────────────── deleteAccount — suppression de compte RGPD ─────────────────────────
-// RED attendu : AuthService.deleteAccount n'existe pas encore (méthode absente → comportement dû au GREEN).
 // Le storage (4e dépendance) est injecté en plus du repo + mailer + twoFactor.
 describe('AuthService.deleteAccount (RGPD)', () => {
   const repoFor = () => ({

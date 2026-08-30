@@ -55,8 +55,7 @@ describe('StorageService non configuré', () => {
   });
 });
 
-// ───────────────────────── deletePrefix — suppression par préfixe (RGPD) ─────────────────────────
-// RED attendu : StorageService.deletePrefix n'existe pas encore (méthode absente → comportement dû au GREEN).
+// deletePrefix — suppression par préfixe (RGPD)
 describe('StorageService.deletePrefix', () => {
   type WithDeletePrefix = StorageService & {
     deletePrefix(prefix: string): Promise<void>;

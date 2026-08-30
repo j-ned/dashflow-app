@@ -20,8 +20,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
 import { SESSION_COOKIE } from './cookie';
 
-// RED attendu : la route DELETE /auth/me n'existe pas encore (handler absent → 404).
-// Le comportement (204, appel service avec l'userId courant, purge du cookie de session) est dû au GREEN.
+// Le comportement attendu : 204, appel service avec l'userId courant, purge du cookie de session.
 describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () => {
   let app: INestApplication;
   const mockAuth = { deleteAccount: vi.fn() };
