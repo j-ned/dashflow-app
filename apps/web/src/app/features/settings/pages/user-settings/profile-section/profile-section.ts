@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 
@@ -13,7 +13,7 @@ type ProfileFormShape = {
   selector: 'app-profile-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [ReactiveFormsModule, Icon, TranslocoPipe],
-  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  // display:block (pas 'contents') : section en flux vertical de page, sinon 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
     <!-- ── Profile ── -->

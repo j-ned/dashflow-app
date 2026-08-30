@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { RecoveryKeyModal } from '@features/auth/components/recovery-key-modal/recovery-key-modal';
 import { Toaster } from '@shared/components/toast/toast';
@@ -10,7 +10,7 @@ import { Toaster } from '@shared/components/toast/toast';
   selector: 'app-encryption-section',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [RecoveryKeyModal, TranslocoPipe],
-  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  // display:block (pas 'contents') : section en flux vertical de page, sinon 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
     <!-- ── Encryption ── -->
@@ -98,7 +98,7 @@ import { Toaster } from '@shared/components/toast/toast';
 
     <app-recovery-key-modal
       [recoveryKey]="settingsRecoveryKey()"
-      (confirmed$)="onRecoveryKeyRegenerated()"
+      (keySaved)="onRecoveryKeyRegenerated()"
     />
   `,
 })
@@ -119,7 +119,7 @@ export class EncryptionSection {
   protected async regenerateRecoveryKey(): Promise<void> {
     this.encryptionLoading.set(true);
     try {
-      const masterKey = this.crypto.getMasterKey();
+      const masterKey = this.crypto.getRewrappableMasterKey();
       if (!masterKey) {
         this.toaster.error('settings.encryption.feedback.locked');
         return;

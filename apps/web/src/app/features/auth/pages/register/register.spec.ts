@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TranslocoService } from '@jsverse/transloco';
-import { AuthStore } from '../../domain/auth.store';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
+import { AuthStore } from '../../auth.store';
 import { Register } from './register';
 
 type Cmp = {
@@ -76,7 +76,7 @@ const VALID_FORM = {
   confirmPassword: 'sup3rs3cur3passw0rd',
 };
 
-describe('Register — inscription 2 étapes (sécurité)', () => {
+describe('Register : inscription 2 étapes (sécurité)', () => {
   describe('Validateur passwordMatch', () => {
     it("mots de passe identiques → formulaire valide (pas d'erreur mismatch)", () => {
       const { cmp } = makeComponent();
@@ -125,9 +125,10 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.step()).toBe('verify');
     });
 
-    it('échec inscription avec erreur serveur structurée → affiche le message, reste à l’étape register', async () => {
+    it('échec inscription (forme normalisée ApiClient) → erreur i18n générique, reste à l’étape register', async () => {
       const { cmp, auth, navigate } = makeComponent({
-        register: () => Promise.reject({ error: { error: 'SERVER_ERROR' } } as unknown as Error),
+        register: () =>
+          Promise.reject({ status: 500, message: 'Server error', code: 'SERVER_ERROR' }),
       });
       cmp.registerForm.setValue(VALID_FORM);
 
@@ -135,7 +136,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
 
       expect(auth.register).toHaveBeenCalledTimes(1);
       expect(cmp.step()).toBe('register');
-      expect(cmp.error()).toBe('SERVER_ERROR');
+      expect(cmp.error()).toBe('auth.register.errors.registerFailed');
       expect(navigate).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
@@ -191,9 +192,10 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.loading()).toBe(false);
     });
 
-    it('code invalide → erreur définie, pas de navigation, loading reset', async () => {
+    it('code invalide (forme normalisée ApiClient) → erreur i18n définie, pas de navigation, loading reset', async () => {
       const { cmp, navigate } = makeComponent({
-        verifyCode: () => Promise.reject({ error: { error: 'INVALID_CODE' } } as unknown as Error),
+        verifyCode: () =>
+          Promise.reject({ status: 400, message: 'Invalid code', code: 'INVALID_CODE' }),
       });
       cmp.registerForm.setValue(VALID_FORM);
       await cmp.submitRegister();
@@ -202,7 +204,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       await expect(cmp.submitVerify()).resolves.toBeUndefined();
 
       expect(navigate).not.toHaveBeenCalled();
-      expect(cmp.error()).toBe('INVALID_CODE');
+      expect(cmp.error()).toBe('auth.register.errors.codeInvalid');
       expect(cmp.loading()).toBe(false);
     });
 
@@ -271,7 +273,7 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
     });
   });
 
-  describe('constructeur — query param verify=true', () => {
+  describe('constructeur : query param verify=true', () => {
     it("verify=true + email présents → passe directement à l'étape verify et appelle resendCode", () => {
       const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
 
@@ -302,5 +304,68 @@ describe('Register — inscription 2 étapes (sécurité)', () => {
       expect(cmp.step()).toBe('register');
       expect(auth.resendCode).not.toHaveBeenCalled();
     });
+  });
+});
+
+describe('Register : rendu réel du template (F014)', () => {
+  function mountReal(opts: { register?: (...args: unknown[]) => Promise<void> } = {}) {
+    const auth: AuthStoreMock = {
+      register: vi.fn(opts.register ?? (() => Promise.resolve())),
+      verifyCode: vi.fn(() => Promise.resolve()),
+      resendCode: vi.fn(() => Promise.resolve()),
+    };
+    TestBed.configureTestingModule({
+      imports: [
+        Register,
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: AuthStore, useValue: auth },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
+      ],
+    });
+    const fixture = TestBed.createComponent(Register);
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as unknown as Cmp };
+  }
+
+  it("étape 'register' : le bouton d'inscription est désactivé tant que le formulaire est invalide", () => {
+    const { fixture } = mountReal();
+
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="register-submit"]',
+    );
+
+    expect(submit).not.toBeNull();
+    expect(submit?.disabled).toBe(true);
+  });
+
+  it("étape 'register' : le bouton d'inscription se réactive une fois le formulaire valide", () => {
+    const { fixture, cmp } = mountReal();
+    cmp.registerForm.setValue(VALID_FORM);
+
+    fixture.detectChanges();
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="register-submit"]',
+    );
+
+    expect(submit?.disabled).toBe(false);
+  });
+
+  it("inscription réussie : bascule sur l'étape 'verify' rendue dans le DOM", async () => {
+    const { fixture, cmp } = mountReal();
+    cmp.registerForm.setValue(VALID_FORM);
+
+    await cmp.submitRegister();
+    fixture.detectChanges();
+
+    const verifyStep = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="register-verify-step"]',
+    );
+    expect(verifyStep).not.toBeNull();
   });
 });

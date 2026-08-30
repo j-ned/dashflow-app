@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   DestroyRef,
   inject,
   input,
@@ -257,10 +258,10 @@ export class CsvImportWizard {
   protected readonly readError = signal(false);
   protected readonly categoryGroups = CATEGORY_GROUPS;
 
-  protected amountSignedCol(): number {
+  protected readonly amountSignedCol = computed(() => {
     const mode = this.mapping().amountMode;
     return mode.kind === 'signed' ? mode.col : 2;
-  }
+  });
 
   protected onFile(ev: Event): void {
     const file = (ev.target as HTMLInputElement).files?.[0];
@@ -293,9 +294,8 @@ export class CsvImportWizard {
     this.step.set(3);
   }
 
-  protected toImport(): ReviewRow[] {
-    return this.reviewRows().filter((r) => r.selected);
-  }
+  protected readonly toImport = computed(() => this.reviewRows().filter((r) => r.selected));
+
   protected setRow(i: number, patch: Partial<ReviewRow>): void {
     this.reviewRows.update((rows) => rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
   }

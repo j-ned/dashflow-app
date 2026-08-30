@@ -54,8 +54,8 @@ describe('buildTimelineEvents', () => {
         re({ id: 'in', type: 'transfer', accountId: 'liv', label: 'Reçu', dayOfMonth: 9 }),
       ],
     });
-    expect(out.find((x) => x.id === 'o')!.label).toBe('→ Livret A — Épargne');
-    expect(out.find((x) => x.id === 'in-in')!.label).toBe('← Livret A — Reçu');
+    expect(out.find((x) => x.id === 'o')!.label).toBe('→ Livret A : Épargne');
+    expect(out.find((x) => x.id === 'in-in')!.label).toBe('← Livret A : Reçu');
   });
 
   it('libellé de repli quand accountName renvoie null', () => {
@@ -63,7 +63,7 @@ describe('buildTimelineEvents', () => {
       ...BASE,
       outgoingTransfers: [re({ id: 'o', type: 'transfer', toAccountId: 'zzz', label: 'X' })],
     });
-    expect(out[0].label).toBe('→ compte — X');
+    expect(out[0].label).toBe('→ compte : X');
   });
 
   it('tri par cycle de paie (salaire 25 : 25,1,24)', () => {

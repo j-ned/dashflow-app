@@ -1,6 +1,6 @@
 import { inject } from '@angular/core';
 import { CanMatchFn, Router } from '@angular/router';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 
 export const guestGuard: CanMatchFn = async () => {
   const auth = inject(AuthStore);

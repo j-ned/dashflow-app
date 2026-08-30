@@ -27,7 +27,7 @@ export const directionOf = (entry: RecurringEntry): DuePostingDirection =>
   entry.type === 'income' ? 'income' : entry.type === 'transfer' ? 'transfer' : 'expense';
 
 /** Une entrée est auto-postée si son flag autoPost est vrai OU si c'est un virement
- *  (un virement récurrent s'exécute toujours automatiquement — jamais de confirmation manuelle). */
+ *  (un virement récurrent s'exécute toujours automatiquement, jamais de confirmation manuelle). */
 export const isAutoEntry = (entry: RecurringEntry): boolean =>
   entry.autoPost || entry.type === 'transfer';
 
@@ -50,7 +50,7 @@ function monthsBetween(from: string, to: string): string[] {
 /**
  * Transactions à créer pour matérialiser les échéances auto-pointées :
  * - filtre autoPost, compte/jour présents, type éligible ;
- * - itère [autoPostSince … mois courant] (autoPostSince null → mois courant seul) ;
+ * - itère [autoPostSince ... mois courant] (autoPostSince null → mois courant seul) ;
  * - mois courant : échu ssi dayOfMonth ≤ currentDay (gate calendaire, évite les dates futures) ;
  * - mois passé : échu en entier ;
  * - saute tout mois déjà pointé (idempotent) ; respecte endDate.

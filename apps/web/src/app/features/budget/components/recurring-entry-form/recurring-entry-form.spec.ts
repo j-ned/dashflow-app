@@ -48,7 +48,7 @@ function mount() {
   return fixture;
 }
 
-describe('RecurringEntryForm — autoPost', () => {
+describe('RecurringEntryForm : autoPost', () => {
   it("émet autoPost=true et fige autoPostSince au mois courant à l'activation", async () => {
     const fixture = mount();
     const cmp = fixture.componentInstance as unknown as Cmp;
@@ -105,7 +105,7 @@ function mountExpense() {
   return fixture;
 }
 
-describe('RecurringEntryForm — destination prélèvement → livret', () => {
+describe('RecurringEntryForm : destination prélèvement → livret', () => {
   it("émet type='transfer' + toAccountId quand destination = mon compte", async () => {
     const fixture = mountExpense();
     const cmp = fixture.componentInstance as unknown as Cmp;
@@ -191,7 +191,7 @@ function mountEdit(entry: typeof EXPENSE_ENTRY) {
   return fixture;
 }
 
-describe('RecurringEntryForm — ÉDITION prélèvement → livret (repro bug)', () => {
+describe('RecurringEntryForm : ÉDITION prélèvement → livret (repro bug)', () => {
   it("édition d'une dépense → bascule my_account + livret → émet type='transfer'", async () => {
     const fixture = mountEdit(EXPENSE_ENTRY);
     const cmp = fixture.componentInstance as unknown as Cmp;
@@ -252,7 +252,7 @@ describe('RecurringEntryForm — ÉDITION prélèvement → livret (repro bug)',
   });
 });
 
-describe('RecurringEntryForm — mode virement, patch & fichier', () => {
+describe('RecurringEntryForm : mode virement, patch & fichier', () => {
   it('setTransferMode vide les champs du mode opposé', () => {
     TestBed.configureTestingModule({
       imports: [
@@ -301,7 +301,7 @@ describe('RecurringEntryForm — mode virement, patch & fichier', () => {
   });
 });
 
-describe('RecurringEntryForm — case auto-pointage selon le type', () => {
+describe('RecurringEntryForm : case auto-pointage selon le type', () => {
   function mountForced(type: 'transfer' | 'expense') {
     TestBed.configureTestingModule({
       imports: [

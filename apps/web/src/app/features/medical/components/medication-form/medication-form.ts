@@ -106,7 +106,7 @@ const MEDICATION_TYPES: MedicationType[] = [
             </option>
             @for (p of prescriptions(); track p.id) {
               <option [value]="p.id">
-                {{ p.issuedDate }} —
+                {{ p.issuedDate }} :
                 {{ p.notes ?? ('medical.medication.form.prescriptionFallbackNoNotes' | transloco) }}
               </option>
             }

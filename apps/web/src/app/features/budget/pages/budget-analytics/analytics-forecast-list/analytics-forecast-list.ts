@@ -13,7 +13,7 @@ export type ForecastView = {
   selector: 'app-analytics-forecast-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon],
-  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  // display:block (pas 'contents') : section en flux vertical de page, sinon 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
     <section class="rounded-xl border border-border bg-surface overflow-hidden">

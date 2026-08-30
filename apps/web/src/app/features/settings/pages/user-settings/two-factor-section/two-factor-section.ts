@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
 
@@ -37,7 +37,7 @@ import { Toaster } from '@shared/components/toast/toast';
 
       <div class="p-6">
         @if (auth.totpEnabled()) {
-          <!-- 2FA is enabled — show disable option -->
+          <!-- 2FA is enabled: show disable option -->
           <div class="space-y-4">
             <p class="text-sm text-text-primary">
               {{ 'settings.twoFactor.enabledExplain' | transloco }}
@@ -80,7 +80,7 @@ import { Toaster } from '@shared/components/toast/toast';
             </button>
           </div>
         } @else if (totpSetup()) {
-          <!-- Setup in progress — show QR + verify -->
+          <!-- Setup in progress: show QR + verify -->
           <div class="space-y-5">
             <p class="text-sm text-text-primary">
               {{ 'settings.twoFactor.scanExplain' | transloco }}
@@ -151,7 +151,7 @@ import { Toaster } from '@shared/components/toast/toast';
             </div>
           </div>
         } @else {
-          <!-- 2FA not enabled — show setup button -->
+          <!-- 2FA not enabled: show setup button -->
           <div class="space-y-4">
             <p class="text-sm text-text-muted">
               {{ 'settings.twoFactor.setupExplain' | transloco }}

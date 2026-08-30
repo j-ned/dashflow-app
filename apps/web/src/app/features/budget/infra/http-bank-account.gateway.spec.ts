@@ -21,7 +21,7 @@ async function waitForRequest(httpMock: HttpTestingController, url: string, trie
   throw new Error(`no request emitted for ${url}`);
 }
 
-describe('HttpBankAccountGateway — validation (F002)', () => {
+describe('HttpBankAccountGateway : validation (F002)', () => {
   let gateway: HttpBankAccountGateway;
   let httpMock: HttpTestingController;
 
@@ -63,7 +63,7 @@ describe('HttpBankAccountGateway — validation (F002)', () => {
   });
 });
 
-describe('HttpBankAccountGateway (E2EE) — régression fuite initialBalance en clair', () => {
+describe('HttpBankAccountGateway (E2EE) : régression fuite initialBalance en clair', () => {
   let gateway: HttpBankAccountGateway;
   let httpMock: HttpTestingController;
   let key: CryptoKey;

@@ -43,7 +43,7 @@ import { MemberSummary } from '../../../domain/member-summary';
                   } @else if (entry.dayOfMonth) {
                     {{ entry.dayOfMonth }}
                   } @else {
-                    —
+                    -
                   }
                 </div>
                 <span

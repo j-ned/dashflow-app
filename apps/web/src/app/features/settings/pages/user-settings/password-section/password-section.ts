@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
+import { AuthEncryptionStore } from '@features/auth/auth-encryption.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Icon } from '@shared/components/icon/icon';
-import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { PASSWORD_MIN_LENGTH, passwordMatchValidator } from '@shared/validators/form-validators';
 import { Toaster } from '@shared/components/toast/toast';
 
 type PasswordFormShape = {
@@ -185,6 +186,7 @@ type PasswordFormShape = {
 })
 export class PasswordSection {
   protected readonly auth = inject(AuthStore);
+  private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly crypto = inject(CryptoStore);
   private readonly toaster = inject(Toaster);
 
@@ -197,7 +199,7 @@ export class PasswordSection {
       currentPassword: new FormControl('', { nonNullable: true }),
       newPassword: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(12)],
+        validators: [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
       }),
       confirmPassword: new FormControl('', {
         nonNullable: true,
@@ -234,25 +236,29 @@ export class PasswordSection {
         // Si le CryptoStore est locked, on le déverrouille avec currentPassword avant.
         if (!this.crypto.isUnlocked()) {
           try {
-            await this.auth.unlockWithPassword(currentPassword);
+            await this.authEncryption.unlockWithPassword(currentPassword);
           } catch {
             this.toaster.error('settings.password.feedback.outOfSync');
             return;
           }
         }
-        await this.auth.updatePasswordWithReWrap(currentPassword, newPassword);
+        await this.authEncryption.updatePasswordWithReWrap(currentPassword, newPassword);
         this.toaster.success('settings.password.feedback.updated');
       } else {
         await this.auth.updatePassword(currentPassword, newPassword);
         this.toaster.success('settings.password.feedback.updated');
       }
       this.passwordForm.reset();
-    } catch {
-      this.toaster.error(
-        this.auth.hasPassword()
-          ? 'settings.password.feedback.updateFailed'
-          : 'settings.password.feedback.setFailed',
-      );
+    } catch (e) {
+      if (e instanceof Error && e.message === 'E2EE_LOCKED') {
+        this.toaster.error('settings.password.feedback.unlockRequired');
+      } else {
+        this.toaster.error(
+          this.auth.hasPassword()
+            ? 'settings.password.feedback.updateFailed'
+            : 'settings.password.feedback.setFailed',
+        );
+      }
     } finally {
       this.passwordSaving.set(false);
     }

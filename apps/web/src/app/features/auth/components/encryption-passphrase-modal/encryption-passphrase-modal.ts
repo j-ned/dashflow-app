@@ -3,7 +3,7 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
-import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { PASSWORD_MIN_LENGTH, passwordMatchValidator } from '@shared/validators/form-validators';
 
 type PassphraseFormShape = {
   passphrase: FormControl<string>;
@@ -127,7 +127,7 @@ export class EncryptionPassphraseModal {
     {
       passphrase: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(8)],
+        validators: [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
       }),
       confirm: new FormControl('', {
         nonNullable: true,

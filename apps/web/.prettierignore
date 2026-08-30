@@ -2,3 +2,6 @@
 # dédiées, jamais par le formatter applicatif -- sinon divergence bruyante avec la source vendorée.
 .claude/
 .superpowers/
+
+# Généré par pnpm dans son propre format YAML canonique : jamais reformaté par prettier.
+pnpm-lock.yaml

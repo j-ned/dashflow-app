@@ -122,7 +122,7 @@ describe('isAutoEntry', () => {
   });
 });
 
-describe('duePostings — virements toujours auto', () => {
+describe('duePostings : virements toujours auto', () => {
   it('poste un virement récurrent même si autoPost est false', () => {
     const res = duePostings(
       [

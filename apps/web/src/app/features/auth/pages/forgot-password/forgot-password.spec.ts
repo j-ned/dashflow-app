@@ -1,10 +1,11 @@
 import { TestBed } from '@angular/core/testing';
-import { TranslocoService } from '@jsverse/transloco';
+import { provideRouter } from '@angular/router';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { Observable, of, throwError } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
-import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
 import { ForgotPassword } from './forgot-password';
 
 type Cmp = {
@@ -21,10 +22,12 @@ type Cmp = {
   step: () => 'email' | 'reset' | 'recovery' | 'done';
   pendingEmail: () => string;
   recoveryKeyValue: () => string;
+  mfaRequiredAfterReset: () => boolean;
   emailForm: { setValue: (v: { email: string }) => void };
   resetForm: {
     setValue: (v: { code: string; newPassword: string; confirmPassword: string }) => void;
   };
+  _resetPassword: string;
 };
 
 type AuthUserShape = { encryptionVersion: number };
@@ -39,13 +42,8 @@ type AuthStoreMock = {
   getKeyMaterial: () => KeyMaterialShape | null;
 };
 
-type CryptoStoreMock = {
-  unlockWithRecovery: ReturnType<typeof vi.fn>;
-  getMasterKey: ReturnType<typeof vi.fn>;
-  generateSalt: ReturnType<typeof vi.fn>;
-  deriveWrappingKey: ReturnType<typeof vi.fn>;
-  deriveWrappingKeyFromRecovery: ReturnType<typeof vi.fn>;
-  wrapKey: ReturnType<typeof vi.fn>;
+type AuthEncryptionStoreMock = {
+  repairWithRecovery: ReturnType<typeof vi.fn>;
 };
 
 type ApiClientMock = {
@@ -59,9 +57,9 @@ function makeComponent(
     resetPassword?: (email: string, code: string, newPassword: string) => Promise<void>;
     login?: (email: string, password: string) => Promise<unknown>;
     logout?: () => Promise<void>;
+    repairWithRecovery?: () => Promise<void>;
     user?: AuthUserShape | null;
     keyMaterial?: KeyMaterialShape | null;
-    crypto?: Partial<CryptoStoreMock>;
     apiPatch?: () => Observable<unknown>;
     apiPost?: () => Observable<unknown>;
     confirmed?: boolean;
@@ -76,18 +74,8 @@ function makeComponent(
     user: () => opts.user ?? null,
     getKeyMaterial: () => opts.keyMaterial ?? null,
   };
-
-  const crypto: CryptoStoreMock = {
-    unlockWithRecovery: vi.fn(opts.crypto?.unlockWithRecovery ?? (() => Promise.resolve())),
-    getMasterKey: vi.fn(opts.crypto?.getMasterKey ?? (() => ({}) as CryptoKey)),
-    generateSalt: vi.fn(opts.crypto?.generateSalt ?? (() => new Uint8Array([1, 2, 3]))),
-    deriveWrappingKey: vi.fn(
-      opts.crypto?.deriveWrappingKey ?? (() => Promise.resolve({} as CryptoKey)),
-    ),
-    deriveWrappingKeyFromRecovery: vi.fn(
-      opts.crypto?.deriveWrappingKeyFromRecovery ?? (() => Promise.resolve({} as CryptoKey)),
-    ),
-    wrapKey: vi.fn(opts.crypto?.wrapKey ?? (() => Promise.resolve('wrapped'))),
+  const authEncryption: AuthEncryptionStoreMock = {
+    repairWithRecovery: vi.fn(opts.repairWithRecovery ?? (() => Promise.resolve())),
   };
 
   const api: ApiClientMock = {
@@ -98,7 +86,7 @@ function makeComponent(
   TestBed.configureTestingModule({
     providers: [
       { provide: AuthStore, useValue: auth },
-      { provide: CryptoStore, useValue: crypto },
+      { provide: AuthEncryptionStore, useValue: authEncryption },
       { provide: ApiClient, useValue: api },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
       { provide: ConfirmService, useValue: confirmService },
@@ -109,7 +97,7 @@ function makeComponent(
   return {
     cmp: fixture.componentInstance as unknown as Cmp,
     auth,
-    crypto,
+    authEncryption,
     api,
     confirmService,
   };
@@ -126,8 +114,8 @@ function setRecoveryKey(cmp: Cmp, value: string): void {
   cmp.onRecoveryKeyInput({ target: { value } } as unknown as Event);
 }
 
-describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)', () => {
-  describe('submitEmail — demande de code', () => {
+describe('ForgotPassword : réinitialisation multi-étapes (sécurité E2EE)', () => {
+  describe('submitEmail : demande de code', () => {
     it("succès → mémorise l'email et passe à l'étape reset", async () => {
       const { cmp, auth } = makeComponent();
       cmp.emailForm.setValue(VALID_EMAIL);
@@ -142,10 +130,10 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
-    it("échec gateway avec body structuré → erreur du serveur, reste à l'étape email", async () => {
+    it("échec gateway (forme normalisée ApiClient) → erreur i18n générique, reste à l'étape email", async () => {
       const { cmp, auth } = makeComponent({
         forgotPassword: () =>
-          Promise.reject({ error: { error: 'RATE_LIMITED' } } as unknown as Error),
+          Promise.reject({ status: 429, message: 'Too many requests', code: 'RATE_LIMITED' }),
       });
       cmp.emailForm.setValue(VALID_EMAIL);
 
@@ -153,7 +141,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
 
       expect(auth.forgotPassword).toHaveBeenCalledTimes(1);
       expect(cmp.step()).toBe('email');
-      expect(cmp.error()).toBe('RATE_LIMITED');
+      expect(cmp.error()).toBe('auth.forgot.errors.generic');
       expect(cmp.loading()).toBe(false);
     });
 
@@ -182,7 +170,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
     });
   });
 
-  describe('submitReset — soumission code + nouveau mot de passe', () => {
+  describe('submitReset : soumission code + nouveau mot de passe', () => {
     it('reset OK, compte non chiffré (encryptionVersion 0) → logout puis étape done', async () => {
       const { cmp, auth } = makeComponent({ user: { encryptionVersion: 0 } });
       cmp.emailForm.setValue(VALID_EMAIL);
@@ -215,6 +203,36 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.step()).toBe('recovery');
       expect(cmp.loading()).toBe(false);
+    });
+
+    it('given un compte protégé par 2FA (régression sécurité), when submitReset, then ne saute jamais silencieusement le rewrap E2EE : détecte mfa_required et redirige vers un login normal sans toucher au crypto', async () => {
+      const { cmp, auth, authEncryption } = makeComponent({
+        login: () => Promise.resolve('mfa_required'),
+      });
+      cmp.emailForm.setValue(VALID_EMAIL);
+      await cmp.submitEmail();
+      cmp.resetForm.setValue(VALID_RESET);
+
+      await cmp.submitReset();
+
+      // Ne doit RIEN tenter côté crypto : ni passer à l'étape recovery (qui suppose une
+      // session authentifiée), ni logout (aucune session n'a été ouverte par login()).
+      expect(cmp.step()).toBe('done');
+      expect(cmp.mfaRequiredAfterReset()).toBe(true);
+      expect(auth.logout).not.toHaveBeenCalled();
+      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
+      expect(cmp.loading()).toBe(false);
+    });
+
+    it('given un reset réussi sans 2FA, when submitReset, then mfaRequiredAfterReset reste false', async () => {
+      const { cmp } = makeComponent({ user: { encryptionVersion: 0 } });
+      cmp.emailForm.setValue(VALID_EMAIL);
+      await cmp.submitEmail();
+      cmp.resetForm.setValue(VALID_RESET);
+
+      await cmp.submitReset();
+
+      expect(cmp.mfaRequiredAfterReset()).toBe(false);
     });
 
     it('reset OK mais login échoue → étape done (catch interne), pas de logout', async () => {
@@ -302,6 +320,7 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       cmp.resetForm.setValue(VALID_RESET);
       await cmp.submitReset();
       expect(cmp.error()).not.toBe('');
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
 
       cmp.backToEmail();
 
@@ -309,9 +328,22 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.error()).toBe('');
       expect(cmp.success()).toBe('');
     });
+
+    it('given un mot de passe réinitialisé en mémoire (F018), when backToEmail, then le zéroise', async () => {
+      const { cmp } = makeComponent({ user: { encryptionVersion: 1 } });
+      cmp.emailForm.setValue(VALID_EMAIL);
+      await cmp.submitEmail();
+      cmp.resetForm.setValue(VALID_RESET);
+      await cmp.submitReset();
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
+
+      cmp.backToEmail();
+
+      expect(cmp._resetPassword).toBe('');
+    });
   });
 
-  describe('onRecoveryKeyInput — normalisation', () => {
+  describe('onRecoveryKeyInput : normalisation', () => {
     it('supprime tous les espaces (espaces, tabs, retours ligne) de la clé saisie', () => {
       const { cmp } = makeComponent();
 
@@ -321,105 +353,98 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
     });
   });
 
-  describe('recoverWithKey — garde + seam injectée avant import dynamique', () => {
-    it('clé de longueur != 64 → return immédiat, aucun appel crypto', async () => {
-      const { cmp, crypto, auth } = makeComponent();
+  describe('recoverWithKey : délègue à authEncryption.repairWithRecovery (F007, converge sur le store)', () => {
+    it('clé de longueur != 64 → return immédiat, aucun appel repairWithRecovery', async () => {
+      const { cmp, auth, authEncryption } = makeComponent();
       setRecoveryKey(cmp, 'deadbeef'); // 8 chars
 
       await cmp.recoverWithKey();
 
-      expect(crypto.unlockWithRecovery).not.toHaveBeenCalled();
+      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
       expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
 
-    it('pas de recoveryWrappedKey en mémoire → erreur noRecoveryKey, pas de déchiffrement', async () => {
-      const { cmp, crypto } = makeComponent({ keyMaterial: { recoveryWrappedKey: null } });
+    it('pas de recoveryWrappedKey en mémoire → erreur noRecoveryKey, pas de repairWithRecovery', async () => {
+      const { cmp, authEncryption } = makeComponent({ keyMaterial: { recoveryWrappedKey: null } });
       setRecoveryKey(cmp, 'a'.repeat(64));
 
       await cmp.recoverWithKey();
 
       expect(cmp.error()).toBe('auth.forgot.errors.noRecoveryKey');
-      expect(crypto.unlockWithRecovery).not.toHaveBeenCalled();
+      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
 
     it('keyMaterial absent → erreur noRecoveryKey (optional chaining)', async () => {
-      const { cmp, crypto } = makeComponent({ keyMaterial: null });
+      const { cmp, authEncryption } = makeComponent({ keyMaterial: null });
       setRecoveryKey(cmp, 'a'.repeat(64));
 
       await cmp.recoverWithKey();
 
       expect(cmp.error()).toBe('auth.forgot.errors.noRecoveryKey');
-      expect(crypto.unlockWithRecovery).not.toHaveBeenCalled();
+      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
     });
 
-    it('chemin complet de récupération → déchiffre, re-wrap, PATCH des clés, logout puis done', async () => {
-      const apiPatch = vi.fn(() => of(undefined));
-      const { cmp, crypto, auth, api } = makeComponent({
+    it('chemin complet de récupération → repairWithRecovery(recoveryHex, motDePasseSaisi) puis logout et done', async () => {
+      const { cmp, auth, authEncryption } = makeComponent({
         keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        apiPatch,
+        user: { encryptionVersion: 1 },
       });
       cmp.emailForm.setValue(VALID_EMAIL);
       await cmp.submitEmail();
       cmp.resetForm.setValue(VALID_RESET);
+      await cmp.submitReset(); // mémorise _resetPassword et bascule sur l'étape recovery
       const recoveryHex = 'a'.repeat(64);
       setRecoveryKey(cmp, recoveryHex);
 
       await cmp.recoverWithKey();
 
-      expect(crypto.unlockWithRecovery).toHaveBeenCalledWith(recoveryHex, 'recovery-wrapped');
-      expect(crypto.getMasterKey).toHaveBeenCalled();
-      expect(crypto.deriveWrappingKeyFromRecovery).toHaveBeenCalledWith(recoveryHex);
-      expect(api.patch).toHaveBeenCalledTimes(1);
-      expect(api.patch).toHaveBeenCalledWith(
-        '/auth/me/encryption-keys',
-        expect.objectContaining({
-          salt: expect.any(String),
-          wrappedMasterKey: 'wrapped',
-          recoveryWrappedKey: 'wrapped',
-        }),
+      expect(authEncryption.repairWithRecovery).toHaveBeenCalledWith(
+        recoveryHex,
+        VALID_RESET.newPassword,
       );
       expect(auth.logout).toHaveBeenCalledTimes(1);
       expect(cmp.step()).toBe('done');
       expect(cmp.error()).toBe('');
       expect(cmp.loading()).toBe(false);
+      expect(cmp._resetPassword).toBe(''); // F018 : plus besoin du mot de passe une fois rewrap fait
     });
 
-    it('échec du déchiffrement (mauvaise clé) → erreur invalidRecoveryKey, pas de PATCH ni logout', async () => {
-      const apiPatch = vi.fn(() => of(undefined));
-      const { cmp, auth, api } = makeComponent({
+    it('échec côté store (mauvaise clé ou PATCH serveur) → erreur invalidRecoveryKey, pas de logout', async () => {
+      const { cmp, auth } = makeComponent({
         keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        crypto: { unlockWithRecovery: vi.fn(() => Promise.reject(new Error('bad key'))) },
-        apiPatch,
+        repairWithRecovery: vi.fn(() => Promise.reject(new Error('bad key'))),
       });
       setRecoveryKey(cmp, 'a'.repeat(64));
 
       await expect(cmp.recoverWithKey()).resolves.toBeUndefined();
 
-      expect(api.patch).not.toHaveBeenCalled();
       expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.error()).toBe('auth.forgot.errors.invalidRecoveryKey');
       expect(cmp.step()).toBe('email');
       expect(cmp.loading()).toBe(false);
     });
 
-    it('échec du PATCH serveur → erreur invalidRecoveryKey (catch englobant), pas de logout', async () => {
-      const { cmp, auth } = makeComponent({
+    it('given un échec de repairWithRecovery (mauvaise clé de récupération), when recoverWithKey, then conserve _resetPassword pour permettre une nouvelle tentative', async () => {
+      const { cmp } = makeComponent({
         keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        apiPatch: () => throwError(() => new Error('500')),
+        user: { encryptionVersion: 1 },
+        repairWithRecovery: vi.fn(() => Promise.reject(new Error('bad recovery key'))),
       });
+      cmp.emailForm.setValue(VALID_EMAIL);
+      await cmp.submitEmail();
+      cmp.resetForm.setValue(VALID_RESET);
+      await cmp.submitReset();
       setRecoveryKey(cmp, 'a'.repeat(64));
 
       await cmp.recoverWithKey();
 
-      expect(auth.logout).not.toHaveBeenCalled();
-      expect(cmp.error()).toBe('auth.forgot.errors.invalidRecoveryKey');
-      expect(cmp.loading()).toBe(false);
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
     });
   });
 
-  describe('skipRecovery — confirmation via ConfirmService (régression F008 : plus de confirm() natif) + wipe chiffrement', () => {
+  describe('skipRecovery : confirmation via ConfirmService (régression F008 : plus de confirm() natif) + wipe chiffrement', () => {
     it('confirmation refusée → return immédiat, aucun appel API', async () => {
       const { cmp, api, auth, confirmService } = makeComponent({ confirmed: false });
 
@@ -445,6 +470,19 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.loading()).toBe(false);
     });
 
+    it('given un mot de passe réinitialisé en mémoire (F018), when skipRecovery confirmé, then le zéroise', async () => {
+      const { cmp } = makeComponent({ confirmed: true, user: { encryptionVersion: 1 } });
+      cmp.emailForm.setValue(VALID_EMAIL);
+      await cmp.submitEmail();
+      cmp.resetForm.setValue(VALID_RESET);
+      await cmp.submitReset();
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
+
+      await cmp.skipRecovery();
+
+      expect(cmp._resetPassword).toBe('');
+    });
+
     it('confirmation acceptée mais wipe échoue → erreur wipeFailed, pas de logout', async () => {
       const { cmp, auth } = makeComponent({
         confirmed: true,
@@ -457,5 +495,73 @@ describe('ForgotPassword — réinitialisation multi-étapes (sécurité E2EE)',
       expect(cmp.error()).toBe('auth.forgot.errors.wipeFailed');
       expect(cmp.loading()).toBe(false);
     });
+  });
+});
+
+describe('ForgotPassword : rendu réel du template (F014)', () => {
+  function mountReal(opts: { forgotPassword?: (email: string) => Promise<void> } = {}) {
+    const auth = {
+      forgotPassword: vi.fn(opts.forgotPassword ?? (() => Promise.resolve())),
+      resetPassword: vi.fn(() => Promise.resolve()),
+      login: vi.fn(() => Promise.resolve(undefined)),
+      logout: vi.fn(() => Promise.resolve()),
+      user: () => null,
+      getKeyMaterial: () => null,
+    };
+    const authEncryption = { repairWithRecovery: vi.fn(() => Promise.resolve()) };
+    TestBed.configureTestingModule({
+      imports: [
+        ForgotPassword,
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: AuthStore, useValue: auth },
+        { provide: AuthEncryptionStore, useValue: authEncryption },
+        { provide: ApiClient, useValue: { patch: () => of(undefined), post: () => of(undefined) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(ForgotPassword);
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as unknown as Cmp };
+  }
+
+  it("étape 'email' : le bouton d'envoi est désactivé tant que l'email est invalide", () => {
+    const { fixture } = mountReal();
+
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="forgot-email-submit"]',
+    );
+
+    expect(submit).not.toBeNull();
+    expect(submit?.disabled).toBe(true);
+  });
+
+  it("étape 'email' : le bouton d'envoi se réactive une fois l'email valide", () => {
+    const { fixture, cmp } = mountReal();
+    cmp.emailForm.setValue(VALID_EMAIL);
+
+    fixture.detectChanges();
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="forgot-email-submit"]',
+    );
+
+    expect(submit?.disabled).toBe(false);
+  });
+
+  it("envoi réussi : bascule sur l'étape 'reset' rendue dans le DOM", async () => {
+    const { fixture, cmp } = mountReal();
+    cmp.emailForm.setValue(VALID_EMAIL);
+
+    await cmp.submitEmail();
+    fixture.detectChanges();
+
+    const resetStep = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="forgot-reset-step"]',
+    );
+    expect(resetStep).not.toBeNull();
   });
 });

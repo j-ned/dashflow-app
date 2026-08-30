@@ -4,7 +4,7 @@ import { ApiClient } from '@core/services/api/api-client';
 import { Reminder } from '../domain/models/reminder.model';
 import { ReminderGateway } from '../domain/gateways/reminder.gateway';
 
-// Non-E2EE intentionnel : un reminder ne porte que du routage opérationnel — `recipientEmail` que
+// Non-E2EE intentionnel : un reminder ne porte que du routage opérationnel, `recipientEmail` que
 // le serveur DOIT lire pour envoyer les rappels email, + des FK medication/appointment. Aucun contenu
 // médical (nom, note) n'y figure ; le chiffrer casserait l'envoi côté serveur.
 @Injectable()

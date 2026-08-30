@@ -69,7 +69,6 @@ export class ConfirmService {
     });
   }
 
-  /** Shorthand for delete confirmations */
   delete(entityName: string): Promise<boolean> {
     return this.confirm({
       title: this._i18n.translate('shared.confirm.deleteTitle'),
@@ -79,7 +78,6 @@ export class ConfirmService {
     });
   }
 
-  /** Three-choice dialog: confirm / alternative / cancel */
   choose(options: ChoiceOptions): Promise<ChoiceResult> {
     return new Promise((resolve) => {
       this._pending.set({
@@ -247,7 +245,7 @@ export class ConfirmDialog {
   }
 
   protected onDialogClose() {
-    // Escape key pressed — resolve as cancel
+    // Escape key pressed: resolve as cancel
     const p = this.pending();
     if (p) {
       p.resolve('cancel');

@@ -4,11 +4,11 @@ import { RouterLink } from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
-import { bytesToHex, CryptoStore } from '@core/services/crypto/crypto.store';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
 import { Icon } from '@shared/components/icon/icon';
 import { firstValueFrom } from 'rxjs';
-import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { PASSWORD_MIN_LENGTH, passwordMatchValidator } from '@shared/validators/form-validators';
 import { ConfirmDialog, ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 
 type EmailFormShape = {
@@ -79,6 +79,7 @@ type ResetFormShape = {
 
             <button
               type="submit"
+              data-testid="forgot-email-submit"
               [disabled]="emailForm.invalid || loading()"
               class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -94,7 +95,10 @@ type ResetFormShape = {
         }
 
         @if (step() === 'reset') {
-          <div class="mb-4 rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
+          <div
+            class="mb-4 rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center"
+            data-testid="forgot-reset-step"
+          >
             <p class="text-sm text-text-primary">
               {{ 'auth.forgot.codeSentTo' | transloco }} <strong>{{ pendingEmail() }}</strong>
             </p>
@@ -198,6 +202,7 @@ type ResetFormShape = {
 
             <button
               type="submit"
+              data-testid="forgot-reset-submit"
               [disabled]="resetForm.invalid || loading()"
               class="mt-2 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -297,7 +302,10 @@ type ResetFormShape = {
               </svg>
             </div>
             <p class="text-center text-sm text-text-primary">
-              {{ 'auth.forgot.doneMessage' | transloco }}
+              {{
+                (mfaRequiredAfterReset() ? 'auth.forgot.doneMessageMfa' : 'auth.forgot.doneMessage')
+                  | transloco
+              }}
             </p>
             <a
               routerLink="/auth/login"
@@ -315,8 +323,8 @@ type ResetFormShape = {
 })
 export class ForgotPassword {
   private readonly auth = inject(AuthStore);
+  private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly confirmService = inject(ConfirmService);
-  private readonly cryptoStore = inject(CryptoStore);
   private readonly api = inject(ApiClient);
   private readonly _i18n = inject(TranslocoService);
 
@@ -328,6 +336,7 @@ export class ForgotPassword {
   protected readonly step = signal<'email' | 'reset' | 'recovery' | 'done'>('email');
   protected readonly pendingEmail = signal('');
   protected readonly recoveryKeyValue = signal('');
+  protected readonly mfaRequiredAfterReset = signal(false);
 
   private _resetPassword = '';
 
@@ -346,7 +355,7 @@ export class ForgotPassword {
       }),
       newPassword: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(6)],
+        validators: [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
       }),
       confirmPassword: new FormControl('', {
         nonNullable: true,
@@ -373,8 +382,8 @@ export class ForgotPassword {
       await this.auth.forgotPassword(email);
       this.pendingEmail.set(email);
       this.step.set('reset');
-    } catch (err: unknown) {
-      this.error.set(this.extractError(err, this._i18n.translate('auth.forgot.errors.generic')));
+    } catch {
+      this.error.set(this._i18n.translate('auth.forgot.errors.generic'));
     } finally {
       this.loading.set(false);
     }
@@ -392,8 +401,19 @@ export class ForgotPassword {
 
       await this.auth.resetPassword(this.pendingEmail(), code, newPassword);
 
+      this.mfaRequiredAfterReset.set(false);
       try {
-        await this.auth.login(this.pendingEmail(), newPassword);
+        const loginResult = await this.auth.login(this.pendingEmail(), newPassword);
+        if (loginResult === 'mfa_required') {
+          // La 2FA bloque l'auto-login : impossible de savoir ici si l'E2EE a besoin d'un
+          // rewrap (needsUnlock ne peut être évalué sans session). On ne touche à AUCUNE
+          // opération crypto ici : l'utilisateur se reconnecte normalement (login.ts gère la
+          // 2FA), et si son déverrouillage auto échoue ensuite, /auth/unlock (mode "repair",
+          // déjà correct) prend le relais avec sa clé de récupération.
+          this.mfaRequiredAfterReset.set(true);
+          this.step.set('done');
+          return;
+        }
         const user = this.auth.user();
         if (user && user.encryptionVersion === 1) {
           this.step.set('recovery');
@@ -402,7 +422,6 @@ export class ForgotPassword {
           this.step.set('done');
         }
       } catch (e) {
-        console.error('[forgot-password] auto-login après reset échoué :', e);
         Sentry.captureException(e, { tags: { flow: 'reset-password-auto-login' } });
         this.step.set('done');
       }
@@ -421,10 +440,8 @@ export class ForgotPassword {
     try {
       await this.auth.forgotPassword(this.pendingEmail());
       this.success.set(this._i18n.translate('auth.forgot.success.codeResent'));
-    } catch (err: unknown) {
-      this.error.set(
-        this.extractError(err, this._i18n.translate('auth.forgot.errors.resendFailed')),
-      );
+    } catch {
+      this.error.set(this._i18n.translate('auth.forgot.errors.resendFailed'));
     } finally {
       this.loading.set(false);
     }
@@ -435,6 +452,8 @@ export class ForgotPassword {
     this.error.set('');
     this.success.set('');
     this.resetForm.reset();
+    // Abandon du flux : le mot de passe réinitialisé n'a plus lieu d'être conservé en mémoire.
+    this._resetPassword = '';
   }
 
   protected async recoverWithKey(): Promise<void> {
@@ -451,29 +470,13 @@ export class ForgotPassword {
         return;
       }
 
-      await this.cryptoStore.unlockWithRecovery(recoveryHex, keyMaterial.recoveryWrappedKey);
-
-      const masterKey = this.cryptoStore.getMasterKey()!;
-      const salt = this.cryptoStore.generateSalt();
-      const wrappingKey = await this.cryptoStore.deriveWrappingKey(this._resetPassword, salt);
-      const wrappedMasterKey = await this.cryptoStore.wrapKey(masterKey, wrappingKey);
-      const saltHex = bytesToHex(salt);
-
-      const recoveryWrappingKey = await this.cryptoStore.deriveWrappingKeyFromRecovery(recoveryHex);
-      const recoveryWrappedKey = await this.cryptoStore.wrapKey(masterKey, recoveryWrappingKey);
-
-      await firstValueFrom(
-        this.api.patch('/auth/me/encryption-keys', {
-          salt: saltHex,
-          wrappedMasterKey,
-          recoveryWrappedKey,
-        }),
-      );
+      await this.authEncryption.repairWithRecovery(recoveryHex, this._resetPassword);
+      // Succès : le mot de passe a rempli son rôle (rewrap de la clé maîtresse), on ne le garde pas.
+      this._resetPassword = '';
 
       await this.auth.logout();
       this.step.set('done');
     } catch (e) {
-      console.error('[forgot-password] récupération E2EE échouée :', e);
       Sentry.captureException(e, { tags: { flow: 'e2ee-recovery' } });
       this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
     } finally {
@@ -492,6 +495,8 @@ export class ForgotPassword {
 
     this.loading.set(true);
     this.error.set('');
+    // Abandon de la récupération (chiffrement remis à zéro) : le mot de passe ne sert plus.
+    this._resetPassword = '';
 
     try {
       await firstValueFrom(this.api.post('/auth/me/wipe-encryption', {}));
@@ -502,13 +507,5 @@ export class ForgotPassword {
     } finally {
       this.loading.set(false);
     }
-  }
-
-  private extractError(err: unknown, fallback: string): string {
-    if (err && typeof err === 'object' && 'error' in err) {
-      const httpErr = err as { error?: { error?: string } };
-      return httpErr.error?.error ?? fallback;
-    }
-    return fallback;
   }
 }

@@ -159,7 +159,7 @@ function make(
   return { fixture, cmp: fixture.componentInstance as unknown as Cmp };
 }
 
-describe('MedicalDashboard — rendu réel du template (régression pipes imbriqués)', () => {
+describe('MedicalDashboard : rendu réel du template (régression pipes imbriqués)', () => {
   it("n'explose pas quand un patient a médicaments, RDV et ordonnance avec validUntil", () => {
     TestBed.configureTestingModule({
       imports: [
@@ -217,7 +217,7 @@ describe('MedicalDashboard', () => {
     }
   });
 
-  describe('patientSummaries — nextAppointments', () => {
+  describe('patientSummaries : nextAppointments', () => {
     it('ne garde que les RDV futurs, planifiés, triés par date+heure et capés à 3', () => {
       const { cmp } = make({
         patients: [patient()],
@@ -261,7 +261,7 @@ describe('MedicalDashboard', () => {
     });
   });
 
-  describe('patientSummaries — activePrescriptions', () => {
+  describe('patientSummaries : activePrescriptions', () => {
     it('filtre par validUntil (>= today ou null), trie par issuedDate desc, cap 3', () => {
       const { cmp } = make({
         patients: [patient()],
@@ -280,7 +280,7 @@ describe('MedicalDashboard', () => {
     });
   });
 
-  describe('patientSummaries — medications & lowStockCount', () => {
+  describe('patientSummaries : medications & lowStockCount', () => {
     it('trie par daysRemaining croissant et compte les meds en stock bas', () => {
       const { cmp } = make({
         patients: [patient()],

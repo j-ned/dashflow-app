@@ -1,6 +1,8 @@
 import { computed, Injectable, signal } from '@angular/core';
 
-const SESSION_KEY = 'e2ee_master_key';
+const DB_NAME = 'dashflow-crypto';
+const STORE_NAME = 'keys';
+const MASTER_KEY_ID = 'master';
 const PBKDF2_ITERATIONS = 600_000;
 const SALT_BYTES = 16;
 const IV_BYTES = 12;
@@ -9,6 +11,11 @@ const KEY_BITS = 256;
 @Injectable({ providedIn: 'root' })
 export class CryptoStore {
   private readonly _masterKey = signal<CryptoKey | null>(null);
+  // Copie extractible en mémoire uniquement (jamais persistée) : nécessaire pour les rewraps
+  // (changement de mot de passe, rotation de clé de récupération) qui n'ont pas toujours un
+  // identifiant frais en main. Cf. audit F003 : _masterKey reste non-extractible pour que la
+  // persistance (IndexedDB) ne puisse jamais être exportée par un script tiers.
+  private _extractableMasterKey: CryptoKey | null = null;
 
   readonly isUnlocked = computed(() => !!this._masterKey());
 
@@ -64,7 +71,11 @@ export class CryptoStore {
     return bufferToBase64(wrapped);
   }
 
-  async unwrapKey(wrappedBase64: string, wrappingKey: CryptoKey): Promise<CryptoKey> {
+  async unwrapKey(
+    wrappedBase64: string,
+    wrappingKey: CryptoKey,
+    extractable = false,
+  ): Promise<CryptoKey> {
     const wrapped = base64ToBuffer(wrappedBase64);
     return crypto.subtle.unwrapKey(
       'raw',
@@ -72,7 +83,7 @@ export class CryptoStore {
       wrappingKey,
       'AES-KW',
       { name: 'AES-GCM', length: KEY_BITS },
-      true,
+      extractable,
       ['encrypt', 'decrypt'],
     );
   }
@@ -104,51 +115,105 @@ export class CryptoStore {
   async unlock(password: string, saltHex: string, wrappedKeyBase64: string): Promise<void> {
     const salt = hexToBytes(saltHex);
     const wrappingKey = await this.deriveWrappingKey(password, salt);
-    const masterKey = await this.unwrapKey(wrappedKeyBase64, wrappingKey);
-    this._masterKey.set(masterKey);
-    await this.saveToSession(masterKey);
+    await this.setMasterKeyFromWrapped(wrappedKeyBase64, wrappingKey);
   }
 
   async unlockWithRecovery(recoveryHex: string, wrappedKeyBase64: string): Promise<void> {
     const wrappingKey = await this.deriveWrappingKeyFromRecovery(recoveryHex);
-    const masterKey = await this.unwrapKey(wrappedKeyBase64, wrappingKey);
-    this._masterKey.set(masterKey);
-    await this.saveToSession(masterKey);
+    await this.setMasterKeyFromWrapped(wrappedKeyBase64, wrappingKey);
   }
 
-  lock(): void {
+  async lock(): Promise<void> {
     this._masterKey.set(null);
-    sessionStorage.removeItem(SESSION_KEY);
+    this._extractableMasterKey = null;
+    await idbDelete(MASTER_KEY_ID);
   }
 
-  async restoreFromSession(): Promise<boolean> {
-    const stored = sessionStorage.getItem(SESSION_KEY);
-    if (!stored) return false;
-
-    try {
-      const raw = base64ToBuffer(stored);
-      const key = await crypto.subtle.importKey(
-        'raw',
-        raw,
-        { name: 'AES-GCM', length: KEY_BITS },
-        true,
-        ['encrypt', 'decrypt'],
-      );
-      this._masterKey.set(key);
-      return true;
-    } catch {
-      sessionStorage.removeItem(SESSION_KEY);
-      return false;
-    }
+  /** Restaure la clé maîtresse (non-extractible) persistée en IndexedDB après un rechargement. */
+  async restoreFromStorage(): Promise<boolean> {
+    const key = await idbGet(MASTER_KEY_ID);
+    if (!key) return false;
+    this._masterKey.set(key);
+    return true;
   }
 
+  /** Clé pour encrypt/decrypt uniquement : non-extractible, jamais exportable en JS. */
   getMasterKey(): CryptoKey | null {
     return this._masterKey();
   }
 
-  private async saveToSession(key: CryptoKey): Promise<void> {
-    const raw = await crypto.subtle.exportKey('raw', key);
-    sessionStorage.setItem(SESSION_KEY, bufferToBase64(raw));
+  /**
+   * Clé extractible pour les rewraps (changement de mot de passe, rotation de clé de
+   * récupération). Disponible uniquement en mémoire depuis le dernier `unlock`/`unlockWithRecovery`
+   * de la session courante ; `null` après un simple `restoreFromStorage` (rechargement de page) :
+   * l'appelant doit alors redemander le mot de passe pour redériver la clé avant de rewrap.
+   */
+  getRewrappableMasterKey(): CryptoKey | null {
+    return this._extractableMasterKey;
+  }
+
+  private async setMasterKeyFromWrapped(
+    wrappedKeyBase64: string,
+    wrappingKey: CryptoKey,
+  ): Promise<void> {
+    const [masterKey, extractableMasterKey] = await Promise.all([
+      this.unwrapKey(wrappedKeyBase64, wrappingKey, false),
+      this.unwrapKey(wrappedKeyBase64, wrappingKey, true),
+    ]);
+    this._masterKey.set(masterKey);
+    this._extractableMasterKey = extractableMasterKey;
+    await idbPut(MASTER_KEY_ID, masterKey);
+  }
+}
+
+function openKeyDb(): Promise<IDBDatabase> {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open(DB_NAME, 1);
+    request.onupgradeneeded = () => request.result.createObjectStore(STORE_NAME);
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error as Error);
+  });
+}
+
+async function idbPut(id: string, value: CryptoKey): Promise<void> {
+  const db = await openKeyDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).put(value, id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error as Error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function idbGet(id: string): Promise<CryptoKey | undefined> {
+  const db = await openKeyDb();
+  try {
+    return await new Promise<CryptoKey | undefined>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readonly');
+      const request = tx.objectStore(STORE_NAME).get(id);
+      request.onsuccess = () => resolve(request.result as CryptoKey | undefined);
+      request.onerror = () => reject(request.error as Error);
+    });
+  } finally {
+    db.close();
+  }
+}
+
+async function idbDelete(id: string): Promise<void> {
+  const db = await openKeyDb();
+  try {
+    await new Promise<void>((resolve, reject) => {
+      const tx = db.transaction(STORE_NAME, 'readwrite');
+      tx.objectStore(STORE_NAME).delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error as Error);
+    });
+  } finally {
+    db.close();
   }
 }
 

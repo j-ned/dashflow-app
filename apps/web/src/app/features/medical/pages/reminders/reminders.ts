@@ -292,14 +292,14 @@ export class Reminders {
       if (appt) {
         const patient = this.patientMap().get(appt.patientId) ?? '';
         const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-        return `${appt.date} ${appt.time} — ${patient} / ${practitioner}`;
+        return `${appt.date} ${appt.time} : ${patient} / ${practitioner}`;
       }
     }
     if (reminder.target === 'medication' && reminder.medicationId) {
       const med = this.medicationMap().get(reminder.medicationId);
       if (med) {
         const patient = this.patientMap().get(med.patientId) ?? '';
-        return `${med.name} (${med.dosage}) — ${patient}`;
+        return `${med.name} (${med.dosage}) : ${patient}`;
       }
     }
     return '-';

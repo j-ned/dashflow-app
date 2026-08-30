@@ -9,7 +9,7 @@ import {
   type UrlTree,
 } from '@angular/router';
 import { adminGuard } from './admin';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 
 type AuthMock = {
   isLoading: ReturnType<typeof vi.fn>;

@@ -516,7 +516,7 @@ export class BankAccount {
 
   // Construit le payload de transaction réelle dérivé d'une récurrence : les champs liés à
   // l'entrée (compte, virement, catégorie, membre, lien recurringEntryId) sont toujours repris ;
-  // montant / sens / date / note varient selon le contexte (confirmation manuelle, auto-post…).
+  // montant / sens / date / note varient selon le contexte (confirmation manuelle, auto-post, etc.).
   private _txPayloadFor(
     entry: RecurringEntry,
     over: Pick<AccountTransaction, 'amount' | 'direction' | 'date' | 'note'>,

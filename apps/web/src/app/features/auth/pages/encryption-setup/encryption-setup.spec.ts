@@ -4,7 +4,9 @@ import { Router } from '@angular/router';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { AuthStore, type AuthUser } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
+import { AuthUser } from '../../domain/models/auth-user.model';
 import { EncryptionSetup } from './encryption-setup';
 
 type Cmp = {
@@ -24,10 +26,11 @@ function makeComponent(
     providers: [
       {
         provide: AuthStore,
-        useValue: {
-          getKeyMaterial: () => null,
-          migrateEncryption,
-        },
+        useValue: { getKeyMaterial: () => null },
+      },
+      {
+        provide: AuthEncryptionStore,
+        useValue: { migrateEncryption },
       },
       {
         provide: CryptoStore,
@@ -53,7 +56,7 @@ function makeComponent(
   };
 }
 
-describe('EncryptionSetup — migration E2EE (F003)', () => {
+describe('EncryptionSetup : migration E2EE (F003)', () => {
   it("n'envoie PAS la migration et bloque 'done' si une table échoue à chiffrer", async () => {
     const get = (path: string) =>
       path === '/bank-accounts' ? throwError(() => new Error('boom')) : of([]);
@@ -90,7 +93,7 @@ const USER: AuthUser = {
   role: 'user',
 };
 
-describe('EncryptionSetup — rendu réel (régression F008 : prompt() natif remplacé par une modale)', () => {
+describe('EncryptionSetup : rendu réel (régression F008 : prompt() natif remplacé par une modale)', () => {
   it("startSetup() ouvre la modale de confirmation au lieu d'un prompt() natif", () => {
     // jsdom n'implémente pas <dialog>.showModal() du tout : on la définit pour ce test DOM,
     // même limitation que pour ConfirmDialog/ModalDialog (jamais testés en DOM ailleurs).
@@ -107,6 +110,7 @@ describe('EncryptionSetup — rendu réel (régression F008 : prompt() natif rem
       ],
       providers: [
         { provide: AuthStore, useValue: { user: () => USER } },
+        { provide: AuthEncryptionStore, useValue: {} },
         {
           provide: CryptoStore,
           useValue: { unlock: () => Promise.resolve(), getMasterKey: () => null },
@@ -142,7 +146,8 @@ describe('EncryptionSetup — rendu réel (régression F008 : prompt() natif rem
         }),
       ],
       providers: [
-        { provide: AuthStore, useValue: { user: () => USER, setupEncryption } },
+        { provide: AuthStore, useValue: { user: () => USER } },
+        { provide: AuthEncryptionStore, useValue: { setupEncryption } },
         {
           provide: CryptoStore,
           useValue: { unlock: () => Promise.resolve(), getMasterKey: () => null },

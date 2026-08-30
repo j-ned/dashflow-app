@@ -26,11 +26,8 @@
   white-box typé via cast d'internals, mocks via `vi.fn()`).
 - **format** : `pnpm format:check` (= `prettier --check .`, gate de mise en forme
   **séparé** du lint via `eslint-config-prettier`). `pnpm format` (`prettier --write .`)
-  pour corriger. ⚠️ **Drift connu (2026-07-04)** : le codebase **n'est pas** 100%
-  prettier-clean — `format:check` flague ~100+ fichiers pré-existants. `format:check`
-  **n'est donc PAS une gate fiable en l'état** ; un `reviewer` ne doit se fier qu'aux
-  fichiers **du diff** (les 4 fixes 2026-07-04 étaient clean sur leur périmètre). À
-  assainir globalement (`pnpm format` sur tout le repo) dans un chantier dédié.
+  pour corriger. Gate fiable (vérifié 2026-08-30) : `format:check` sort en 0 sur tout
+  le repo, et la CI l'applique déjà (`ci.yml`).
 - **build** : `pnpm build` (= `ng build`, configuration `production`). N'est
   **pas** la source de vérité des types (le typecheck des specs passe par `test`).
 - **invalidation cache** : `aucun` — pas de système de cache de build orchestré

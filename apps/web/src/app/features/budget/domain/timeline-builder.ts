@@ -53,7 +53,7 @@ export function buildTimelineEvents(p: TimelineInput): TimelineEvent[] {
     events.push({
       id: e.id,
       day: e.dayOfMonth ?? 1,
-      label: `→ ${p.accountName(e.toAccountId) ?? p.fallbackLabel} — ${e.label}`,
+      label: `→ ${p.accountName(e.toAccountId) ?? p.fallbackLabel} : ${e.label}`,
       amount: Number(e.amount),
       sign: '-',
       type: 'transfer',
@@ -64,7 +64,7 @@ export function buildTimelineEvents(p: TimelineInput): TimelineEvent[] {
     events.push({
       id: e.id + '-in',
       day: e.dayOfMonth ?? 1,
-      label: `← ${p.accountName(e.accountId) ?? p.fallbackLabel} — ${e.label}`,
+      label: `← ${p.accountName(e.accountId) ?? p.fallbackLabel} : ${e.label}`,
       amount: Number(e.amount),
       sign: '+',
       type: 'transfer',

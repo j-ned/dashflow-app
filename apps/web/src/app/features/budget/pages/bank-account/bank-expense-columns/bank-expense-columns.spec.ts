@@ -64,7 +64,7 @@ function mount(rows: RecurringEntry[], savingsSubtotal: number) {
   return fixture;
 }
 
-describe('BankExpenseColumns — versement épargne', () => {
+describe('BankExpenseColumns : versement épargne', () => {
   it('affiche un badge destination sur une ligne de virement', () => {
     const fixture = mount([EXPENSE, SAVING], 200);
     const badge = fixture.nativeElement.querySelector('[data-testid="savings-badge"]');
@@ -85,7 +85,7 @@ describe('BankExpenseColumns — versement épargne', () => {
   });
 });
 
-describe('BankExpenseColumns — badge date de fin (régression pipe imbriqué dans transloco)', () => {
+describe('BankExpenseColumns : badge date de fin (régression pipe imbriqué dans transloco)', () => {
   it("n'explose pas quand une dépense récurrente a une endDate", () => {
     expect(() => mount([{ ...EXPENSE, endDate: '2026-12-31' }], 0)).not.toThrow();
   });

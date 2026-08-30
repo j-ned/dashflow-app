@@ -6,7 +6,8 @@ import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { encryptEntity } from '@core/services/crypto/entity-crypto';
 import { firstValueFrom } from 'rxjs';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
 import { RecoveryKeyModal } from '../../components/recovery-key-modal/recovery-key-modal';
 import { EncryptionPassphraseModal } from '../../components/encryption-passphrase-modal/encryption-passphrase-modal';
 import { ConfirmPasswordModal } from '../../components/confirm-password-modal/confirm-password-modal';
@@ -160,10 +161,7 @@ const API_PATHS: Record<string, string> = {
         </div>
       </article>
 
-      <app-recovery-key-modal
-        [recoveryKey]="recoveryKey()"
-        (confirmed$)="onRecoveryKeyConfirmed()"
-      />
+      <app-recovery-key-modal [recoveryKey]="recoveryKey()" (keySaved)="onRecoveryKeyConfirmed()" />
 
       <app-encryption-passphrase-modal (passphraseSet)="onPassphraseSet($event)" />
 
@@ -173,6 +171,7 @@ const API_PATHS: Record<string, string> = {
 })
 export class EncryptionSetup {
   private readonly auth = inject(AuthStore);
+  private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly cryptoStore = inject(CryptoStore);
   private readonly api = inject(ApiClient);
   private readonly router = inject(Router);
@@ -215,12 +214,12 @@ export class EncryptionSetup {
     try {
       this._password = password;
 
-      const key = await this.auth.setupEncryption(password);
+      const key = await this.authEncryption.setupEncryption(password);
       this.recoveryKey.set(key);
       this.loading.set(false);
       this.recoveryModal().open();
     } catch (e) {
-      console.error('Encryption setup error:', e);
+      Sentry.captureException(e, { tags: { flow: 'e2ee-setup' } });
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.prepareFailed'));
       this.loading.set(false);
     }
@@ -240,12 +239,12 @@ export class EncryptionSetup {
         this.api.post('/auth/me/encryption-passphrase', { passphrase: password }),
       );
 
-      const key = await this.auth.setupEncryption(password);
+      const key = await this.authEncryption.setupEncryption(password);
       this.recoveryKey.set(key);
       this.loading.set(false);
       this.recoveryModal().open();
     } catch (e) {
-      console.error('Passphrase encryption setup error:', e);
+      Sentry.captureException(e, { tags: { flow: 'e2ee-setup-passphrase' } });
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.passphraseFailed'));
       this.loading.set(false);
     }
@@ -301,7 +300,6 @@ export class EncryptionSetup {
             encryptedData[tableName] = encrypted;
           }
         } catch (e) {
-          console.error(`Encryption migration failed for table "${tableName}":`, e);
           Sentry.captureException(e, { tags: { flow: 'e2ee-migration', table: tableName } });
           failedTables.push(tableName);
         }
@@ -322,12 +320,11 @@ export class EncryptionSetup {
       this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.sendingEncrypted'));
       this.progress.set(90);
 
-      await this.auth.migrateEncryption(encryptedData);
+      await this.authEncryption.migrateEncryption(encryptedData);
 
       this.progress.set(100);
       this.step.set('done');
     } catch (e) {
-      console.error('Migration error:', e);
       Sentry.captureException(e, { tags: { flow: 'e2ee-migration' } });
       this.step.set('init');
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.migrationFailed'));

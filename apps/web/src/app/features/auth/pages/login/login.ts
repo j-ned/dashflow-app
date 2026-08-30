@@ -2,10 +2,11 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { environment } from '@env/environment';
 import { Toaster } from '@shared/components/toast/toast';
+import { PASSWORD_MIN_LENGTH } from '@shared/validators/form-validators';
 
 type LoginFormShape = {
   email: FormControl<string>;
@@ -100,6 +101,7 @@ type LoginFormShape = {
 
             <button
               type="submit"
+              data-testid="login-submit"
               [disabled]="form.invalid || loading()"
               class="mt-4 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -162,7 +164,7 @@ type LoginFormShape = {
         }
 
         @if (step() === 'totp') {
-          <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-4" data-testid="login-totp-step">
             <div class="rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
               <p class="text-sm text-text-primary">
                 {{ 'auth.login.totpPrompt' | transloco }}
@@ -266,7 +268,7 @@ export class Login {
     }),
     password: new FormControl('', {
       nonNullable: true,
-      validators: [Validators.required, Validators.minLength(12)],
+      validators: [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
     }),
   });
 

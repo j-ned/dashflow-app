@@ -495,7 +495,7 @@ export class RecurringEntryForm {
   );
 
   // Sous-toggle récurrent/ponctuel : visible seulement pour le flux virement explicite
-  // (bouton ponctuel du panneau, ou édition d'un virement) — masqué dans le flux prélèvement.
+  // (bouton ponctuel du panneau, ou édition d'un virement), masqué dans le flux prélèvement.
   protected readonly showTransferModeToggle = computed(() =>
     transferModeToggleVisible(this.forcedType() ?? this.initial()?.type),
   );

@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Router } from '@angular/router';
-import { TranslocoService } from '@jsverse/transloco';
-import { AuthStore } from '../../domain/auth.store';
+import { ActivatedRoute, provideRouter, Router } from '@angular/router';
+import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
+import { AuthStore } from '../../auth.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { Login } from './login';
 
@@ -69,7 +69,7 @@ function makeComponent(
 
 const VALID = { email: 'user@dash.flow', password: 'longenoughpass' };
 
-describe('Login — authentification 2 étapes (sécurité)', () => {
+describe('Login : authentification 2 étapes (sécurité)', () => {
   it('connexion réussie sans MFA, utilisateur prêt → navigue vers /budget', async () => {
     const { cmp, auth, navigate, success } = makeComponent();
     cmp.form.setValue(VALID);
@@ -251,7 +251,7 @@ describe('Login — authentification 2 étapes (sécurité)', () => {
         hydrateFromCookie: hydrate,
       });
 
-      // Le constructeur a lancé handleOAuthCallback (async) — on attend sa résolution.
+      // Le constructeur a lancé handleOAuthCallback (async) : on attend sa résolution.
       resolveHydrate();
       await Promise.resolve();
       await Promise.resolve();
@@ -276,5 +276,78 @@ describe('Login — authentification 2 étapes (sécurité)', () => {
       expect(navigate).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
+  });
+});
+
+describe('Login : rendu réel du template (F014)', () => {
+  function mountReal(
+    opts: {
+      login?: (
+        email: string,
+        password: string,
+        totpCode?: string,
+      ) => Promise<'authenticated' | 'mfa_required'>;
+    } = {},
+  ) {
+    const auth: AuthStoreMock = {
+      needsEncryptionSetup: () => false,
+      needsUnlock: () => false,
+      login: vi.fn(opts.login ?? (() => Promise.resolve('authenticated'))),
+      hydrateFromCookie: vi.fn(() => Promise.resolve()),
+    };
+    TestBed.configureTestingModule({
+      imports: [
+        Login,
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+      providers: [
+        provideRouter([]),
+        { provide: AuthStore, useValue: auth },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
+        { provide: Toaster, useValue: { success: vi.fn() } },
+      ],
+    });
+    const fixture = TestBed.createComponent(Login);
+    fixture.detectChanges();
+    return { fixture, cmp: fixture.componentInstance as unknown as Cmp, auth };
+  }
+
+  it("étape 'credentials' : le bouton de connexion est désactivé tant que le formulaire est invalide", () => {
+    const { fixture } = mountReal();
+
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="login-submit"]',
+    );
+
+    expect(submit).not.toBeNull();
+    expect(submit?.disabled).toBe(true);
+  });
+
+  it("étape 'credentials' : le bouton de connexion se réactive une fois le formulaire valide", () => {
+    const { fixture, cmp } = mountReal();
+    cmp.form.setValue(VALID);
+
+    fixture.detectChanges();
+    const submit = (fixture.nativeElement as HTMLElement).querySelector<HTMLButtonElement>(
+      '[data-testid="login-submit"]',
+    );
+
+    expect(submit?.disabled).toBe(false);
+  });
+
+  it("connexion MFA requise : bascule sur l'étape 'totp' rendue dans le DOM", async () => {
+    const { fixture, cmp } = mountReal({ login: () => Promise.resolve('mfa_required') });
+    cmp.form.setValue(VALID);
+
+    await cmp.submitLogin();
+    fixture.detectChanges();
+
+    const totpStep = (fixture.nativeElement as HTMLElement).querySelector(
+      '[data-testid="login-totp-step"]',
+    );
+    expect(totpStep).not.toBeNull();
   });
 });

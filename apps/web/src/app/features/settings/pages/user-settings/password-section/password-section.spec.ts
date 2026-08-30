@@ -1,18 +1,25 @@
 import { TestBed } from '@angular/core/testing';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
+import { AuthEncryptionStore } from '@features/auth/auth-encryption.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { PasswordSection } from './password-section';
 
 function mount(
-  opts: { hasPassword?: boolean; encryptionVersion?: number; isUnlocked?: boolean } = {},
+  opts: {
+    hasPassword?: boolean;
+    encryptionVersion?: number;
+    isUnlocked?: boolean;
+    setPassword?: () => Promise<void>;
+  } = {},
 ) {
-  const setPassword = vi.fn(() => Promise.resolve());
+  const setPassword = vi.fn(opts.setPassword ?? (() => Promise.resolve()));
   const updatePassword = vi.fn(() => Promise.resolve());
   const updatePasswordWithReWrap = vi.fn(() => Promise.resolve());
   const unlockWithPassword = vi.fn(() => Promise.resolve());
+  const error = vi.fn();
   TestBed.configureTestingModule({
     imports: [
       PasswordSection,
@@ -29,12 +36,14 @@ function mount(
           encryptionVersion: () => opts.encryptionVersion ?? 0,
           setPassword,
           updatePassword,
-          updatePasswordWithReWrap,
-          unlockWithPassword,
         },
       },
+      {
+        provide: AuthEncryptionStore,
+        useValue: { updatePasswordWithReWrap, unlockWithPassword },
+      },
       { provide: CryptoStore, useValue: { isUnlocked: () => opts.isUnlocked ?? true } },
-      { provide: Toaster, useValue: { success: vi.fn(), error: vi.fn() } },
+      { provide: Toaster, useValue: { success: vi.fn(), error } },
     ],
   });
   const fixture = TestBed.createComponent(PasswordSection);
@@ -59,16 +68,29 @@ function mount(
     updatePassword,
     updatePasswordWithReWrap,
     unlockWithPassword,
+    error,
   };
 }
 
-describe('PasswordSection — changePassword 3 voies', () => {
+describe('PasswordSection : changePassword 3 voies', () => {
   it('voie SET : pas de mot de passe existant → auth.setPassword(new)', async () => {
     const { cmp, fill, setPassword, updatePassword } = mount({ hasPassword: false });
     fill('', 'motdepasse-123');
     await cmp.changePassword();
     expect(setPassword).toHaveBeenCalledWith('motdepasse-123');
     expect(updatePassword).not.toHaveBeenCalled();
+  });
+
+  it("voie SET : E2EE verrouillée (E2EE_LOCKED) → message dédié plutôt que l'échec générique", async () => {
+    const { cmp, fill, error } = mount({
+      hasPassword: false,
+      setPassword: () => Promise.reject(new Error('E2EE_LOCKED')),
+    });
+    fill('', 'motdepasse-123');
+
+    await cmp.changePassword();
+
+    expect(error).toHaveBeenCalledWith('settings.password.feedback.unlockRequired');
   });
 
   it('voie UPDATE simple : hasPassword + encryptionVersion 0 → auth.updatePassword(cur,new)', async () => {

@@ -6,7 +6,7 @@ import { Icon } from '@shared/components/icon/icon';
   selector: 'app-landing-security',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [Icon, TranslocoPipe],
-  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  // display:block (pas 'contents') : section en flux vertical de page, sinon 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
     <section

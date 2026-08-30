@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { EncryptionSection } from './encryption-section';
@@ -25,7 +25,7 @@ function mount(opts: { version?: number; masterKey?: unknown } = {}) {
       {
         provide: CryptoStore,
         useValue: {
-          getMasterKey: () => opts.masterKey ?? null,
+          getRewrappableMasterKey: () => opts.masterKey ?? null,
           generateRecoveryKey: () => 'RECOVERY-KEY',
           deriveWrappingKeyFromRecovery: () => Promise.resolve({} as CryptoKey),
           wrapKey,

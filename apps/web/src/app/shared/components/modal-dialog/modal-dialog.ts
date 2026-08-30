@@ -57,7 +57,6 @@ export class ModalDialog {
 
   private readonly dialogRef = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
-  /** Exposed for call-site conditional rendering: @if (modal.isOpen()) { <content /> } */
   readonly isOpen = signal(false);
   protected readonly sizeClass = computed(() => `modal-content modal-${this.size()}`);
 

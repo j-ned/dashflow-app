@@ -102,7 +102,7 @@ function make(
   return cmp.memberSummaries();
 }
 
-describe('BudgetDashboard — caractérisation memberSummaries', () => {
+describe('BudgetDashboard : caractérisation memberSummaries', () => {
   it('mono-membre : agrège les orphelins, trie les charges mensuelles par jour', () => {
     const summaries = make({
       members: [member({ id: 'm1', firstName: 'Alice', lastName: 'Martin' })],

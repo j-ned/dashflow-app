@@ -123,7 +123,7 @@ function makeComponent(
   return fixture.componentInstance as unknown as Cmp;
 }
 
-describe('BankAccount — prélèvement vers livret', () => {
+describe('BankAccount : prélèvement vers livret', () => {
   const ACCS = [
     {
       id: 'a',
@@ -217,7 +217,7 @@ describe('BankAccount — prélèvement vers livret', () => {
   });
 });
 
-describe('BankAccount — solde projeté', () => {
+describe('BankAccount : solde projeté', () => {
   const RENT = {
     id: 'r1',
     accountId: 'a',
@@ -260,7 +260,7 @@ describe('BankAccount — solde projeté', () => {
   });
 });
 
-describe('BankAccount — solde confirmé', () => {
+describe('BankAccount : solde confirmé', () => {
   it('confirmedBalance = solde initial quand aucune transaction réelle', () => {
     expect(makeComponent().confirmedBalance()).toBe(1000);
   });
@@ -296,7 +296,7 @@ describe('BankAccount — solde confirmé', () => {
   });
 });
 
-describe('BankAccount — échéances à confirmer', () => {
+describe('BankAccount : échéances à confirmer', () => {
   const month = new Date().toISOString().slice(0, 7);
   const RENT = {
     id: 'r1',
@@ -381,7 +381,7 @@ describe('BankAccount — échéances à confirmer', () => {
   });
 });
 
-describe('BankAccount — récurrences orphelines', () => {
+describe('BankAccount : récurrences orphelines', () => {
   const ORPHAN = {
     id: 'o1',
     accountId: null,
@@ -445,7 +445,7 @@ describe('BankAccount — récurrences orphelines', () => {
   });
 });
 
-describe('BankAccount — échéances manuelles', () => {
+describe('BankAccount : échéances manuelles', () => {
   it('exclut les récurrences auto-pointées des échéances manuelles', () => {
     const auto = {
       id: 'r9',
@@ -471,7 +471,7 @@ describe('BankAccount — échéances manuelles', () => {
   });
 });
 
-describe('BankAccount — virement récurrent = toujours auto (jamais en échéance à confirmer)', () => {
+describe('BankAccount : virement récurrent = toujours auto (jamais en échéance à confirmer)', () => {
   // Virement récurrent a → liv (source 'a', destination 'liv'). autoPost:false mais toujours auto.
   const TRANSFER = {
     id: 'tr1',
@@ -517,7 +517,7 @@ describe('BankAccount — virement récurrent = toujours auto (jamais en échéa
   });
 });
 
-describe("BankAccount — auto-pointage à l'ouverture", () => {
+describe("BankAccount : auto-pointage à l'ouverture", () => {
   it("crée la transaction d'une échéance auto échue et non pointée", () => {
     const created: { accountId: string; body: Record<string, unknown> }[] = [];
     const auto = {
@@ -599,7 +599,7 @@ describe("BankAccount — auto-pointage à l'ouverture", () => {
   });
 });
 
-describe('BankAccount — virement ponctuel posté immédiatement', () => {
+describe('BankAccount : virement ponctuel posté immédiatement', () => {
   const ACCS_LIV = [
     {
       id: 'a',
@@ -748,7 +748,7 @@ describe('BankAccount — virement ponctuel posté immédiatement', () => {
   });
 });
 
-describe('BankAccount — nouveau cycle (revenu existant + « Nouveau cycle »)', () => {
+describe('BankAccount : nouveau cycle (revenu existant + « Nouveau cycle »)', () => {
   const INCOME = {
     id: 'inc1',
     accountId: 'a',

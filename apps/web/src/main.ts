@@ -17,7 +17,7 @@ if (environment.sentryDsn) {
       queryParams: false,
     },
     // Un console.error/warn peut porter une donnée E2EE déchiffrée (cf. validate-decrypted.ts) ; le breadcrumb
-    // par défaut de Sentry capture les arguments bruts des logs console — on les exclut sans toucher aux
+    // par défaut de Sentry capture les arguments bruts des logs console, donc on les exclut sans toucher aux
     // autres intégrations par défaut (dedupe, linkedErrors, httpContext...).
     beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === 'console' ? null : breadcrumb),
   });

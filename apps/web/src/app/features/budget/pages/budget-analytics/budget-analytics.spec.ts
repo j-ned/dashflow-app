@@ -43,7 +43,7 @@ function make(entries: RecurringEntry[]) {
   return fixture.componentInstance as unknown as { kpis: () => { label: string; value: number }[] };
 }
 
-describe('BudgetAnalytics — calibration', () => {
+describe('BudgetAnalytics : calibration', () => {
   it('le KPI revenu exclut une income terminée (endDate passée)', () => {
     const past = new Date(Date.UTC(new Date().getUTCFullYear() - 1, 0, 1))
       .toISOString()

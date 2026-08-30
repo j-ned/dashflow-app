@@ -125,7 +125,7 @@ type TransactionViewModel = AccountTransaction & {
                 class="inline-block w-2 h-2 rounded-full mr-2"
                 [style.background]="t.categoryColor"
               ></span>
-              {{ t.date }} — {{ t.note || t.categoryLabel }}
+              {{ t.date }} : {{ t.note || t.categoryLabel }}
             </span>
             <span class="flex items-center gap-3">
               <span [class.text-ib-green]="t.isCredit">

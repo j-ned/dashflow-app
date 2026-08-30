@@ -43,7 +43,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                   @if (entry.dayOfMonth) {
                     {{ entry.dayOfMonth }}
                   } @else {
-                    —
+                    -
                   }
                 </div>
                 <div>

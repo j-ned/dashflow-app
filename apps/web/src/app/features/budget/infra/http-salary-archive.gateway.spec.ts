@@ -75,7 +75,7 @@ describe('HttpSalaryArchiveGateway (compte démo, données en clair)', () => {
   });
 });
 
-describe('HttpSalaryArchiveGateway (compte chiffré, E2EE) — create()', () => {
+describe('HttpSalaryArchiveGateway (compte chiffré, E2EE) : create()', () => {
   let gateway: HttpSalaryArchiveGateway;
   let httpController: HttpTestingController;
   let key: CryptoKey;

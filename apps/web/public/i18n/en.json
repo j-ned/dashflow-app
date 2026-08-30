@@ -166,6 +166,7 @@
       "skipConfirmTitle": "Continue without a recovery key?",
       "skipConfirm": "Are you sure? All your encrypted data will be permanently lost.",
       "doneMessage": "Your password has been reset successfully.",
+      "doneMessageMfa": "Your password has been reset. Sign back in with your 2FA code. If your encrypted data stays locked, use your recovery key on the unlock screen.",
       "doneSignIn": "Sign in",
       "errors": {
         "generic": "Something went wrong. Please try again.",
@@ -244,7 +245,7 @@
       "passphrase": "Passphrase",
       "passphrasePlaceholder": "Your encryption passphrase",
       "passphraseRequired": "Passphrase is required.",
-      "passphraseMin": "Minimum 8 characters.",
+      "passphraseMin": "Minimum 12 characters.",
       "confirm": "Confirm",
       "confirmPlaceholder": "Confirm passphrase",
       "mismatch": "Passphrases do not match.",
@@ -258,6 +259,7 @@
       "label": "Recovery key",
       "copy": "Copy key",
       "copied": "Copied!",
+      "copyFailed": "Copy failed, select the text manually",
       "saved": "I have saved this key in a safe place",
       "continue": "Continue"
     }
@@ -303,6 +305,7 @@
         "set": "Password set successfully. You can now sign in with email + password.",
         "updated": "Password changed successfully.",
         "outOfSync": "Current password is incorrect or data is out of sync. Sign out, then use \"Repair\" on the unlock page.",
+        "unlockRequired": "Your encrypted data is locked. Unlock it from the unlock page before setting a password.",
         "updateFailed": "Failed to change password.",
         "setFailed": "Failed to set password."
       }
@@ -418,7 +421,7 @@
       "primaryCta": "Start for free",
       "secondaryCta": "How it works",
       "demoCta": "Try the demo, no signup",
-      "demoLoading": "Opening the demo…",
+      "demoLoading": "Opening the demo...",
       "demoError": "Demo unavailable right now",
       "reassurance": "Free account, no credit card. Encryption included.",
       "screenshotAlt": "DashFlow budget overview: envelopes, monthly charges, income and money left to spend",
@@ -645,9 +648,9 @@
         "payslip": "Payslip",
         "empty": "Add your salary or other monthly income",
         "editAria": "Edit {{label}}",
-        "editTitle": "Edit — {{label}}",
+        "editTitle": "Edit : {{label}}",
         "deleteAria": "Delete {{label}}",
-        "deleteTitle": "Delete — {{label}}"
+        "deleteTitle": "Delete : {{label}}"
       },
       "expenses": {
         "monthlyTitle": "Monthly",
@@ -702,7 +705,7 @@
         "renameAria": "Rename account {{name}}",
         "type": "Account type",
         "typeAria": "Type of account {{name}}",
-        "deleteTitle": "Delete — {{name}}"
+        "deleteTitle": "Delete : {{name}}"
       },
       "type": {
         "courant": "Checking",
@@ -767,7 +770,7 @@
       },
       "orphans": {
         "title": "Recurring entries without an account",
-        "reassignPlaceholder": "Reassign to…",
+        "reassignPlaceholder": "Reassign to...",
         "delete": "Delete"
       },
       "deleteWithEntries": {
@@ -826,14 +829,14 @@
       "progress": "Progress",
       "noObjective": "No goal set",
       "creditAction": "Credit",
-      "creditTitle": "Credit/Debit — {{name}}",
+      "creditTitle": "Credit/Debit : {{name}}",
       "creditAria": "Credit or debit {{name}}",
-      "historyTitle": "History — {{name}}",
+      "historyTitle": "History : {{name}}",
       "historyAria": "History of {{name}}",
-      "editTitle": "Edit — {{name}}",
+      "editTitle": "Edit : {{name}}",
       "editAria": "Edit {{name}}",
       "editAction": "Edit",
-      "deleteTitle": "Delete — {{name}}",
+      "deleteTitle": "Delete : {{name}}",
       "deleteAria": "Delete {{name}}",
       "deleteAction": "Delete",
       "empty": "No envelope",
@@ -851,7 +854,7 @@
         "create": "New envelope",
         "edit": "Edit envelope",
         "credit": "Credit / Debit",
-        "history": "History — {{name}}",
+        "history": "History : {{name}}",
         "amount": "Amount",
         "amountHint": "Positive = credit, negative = debit",
         "date": "Date",
@@ -887,7 +890,7 @@
         "amountHint": "Positive to credit, negative to debit",
         "date": "Date",
         "note": "Note (optional)",
-        "notePlaceholder": "e.g. salary, refund…",
+        "notePlaceholder": "e.g. salary, refund...",
         "deductFromAccount": "Deduct from account",
         "noDeduction": "Do not deduct",
         "deductionHint": "Will create an expense on the selected account"
@@ -904,7 +907,7 @@
         "deleteError": "Error deleting envelope",
         "deleteTarget": "this envelope",
         "envelopeCreditCategory": "Envelope",
-        "envelopeCreditLabel": "Envelope credit — {{name}}"
+        "envelopeCreditLabel": "Envelope credit : {{name}}"
       }
     },
     "loan": {
@@ -948,17 +951,17 @@
       },
       "actions": {
         "repay": "Repay",
-        "repayTitle": "Repayment — {{person}}",
+        "repayTitle": "Repayment : {{person}}",
         "repayAria": "Record a repayment for {{person}}",
         "history": "History",
-        "historyTitle": "History — {{person}}",
+        "historyTitle": "History : {{person}}",
         "historyAria": "History of {{person}}",
         "edit": "Edit",
-        "editLentTitle": "Edit — {{person}}",
+        "editLentTitle": "Edit : {{person}}",
         "editLentAria": "Edit loan from {{person}}",
         "editBorrowedAria": "Edit borrowing from {{person}}",
         "delete": "Delete",
-        "deleteLentTitle": "Delete — {{person}}",
+        "deleteLentTitle": "Delete : {{person}}",
         "deleteLentAria": "Delete loan from {{person}}",
         "deleteBorrowedAria": "Delete borrowing from {{person}}"
       },
@@ -967,7 +970,7 @@
         "newBorrowed": "New borrowing",
         "edit": "Edit",
         "payment": "Repayment",
-        "history": "History — {{person}}",
+        "history": "History : {{person}}",
         "initialAmount": "Initial amount",
         "progress": "{{pct}}% repaid",
         "noPayments": "No repayment recorded",
@@ -996,7 +999,7 @@
         "amount": "Repayment amount",
         "date": "Date",
         "note": "Note",
-        "notePlaceholder": "Optional (e.g. transfer, cash…)",
+        "notePlaceholder": "Optional (e.g. transfer, cash...)",
         "deductFromAccount": "Deduct from account",
         "noDeduction": "Do not deduct",
         "deductionHint": "Will create an expense on the selected account"
@@ -1013,8 +1016,8 @@
         "deleteError": "Error deleting",
         "deleteTarget": "this loan",
         "repaymentCategory": "Repayment",
-        "loanRepaymentLabel": "Loan repayment — {{person}}",
-        "debtRepaymentLabel": "Debt repayment — {{person}}"
+        "loanRepaymentLabel": "Loan repayment : {{person}}",
+        "debtRepaymentLabel": "Debt repayment : {{person}}"
       }
     },
     "salaryArchive": {
@@ -1033,7 +1036,7 @@
       "spendingsDetail": "Spending detail",
       "viewPayslip": "View payslip",
       "noPayslip": "No payslip",
-      "deleteTitle": "Delete — {{month}}",
+      "deleteTitle": "Delete : {{month}}",
       "deleteAria": "Delete archive {{month}}",
       "editAria": "Edit archive {{month}}",
       "empty": "No archive yet",
@@ -1045,7 +1048,7 @@
         "salary": "Net salary",
         "fixedCharges": "Fixed charges",
         "account": "Account",
-        "accountNone": "— None —",
+        "accountNone": "(None)",
         "importSpendings": "Import the month's spending from the account",
         "total": "Total",
         "payslip": "Payslip (PDF/image)",
@@ -1081,16 +1084,16 @@
       "title": "Stats & Forecasts",
       "subtitle": "Budget analysis and future projections",
       "kpiAriaLabel": "Key indicators",
-      "balanceHistoryTitle": "Net balance — 12 months",
+      "balanceHistoryTitle": "Net balance : 12 months",
       "balanceHistoryEmpty": "Not enough data (min. 2 archives)",
       "expenseDistributionTitle": "Expense distribution",
       "expenseDistributionEmpty": "No categorized expense",
       "perMonth": "per month",
-      "incomeVsExpensesTitle": "Income vs Expenses — 6 months",
+      "incomeVsExpensesTitle": "Income vs Expenses : 6 months",
       "incomeVsExpensesEmpty": "Not enough data",
       "income": "Income",
       "expenses": "Expenses",
-      "envelopeForecastTitle": "Envelope forecast — 6 months",
+      "envelopeForecastTitle": "Envelope forecast : 6 months",
       "envelopeForecastEmpty": "No envelope with a goal",
       "forecastsTitle": "Forecasts",
       "forecastsEmpty": "No forecast available",
@@ -1146,17 +1149,17 @@
         "envelopeLabel": "Envelope “{{name}}”",
         "envelopeNextMonth": "Goal reached next month!",
         "envelopeIn": "Goal reached in {{months}} months ({{date}})",
-        "envelopeDetail": "{{balance}}€ / {{target}}€ — {{remaining}}€ left at ~{{contrib}}€/month",
+        "envelopeDetail": "{{balance}}€ / {{target}}€ : {{remaining}}€ left at ~{{contrib}}€/month",
         "envelopeNoContrib": "{{remaining}}€ left to reach the goal",
-        "envelopeNoContribDetail": "{{balance}}€ / {{target}}€ — no recurring contribution detected",
+        "envelopeNoContribDetail": "{{balance}}€ / {{target}}€ : no recurring contribution detected",
         "loanPrefixLent": "Loan",
         "loanPrefixBorrowed": "Debt",
-        "loanLabel": "{{prefix}} — {{person}}",
+        "loanLabel": "{{prefix}} : {{person}}",
         "loanNextMonth": "Paid off next month!",
         "loanIn": "Paid off in {{months}} months ({{date}})",
-        "loanDetail": "{{pct}}% repaid — {{remaining}}€ left at ~{{payment}}€/month",
+        "loanDetail": "{{pct}}% repaid : {{remaining}}€ left at ~{{payment}}€/month",
         "loanNoPayment": "{{remaining}}€ left to repay",
-        "loanNoPaymentDetail": "{{pct}}% repaid — no recurring repayment detected"
+        "loanNoPaymentDetail": "{{pct}}% repaid : no recurring repayment detected"
       }
     },
     "recurringForm": {
@@ -1257,7 +1260,7 @@
       "resetNow": "Reset now"
     },
     "login": {
-      "loading": "Loading demo…",
+      "loading": "Loading demo...",
       "error": "Could not load demo, please retry"
     }
   },
@@ -1275,7 +1278,7 @@
       "upcomingAppointments": "Upcoming appointments",
       "activePrescriptions": "Active prescriptions",
       "familyHeading": "Family",
-      "ageBornOn": "{{age}} years old — Born on {{date}}",
+      "ageBornOn": "{{age}} years old : Born on {{date}}",
       "alertsBadgeOne": "{{count}} alert",
       "alertsBadgeMany": "{{count}} alerts",
       "nextAppointments": "Upcoming appointments",
@@ -1286,7 +1289,7 @@
       "viewPdf": "View PDF",
       "medications": "Medications",
       "noMedications": "No medications",
-      "stockSummary": "{{remaining}}/{{total}} units — runs out {{date}}",
+      "stockSummary": "{{remaining}}/{{total}} units : runs out {{date}}",
       "daysShort": "{{days}}d",
       "unknownPractitioner": "Unknown"
     },
@@ -1479,7 +1482,7 @@
         "removeFile": "Remove",
         "dropHere": "Drag and drop a file here or",
         "browse": "browse",
-        "fileHint": "PDF, JPG, PNG, WEBP — max 10 MB",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 10 MB",
         "create": "Create",
         "save": "Save"
       },
@@ -1630,7 +1633,7 @@
         "removeFile": "Remove",
         "dropHere": "Drag and drop a file here or",
         "browse": "browse",
-        "fileHint": "PDF, JPG, PNG, WEBP — max 10 MB",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 10 MB",
         "create": "Create",
         "save": "Save"
       },
@@ -1670,9 +1673,9 @@
       "empty": "No alerts configured",
       "emptyHint": "Set up alerts for your medications and appointments",
       "modalCreateTitle": "New alert",
-      "appointmentTitle": "Medical appointment — {{patient}} with {{practitioner}}",
+      "appointmentTitle": "Medical appointment : {{patient}} with {{practitioner}}",
       "appointmentReason": "Reason: {{reason}}",
-      "medicationTitle": "Take {{name}} — {{patient}}",
+      "medicationTitle": "Take {{name}} : {{patient}}",
       "medicationDescription": "Dosage: {{dosage}}\nPatient: {{patient}}",
       "alarmAppointment": "Medical appointment reminder",
       "alarmMedication": "Medication intake reminder",
@@ -1736,14 +1739,14 @@
         "action": "Quick actions"
       },
       "commands": {
-        "navBudget": "Overview — Budget",
+        "navBudget": "Overview : Budget",
         "navEnvelopes": "Envelopes",
         "navLoans": "Loans & Debts",
         "navAccount": "Bank account",
         "navArchives": "Salary archives",
         "navAnalytics": "Analytics & Forecasts",
         "navTransactions": "Transaction statement",
-        "navMedical": "Overview — Medical",
+        "navMedical": "Overview : Medical",
         "navPatients": "Patients",
         "navPractitioners": "Practitioners",
         "navAppointments": "Appointments",

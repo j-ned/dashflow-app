@@ -18,7 +18,7 @@ export type ForecastDeltaInput = {
 
 // Delta des récurrences (formule de endOfMonthBalance sans le solde initial),
 // chaque somme excluant les entrées déjà postées (réconciliées avec une transaction réelle).
-// Récurrent (dayOfMonth défini) : réconcilié pour le mois courant seulement — l'échéance du mois
+// Récurrent (dayOfMonth défini) : réconcilié pour le mois courant seulement, l'échéance du mois
 // suivant reste à projeter. Ponctuel (dayOfMonth null) : one-shot, réconcilié définitivement dès
 // qu'une transaction le porte, quel que soit son mois (sinon un revenu ponctuel posté à un mois
 // passé serait compté à la fois dans le confirmé et dans le projeté).

@@ -1,6 +1,6 @@
 /**
  * Formatage des dates et textes pour l'export calendrier (ICS + Google Calendar).
- * Fonctions pures, sans dépendance Angular — testables sans TestBed.
+ * Fonctions pures, sans dépendance Angular, testables sans TestBed.
  */
 
 /** Date+heure locale au format compact Google Calendar (`YYYYMMDDTHHMMSSZ`-like, sans Z). */

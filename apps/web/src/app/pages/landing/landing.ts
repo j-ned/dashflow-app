@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { LandingNav } from './landing-nav/landing-nav';
 import { LandingHero } from './landing-hero/landing-hero';

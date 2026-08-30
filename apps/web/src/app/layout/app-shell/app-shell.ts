@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, viewChild } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { Icon } from '@shared/components/icon/icon';
 import { CommandPalette } from '@shared/components/command-palette/command-palette';
 import { ConfirmDialog } from '@shared/components/confirm-dialog/confirm-dialog';

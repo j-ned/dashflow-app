@@ -58,10 +58,13 @@ export class ApiClient {
   private handleError(error: unknown): Observable<never> {
     const httpError = error as {
       status?: number;
-      error?: { error?: string; message?: string; code?: string };
+      error?: { message?: string; error?: string; code?: string };
     };
+    // `message` porte le détail métier (ex. "Le mot de passe doit faire au moins 12
+    // caractères") ; `error` n'est que le libellé HTTP générique (ex. "Bad Request") posé par
+    // le filtre d'exception global du backend, à ne lire qu'en dernier recours.
     const message =
-      httpError?.error?.error ?? httpError?.error?.message ?? 'Une erreur est survenue';
+      httpError?.error?.message ?? httpError?.error?.error ?? 'Une erreur est survenue';
     const code = httpError?.error?.code;
     const status = httpError?.status ?? 0;
     return throwError(() => ({ status, message, code }));

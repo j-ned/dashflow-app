@@ -106,7 +106,7 @@ function make(
   };
 }
 
-describe('SalaryArchives — caractérisation', () => {
+describe('SalaryArchives : caractérisation', () => {
   it('availableYears triées desc, filteredArchives par année', () => {
     const { cmp } = make();
     expect(cmp.availableYears()).toEqual(['2026', '2025']);

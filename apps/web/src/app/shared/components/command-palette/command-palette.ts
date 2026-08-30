@@ -10,7 +10,7 @@ import {
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { Icon, type IconName } from '@shared/components/icon/icon';
-import { AuthStore } from '@features/auth/domain/auth.store';
+import { AuthStore } from '@features/auth/auth.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { fuzzyScore } from './fuzzy-score';
 

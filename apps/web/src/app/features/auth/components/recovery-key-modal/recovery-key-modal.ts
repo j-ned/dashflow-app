@@ -1,6 +1,9 @@
 import {
   Component,
   ChangeDetectionStrategy,
+  computed,
+  DestroyRef,
+  inject,
   input,
   output,
   signal,
@@ -48,6 +51,12 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
           {{ (copied() ? 'auth.recoveryKey.copied' : 'auth.recoveryKey.copy') | transloco }}
         </button>
 
+        @if (copyFailed()) {
+          <p role="alert" class="text-sm text-ib-red">
+            {{ 'auth.recoveryKey.copyFailed' | transloco }}
+          </p>
+        }
+
         <label class="flex items-start gap-3 cursor-pointer">
           <input
             type="checkbox"
@@ -75,32 +84,45 @@ import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 export class RecoveryKeyModal {
   readonly recoveryKey = input.required<string>();
   readonly closed = output<void>();
-  readonly confirmed$ = output<void>();
+  readonly keySaved = output<void>();
 
+  private readonly destroyRef = inject(DestroyRef);
   private readonly modal = viewChild.required(ModalDialog);
+  private _copiedTimeout?: ReturnType<typeof setTimeout>;
 
   protected readonly confirmed = signal(false);
   protected readonly copied = signal(false);
-
-  protected formattedKey(): string {
+  protected readonly copyFailed = signal(false);
+  protected readonly formattedKey = computed(() => {
     const key = this.recoveryKey();
     return key.match(/.{4}/g)?.join(' ') ?? key;
+  });
+
+  constructor() {
+    this.destroyRef.onDestroy(() => clearTimeout(this._copiedTimeout));
   }
 
   protected async copyKey(): Promise<void> {
-    await navigator.clipboard.writeText(this.recoveryKey());
-    this.copied.set(true);
-    setTimeout(() => this.copied.set(false), 2000);
+    try {
+      await navigator.clipboard.writeText(this.recoveryKey());
+      this.copyFailed.set(false);
+      this.copied.set(true);
+      clearTimeout(this._copiedTimeout);
+      this._copiedTimeout = setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      this.copyFailed.set(true);
+    }
   }
 
   protected continue(): void {
-    this.confirmed$.emit();
+    this.keySaved.emit();
     this.modal().close();
   }
 
   open(): void {
     this.confirmed.set(false);
     this.copied.set(false);
+    this.copyFailed.set(false);
     this.modal().open();
   }
 }

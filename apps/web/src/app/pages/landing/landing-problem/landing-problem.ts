@@ -5,7 +5,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
   selector: 'app-landing-problem',
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [TranslocoPipe],
-  // display:block (pas 'contents') : section en flux vertical de page — 'contents' annulerait les marges du host et casserait l'espacement du parent
+  // display:block (pas 'contents') : section en flux vertical de page, sinon 'contents' annulerait les marges du host et casserait l'espacement du parent
   host: { class: 'block' },
   template: `
     <section class="border-y border-border bg-surface" aria-labelledby="problem-title">

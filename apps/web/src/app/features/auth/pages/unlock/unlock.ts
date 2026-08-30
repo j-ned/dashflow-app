@@ -2,7 +2,8 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
 import { Icon } from '@shared/components/icon/icon';
 
 type UnlockFormShape = {
@@ -127,6 +128,7 @@ type Mode = 'password' | 'recovery' | 'repair';
 
               <button
                 type="submit"
+                data-testid="unlock-submit"
                 [disabled]="form.invalid || loading()"
                 class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
               >
@@ -145,6 +147,7 @@ type Mode = 'password' | 'recovery' | 'repair';
 
               <button
                 type="button"
+                data-testid="unlock-use-recovery-key"
                 (click)="setMode('recovery')"
                 class="text-sm text-ib-blue hover:underline transition-colors text-center"
               >
@@ -166,6 +169,7 @@ type Mode = 'password' | 'recovery' | 'repair';
               [formGroup]="recoveryForm"
               (ngSubmit)="unlockWithRecovery()"
               class="flex flex-col gap-4"
+              data-testid="unlock-recovery-mode"
             >
               <fieldset class="flex flex-col gap-4">
                 <legend class="sr-only">{{ 'auth.unlock.recoveryLegend' | transloco }}</legend>
@@ -304,6 +308,7 @@ type Mode = 'password' | 'recovery' | 'repair';
 })
 export class Unlock {
   protected readonly auth = inject(AuthStore);
+  private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly router = inject(Router);
   private readonly _i18n = inject(TranslocoService);
 
@@ -351,7 +356,7 @@ export class Unlock {
 
     try {
       const { password } = this.form.getRawValue();
-      await this.auth.unlockWithPassword(password);
+      await this.authEncryption.unlockWithPassword(password);
       this.router.navigate(['/budget']);
     } catch {
       this.passwordFailed.set(true);
@@ -369,7 +374,7 @@ export class Unlock {
 
     try {
       const { recoveryKey } = this.recoveryForm.getRawValue();
-      await this.auth.unlockWithRecovery(recoveryKey.replace(/\s/g, ''));
+      await this.authEncryption.unlockWithRecovery(recoveryKey.replace(/\s/g, ''));
       this.router.navigate(['/budget']);
     } catch {
       this.error.set(this._i18n.translate('auth.unlock.errors.invalidRecoveryKey'));
@@ -386,7 +391,7 @@ export class Unlock {
 
     try {
       const { recoveryKey, password } = this.repairForm.getRawValue();
-      await this.auth.repairWithRecovery(recoveryKey.replace(/\s/g, ''), password);
+      await this.authEncryption.repairWithRecovery(recoveryKey.replace(/\s/g, ''), password);
       this.router.navigate(['/budget']);
     } catch {
       this.error.set(this._i18n.translate('auth.unlock.errors.repairFailed'));

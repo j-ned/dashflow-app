@@ -2,9 +2,9 @@ import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/cor
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { AuthStore } from '../../domain/auth.store';
+import { AuthStore } from '../../auth.store';
 import { Icon } from '@shared/components/icon/icon';
-import { passwordMatchValidator } from '@shared/validators/form-validators';
+import { PASSWORD_MIN_LENGTH, passwordMatchValidator } from '@shared/validators/form-validators';
 import { environment } from '@env/environment';
 
 type RegisterFormShape = {
@@ -160,6 +160,7 @@ type RegisterFormShape = {
 
             <button
               type="submit"
+              data-testid="register-submit"
               [disabled]="registerForm.invalid || loading()"
               class="mt-4 w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
@@ -214,7 +215,7 @@ type RegisterFormShape = {
         }
 
         @if (step() === 'verify') {
-          <div class="flex flex-col gap-4">
+          <div class="flex flex-col gap-4" data-testid="register-verify-step">
             <div class="rounded-lg bg-ib-blue/5 border border-ib-blue/20 p-4 text-center">
               <p class="text-sm text-text-primary">
                 {{ 'auth.register.verifySent' | transloco }}
@@ -310,7 +311,7 @@ export class Register {
       }),
       password: new FormControl('', {
         nonNullable: true,
-        validators: [Validators.required, Validators.minLength(12)],
+        validators: [Validators.required, Validators.minLength(PASSWORD_MIN_LENGTH)],
       }),
       confirmPassword: new FormControl('', {
         nonNullable: true,
@@ -332,10 +333,8 @@ export class Register {
       this.pendingEmail.set(email);
       this.step.set('verify');
       this.success.set('');
-    } catch (err: unknown) {
-      this.error.set(
-        this.extractError(err, this._i18n.translate('auth.register.errors.registerFailed')),
-      );
+    } catch {
+      this.error.set(this._i18n.translate('auth.register.errors.registerFailed'));
     } finally {
       this.loading.set(false);
     }
@@ -351,10 +350,8 @@ export class Register {
     try {
       await this.auth.verifyCode(this.pendingEmail(), code);
       this.router.navigate(['/budget']);
-    } catch (err: unknown) {
-      this.error.set(
-        this.extractError(err, this._i18n.translate('auth.register.errors.codeInvalid')),
-      );
+    } catch {
+      this.error.set(this._i18n.translate('auth.register.errors.codeInvalid'));
     } finally {
       this.loading.set(false);
     }
@@ -368,10 +365,8 @@ export class Register {
     try {
       await this.auth.resendCode(this.pendingEmail());
       this.success.set(this._i18n.translate('auth.register.success.codeSent'));
-    } catch (err: unknown) {
-      this.error.set(
-        this.extractError(err, this._i18n.translate('auth.register.errors.resendFailed')),
-      );
+    } catch {
+      this.error.set(this._i18n.translate('auth.register.errors.resendFailed'));
     } finally {
       this.resending.set(false);
     }
@@ -382,13 +377,5 @@ export class Register {
     this.error.set('');
     this.success.set('');
     this.codeValue.set('');
-  }
-
-  private extractError(err: unknown, fallback: string): string {
-    if (err && typeof err === 'object' && 'error' in err) {
-      const httpErr = err as { error?: { error?: string } };
-      return httpErr.error?.error ?? fallback;
-    }
-    return fallback;
   }
 }

@@ -64,7 +64,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                     } @else if (entry.dayOfMonth) {
                       {{ entry.dayOfMonth }}
                     } @else {
-                      —
+                      -
                     }
                   </div>
                   <div class="min-w-0">
@@ -331,7 +331,7 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                     } @else if (entry.dayOfMonth) {
                       {{ entry.dayOfMonth }}
                     } @else {
-                      —
+                      -
                     }
                   </div>
                   <div class="min-w-0">

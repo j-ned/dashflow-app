@@ -49,7 +49,7 @@ import { isAutoEntry } from '../../../domain/auto-post';
                     } @else if (entry.dayOfMonth) {
                       {{ entry.dayOfMonth }}
                     } @else {
-                      —
+                      -
                     }
                   </div>
                   <div>
@@ -153,7 +153,7 @@ import { isAutoEntry } from '../../../domain/auto-post';
                     @if (entry.date) {
                       {{ entry.date | date: 'dd' }}
                     } @else {
-                      —
+                      -
                     }
                   </div>
                   <div>
