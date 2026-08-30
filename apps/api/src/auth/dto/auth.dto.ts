@@ -57,7 +57,10 @@ export const setupEncryptionKeysSchema = z.object({
 export const encryptionPassphraseSchema = z.object({
   passphrase: z
     .string()
-    .min(8, 'La passphrase doit faire au moins 8 caractères'),
+    .min(
+      MIN_PASSWORD_LENGTH,
+      `La passphrase doit faire au moins ${MIN_PASSWORD_LENGTH} caractères`,
+    ),
 });
 export const migrateEncryptionSchema = z.object({
   keyMaterial: setupEncryptionKeysSchema,
