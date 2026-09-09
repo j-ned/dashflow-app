@@ -102,7 +102,7 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 ```mermaid
 graph LR
   A[Mot de passe utilisateur] -->|PBKDF2 600k itérations| B[Clé de chiffrement dérivée KEK]
-  B -->|AES-256-GCM| C[Clé de données DEK chiffrée]
+  B -->|AES-KW key wrapping| C[Clé de données DEK chiffrée]
   D[Données métier] -->|AES-256-GCM avec DEK| E[Payload chiffré]
   E -->|HTTPS| F[(PostgreSQL - payload opaque)]
   C -->|HTTPS| F
@@ -110,14 +110,14 @@ graph LR
 
 ### Pourquoi une **double enveloppe de clés** ?
 
-- **Rotation de mot de passe** sans rechiffrer toute la base : on rechiffre uniquement la DEK avec une nouvelle KEK
+- **Rotation de mot de passe** sans rechiffrer toute la base : on ré-emballe (AES-KW) uniquement la DEK avec une nouvelle KEK
 - **Multi-device** : chaque appareil peut déchiffrer la DEK avec le mot de passe, sans partager la clé dérivée
 - **Zero-knowledge serveur** : le backend ne stocke jamais la KEK, uniquement la DEK chiffrée
 
 ### Garanties
 
 - ✅ **AES-256-GCM** — authenticated encryption (chiffrement + intégrité)
-- ✅ **PBKDF2 100k itérations** (recommandation OWASP 2023)
+- ✅ **PBKDF2-SHA-256 600k itérations** (recommandation OWASP)
 - ✅ **IV unique** par payload (jamais réutilisé)
 - ✅ **2FA TOTP** optionnel
 - ✅ **Rate limiting** sur toutes les routes sensibles

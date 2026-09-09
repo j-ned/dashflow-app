@@ -101,8 +101,8 @@ Even if the server is compromised: no exploitable data leaves the box.
 
 ```mermaid
 graph LR
-  A[User password] -->|PBKDF2 100k iterations| B[Derived encryption key KEK]
-  B -->|AES-256-GCM| C[Encrypted data key DEK]
+  A[User password] -->|PBKDF2 600k iterations| B[Derived encryption key KEK]
+  B -->|AES-KW key wrapping| C[Encrypted data key DEK]
   D[Business data] -->|AES-256-GCM with DEK| E[Encrypted payload]
   E -->|HTTPS| F[(PostgreSQL — opaque payload)]
   C -->|HTTPS| F
@@ -110,14 +110,14 @@ graph LR
 
 ### Why a **double key envelope**?
 
-- **Password rotation** without re-encrypting the whole database: only the DEK is re-encrypted with a new KEK
+- **Password rotation** without re-encrypting the whole database: only the DEK is re-wrapped (AES-KW) with a new KEK
 - **Multi-device**: each device can decrypt the DEK with the password, no need to share the derived key
 - **Zero-knowledge server**: the backend never stores the KEK, only the encrypted DEK
 
 ### Guarantees
 
 - ✅ **AES-256-GCM** — authenticated encryption (encryption + integrity)
-- ✅ **PBKDF2 100k iterations** (OWASP 2023 recommendation)
+- ✅ **PBKDF2-SHA-256 600k iterations** (OWASP recommendation)
 - ✅ **Unique IV** per payload (never reused)
 - ✅ **Optional TOTP 2FA**
 - ✅ **Rate limiting** on all sensitive routes
