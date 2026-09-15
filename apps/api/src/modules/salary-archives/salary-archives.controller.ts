@@ -24,7 +24,8 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { assertValidUpload } from '../../common/files/validate-upload';
+import { UploadPolicy } from '../../common/files/upload-policy';
+import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createSalaryArchiveSchema,
   createEncryptedSalaryArchiveSchema,
@@ -39,6 +40,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   constructor(
     protected readonly svc: SalaryArchivesService,
     private readonly storage: StorageService,
+    private readonly uploads: UploadPolicy,
   ) {
     super();
   }
@@ -95,7 +97,9 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   @Post()
   @HttpCode(201)
   @UseInterceptors(
-    FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }),
+    FileInterceptor('payslip', {
+      limits: { fileSize: UPLOAD_MULTER_LIMIT_BYTES },
+    }),
   )
   override async create(
     @CurrentUser() u: AuthUser,
@@ -106,7 +110,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
       id: string;
     };
     if (!file) return row;
-    await assertValidUpload(file);
+    await this.uploads.assertValid(u.id, file);
     const key = this.storage.payslipKey(u.id, row.id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype);
     return this.svc.update(u.id, row.id, { payslipKey: key });
@@ -126,7 +130,9 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Post(':id/payslip')
   @UseInterceptors(
-    FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }),
+    FileInterceptor('payslip', {
+      limits: { fileSize: UPLOAD_MULTER_LIMIT_BYTES },
+    }),
   )
   async uploadPayslip(
     @CurrentUser() u: AuthUser,
@@ -134,7 +140,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
-    await assertValidUpload(file);
+    await this.uploads.assertValid(u.id, file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.payslipKey(u.id, id, file.mimetype);

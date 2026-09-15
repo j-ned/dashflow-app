@@ -13,6 +13,7 @@ import type { INestApplication, ExecutionContext } from '@nestjs/common';
 import { RecurringEntriesController } from './recurring-entries.controller';
 import { RecurringEntriesService } from './recurring-entries.service';
 import { StorageService } from '../../storage/storage.service';
+import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 
@@ -25,6 +26,9 @@ class TestableController extends RecurringEntriesController {
     return this.toUpdatePatch(body);
   }
 }
+
+// UploadPolicy est mockée : la règle E2EE/clair est couverte par upload-policy.spec.ts.
+const mockUploads = { assertValid: vi.fn() };
 
 describe('RecurringEntriesController — transferts chiffrés (E2EE)', () => {
   const controller = new TestableController(null as never, null as never);
@@ -89,6 +93,7 @@ describe('RecurringEntriesController — POST /recurring-entries/:id/payslip (mu
       providers: [
         { provide: RecurringEntriesService, useValue: mockSvc },
         { provide: StorageService, useValue: mockStorage },
+        { provide: UploadPolicy, useValue: mockUploads },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -111,6 +116,7 @@ describe('RecurringEntriesController — POST /recurring-entries/:id/payslip (mu
   });
 
   beforeEach(() => {
+    mockUploads.assertValid.mockReset().mockResolvedValue(undefined);
     mockSvc.getOne.mockReset().mockResolvedValue({ id: ENTRY_ID });
     mockSvc.update.mockReset().mockResolvedValue({
       id: ENTRY_ID,
