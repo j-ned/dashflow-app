@@ -9,10 +9,15 @@ import {
 } from 'vitest';
 import request from 'supertest';
 import { Test } from '@nestjs/testing';
-import type { INestApplication, ExecutionContext } from '@nestjs/common';
+import {
+  BadRequestException,
+  type INestApplication,
+  type ExecutionContext,
+} from '@nestjs/common';
 import { DocumentsController } from './documents.controller';
 import { DocumentsService } from './documents.service';
 import { StorageService } from '../../storage/storage.service';
+import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 
@@ -21,6 +26,9 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // exact doit être parsé → storage.upload appelé → svc.update({ fileUrl }).
 
 const DOC_ID = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb';
+
+// UploadPolicy est mockée : la règle E2EE/clair est couverte par upload-policy.spec.ts.
+const mockUploads = { assertValid: vi.fn() };
 
 describe('DocumentsController — POST /documents/:id/file (multipart)', () => {
   let app: INestApplication;
@@ -48,6 +56,7 @@ describe('DocumentsController — POST /documents/:id/file (multipart)', () => {
       providers: [
         { provide: DocumentsService, useValue: mockSvc },
         { provide: StorageService, useValue: mockStorage },
+        { provide: UploadPolicy, useValue: mockUploads },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -71,6 +80,7 @@ describe('DocumentsController — POST /documents/:id/file (multipart)', () => {
 
   beforeEach(() => {
     mockSvc.getOne.mockReset().mockResolvedValue({ id: DOC_ID });
+    mockUploads.assertValid.mockReset().mockResolvedValue(undefined);
     mockSvc.update
       .mockReset()
       .mockResolvedValue({ id: DOC_ID, fileUrl: 'documents/u1/doc-1.pdf' });
@@ -91,6 +101,42 @@ describe('DocumentsController — POST /documents/:id/file (multipart)', () => {
       DOC_ID,
       expect.objectContaining({ fileUrl: expect.any(String) }),
     );
+  });
+
+  it('blob opaque (E2EE) accepté par la politique → 201, uploadé tel quel en octet-stream', async () => {
+    mockUploads.assertValid.mockResolvedValueOnce(undefined);
+
+    const res = await request(app.getHttpServer())
+      .post(`/documents/${DOC_ID}/file`)
+      .attach('file', Buffer.from([0x9f, 0x12, 0x00, 0xff]), {
+        filename: 'ordonnance.pdf',
+        contentType: 'application/octet-stream',
+      });
+
+    expect(res.status).toBe(201);
+    expect(mockUploads.assertValid).toHaveBeenCalledWith(
+      'u1',
+      expect.objectContaining({ mimetype: 'application/octet-stream' }),
+    );
+    expect(mockStorage.upload).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.any(Buffer),
+      'application/octet-stream',
+    );
+  });
+
+  it("politique d'upload refuse → 400, storage.upload jamais appelé", async () => {
+    mockUploads.assertValid.mockRejectedValueOnce(
+      new BadRequestException('Type de fichier non autorisé'),
+    );
+
+    const res = await request(app.getHttpServer())
+      .post(`/documents/${DOC_ID}/file`)
+      .attach('file', Buffer.from([0x4d, 0x5a, 0x90, 0x00]), 'malware.pdf');
+
+    expect(res.status).toBe(400);
+    expect(mockStorage.upload).not.toHaveBeenCalled();
+    expect(mockSvc.update).not.toHaveBeenCalled();
   });
 
   it('sans fichier → 400 (BadRequestException), storage.upload jamais appelé', async () => {

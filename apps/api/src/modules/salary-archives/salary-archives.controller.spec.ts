@@ -13,6 +13,7 @@ import type { INestApplication, ExecutionContext } from '@nestjs/common';
 import { SalaryArchivesController } from './salary-archives.controller';
 import { SalaryArchivesService } from './salary-archives.service';
 import { StorageService } from '../../storage/storage.service';
+import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 
@@ -21,6 +22,9 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // n'est pas parsé → 500. Ces tests décrivent le comportement attendu (201 + parsing).
 
 const ACCOUNT_ID = '11111111-1111-4111-8111-111111111111';
+
+// UploadPolicy est mockée : la règle E2EE/clair est couverte par upload-policy.spec.ts.
+const mockUploads = { assertValid: vi.fn() };
 
 describe('SalaryArchivesController — POST /salary-archives (multipart)', () => {
   let app: INestApplication;
@@ -47,6 +51,7 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
       providers: [
         { provide: SalaryArchivesService, useValue: mockSvc },
         { provide: StorageService, useValue: mockStorage },
+        { provide: UploadPolicy, useValue: mockUploads },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -69,6 +74,7 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
   });
 
   beforeEach(() => {
+    mockUploads.assertValid.mockReset().mockResolvedValue(undefined);
     mockSvc.create.mockReset().mockResolvedValue({ id: 'arch-1' });
     mockSvc.update.mockReset().mockResolvedValue({
       id: 'arch-1',
@@ -171,6 +177,7 @@ describe('SalaryArchivesController — POST /salary-archives garde CSRF active',
       providers: [
         { provide: SalaryArchivesService, useValue: mockSvc },
         { provide: StorageService, useValue: mockStorage },
+        { provide: UploadPolicy, useValue: mockUploads },
       ],
     })
       .overrideGuard(JwtAuthGuard)

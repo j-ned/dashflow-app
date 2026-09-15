@@ -24,7 +24,8 @@ import {
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { parseBody } from '../../common/parse-body';
-import { assertValidUpload } from '../../common/files/validate-upload';
+import { UploadPolicy } from '../../common/files/upload-policy';
+import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createPrescriptionSchema,
   createEncryptedPrescriptionSchema,
@@ -38,6 +39,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   constructor(
     protected readonly svc: PrescriptionsService,
     private readonly storage: StorageService,
+    private readonly uploads: UploadPolicy,
   ) {
     super();
   }
@@ -109,7 +111,9 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Post(':id/document')
   @UseInterceptors(
-    FileInterceptor('document', { limits: { fileSize: 10 * 1024 * 1024 } }),
+    FileInterceptor('document', {
+      limits: { fileSize: UPLOAD_MULTER_LIMIT_BYTES },
+    }),
   )
   async uploadDocument(
     @CurrentUser() u: AuthUser,
@@ -117,7 +121,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
-    await assertValidUpload(file);
+    await this.uploads.assertValid(u.id, file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.prescriptionKey(u.id, id, file.mimetype);

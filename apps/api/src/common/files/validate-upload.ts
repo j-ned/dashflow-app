@@ -10,7 +10,23 @@ const ALLOWED_UPLOAD_MIME_TYPES: readonly string[] = [
 ];
 
 /**
- * Vérifie qu'un fichier uploadé est bien du type déclaré : whitelist sur le `mimetype`
+ * MIME déclaré par le client pour un fichier chiffré côté client (E2EE). Accepté uniquement
+ * via `UploadPolicy` pour les comptes dont `encryption_version = 1`.
+ */
+export const OPAQUE_MIME_TYPE = 'application/octet-stream';
+
+/** Taille max d'un fichier utilisateur (miroir de la règle côté client). */
+export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+
+/**
+ * Limite multer : le client valide `UPLOAD_MAX_BYTES` sur le fichier EN CLAIR ; en E2EE le blob
+ * reçu porte en plus l'en-tête de format (≤ 260 octets), l'IV (12) et le tag GCM (16).
+ * Sans cette marge, un fichier de 10 Mo tout juste valide côté client serait refusé ici.
+ */
+export const UPLOAD_MULTER_LIMIT_BYTES = UPLOAD_MAX_BYTES + 1024;
+
+/**
+ * Vérifie qu'un fichier uploadé en clair est bien du type déclaré : whitelist sur le `mimetype`
  * (déclaratif, fourni par le client) ET vérification par magic-bytes du contenu réel.
  * Un `mimetype` usurpé (ex. exécutable renommé en `.pdf`) est rejeté même s'il passe la
  * whitelist déclarative.

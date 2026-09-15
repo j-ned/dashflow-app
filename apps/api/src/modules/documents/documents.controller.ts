@@ -23,7 +23,8 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { assertValidUpload } from '../../common/files/validate-upload';
+import { UploadPolicy } from '../../common/files/upload-policy';
+import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createDocumentSchema,
   createEncryptedDocumentSchema,
@@ -38,6 +39,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   constructor(
     protected readonly svc: DocumentsService,
     private readonly storage: StorageService,
+    private readonly uploads: UploadPolicy,
   ) {
     super();
   }
@@ -106,7 +108,9 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Post(':id/file')
   @UseInterceptors(
-    FileInterceptor('file', { limits: { fileSize: 10 * 1024 * 1024 } }),
+    FileInterceptor('file', {
+      limits: { fileSize: UPLOAD_MULTER_LIMIT_BYTES },
+    }),
   )
   async uploadFile(
     @CurrentUser() u: AuthUser,
@@ -114,7 +118,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
-    await assertValidUpload(file);
+    await this.uploads.assertValid(u.id, file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.documentKey(u.id, id, file.mimetype);

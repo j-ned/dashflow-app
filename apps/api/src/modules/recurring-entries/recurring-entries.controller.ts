@@ -23,7 +23,8 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { assertValidUpload } from '../../common/files/validate-upload';
+import { UploadPolicy } from '../../common/files/upload-policy';
+import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createRecurringEntrySchema,
   createEncryptedRecurringEntrySchema,
@@ -38,6 +39,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   constructor(
     protected readonly svc: RecurringEntriesService,
     private readonly storage: StorageService,
+    private readonly uploads: UploadPolicy,
   ) {
     super();
   }
@@ -108,7 +110,9 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Post(':id/payslip')
   @UseInterceptors(
-    FileInterceptor('payslip', { limits: { fileSize: 10 * 1024 * 1024 } }),
+    FileInterceptor('payslip', {
+      limits: { fileSize: UPLOAD_MULTER_LIMIT_BYTES },
+    }),
   )
   async uploadPayslip(
     @CurrentUser() u: AuthUser,
@@ -116,7 +120,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
-    await assertValidUpload(file);
+    await this.uploads.assertValid(u.id, file);
     const existing = await this.svc.getOne(u.id, id);
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.payslipKey(u.id, id, file.mimetype);

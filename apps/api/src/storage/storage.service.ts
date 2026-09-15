@@ -12,6 +12,8 @@ import type { Readable } from 'node:stream';
 import type { Env } from '../config/env.schema';
 
 function ext(contentType: string, fallback: string): string {
+  // Fichier chiffré côté client (E2EE) : contenu opaque, extension neutre.
+  if (contentType === 'application/octet-stream') return 'bin';
   return (contentType.split('/')[1] ?? fallback).replace('jpeg', 'jpg');
 }
 

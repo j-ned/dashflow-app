@@ -13,6 +13,7 @@ import type { INestApplication, ExecutionContext } from '@nestjs/common';
 import { PrescriptionsController } from './prescriptions.controller';
 import { PrescriptionsService } from './prescriptions.service';
 import { StorageService } from '../../storage/storage.service';
+import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 
@@ -21,6 +22,9 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // exact doit être parsé → storage.upload appelé → svc.update({ documentUrl }).
 
 const PRESC_ID = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc';
+
+// UploadPolicy est mockée : la règle E2EE/clair est couverte par upload-policy.spec.ts.
+const mockUploads = { assertValid: vi.fn() };
 
 describe('PrescriptionsController — POST /prescriptions/:id/document (multipart)', () => {
   let app: INestApplication;
@@ -48,6 +52,7 @@ describe('PrescriptionsController — POST /prescriptions/:id/document (multipar
       providers: [
         { provide: PrescriptionsService, useValue: mockSvc },
         { provide: StorageService, useValue: mockStorage },
+        { provide: UploadPolicy, useValue: mockUploads },
       ],
     })
       .overrideGuard(JwtAuthGuard)
@@ -70,6 +75,7 @@ describe('PrescriptionsController — POST /prescriptions/:id/document (multipar
   });
 
   beforeEach(() => {
+    mockUploads.assertValid.mockReset().mockResolvedValue(undefined);
     mockSvc.getOne.mockReset().mockResolvedValue({ id: PRESC_ID });
     mockSvc.update.mockReset().mockResolvedValue({
       id: PRESC_ID,
