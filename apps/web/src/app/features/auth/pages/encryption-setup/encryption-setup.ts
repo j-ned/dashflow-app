@@ -14,6 +14,17 @@ import { ConfirmPasswordModal } from '../../components/confirm-password-modal/co
 
 const CLEARTEXT_KEYS: Record<string, readonly string[]> = {
   bankAccounts: ['id', 'userId', 'createdAt'],
+  // Miroir de http-account-transaction.gateway.ts : ce qui reste en clair pour le tri/les FK.
+  accountTransactions: [
+    'id',
+    'userId',
+    'accountId',
+    'toAccountId',
+    'direction',
+    'memberId',
+    'recurringEntryId',
+    'createdAt',
+  ],
   envelopes: ['id', 'userId', 'memberId'],
   envelopeTransactions: ['id', 'envelopeId', 'createdAt'],
   loans: ['id', 'userId', 'memberId'],
@@ -30,6 +41,7 @@ const CLEARTEXT_KEYS: Record<string, readonly string[]> = {
 
 const API_PATHS: Record<string, string> = {
   bankAccounts: '/bank-accounts',
+  accountTransactions: '/transactions/all',
   envelopes: '/envelopes',
   envelopeTransactions: '/envelopes/transactions/all',
   loans: '/loans',
