@@ -130,6 +130,101 @@ describe('Finance e2e', () => {
     expect(tx.body.length).toBeGreaterThanOrEqual(1);
   });
 
+  it('loans : un paiement supérieur au restant dû est refusé (400) et rien ne bouge', async () => {
+    const a = await authedClient();
+    const loan = await request(a.s)
+      .post('/loans')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        person: 'Sophie',
+        direction: 'lent',
+        amount: '100',
+        remaining: '50',
+        date: '2026-01-01',
+      })
+      .expect(201);
+    const id = loan.body.id as string;
+
+    await request(a.s)
+      .patch(`/loans/${id}/payment`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ amount: 80 })
+      .expect(400);
+
+    const after = await request(a.s)
+      .get(`/loans/${id}`)
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(after.body.remaining).toBe('50.00');
+    const tx = await request(a.s)
+      .get(`/loans/${id}/transactions`)
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(tx.body).toHaveLength(0);
+  });
+
+  it('loans : remaining > amount refusé à la création (400)', async () => {
+    const a = await authedClient();
+    await request(a.s)
+      .post('/loans')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        person: 'Sophie',
+        direction: 'lent',
+        amount: '100',
+        remaining: '150',
+        date: '2026-01-01',
+      })
+      .expect(400);
+  });
+
+  it('account-transactions : montant négatif ou NaN → 400 (le sens est porté par direction)', async () => {
+    const a = await authedClient();
+    const acc = await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Courant', initialBalance: 0 })
+      .expect(201);
+    for (const amount of ['-10', 'NaN', 'Infinity', '1.005']) {
+      await request(a.s)
+        .post(`/bank-accounts/${acc.body.id}/transactions`)
+        .set('Cookie', a.cookies)
+        .set('X-CSRF-Token', a.csrf)
+        .send({ amount, direction: 'expense', date: '2026-03-01' })
+        .expect(400);
+    }
+  });
+
+  it('envelopes : deux crédits concurrents ne se perdent pas (verrou de ligne)', async () => {
+    const a = await authedClient();
+    const env = await request(a.s)
+      .post('/envelopes')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Concurrence', type: 'épargne', balance: '0' })
+      .expect(201);
+    const id = env.body.id as string;
+
+    const credit = (amount: number) =>
+      request(a.s)
+        .patch(`/envelopes/${id}/balance`)
+        .set('Cookie', a.cookies)
+        .set('X-CSRF-Token', a.csrf)
+        .send({ amount })
+        .expect(200);
+    await Promise.all([credit(10), credit(20), credit(0.3)]);
+
+    const after = await request(a.s)
+      .get(`/envelopes/${id}`)
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(after.body.balance).toBe('30.30');
+  });
+
   it('mutation sans X-CSRF-Token → 403', async () => {
     const a = await authedClient();
     await request(a.s)

@@ -122,4 +122,48 @@ describe('EnvelopesController — DTO de sortie', () => {
     expect(res.status).toBe(200);
     expect(res.body.userId).toBeUndefined();
   });
+  it.each([
+    ['NaN (chaîne)', { amount: 'NaN' }],
+    ['Infinity', { amount: Number.POSITIVE_INFINITY }],
+    ['3 décimales', { amount: 1.005 }],
+    ['texte', { amount: 'abc' }],
+    ['notation scientifique', { amount: '1e21' }],
+  ])(
+    'PATCH /envelopes/:id/balance avec %s → 400, service jamais appelé',
+    async (_l, body) => {
+      mockSvc.credit.mockClear();
+      const res = await request(app.getHttpServer())
+        .patch('/envelopes/env-1/balance')
+        .send(body);
+
+      expect(res.status).toBe(400);
+      expect(mockSvc.credit).not.toHaveBeenCalled();
+    },
+  );
+
+  it('PATCH /envelopes/:id/balance accepte un retrait (montant négatif à 2 décimales)', async () => {
+    mockSvc.credit
+      .mockClear()
+      .mockResolvedValue({ id: 'env-1', balance: '-2.50' });
+    const res = await request(app.getHttpServer())
+      .patch('/envelopes/env-1/balance')
+      .send({ amount: '-2.5' });
+
+    expect(res.status).toBe(200);
+    expect(mockSvc.credit).toHaveBeenCalledWith('u1', 'env-1', {
+      amount: -2.5,
+      date: undefined,
+      note: null,
+    });
+  });
+
+  it('POST /envelopes avec un objectif négatif → 400', async () => {
+    mockSvc.create.mockClear();
+    const res = await request(app.getHttpServer())
+      .post('/envelopes')
+      .send({ name: 'Vacances', type: 'vacances', target: -100 });
+
+    expect(res.status).toBe(400);
+    expect(mockSvc.create).not.toHaveBeenCalled();
+  });
 });

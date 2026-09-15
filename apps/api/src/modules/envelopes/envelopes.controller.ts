@@ -152,14 +152,15 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
       if (row === undefined) throw new NotFoundException('Non trouvé');
       return row;
     }
+    // En clair, un mouvement DOIT tenir le solde : même chemin atomique que PATCH /:id/balance.
     const d = parseBody(envelopeTransactionSchema, body);
-    const row = await this.svc.addTransaction(u.id, id, {
-      amount: String(d.amount),
+    const env = await this.svc.credit(u.id, id, {
+      amount: d.amount,
       date: d.date,
       note: d.note ?? null,
     });
-    if (row === undefined) throw new NotFoundException('Non trouvé');
-    return row;
+    if (env === undefined) throw new NotFoundException('Non trouvé');
+    return toEnvelopeResponse(env);
   }
 
   @UseGuards(CsrfGuard)

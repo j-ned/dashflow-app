@@ -114,8 +114,15 @@ export class EnvelopesService extends OwnedCrudService<Envelope> {
         });
         return u;
       }
+      // Lecture verrouillée : deux crédits concurrents (double-clic, deux onglets) se sérialisent
+      // au lieu de s'écraser (lost update). `env` lu hors transaction ne sert qu'à l'ownership.
+      const [locked] = await tx
+        .select({ balance: envelopes.balance })
+        .from(envelopes)
+        .where(and(eq(envelopes.id, id), eq(envelopes.userId, userId)))
+        .for('update');
       const newBalance = String(
-        addMoney(Number(env.balance), opts.amount ?? 0),
+        addMoney(Number(locked?.balance ?? env.balance), opts.amount ?? 0),
       );
       const [u] = await tx
         .update(envelopes)

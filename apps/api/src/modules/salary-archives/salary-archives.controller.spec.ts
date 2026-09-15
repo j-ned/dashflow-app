@@ -102,7 +102,7 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
       'u1',
       expect.objectContaining({
         month: '2026-06',
-        salary: '1500',
+        salary: '1500.00',
         spendings,
       }),
     );

@@ -1,6 +1,5 @@
 import { z } from 'zod';
-
-const amount = z.union([z.string(), z.number()]).transform(String);
+import { nonNegativeMoney as amount } from '../../../common/money';
 
 export const createSalaryArchiveSchema = z.object({
   month: z.string().regex(/^\d{4}-\d{2}$/, 'Format mois invalide (YYYY-MM)'),

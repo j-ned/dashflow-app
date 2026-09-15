@@ -1,10 +1,10 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { loans, loanTransactions, patients } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
-import { addMoney } from '../../common/money';
+import { addMoney, toCents } from '../../common/money';
 import { today } from '../../common/today';
 import type { Loan } from './loan.response';
 
@@ -84,10 +84,23 @@ export class LoansService extends OwnedCrudService<Loan> {
     const current = await this.getOne(userId, id);
     if (!current) return undefined;
     const txDate = opts.date || today();
-    const newRemaining = String(
-      Math.max(0, addMoney(Number(current.remaining), -opts.amount)),
-    );
     return this.db.transaction(async (tx) => {
+      // Lecture verrouillée : deux paiements concurrents (double-clic, deux onglets) se
+      // sérialisent au lieu de s'écraser. `current` lu hors transaction ne sert qu'à l'ownership.
+      const [locked] = await tx
+        .select({ remaining: loans.remaining })
+        .from(loans)
+        .where(and(eq(loans.id, id), eq(loans.userId, userId)))
+        .for('update');
+      const remaining = Number(locked?.remaining ?? current.remaining);
+      // Un paiement supérieur au restant dû casserait l'invariant Σ paiements = amount − remaining
+      // (avant : remaining clampé à 0 mais le mouvement enregistré en entier).
+      if (toCents(opts.amount) > toCents(remaining)) {
+        throw new BadRequestException(
+          `Le paiement dépasse le restant dû (${remaining.toFixed(2)})`,
+        );
+      }
+      const newRemaining = String(addMoney(remaining, -opts.amount));
       const [updated] = await tx
         .update(loans)
         .set({ remaining: newRemaining })

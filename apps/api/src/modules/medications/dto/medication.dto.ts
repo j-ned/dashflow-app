@@ -1,11 +1,11 @@
 import { z } from 'zod';
+import { smallPositiveRate as amount } from '../../../common/money';
 
 const uuid = z.string().uuid();
 const optionalUuid = z.string().uuid().nullable().optional();
 const dateStr = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, 'Format date invalide (YYYY-MM-DD)');
-const amount = z.union([z.string(), z.number()]).transform(String);
 
 const MEDICATION_TYPES = [
   'comprime',
