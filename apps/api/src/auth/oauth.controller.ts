@@ -40,6 +40,7 @@ export class OAuthController {
     res.redirect(url);
   }
 
+  @Throttle(STRICT_THROTTLE)
   @Get('callback')
   async callback(
     @Query('code') code: string | undefined,

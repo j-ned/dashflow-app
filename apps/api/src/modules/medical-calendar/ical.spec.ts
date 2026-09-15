@@ -2,6 +2,12 @@ import { describe, it, expect } from 'vitest';
 import { buildIcal, escapeIcal } from './ical';
 
 describe('iCal', () => {
+  it('escapeIcal retire \r (injection de propriétés VEVENT)', () => {
+    expect(escapeIcal('Motif\r\nATTENDEE:mailto:x@y.z')).toBe(
+      'Motif\\nATTENDEE:mailto:x@y.z',
+    );
+  });
+
   it('escapeIcal échappe ; ,', () => {
     expect(escapeIcal('a;b,c')).toBe('a\\;b\\,c');
   });

@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, inArray } from 'drizzle-orm';
 import { AuthRepository } from './auth.repository';
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
 import { ok, fail, type Result } from './auth.result';
@@ -12,36 +12,62 @@ import type {
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import * as schema from '../db/schema';
 
-type MigrateTable = PgTable & { id: PgColumn; userId?: PgColumn };
+type OwnedTable = PgTable & { id: PgColumn; userId: PgColumn };
+type ChildTable = PgTable & { id: PgColumn };
 
-const MIGRATE_TABLES: Record<
-  string,
-  { table: MigrateTable; hasUserId: boolean }
-> = {
-  bankAccounts: { table: schema.bankAccounts, hasUserId: true },
-  envelopes: { table: schema.envelopes, hasUserId: true },
+/**
+ * Comment scoper une table pendant la migration :
+ * - `own`   : la table porte `user_id`, on filtre dessus ;
+ * - `child` : la table n'a pas `user_id` (mouvements d'enveloppe / de prêt), on la scope via
+ *             son parent (`fk IN (SELECT id FROM parent WHERE user_id = $u)`). Sans cela un
+ *             utilisateur pouvait écraser `encrypted_data` d'un mouvement d'un autre foyer en
+ *             connaissant son UUID.
+ */
+type MigrateMapping =
+  | { kind: 'own'; table: OwnedTable }
+  | { kind: 'child'; table: ChildTable; fk: PgColumn; parent: OwnedTable };
+
+/** Toutes les tables porteuses de `encrypted_data`. Tenue en miroir côté front (encryption-setup). */
+export const MIGRATE_TABLES: Record<string, MigrateMapping> = {
+  bankAccounts: { kind: 'own', table: schema.bankAccounts },
+  accountTransactions: { kind: 'own', table: schema.accountTransactions },
+  envelopes: { kind: 'own', table: schema.envelopes },
   envelopeTransactions: {
+    kind: 'child',
     table: schema.envelopeTransactions,
-    hasUserId: false,
+    fk: schema.envelopeTransactions.envelopeId,
+    parent: schema.envelopes,
   },
-  loans: { table: schema.loans, hasUserId: true },
-  loanTransactions: { table: schema.loanTransactions, hasUserId: false },
-  recurringEntries: { table: schema.recurringEntries, hasUserId: true },
-  salaryArchives: { table: schema.salaryArchives, hasUserId: true },
-  patients: { table: schema.patients, hasUserId: true },
-  practitioners: { table: schema.practitioners, hasUserId: true },
-  appointments: { table: schema.appointments, hasUserId: true },
-  prescriptions: { table: schema.prescriptions, hasUserId: true },
-  medications: { table: schema.medications, hasUserId: true },
-  documents: { table: schema.documents, hasUserId: true },
+  loans: { kind: 'own', table: schema.loans },
+  loanTransactions: {
+    kind: 'child',
+    table: schema.loanTransactions,
+    fk: schema.loanTransactions.loanId,
+    parent: schema.loans,
+  },
+  recurringEntries: { kind: 'own', table: schema.recurringEntries },
+  salaryArchives: { kind: 'own', table: schema.salaryArchives },
+  patients: { kind: 'own', table: schema.patients },
+  practitioners: { kind: 'own', table: schema.practitioners },
+  appointments: { kind: 'own', table: schema.appointments },
+  prescriptions: { kind: 'own', table: schema.prescriptions },
+  medications: { kind: 'own', table: schema.medications },
+  documents: { kind: 'own', table: schema.documents },
 };
 
-const CLEAR_COLUMNS: Record<string, Record<string, unknown>> = {
+/** Valeurs neutres écrites dans les colonnes en clair une fois le contenu déplacé dans le blob. */
+export const CLEAR_COLUMNS: Record<string, Record<string, unknown>> = {
   bankAccounts: {
     name: '[chiffré]',
     type: 'courant',
     color: null,
     dotColor: null,
+  },
+  accountTransactions: {
+    amount: '0',
+    date: '1970-01-01',
+    category: null,
+    note: null,
   },
   envelopes: {
     name: '[chiffré]',
@@ -127,7 +153,9 @@ const CLEAR_COLUMNS: Record<string, Record<string, unknown>> = {
   },
 };
 
-const WIPE_TABLES: (PgTable & { userId: PgColumn })[] = [
+/** Tables purgées par `wipe` : toutes les tables `user_id` de données métier (cascade pour les enfants). */
+const WIPE_TABLES: OwnedTable[] = [
+  schema.accountTransactions,
   schema.bankAccounts,
   schema.envelopes,
   schema.loans,
@@ -185,42 +213,64 @@ export class EncryptionService {
     return ok(null);
   }
 
+  /**
+   * Bascule un compte en E2EE : écrit les blobs envoyés par le client, neutralise les colonnes
+   * en clair, puis pose les clés. Tout ou rien : une erreur en cours de route laissait avant
+   * un compte mi-chiffré mi-clair avec `encryption_version = 0`.
+   */
   async migrate(
     userId: string,
     dto: MigrateEncryptionDto,
   ): Promise<Result<null>> {
-    for (const [tableName, rows] of Object.entries(dto.data)) {
-      const mapping = MIGRATE_TABLES[tableName];
-      if (!mapping) continue;
-      const clear = CLEAR_COLUMNS[tableName] ?? {};
-      for (const row of rows) {
-        const conditions = [eq(mapping.table.id, row.id)];
-        if (mapping.hasUserId)
-          conditions.push(eq(mapping.table.userId!, userId));
-        await this.db
-          .update(mapping.table)
-          .set({ encryptedData: row.encryptedData, ...clear })
-          .where(and(...conditions));
+    await this.db.transaction(async (tx) => {
+      for (const [tableName, rows] of Object.entries(dto.data)) {
+        const mapping = MIGRATE_TABLES[tableName];
+        if (!mapping) continue;
+        const clear = CLEAR_COLUMNS[tableName] ?? {};
+        for (const row of rows) {
+          const scope =
+            mapping.kind === 'own'
+              ? eq(mapping.table.userId, userId)
+              : inArray(
+                  mapping.fk,
+                  tx
+                    .select({ id: mapping.parent.id })
+                    .from(mapping.parent)
+                    .where(eq(mapping.parent.userId, userId)),
+                );
+          await tx
+            .update(mapping.table)
+            .set({ encryptedData: row.encryptedData, ...clear })
+            .where(and(eq(mapping.table.id, row.id), scope));
+        }
       }
-    }
-    await this.repo.updateUser(userId, {
-      encryptionSalt: dto.keyMaterial.salt,
-      wrappedMasterKey: dto.keyMaterial.wrappedMasterKey,
-      recoveryWrappedKey: dto.keyMaterial.recoveryWrappedKey,
-      encryptionVersion: 1,
+      await tx
+        .update(schema.users)
+        .set({
+          encryptionSalt: dto.keyMaterial.salt,
+          wrappedMasterKey: dto.keyMaterial.wrappedMasterKey,
+          recoveryWrappedKey: dto.keyMaterial.recoveryWrappedKey,
+          encryptionVersion: 1,
+        })
+        .where(eq(schema.users.id, userId));
     });
     return ok(null);
   }
 
   async wipe(userId: string): Promise<Result<null>> {
-    for (const table of WIPE_TABLES) {
-      await this.db.delete(table).where(eq(table.userId, userId));
-    }
-    await this.repo.updateUser(userId, {
-      encryptionSalt: null,
-      wrappedMasterKey: null,
-      recoveryWrappedKey: null,
-      encryptionVersion: 0,
+    await this.db.transaction(async (tx) => {
+      for (const table of WIPE_TABLES) {
+        await tx.delete(table).where(eq(table.userId, userId));
+      }
+      await tx
+        .update(schema.users)
+        .set({
+          encryptionSalt: null,
+          wrappedMasterKey: null,
+          recoveryWrappedKey: null,
+          encryptionVersion: 0,
+        })
+        .where(eq(schema.users.id, userId));
     });
     return ok(null);
   }

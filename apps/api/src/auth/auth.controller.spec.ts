@@ -21,6 +21,13 @@ import { CsrfGuard } from '../common/guards/csrf.guard';
 import { SESSION_COOKIE } from './cookie';
 
 // Le comportement attendu : 204, appel service avec l'userId courant, purge du cookie de session.
+// Signature PNG + IHDR minimal : reconnu par file-type comme image/png.
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89,
+]);
+
 describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () => {
   let app: INestApplication;
   const mockAuth = { deleteAccount: vi.fn() };
@@ -106,6 +113,7 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
   const mockAuth = { setAvatar: vi.fn() };
   const mockStorage = {
     avatarKey: vi.fn(() => 'avatars/u1.png'),
+    deletePrefix: vi.fn().mockResolvedValue(undefined),
     upload: vi.fn(),
     getStream: vi.fn(),
   };
@@ -149,15 +157,37 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
     mockStorage.upload.mockReset().mockResolvedValue(undefined);
   });
 
-  it("champ 'file' image → 201, storage.upload appelé, auth.setAvatar reçoit la clé", async () => {
+  it('contenu non-image déclaré image/png → 400 (magic-bytes), rien uploadé', async () => {
     const res = await request(app.getHttpServer())
       .post('/auth/me/avatar')
       .attach('file', Buffer.from('fakepngbytes'), {
         filename: 'a.png',
         contentType: 'image/png',
       });
+    expect(res.status).toBe(400);
+    expect(mockStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it('GIF déclaré → 400 (format retiré de la whitelist)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', Buffer.from('GIF89a'), {
+        filename: 'a.gif',
+        contentType: 'image/gif',
+      });
+    expect(res.status).toBe(400);
+  });
+
+  it("champ 'file' image → 201, storage.upload appelé, auth.setAvatar reçoit la clé", async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', PNG_BYTES, {
+        filename: 'a.png',
+        contentType: 'image/png',
+      });
 
     expect(res.status).toBe(201);
+    expect(mockStorage.deletePrefix).toHaveBeenCalledWith('avatars/u1.');
     expect(mockStorage.upload).toHaveBeenCalledTimes(1);
     expect(mockAuth.setAvatar).toHaveBeenCalledWith('u1', 'avatars/u1.png');
     expect(res.body).toMatchObject({ id: 'u1', avatarUrl: '/auth/avatar/u1' });

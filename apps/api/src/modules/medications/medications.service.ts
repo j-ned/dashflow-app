@@ -1,7 +1,7 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { medications, patients } from '../../db/schema';
+import { medications, patients, prescriptions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 
@@ -22,6 +22,14 @@ export class MedicationsService extends OwnedCrudService<Medication> {
     if (typeof values.patientId === 'string') {
       await assertOwnedReference(this.db, patients, userId, values.patientId);
     }
+    if (typeof values.prescriptionId === 'string') {
+      await assertOwnedReference(
+        this.db,
+        prescriptions,
+        userId,
+        values.prescriptionId,
+      );
+    }
     return super.create(userId, values);
   }
 
@@ -32,6 +40,14 @@ export class MedicationsService extends OwnedCrudService<Medication> {
   ): Promise<Medication | undefined> {
     if (typeof patch.patientId === 'string') {
       await assertOwnedReference(this.db, patients, userId, patch.patientId);
+    }
+    if (typeof patch.prescriptionId === 'string') {
+      await assertOwnedReference(
+        this.db,
+        prescriptions,
+        userId,
+        patch.prescriptionId,
+      );
     }
     return super.update(userId, id, patch);
   }

@@ -30,6 +30,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
 import { DemoAccountGuard } from '../common/guards/demo-account.guard';
+import { assertValidImageUpload } from '../common/files/validate-upload';
 import {
   CurrentUser,
   type AuthUser,
@@ -218,6 +219,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Patch('me/password')
   @HttpCode(200)
   async changePassword(
@@ -230,6 +232,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Post('me/set-password')
   @HttpCode(200)
   async setPassword(
@@ -242,6 +245,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Post('me/2fa/setup')
   @HttpCode(200)
   async totpSetup(@CurrentUser() u: AuthUser) {
@@ -251,6 +255,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Post('me/2fa/verify')
   @HttpCode(200)
   async totpVerify(
@@ -263,6 +268,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Post('me/2fa/disable')
   @HttpCode(200)
   async totpDisable(
@@ -304,13 +310,10 @@ export class AuthController {
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
-    if (
-      !['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(
-        file.mimetype,
-      )
-    ) {
-      throw new BadRequestException('Type image invalide');
-    }
+    await assertValidImageUpload(file);
+    // Un changement de format (png → jpg) change la clé : purge l'ancien objet, sinon il reste
+    // public et immuable dans R2 pour toujours.
+    await this.storage.deletePrefix(`avatars/${u.id}.`);
     const key = this.storage.avatarKey(u.id, file.mimetype);
     await this.storage.upload(
       key,

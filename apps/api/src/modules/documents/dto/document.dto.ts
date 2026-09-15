@@ -21,7 +21,6 @@ export const createDocumentSchema = z.object({
   type: z.enum(DOCUMENT_TYPES),
   title: z.string().min(1).max(255),
   date: dateStr,
-  fileUrl: z.string().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 
@@ -37,7 +36,6 @@ export const updateDocumentSchema = z.object({
   type: z.enum(DOCUMENT_TYPES).optional(),
   title: z.string().min(1).max(255).optional(),
   date: dateStr.optional(),
-  fileUrl: z.string().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 

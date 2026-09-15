@@ -1,6 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { recurringEntries, bankAccounts } from '../../db/schema';
+import { recurringEntries, bankAccounts, patients } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 
@@ -31,6 +31,9 @@ export class RecurringEntriesService extends OwnedCrudService<RecurringEntry> {
         userId,
         values.toAccountId,
       );
+    }
+    if (typeof values.memberId === 'string') {
+      await assertOwnedReference(this.db, patients, userId, values.memberId);
     }
   }
 

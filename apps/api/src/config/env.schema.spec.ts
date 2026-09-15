@@ -33,3 +33,49 @@ describe('envSchema', () => {
     expect(envSchema.parse({ ...base }).MAILER).toBe('console');
   });
 });
+
+describe('envSchema — garde-fous production', () => {
+  const prod = {
+    NODE_ENV: 'production',
+    DATABASE_URL: 'postgresql://u:p@db:5432/db',
+    JWT_SECRET: 'A' + 'r4nd0m-secret-'.repeat(3),
+    MAILER: 'smtp',
+    SMTP_HOST: 'mail.example.org',
+  };
+
+  it('accepte une config prod complète', () => {
+    expect(() => envSchema.parse(prod)).not.toThrow();
+  });
+
+  it('refuse MAILER=console en production (codes OTP dans les logs)', () => {
+    expect(() => envSchema.parse({ ...prod, MAILER: 'console' })).toThrow(
+      /MAILER/,
+    );
+  });
+
+  it('refuse MAILER=smtp sans SMTP_HOST en production', () => {
+    expect(() => envSchema.parse({ ...prod, SMTP_HOST: undefined })).toThrow(
+      /MAILER/,
+    );
+  });
+
+  it('refuse le JWT_SECRET d’exemple du .env.example en production', () => {
+    expect(() =>
+      envSchema.parse({
+        ...prod,
+        JWT_SECRET: 'dev-secret-change-me-min-32-characters-long-xxxxx',
+      }),
+    ).toThrow(/JWT_SECRET/);
+  });
+
+  it('tolère console et le secret d’exemple hors production', () => {
+    expect(() =>
+      envSchema.parse({
+        ...prod,
+        NODE_ENV: 'development',
+        MAILER: 'console',
+        JWT_SECRET: 'dev-secret-change-me-min-32-characters-long-xxxxx',
+      }),
+    ).not.toThrow();
+  });
+});

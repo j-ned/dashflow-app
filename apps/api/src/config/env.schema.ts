@@ -1,6 +1,6 @@
 import { z } from 'zod';
 
-export const envSchema = z.object({
+const envBaseSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
     .default('development'),
@@ -46,4 +46,25 @@ export const envSchema = z.object({
   SMTP_FROM: z.string().default('DashFlow <noreply@dashflow.app>'),
 });
 
-export type Env = z.infer<typeof envSchema>;
+// Garde-fous production : le mailer « console » écrit les codes OTP dans stdout (logs Dokploy),
+// et le secret JWT d'exemple du .env.example ne doit jamais signer une session réelle.
+export const envSchema = envBaseSchema.superRefine((env, ctx) => {
+  if (env.NODE_ENV !== 'production') return;
+  if (env.MAILER !== 'smtp' || !env.SMTP_HOST) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['MAILER'],
+      message: 'En production, MAILER doit valoir "smtp" avec SMTP_HOST défini',
+    });
+  }
+  if (/^dev-secret|change-me|^x+$/i.test(env.JWT_SECRET)) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['JWT_SECRET'],
+      message:
+        'JWT_SECRET ressemble à une valeur d’exemple : générez un secret aléatoire',
+    });
+  }
+});
+
+export type Env = z.infer<typeof envBaseSchema>;

@@ -3,6 +3,9 @@ import { count, ilike, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { users } from '../../db/schema';
 
+/** Échappe les jokers ILIKE pour qu'une recherche « 50% » cherche bien « 50% ». */
+const escapeLike = (s: string): string => s.replace(/[\\%_]/g, '\\$&');
+
 export type AdminUserRow = {
   id: string;
   email: string;
@@ -21,7 +24,7 @@ export class AdminRepository {
     offset: number;
   }): Promise<AdminUserRow[]> {
     const where = opts.search
-      ? ilike(users.email, `%${opts.search}%`)
+      ? ilike(users.email, `%${escapeLike(opts.search)}%`)
       : undefined;
     return this.db
       .select({
@@ -39,7 +42,9 @@ export class AdminRepository {
   }
 
   async countAll(search?: string): Promise<number> {
-    const where = search ? ilike(users.email, `%${search}%`) : undefined;
+    const where = search
+      ? ilike(users.email, `%${escapeLike(search)}%`)
+      : undefined;
     const rows = await this.db
       .select({ value: count() })
       .from(users)
