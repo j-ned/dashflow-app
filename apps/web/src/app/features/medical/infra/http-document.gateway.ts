@@ -3,8 +3,9 @@ import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
-import { decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { decryptBlob, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { assertUploadable } from '@shared/forms/upload-file-policy';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { MedicalDocument } from '../domain/models/document.model';
 import { DocumentGateway } from '../domain/gateways/document.gateway';
@@ -75,6 +76,7 @@ export class HttpDocumentGateway implements DocumentGateway {
   }
 
   uploadFile(id: string, file: File): Observable<MedicalDocument> {
+    assertUploadable(file);
     const key = this.crypto.getMasterKey();
     if (!key) {
       const formData = new FormData();
@@ -89,8 +91,6 @@ export class HttpDocumentGateway implements DocumentGateway {
           'file',
           new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
         );
-        formData.append('originalMimeType', file.type);
-        formData.append('encrypted', 'true');
         return decryptOne<MedicalDocument>(
           this.api.postForm<ApiRow>(`/documents/${id}/file`, formData),
           key,
@@ -100,7 +100,11 @@ export class HttpDocumentGateway implements DocumentGateway {
   }
 
   downloadFile(id: string): Observable<Blob> {
-    return this.api.getBlob(`/documents/${id}/file`);
+    return decryptBlob(
+      this.api.getBlob(`/documents/${id}/file`),
+      this.crypto.getMasterKey(),
+      'application/pdf',
+    );
   }
 
   deleteFile(id: string): Observable<void> {

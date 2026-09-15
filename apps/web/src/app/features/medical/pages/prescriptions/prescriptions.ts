@@ -22,6 +22,7 @@ import {
   PrescriptionSubmitData,
 } from '../../components/prescription-form/prescription-form';
 import { Toaster } from '@shared/components/toast/toast';
+import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 
@@ -329,8 +330,8 @@ export class Prescriptions {
       await lastValueFrom(this.prescriptionGw.uploadDocument(prescriptionId, file));
       this.toaster.success('medical.prescription.feedback.documentAdded');
       this._refresh.update((v) => v + 1);
-    } catch {
-      this.toaster.error('medical.prescription.feedback.documentAddFailed');
+    } catch (e) {
+      this.toaster.error(uploadErrorKey(e) ?? 'medical.prescription.feedback.documentAddFailed');
     }
     input.value = '';
   }
@@ -357,16 +358,18 @@ export class Prescriptions {
   protected async createPrescription({ data, file }: PrescriptionSubmitData) {
     try {
       const created = await lastValueFrom(this.prescriptionGw.create(data));
-      let fileFailed = false;
+      let fileError: unknown = null;
       if (file) {
         try {
           await lastValueFrom(this.prescriptionGw.uploadDocument(created.id, file));
-        } catch {
-          fileFailed = true;
+        } catch (e) {
+          fileError = e;
         }
       }
-      if (fileFailed) {
-        this.toaster.error('medical.prescription.feedback.documentAddFailed');
+      if (fileError) {
+        this.toaster.error(
+          uploadErrorKey(fileError) ?? 'medical.prescription.feedback.documentAddFailed',
+        );
       } else {
         this.toaster.success('medical.prescription.feedback.created');
       }
@@ -382,16 +385,18 @@ export class Prescriptions {
     if (!id) return;
     try {
       await lastValueFrom(this.prescriptionGw.update(id, data));
-      let fileFailed = false;
+      let fileError: unknown = null;
       if (file) {
         try {
           await lastValueFrom(this.prescriptionGw.uploadDocument(id, file));
-        } catch {
-          fileFailed = true;
+        } catch (e) {
+          fileError = e;
         }
       }
-      if (fileFailed) {
-        this.toaster.error('medical.prescription.feedback.documentAddFailed');
+      if (fileError) {
+        this.toaster.error(
+          uploadErrorKey(fileError) ?? 'medical.prescription.feedback.documentAddFailed',
+        );
       } else {
         this.toaster.success('medical.prescription.feedback.updated');
       }

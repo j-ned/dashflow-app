@@ -5,6 +5,7 @@ import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, encryptEntity } from '@core/services/crypto/entity-crypto';
 import { decryptBlob, decryptList, decryptOne } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { assertUploadable } from '@shared/forms/upload-file-policy';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
 import { normalizeSalaryArchive } from './salary-archive.adapter';
@@ -32,10 +33,10 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
   }
 
   create(data: FormData): Observable<SalaryArchive> {
+    const file = data.get('payslip') as File | null;
+    if (file) assertUploadable(file);
     const key = this.crypto.getMasterKey();
     if (!key) return this.api.postForm('/salary-archives', data);
-
-    const file = data.get('payslip') as File | null;
     const jsonFields: Record<string, unknown> = {};
     data.forEach((value, field) => {
       if (field !== 'payslip') jsonFields[field] = value;
@@ -51,8 +52,6 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
                 'payslip',
                 new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
               );
-              fd.append('originalMimeType', file.type);
-              fd.append('encrypted', 'true');
               fd.append('encryptedData', encrypted.encryptedData as string);
               for (const k of CLEARTEXT_KEYS) {
                 if (encrypted[k as string] !== undefined) {

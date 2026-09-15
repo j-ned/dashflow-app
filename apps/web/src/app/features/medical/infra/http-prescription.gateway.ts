@@ -3,8 +3,9 @@ import { from, map, Observable, switchMap } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
-import { decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { decryptBlob, decryptOne, mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { assertUploadable } from '@shared/forms/upload-file-policy';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { Prescription } from '../domain/models/prescription.model';
 import { PrescriptionGateway } from '../domain/gateways/prescription.gateway';
@@ -82,6 +83,7 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
   }
 
   uploadDocument(id: string, file: File): Observable<Prescription> {
+    assertUploadable(file);
     const key = this.crypto.getMasterKey();
     if (!key) {
       const formData = new FormData();
@@ -96,8 +98,6 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
           'file',
           new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
         );
-        formData.append('originalMimeType', file.type);
-        formData.append('encrypted', 'true');
         return decryptOne<Prescription>(
           this.api.postForm<ApiRow>(`/prescriptions/${id}/document`, formData),
           key,
@@ -107,7 +107,11 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
   }
 
   downloadDocument(id: string): Observable<Blob> {
-    return this.api.getBlob(`/prescriptions/${id}/document`);
+    return decryptBlob(
+      this.api.getBlob(`/prescriptions/${id}/document`),
+      this.crypto.getMasterKey(),
+      'application/pdf',
+    );
   }
 
   deleteDocument(id: string): Observable<void> {

@@ -17,6 +17,7 @@ import { PractitionerGateway } from '../../domain/gateways/practitioner.gateway'
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { DocumentForm, DocumentSubmitData } from '../../components/document-form/document-form';
 import { Toaster } from '@shared/components/toast/toast';
+import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { Icon } from '@shared/components/icon/icon';
@@ -303,8 +304,8 @@ export class Documents {
       await lastValueFrom(this.documentGw.uploadFile(documentId, file));
       this.toaster.success('medical.document.feedback.fileAdded');
       this._refresh.update((v) => v + 1);
-    } catch {
-      this.toaster.error('medical.document.feedback.fileAddFailed');
+    } catch (e) {
+      this.toaster.error(uploadErrorKey(e) ?? 'medical.document.feedback.fileAddFailed');
     }
     input.value = '';
   }
@@ -312,16 +313,16 @@ export class Documents {
   protected async createDoc({ data, file }: DocumentSubmitData) {
     try {
       const created = await lastValueFrom(this.documentGw.create(data));
-      let fileFailed = false;
+      let fileError: unknown = null;
       if (file) {
         try {
           await lastValueFrom(this.documentGw.uploadFile(created.id, file));
-        } catch {
-          fileFailed = true;
+        } catch (e) {
+          fileError = e;
         }
       }
-      if (fileFailed) {
-        this.toaster.error('medical.document.feedback.fileAddFailed');
+      if (fileError) {
+        this.toaster.error(uploadErrorKey(fileError) ?? 'medical.document.feedback.fileAddFailed');
       } else {
         this.toaster.success('medical.document.feedback.created');
       }
@@ -337,16 +338,16 @@ export class Documents {
     if (!id) return;
     try {
       await lastValueFrom(this.documentGw.update(id, data));
-      let fileFailed = false;
+      let fileError: unknown = null;
       if (file) {
         try {
           await lastValueFrom(this.documentGw.uploadFile(id, file));
-        } catch {
-          fileFailed = true;
+        } catch (e) {
+          fileError = e;
         }
       }
-      if (fileFailed) {
-        this.toaster.error('medical.document.feedback.fileAddFailed');
+      if (fileError) {
+        this.toaster.error(uploadErrorKey(fileError) ?? 'medical.document.feedback.fileAddFailed');
       } else {
         this.toaster.success('medical.document.feedback.updated');
       }
