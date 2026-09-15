@@ -1757,6 +1757,10 @@
         "navSettings": "Settings",
         "actLogout": "Logout"
       }
+    },
+    "upload": {
+      "invalidType": "Unsupported format: PDF, JPG, PNG or WebP only.",
+      "tooLarge": "File too large: 10 MB maximum."
     }
   },
   "admin": {

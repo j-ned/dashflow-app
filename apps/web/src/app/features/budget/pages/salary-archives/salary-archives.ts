@@ -25,6 +25,7 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
+import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { SalaryYearFilter } from './salary-year-filter/salary-year-filter';
@@ -413,8 +414,8 @@ export class SalaryArchives {
       this.toaster.success('budget.salaryArchive.messages.created');
       this.createModalRef().close();
       this._refresh.update((v) => v + 1);
-    } catch {
-      this.toaster.error('budget.salaryArchive.messages.createError');
+    } catch (e) {
+      this.toaster.error(uploadErrorKey(e) ?? 'budget.salaryArchive.messages.createError');
     }
   }
 

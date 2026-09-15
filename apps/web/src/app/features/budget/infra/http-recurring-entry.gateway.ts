@@ -10,6 +10,7 @@ import {
   mutateEncrypted,
 } from '@core/services/crypto/crypto-transport';
 import { encryptFile } from '@core/services/crypto/file-crypto';
+import { assertUploadable } from '@shared/forms/upload-file-policy';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
 import { RecurringEntry } from '../domain/models/recurring-entry.model';
 import { RecurringEntryGateway } from '../domain/gateways/recurring-entry.gateway';
@@ -63,6 +64,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
   }
 
   uploadPayslip(id: string, file: File): Observable<RecurringEntry> {
+    assertUploadable(file);
     const key = this.crypto.getMasterKey();
     if (!key) {
       const fd = new FormData();
@@ -77,8 +79,6 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
           'file',
           new File([encryptedBlob], file.name, { type: 'application/octet-stream' }),
         );
-        fd.append('originalMimeType', file.type);
-        fd.append('encrypted', 'true');
         return decryptOne<RecurringEntry>(
           this.api.postForm<ApiRow>(`/recurring-entries/${id}/payslip`, fd),
           key,

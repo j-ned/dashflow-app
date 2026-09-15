@@ -1757,6 +1757,10 @@
         "navSettings": "Paramètres",
         "actLogout": "Déconnexion"
       }
+    },
+    "upload": {
+      "invalidType": "Format non pris en charge : PDF, JPG, PNG ou WebP uniquement.",
+      "tooLarge": "Fichier trop volumineux : 10 Mo maximum."
     }
   },
   "admin": {

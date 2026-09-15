@@ -32,6 +32,7 @@ import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
 import { Icon } from '@shared/components/icon/icon';
 import { Toaster } from '@shared/components/toast/toast';
+import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { BankBalanceBand } from './bank-balance-band/bank-balance-band';
 import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
@@ -928,8 +929,8 @@ export class BankAccount {
           this.toaster.success('budget.bankAccount.messages.entryUpdated');
           this.editModalRef().close();
           this.store.refreshEntries();
-        } catch {
-          this.toaster.error('budget.bankAccount.messages.payslipUploadError');
+        } catch (e) {
+          this.toaster.error(uploadErrorKey(e) ?? 'budget.bankAccount.messages.payslipUploadError');
         }
       } else {
         this.toaster.success('budget.bankAccount.messages.entryUpdated');
