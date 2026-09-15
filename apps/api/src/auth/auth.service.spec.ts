@@ -6,9 +6,13 @@ import { TwoFactorService } from './two-factor.service';
 import type { Result } from './auth.result';
 import type { AuthRepository } from './auth.repository';
 import type { Mailer } from '../mail/mailer';
+import type { StorageService } from '../storage/storage.service';
 
 const repo = () => ({
   findByEmail: vi.fn(),
+  bumpSessionVersion: vi.fn((id: string) =>
+    Promise.resolve({ id, sessionVersion: 1 }),
+  ),
   findById: vi.fn(),
   createUser: vi.fn(),
   updateUser: vi.fn(),
@@ -424,5 +428,118 @@ describe('AuthService.deleteAccount (RGPD)', () => {
     r.deleteUser.mockResolvedValue(undefined);
     await expect(build(r, s).deleteAccount('u1')).rejects.toThrow();
     expect(r.deleteUser).not.toHaveBeenCalled();
+  });
+});
+
+describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
+  const repoWithBump = () => ({
+    ...repo(),
+    bumpSessionVersion: vi.fn((id: string) =>
+      Promise.resolve({ id, sessionVersion: 1 }),
+    ),
+  });
+  let r: ReturnType<typeof repoWithBump>;
+  let m: ReturnType<typeof mailer>;
+  let svc: AuthService;
+  const tf = new TwoFactorService();
+
+  beforeEach(() => {
+    r = repoWithBump();
+    m = mailer();
+    svc = new AuthService(
+      r as unknown as AuthRepository,
+      m as unknown as Mailer,
+      tf,
+      { deletePrefix: vi.fn() } as unknown as StorageService,
+    );
+  });
+
+  it('changePassword : incrémente session_version et renvoie l’utilisateur pour ré-émettre le cookie', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: await argon2.hash('ancien-mdp-long-1'),
+      encryptionVersion: 0,
+    });
+    r.updateUser.mockResolvedValue({ id: 'u1' });
+    const res = await svc.changePassword('u1', {
+      currentPassword: 'ancien-mdp-long-1',
+      newPassword: 'nouveau-mdp-long-1',
+    });
+    expect(res).toMatchObject({ success: true, data: { sessionVersion: 1 } });
+    expect(r.bumpSessionVersion).toHaveBeenCalledWith('u1');
+  });
+
+  it('resetPassword : incrémente session_version (déconnecte un voleur de cookie)', async () => {
+    r.findValidCode.mockResolvedValue({ id: 'c1' });
+    r.findByEmail.mockResolvedValue({
+      id: 'u1',
+      email: 'a@b.com',
+      encryptionVersion: 0,
+    });
+    r.updateUser.mockResolvedValue({ id: 'u1' });
+    await svc.resetPassword({
+      email: 'a@b.com',
+      code: '123456',
+      newPassword: 'nouveau-long-123',
+    });
+    expect(r.bumpSessionVersion).toHaveBeenCalledWith('u1');
+  });
+
+  it('revokeSessions (logout) : incrémente session_version', async () => {
+    await svc.revokeSessions('u1');
+    expect(r.bumpSessionVersion).toHaveBeenCalledWith('u1');
+  });
+
+  it('setupTotp : 2FA déjà active → 409, aucun nouveau secret écrit', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      email: 'a@b.com',
+      totpEnabled: new Date(),
+    });
+    const res = await svc.setupTotp('u1');
+    expect(res).toMatchObject({ success: false, status: 409 });
+    expect(r.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('login 2FA : un code déjà consommé (même pas TOTP) est refusé au second essai', async () => {
+    const { secret } = tf.generateSecret('a@b.com');
+    const totp = new OTPAuth.TOTP({
+      issuer: 'DashFlow',
+      label: 'a@b.com',
+      secret: OTPAuth.Secret.fromBase32(secret),
+    });
+    const code = totp.generate();
+    const user = {
+      id: 'u1',
+      email: 'a@b.com',
+      password: await argon2.hash('bonmotdepasse'),
+      emailVerified: new Date(),
+      totpEnabled: new Date(),
+      totpSecret: secret,
+      totpLastUsedStep: null as number | null,
+    };
+    r.findByEmail.mockResolvedValue(user);
+    r.updateUser.mockImplementation((_id, patch) => {
+      Object.assign(user, patch);
+      return Promise.resolve(user);
+    });
+
+    const first = await svc.login({
+      email: 'a@b.com',
+      password: 'bonmotdepasse',
+      totpCode: code,
+    });
+    expect(first).toMatchObject({
+      success: true,
+      data: { kind: 'authenticated' },
+    });
+    expect(typeof user.totpLastUsedStep).toBe('number');
+
+    const replay = await svc.login({
+      email: 'a@b.com',
+      password: 'bonmotdepasse',
+      totpCode: code,
+    });
+    expect(replay).toMatchObject({ success: false, status: 401 });
   });
 });

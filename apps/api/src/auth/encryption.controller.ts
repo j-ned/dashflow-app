@@ -13,6 +13,7 @@ import { STRICT_THROTTLE } from './throttle';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
+import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import {
   CurrentUser,
@@ -78,6 +79,7 @@ export class EncryptionController {
     return { message: 'Données chiffrées supprimées' };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('reset-password-with-recovery')
   @HttpCode(200)

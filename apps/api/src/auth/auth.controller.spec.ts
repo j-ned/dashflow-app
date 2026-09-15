@@ -18,6 +18,7 @@ import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
+import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { SESSION_COOKIE } from './cookie';
 
 // Le comportement attendu : 204, appel service avec l'userId courant, purge du cookie de session.
@@ -54,6 +55,8 @@ describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () =
         },
       })
       .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -140,6 +143,8 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
         },
       })
       .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
       .useValue({ canActivate: () => true })
       .compile();
 
@@ -252,6 +257,8 @@ describe('AuthController — session démo : routes d’identité verrouillées'
         },
       })
       .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
       .useValue({ canActivate: () => true })
       .compile();
 

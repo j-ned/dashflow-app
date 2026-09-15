@@ -32,6 +32,11 @@ export const users = pgTable('users', {
     .notNull()
     .default(false),
   isDemoAccount: boolean('is_demo_account').notNull().default(false),
+  // Incrémenté à chaque événement de sécurité (logout, reset/changement de mot de passe,
+  // désactivation 2FA) : tout JWT dont le claim `sv` diffère est refusé → révocation réelle.
+  sessionVersion: integer('session_version').notNull().default(0),
+  // Dernier pas TOTP (30 s) accepté : un code intercepté ne peut pas être rejoué.
+  totpLastUsedStep: integer('totp_last_used_step'),
   role: varchar('role', { length: 16 }).notNull().default('user'),
   createdAt: timestamp('created_at', { withTimezone: true })
     .notNull()
@@ -41,7 +46,10 @@ export const users = pgTable('users', {
 export const verificationCodes = pgTable('verification_codes', {
   id: uuid('id').primaryKey().defaultRandom(),
   email: varchar('email', { length: 255 }).notNull(),
-  code: varchar('code', { length: 6 }).notNull(),
+  // SHA-256 (hex) du code à 6 chiffres : une lecture DB ne donne pas le code.
+  code: varchar('code', { length: 64 }).notNull(),
+  // Échecs de vérification ; le code est détruit au 5e (anti brute-force distribué par IP).
+  attempts: integer('attempts').notNull().default(0),
   purpose: verificationCodePurposeEnum('purpose')
     .notNull()
     .default('verification'),
