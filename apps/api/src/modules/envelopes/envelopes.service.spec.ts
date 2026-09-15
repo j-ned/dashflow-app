@@ -14,6 +14,12 @@ function createFakeDb(opts: FakeDbOptions) {
   let transactionCalled = false;
 
   const tx = {
+    // SELECT ... FOR UPDATE dans la transaction : renvoie la même ligne que la lecture d'ownership.
+    select: () => ({
+      from: () => ({
+        where: () => ({ for: () => Promise.resolve(opts.selectResult) }),
+      }),
+    }),
     update: (_table: unknown) => ({
       set: (patch: Record<string, unknown>) => {
         updatePatches.push(patch);

@@ -159,13 +159,14 @@ export class LoansController extends OwnedCrudController<unknown> {
       if (row === undefined) throw new NotFoundException('Non trouvé');
       return row;
     }
+    // En clair, un remboursement DOIT tenir le restant dû : même chemin atomique que PATCH /:id/payment.
     const d = parseBody(loanTransactionSchema, body);
-    const row = await this.svc.addTransaction(u.id, id, {
-      amount: String(d.amount),
+    const loan = await this.svc.recordPayment(u.id, id, {
+      amount: d.amount,
       date: d.date,
     });
-    if (row === undefined) throw new NotFoundException('Non trouvé');
-    return row;
+    if (loan === undefined) throw new NotFoundException('Non trouvé');
+    return toLoanResponse(loan);
   }
 
   @UseGuards(CsrfGuard)

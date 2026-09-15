@@ -1,4 +1,6 @@
+import { sql } from 'drizzle-orm';
 import {
+  check,
   pgTable,
   uuid,
   varchar,
@@ -146,32 +148,36 @@ export const prescriptions = pgTable('prescriptions', {
     .defaultNow(),
 });
 
-export const medications = pgTable('medications', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => users.id, { onDelete: 'cascade' }),
-  prescriptionId: uuid('prescription_id').references(() => prescriptions.id, {
-    onDelete: 'cascade',
-  }),
-  patientId: uuid('patient_id')
-    .notNull()
-    .references(() => patients.id, { onDelete: 'cascade' }),
-  name: varchar('name', { length: 255 }).notNull(),
-  type: medicationTypeEnum('type').notNull(),
-  dosage: varchar('dosage', { length: 100 }).notNull(),
-  quantity: integer('quantity').notNull().default(0),
-  dailyRate: numeric('daily_rate', { precision: 5, scale: 2 })
-    .notNull()
-    .default('1'),
-  startDate: date('start_date').notNull(),
-  alertDaysBefore: integer('alert_days_before').notNull().default(7),
-  skipDays: jsonb('skip_days').notNull().default([]),
-  encryptedData: text('encrypted_data'),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const medications = pgTable(
+  'medications',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    prescriptionId: uuid('prescription_id').references(() => prescriptions.id, {
+      onDelete: 'cascade',
+    }),
+    patientId: uuid('patient_id')
+      .notNull()
+      .references(() => patients.id, { onDelete: 'cascade' }),
+    name: varchar('name', { length: 255 }).notNull(),
+    type: medicationTypeEnum('type').notNull(),
+    dosage: varchar('dosage', { length: 100 }).notNull(),
+    quantity: integer('quantity').notNull().default(0),
+    dailyRate: numeric('daily_rate', { precision: 5, scale: 2 })
+      .notNull()
+      .default('1'),
+    startDate: date('start_date').notNull(),
+    alertDaysBefore: integer('alert_days_before').notNull().default(7),
+    skipDays: jsonb('skip_days').notNull().default([]),
+    encryptedData: text('encrypted_data'),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [check('medications_daily_rate_positive', sql`${t.dailyRate} > 0`)],
+);
 
 export const documents = pgTable('documents', {
   id: uuid('id').primaryKey().defaultRandom(),

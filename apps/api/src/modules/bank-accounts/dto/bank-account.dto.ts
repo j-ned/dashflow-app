@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { moneyNumber } from '../../../common/money';
 
 const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
 
@@ -7,7 +8,7 @@ const BANK_ACCOUNT_TYPES = ['courant', 'épargne', 'carte', 'espèces'] as const
 export const createBankAccountSchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(BANK_ACCOUNT_TYPES).optional(),
-  initialBalance: z.coerce.number().optional(),
+  initialBalance: moneyNumber.optional(),
   color: hexColor.optional(),
   dotColor: hexColor.optional(),
 });
@@ -19,7 +20,7 @@ export const createEncryptedBankAccountSchema = z.object({
 export const updateBankAccountSchema = z.object({
   name: z.string().min(1).max(255).optional(),
   type: z.enum(BANK_ACCOUNT_TYPES).optional(),
-  initialBalance: z.coerce.number().optional(),
+  initialBalance: moneyNumber.optional(),
   color: hexColor.nullable().optional(),
   dotColor: hexColor.nullable().optional(),
 });
