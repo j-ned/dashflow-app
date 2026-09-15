@@ -209,6 +209,7 @@ export class EncryptionService {
       patch.wrappedMasterKey = dto.newWrappedMasterKey;
     }
     await this.repo.updateUser(user.id, patch);
+    await this.repo.bumpSessionVersion(user.id);
     await this.repo.deleteCodes(dto.email, 'reset');
     return ok(null);
   }

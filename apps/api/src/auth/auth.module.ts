@@ -14,6 +14,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
 import { UploadPolicy } from '../common/files/upload-policy';
 import { DemoAccountGuard } from '../common/guards/demo-account.guard';
+import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { DemoModule } from '../modules/demo/demo.module';
 import type { Env } from '../config/env.schema';
 
@@ -55,6 +56,7 @@ export const JWT_AUDIENCE = 'dashflow-web';
     JwtAuthGuard,
     CsrfGuard,
     DemoAccountGuard,
+    EmailThrottlerGuard,
     UploadPolicy,
   ],
   exports: [

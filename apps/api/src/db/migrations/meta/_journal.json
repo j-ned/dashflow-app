@@ -57,6 +57,13 @@
       "when": 1784739450536,
       "tag": "0007_nosy_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1789496793349,
+      "tag": "0008_session-version-otp-hardening",
+      "breakpoints": true
     }
   ]
 }

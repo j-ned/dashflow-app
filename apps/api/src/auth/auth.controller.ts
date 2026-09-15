@@ -30,6 +30,7 @@ import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
 import { DemoAccountGuard } from '../common/guards/demo-account.guard';
+import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { assertValidImageUpload } from '../common/files/validate-upload';
 import {
   CurrentUser,
@@ -85,12 +86,13 @@ export class AuthController {
 
   private async setSession(
     res: Response,
-    user: { id: string; email: string },
+    user: { id: string; email: string; sessionVersion: number },
     opts: { demo?: boolean } = {},
   ): Promise<void> {
     const jwt = await this.token.sign({
       sub: user.id,
       email: user.email,
+      sv: user.sessionVersion,
       ...(opts.demo ? { demo: true } : {}),
     });
     res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
@@ -107,6 +109,7 @@ export class AuthController {
     return { message: 'Compte créé, vérifiez votre email' };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('verify')
   @HttpCode(200)
@@ -120,6 +123,7 @@ export class AuthController {
     return { user: toPublicUser(r.data), keyMaterial: toKeyMaterial(r.data) };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('resend-code')
   @HttpCode(200)
@@ -130,6 +134,7 @@ export class AuthController {
     return { message: 'Si le compte existe, un code a été envoyé' };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('login')
   @HttpCode(200)
@@ -169,6 +174,7 @@ export class AuthController {
     return { message: 'Démo réinitialisée' };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('forgot-password')
   @HttpCode(200)
@@ -179,6 +185,7 @@ export class AuthController {
     return { message: 'Si le compte existe, un code a été envoyé' };
   }
 
+  @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
   @Post('reset-password')
   @HttpCode(200)
@@ -225,9 +232,12 @@ export class AuthController {
   async changePassword(
     @CurrentUser() u: AuthUser,
     @Body(new ZodValidationPipe(updatePasswordSchema)) dto: UpdatePasswordDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const r = await this.auth.changePassword(u.id, dto);
     if (!r.success) throw httpFrom(r);
+    // Les autres appareils sont déconnectés ; celui-ci reçoit un cookie à jour.
+    await this.setSession(res, r.data);
     return { message: 'Mot de passe mis à jour' };
   }
 
@@ -274,9 +284,11 @@ export class AuthController {
   async totpDisable(
     @CurrentUser() u: AuthUser,
     @Body(new ZodValidationPipe(totpDisableSchema)) dto: TotpDisableDto,
+    @Res({ passthrough: true }) res: Response,
   ) {
     const r = await this.auth.disableTotp(u.id, dto.password);
     if (!r.success) throw httpFrom(r);
+    await this.setSession(res, r.data);
     return { message: '2FA désactivée', totpEnabled: false };
   }
 
@@ -295,7 +307,11 @@ export class AuthController {
   @UseGuards(JwtAuthGuard, CsrfGuard)
   @Post('logout')
   @HttpCode(200)
-  logout(@Res({ passthrough: true }) res: Response) {
+  async logout(
+    @CurrentUser() u: AuthUser,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    await this.auth.revokeSessions(u.id);
     res.clearCookie(SESSION_COOKIE, sessionCookieOptions(this.isProd));
     return { message: 'Déconnecté' };
   }

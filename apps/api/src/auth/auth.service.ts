@@ -99,8 +99,10 @@ export class AuthService {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
       if (!dto.totpCode) return ok({ kind: 'mfa_required' });
-      if (!this.twoFactor.verify(user.totpSecret, dto.totpCode))
+      const step = this.twoFactor.verifyStep(user.totpSecret, dto.totpCode);
+      if (step === null || this.isReplayedTotp(user, step))
         return fail(401, 'Code 2FA invalide');
+      await this.repo.updateUser(user.id, { totpLastUsedStep: step });
     }
     return ok({ kind: 'authenticated', user });
   }
@@ -126,14 +128,16 @@ export class AuthService {
     await this.repo.updateUser(user.id, {
       password: await argon2.hash(dto.newPassword),
     });
+    await this.repo.bumpSessionVersion(user.id); // déconnecte un éventuel voleur de cookie
     await this.repo.deleteCodes(dto.email, 'reset');
     return ok(null);
   }
 
+  /** Renvoie l'utilisateur mis à jour (session_version incrémentée) : le controller ré-émet le cookie. */
   async changePassword(
     userId: string,
     dto: UpdatePasswordDto,
-  ): Promise<Result<null>> {
+  ): Promise<Result<User>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
     if (!(await argon2.verify(user.password, dto.currentPassword)))
@@ -148,7 +152,7 @@ export class AuthService {
       password: await argon2.hash(dto.newPassword),
       ...rewrap.data,
     });
-    return ok(null);
+    return ok(await this.repo.bumpSessionVersion(userId));
   }
 
   async setPassword(
@@ -181,6 +185,13 @@ export class AuthService {
   ): Promise<Result<{ qrCode: string; secret: string; uri: string }>> {
     const user = await this.repo.findById(userId);
     if (!user) return fail(404, 'Compte introuvable');
+    // Un porteur de cookie volé ne doit pas pouvoir remplacer le 2FA par le sien : la
+    // désactivation (mot de passe requis) est le seul chemin vers un ré-enrôlement.
+    if (user.totpEnabled)
+      return fail(
+        409,
+        'La 2FA est déjà active : désactivez-la avant de la reconfigurer',
+      );
     const { secret, otpauthUri } = this.twoFactor.generateSecret(user.email);
     await this.repo.updateUser(userId, { totpSecret: secret });
     const qrCode = await this.twoFactor.buildQrDataUrl(otpauthUri);
@@ -191,19 +202,28 @@ export class AuthService {
     const user = await this.repo.findById(userId);
     if (!user || !user.totpSecret)
       return fail(400, 'Aucun secret 2FA en attente');
-    if (!this.twoFactor.verify(user.totpSecret, code))
+    const step = this.twoFactor.verifyStep(user.totpSecret, code);
+    if (step === null || this.isReplayedTotp(user, step))
       return fail(400, 'Code 2FA invalide');
-    await this.repo.updateUser(userId, { totpEnabled: new Date() });
+    await this.repo.updateUser(userId, {
+      totpEnabled: new Date(),
+      totpLastUsedStep: step,
+    });
     return ok(null);
   }
 
-  async disableTotp(userId: string, password: string): Promise<Result<null>> {
+  /** Renvoie l'utilisateur mis à jour (session_version incrémentée) : le controller ré-émet le cookie. */
+  async disableTotp(userId: string, password: string): Promise<Result<User>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
     if (!(await argon2.verify(user.password, password)))
       return fail(401, 'Mot de passe incorrect');
-    await this.repo.updateUser(userId, { totpSecret: null, totpEnabled: null });
-    return ok(null);
+    await this.repo.updateUser(userId, {
+      totpSecret: null,
+      totpEnabled: null,
+      totpLastUsedStep: null,
+    });
+    return ok(await this.repo.bumpSessionVersion(userId));
   }
 
   async deleteAccount(userId: string): Promise<Result<null>> {
@@ -216,6 +236,15 @@ export class AuthService {
     await this.storage.deletePrefix(`payslips/${userId}/`);
     await this.repo.deleteUser(userId);
     return ok(null);
+  }
+
+  /** Logout : invalide TOUS les JWT du compte (tous les appareils), pas seulement le cookie courant. */
+  revokeSessions(userId: string): Promise<User> {
+    return this.repo.bumpSessionVersion(userId);
+  }
+
+  private isReplayedTotp(user: User, step: number): boolean {
+    return user.totpLastUsedStep != null && step <= user.totpLastUsedStep;
   }
 
   updateProfile(userId: string, displayName?: string): Promise<User> {

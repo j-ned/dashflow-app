@@ -9,6 +9,9 @@ const repo = () => ({
   findById: vi.fn(),
   updateUser: vi.fn(),
   findValidCode: vi.fn(),
+  bumpSessionVersion: vi.fn((id: string) =>
+    Promise.resolve({ id, sessionVersion: 1 }),
+  ),
   deleteCodes: vi.fn(),
 });
 

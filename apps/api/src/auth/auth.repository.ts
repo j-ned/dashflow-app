@@ -1,10 +1,18 @@
+import { createHash, timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt } from 'drizzle-orm';
+import { and, eq, gt, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
 import { users, verificationCodes } from '../db/schema';
 
 type User = typeof users.$inferSelect;
 export type VerificationCodePurpose = 'verification' | 'reset';
+
+/** Échecs tolérés sur un code OTP avant sa destruction (1 chance sur 200 000 sur 10 min). */
+export const MAX_CODE_ATTEMPTS = 5;
+
+/** Le code ne transite en base que hashé : un dump DB ne permet pas de valider un e-mail. */
+const hashCode = (code: string): string =>
+  createHash('sha256').update(code).digest('hex');
 
 @Injectable()
 export class AuthRepository {
@@ -68,6 +76,17 @@ export class AuthRepository {
       .returning();
     return u;
   }
+
+  /** Invalide tous les JWT émis jusqu'ici pour ce compte (le guard compare le claim `sv`). */
+  async bumpSessionVersion(userId: string): Promise<User> {
+    const [u] = await this.db
+      .update(users)
+      .set({ sessionVersion: sql`${users.sessionVersion} + 1` })
+      .where(eq(users.id, userId))
+      .returning();
+    return u;
+  }
+
   async insertCode(
     email: string,
     code: string,
@@ -84,27 +103,56 @@ export class AuthRepository {
       );
     await this.db
       .insert(verificationCodes)
-      .values({ email, code, expiresAt, purpose });
+      .values({ email, code: hashCode(code), expiresAt, purpose });
   }
-  findValidCode(
+
+  /**
+   * Vérifie un code : comparaison en temps constant sur le hash ; chaque échec incrémente
+   * `attempts` et le code est détruit au `MAX_CODE_ATTEMPTS`-ième. Le brute-force distribué
+   * (N adresses IP × throttle) ne dispose donc que de 5 essais par code, pas de 10 × N.
+   */
+  async findValidCode(
     email: string,
     code: string,
     purpose: VerificationCodePurpose,
   ): Promise<{ id: string } | undefined> {
-    return this.db
-      .select({ id: verificationCodes.id })
+    const row = await this.db
+      .select({
+        id: verificationCodes.id,
+        code: verificationCodes.code,
+        attempts: verificationCodes.attempts,
+      })
       .from(verificationCodes)
       .where(
         and(
           eq(verificationCodes.email, email),
-          eq(verificationCodes.code, code),
           eq(verificationCodes.purpose, purpose),
           gt(verificationCodes.expiresAt, new Date()),
         ),
       )
       .limit(1)
       .then((r) => r[0]);
+    if (!row) return undefined;
+
+    const given = Buffer.from(hashCode(code));
+    const stored = Buffer.from(row.code);
+    if (given.length === stored.length && timingSafeEqual(given, stored)) {
+      return { id: row.id };
+    }
+
+    if (row.attempts + 1 >= MAX_CODE_ATTEMPTS) {
+      await this.db
+        .delete(verificationCodes)
+        .where(eq(verificationCodes.id, row.id));
+    } else {
+      await this.db
+        .update(verificationCodes)
+        .set({ attempts: sql`${verificationCodes.attempts} + 1` })
+        .where(eq(verificationCodes.id, row.id));
+    }
+    return undefined;
   }
+
   async deleteCodes(
     email: string,
     purpose: VerificationCodePurpose,

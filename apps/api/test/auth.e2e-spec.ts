@@ -101,6 +101,109 @@ describe('Auth e2e', () => {
       .expect(200);
   });
 
+  it('logout révoque réellement la session : l’ancien cookie renvoie 401 sur GET /me', async () => {
+    const server = app.getHttpServer();
+    const login = await request(server)
+      .post('/auth/login')
+      .send({ email, password: 'motdepasse-long-12' })
+      .expect(200);
+    const cookie = login.headers['set-cookie'] as string | string[];
+    const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
+    const csrf = await request(server)
+      .get('/auth/csrf')
+      .set('Cookie', cookieArr)
+      .expect(200);
+    const csrfCookie = csrf.headers['set-cookie'] as string | string[];
+    const all = cookieArr.concat(
+      Array.isArray(csrfCookie) ? csrfCookie : [csrfCookie],
+    );
+
+    await request(server).get('/auth/me').set('Cookie', all).expect(200);
+    await request(server)
+      .post('/auth/logout')
+      .set('Cookie', all)
+      .set('X-CSRF-Token', csrf.body.csrfToken as string)
+      .expect(200);
+    // Le cookie n'est pas seulement effacé côté client : un attaquant qui l'aurait copié est bloqué.
+    await request(server).get('/auth/me').set('Cookie', all).expect(401);
+  });
+
+  it('changement de mot de passe : l’ancien cookie est révoqué, la réponse porte un cookie à jour', async () => {
+    const server = app.getHttpServer();
+    const login = await request(server)
+      .post('/auth/login')
+      .send({ email, password: 'motdepasse-long-12' })
+      .expect(200);
+    const cookie = login.headers['set-cookie'] as string | string[];
+    const oldCookie = Array.isArray(cookie) ? cookie : [cookie];
+    const csrf = await request(server)
+      .get('/auth/csrf')
+      .set('Cookie', oldCookie)
+      .expect(200);
+    const csrfCookie = csrf.headers['set-cookie'] as string | string[];
+    const all = oldCookie.concat(
+      Array.isArray(csrfCookie) ? csrfCookie : [csrfCookie],
+    );
+
+    const changed = await request(server)
+      .patch('/auth/me/password')
+      .set('Cookie', all)
+      .set('X-CSRF-Token', csrf.body.csrfToken as string)
+      .send({
+        currentPassword: 'motdepasse-long-12',
+        newPassword: 'motdepasse-long-13',
+      })
+      .expect(200);
+    const fresh = changed.headers['set-cookie'] as string | string[];
+    const freshArr = Array.isArray(fresh) ? fresh : [fresh];
+    expect(freshArr.join(';')).toContain('dashflow_session');
+
+    await request(server).get('/auth/me').set('Cookie', all).expect(401);
+    await request(server).get('/auth/me').set('Cookie', freshArr).expect(200);
+
+    // Remet le mot de passe d'origine pour les tests suivants.
+    const csrf2 = await request(server)
+      .get('/auth/csrf')
+      .set('Cookie', freshArr)
+      .expect(200);
+    const csrfCookie2 = csrf2.headers['set-cookie'] as string | string[];
+    await request(server)
+      .patch('/auth/me/password')
+      .set(
+        'Cookie',
+        freshArr.concat(
+          Array.isArray(csrfCookie2) ? csrfCookie2 : [csrfCookie2],
+        ),
+      )
+      .set('X-CSRF-Token', csrf2.body.csrfToken as string)
+      .send({
+        currentPassword: 'motdepasse-long-13',
+        newPassword: 'motdepasse-long-12',
+      })
+      .expect(200);
+  });
+
+  it('code OTP : détruit après 5 échecs, même le bon code ne passe plus', async () => {
+    const server = app.getHttpServer();
+    const target = `e2e-otp+${Date.now()}@dashflow.test`;
+    await request(server)
+      .post('/auth/register')
+      .send({ email: target, password: 'motdepasse-long-12' })
+      .expect(201);
+    const good = mailer.lastCode;
+    const wrong = good === '000000' ? '111111' : '000000';
+    for (let i = 0; i < 5; i++) {
+      await request(server)
+        .post('/auth/verify')
+        .send({ email: target, code: wrong })
+        .expect(400);
+    }
+    await request(server)
+      .post('/auth/verify')
+      .send({ email: target, code: good })
+      .expect(400);
+  });
+
   it('login mauvais mot de passe → 401', async () => {
     await request(app.getHttpServer())
       .post('/auth/login')
@@ -177,7 +280,9 @@ describe('Auth e2e', () => {
       .send({
         email: email2,
         password: 'motdepasse-long-12',
-        totpCode: totp.generate(),
+        // Anti-rejeu : le code utilisé pour l'enrôlement est consommé ; on présente celui du pas
+        // suivant (fenêtre ±1 acceptée, pas strictement supérieur).
+        totpCode: totp.generate({ timestamp: Date.now() + 30_000 }),
       })
       .expect(200);
   });

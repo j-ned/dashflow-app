@@ -67,7 +67,11 @@ export class OAuthController {
     try {
       const profile = await this.oauth.fetchGoogleUser(code, codeVerifier);
       const user = await this.oauth.findOrCreateGoogleUser(profile);
-      const jwt = await this.token.sign({ sub: user.id, email: user.email });
+      const jwt = await this.token.sign({
+        sub: user.id,
+        email: user.email,
+        sv: user.sessionVersion,
+      });
       res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
       res.redirect(`${this.frontUrl}/auth/login?oauth=success`);
     } catch (err) {
