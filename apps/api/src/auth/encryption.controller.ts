@@ -13,6 +13,7 @@ import { STRICT_THROTTLE } from './throttle';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -33,7 +34,7 @@ import type {
 export class EncryptionController {
   constructor(private readonly enc: EncryptionService) {}
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Patch('me/encryption-keys')
   @HttpCode(200)
   async setKeys(
@@ -45,7 +46,7 @@ export class EncryptionController {
     return { message: 'Clés de chiffrement configurées' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/encryption-passphrase')
   @HttpCode(200)
   async setPassphrase(
@@ -57,7 +58,7 @@ export class EncryptionController {
     return { message: 'Passphrase de chiffrement définie' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/migrate-encryption')
   @HttpCode(200)
   async migrate(
@@ -69,7 +70,7 @@ export class EncryptionController {
     return { message: 'Migration chiffrement terminée' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/wipe-encryption')
   @HttpCode(200)
   async wipe(@CurrentUser() u: AuthUser) {

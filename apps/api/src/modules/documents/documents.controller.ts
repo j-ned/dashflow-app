@@ -18,6 +18,7 @@ import { DocumentsService } from './documents.service';
 import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -105,7 +106,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
 
   // --- File sub-routes ---
 
-  @UseGuards(CsrfGuard)
+  @UseGuards(CsrfGuard, DemoAccountGuard)
   @Post(':id/file')
   @UseInterceptors(
     FileInterceptor('file', {

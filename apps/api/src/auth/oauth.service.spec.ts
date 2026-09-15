@@ -61,7 +61,7 @@ describe('OAuthService', () => {
     expect(r.createUser).not.toHaveBeenCalled();
   });
 
-  it('findOrCreate : email existant sans googleId → lien', async () => {
+  it('findOrCreate : email existant VÉRIFIÉ sans googleId → lien du googleId seul, credentials intacts', async () => {
     const svc = new OAuthService(
       config('cid') as unknown as ConfigService<Env, true>,
       r as unknown as AuthRepository,
@@ -70,6 +70,28 @@ describe('OAuthService', () => {
     r.findByEmail.mockResolvedValue({
       id: 'u2',
       email: 'a@b.com',
+      emailVerified: new Date('2026-01-01'),
+    });
+    r.updateUser.mockResolvedValue({ id: 'u2', email: 'a@b.com' });
+    await svc.findOrCreateGoogleUser({
+      googleId: 'g1',
+      email: 'a@b.com',
+      displayName: 'A',
+    });
+    expect(r.updateUser).toHaveBeenCalledWith('u2', { googleId: 'g1' });
+  });
+
+  it('findOrCreate : email existant NON vérifié → pre-account-takeover neutralisé (password/2FA effacés, puis vérifié)', async () => {
+    const svc = new OAuthService(
+      config('cid') as unknown as ConfigService<Env, true>,
+      r as unknown as AuthRepository,
+    );
+    r.findByGoogleId.mockResolvedValue(undefined);
+    r.findByEmail.mockResolvedValue({
+      id: 'u2',
+      email: 'a@b.com',
+      password: 'hash-de-l-attaquant',
+      totpSecret: 'S',
       emailVerified: null,
     });
     r.updateUser.mockResolvedValue({ id: 'u2', email: 'a@b.com' });
@@ -82,6 +104,9 @@ describe('OAuthService', () => {
       'u2',
       expect.objectContaining({
         googleId: 'g1',
+        password: null,
+        totpSecret: null,
+        totpEnabled: null,
         emailVerified: expect.any(Date),
       }),
     );

@@ -1,11 +1,14 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
+import { ConflictException, Inject, Injectable } from '@nestjs/common';
+import { and, count, eq } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { sharedAccess, users } from '../../db/schema';
 import { MAILER, type Mailer } from '../../mail/mailer';
 
 type SharedAccess = typeof sharedAccess.$inferSelect;
+
+/** Chaque partage déclenche un e-mail sortant : borne le volume qu'un seul compte peut générer. */
+export const MAX_SHARED_ACCESS_PER_USER = 10;
 
 @Injectable()
 export class SharedAccessService {
@@ -23,6 +26,15 @@ export class SharedAccessService {
   }
 
   async create(userId: string, invitedEmail: string): Promise<SharedAccess> {
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(sharedAccess)
+      .where(eq(sharedAccess.userId, userId));
+    if (Number(total) >= MAX_SHARED_ACCESS_PER_USER) {
+      throw new ConflictException(
+        `Limite de ${MAX_SHARED_ACCESS_PER_USER} partages atteinte : révoquez un partage existant`,
+      );
+    }
     const calendarToken = randomUUID().replace(/-/g, '').slice(0, 32);
     const [row] = await this.db
       .insert(sharedAccess)

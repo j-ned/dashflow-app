@@ -4,6 +4,8 @@ import { JwtService } from '@nestjs/jwt';
 export interface JwtPayload {
   sub: string;
   email: string;
+  /** Session ouverte via /auth/demo-login : droits restreints (cf. DemoAccountGuard). */
+  demo?: true;
 }
 
 @Injectable()
@@ -14,6 +16,8 @@ export class TokenService {
   }
   async verify(token: string): Promise<JwtPayload> {
     const p = await this.jwt.verifyAsync<JwtPayload>(token);
-    return { sub: p.sub, email: p.email };
+    return p.demo === true
+      ? { sub: p.sub, email: p.email, demo: true }
+      : { sub: p.sub, email: p.email };
   }
 }

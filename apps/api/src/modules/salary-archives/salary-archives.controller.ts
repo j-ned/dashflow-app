@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ForbiddenException,
   Body,
   Controller,
   Delete,
@@ -19,6 +20,7 @@ import { SalaryArchivesService } from './salary-archives.service';
 import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -110,6 +112,8 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
       id: string;
     };
     if (!file) return row;
+    if (u.isDemo)
+      throw new ForbiddenException('Action indisponible sur le compte démo');
     await this.uploads.assertValid(u.id, file);
     const key = this.storage.payslipKey(u.id, row.id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype);
@@ -127,7 +131,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
 
   // --- Payslip file sub-routes ---
 
-  @UseGuards(CsrfGuard)
+  @UseGuards(CsrfGuard, DemoAccountGuard)
   @Post(':id/payslip')
   @UseInterceptors(
     FileInterceptor('payslip', {

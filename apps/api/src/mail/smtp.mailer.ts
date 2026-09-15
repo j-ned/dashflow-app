@@ -3,6 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
+import { escapeHtml, sanitizeSenderName } from './sanitize-sender-name';
 
 const shell = (subtitle: string, inner: string): string => `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -87,9 +88,11 @@ export class SmtpMailer implements Mailer {
 
   async sendCalendarInvitation(
     to: string,
-    senderName: string,
+    rawSenderName: string,
     calendarToken: string,
   ): Promise<void> {
+    const senderName = sanitizeSenderName(rawSenderName);
+    const senderHtml = escapeHtml(senderName);
     const calendarUrl = `${this.appUrl}/medical/calendar/${calendarToken}`;
     const webcalUrl = calendarUrl.replace(/^https?:\/\//, 'webcal://');
     const googleCalUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
@@ -101,7 +104,7 @@ export class SmtpMailer implements Mailer {
       html: shell(
         'Invitation calendrier médical',
         `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-          <p style="color: #374151; font-size: 14px; margin: 0 0 16px 0;"><strong>${senderName}</strong> vous invite à suivre son calendrier médical</p>
+          <p style="color: #374151; font-size: 14px; margin: 0 0 16px 0;"><strong>${senderHtml}</strong> vous invite à suivre son calendrier médical</p>
           <a href="${googleCalUrl}" style="display: inline-block; background: #4285f4; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Ajouter à Google Calendar</a><br/>
           <a href="${webcalUrl}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 8px;">S'abonner (Apple / Outlook / Thunderbird)</a>
         </div>

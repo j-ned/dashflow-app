@@ -118,6 +118,11 @@ export class DemoService {
       // 2. Restauration depuis les snapshots (parents avant enfants). Chaque snapshot user-scopé
       //    est re-pointé vers le compte démo courant : immunise contre une recréation du compte
       //    démo (les user_id du snapshot deviendraient orphelins → violation FK à l'insert).
+      // 1b. La ligne users elle-même : un visiteur a pu activer E2EE (démo illisible pour tous),
+      //     poser un avatar ou un 2FA avant l'introduction de DemoAccountGuard.
+      await tx.execute(
+        sql`update users set encryption_version = 0, encryption_salt = null, wrapped_master_key = null, recovery_wrapped_key = null, encryption_passphrase = false, totp_secret = null, totp_enabled = null, avatar_url = null, password = null where id = ${id}`,
+      );
       for (const table of INSERT_ORDER) {
         const seed = `demo_seed_${table}`;
         if (USER_SCOPED.has(table)) {
