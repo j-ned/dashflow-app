@@ -1,8 +1,9 @@
 import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, getTableColumns } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { loans, loanTransactions } from '../../db/schema';
+import { loans, loanTransactions, patients } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
+import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 import { addMoney } from '../../common/money';
 import { today } from '../../common/today';
 import type { Loan } from './loan.response';
@@ -11,6 +12,32 @@ import type { Loan } from './loan.response';
 export class LoansService extends OwnedCrudService<Loan> {
   constructor(@Inject(DRIZZLE) db: DrizzleDB) {
     super(db, loans);
+  }
+
+  override async create(
+    userId: string,
+    values: Record<string, unknown>,
+  ): Promise<Loan> {
+    await this.assertOwnedFks(userId, values);
+    return super.create(userId, values);
+  }
+
+  override async update(
+    userId: string,
+    id: string,
+    patch: Record<string, unknown>,
+  ): Promise<Loan | undefined> {
+    await this.assertOwnedFks(userId, patch);
+    return super.update(userId, id, patch);
+  }
+
+  private async assertOwnedFks(
+    userId: string,
+    values: Record<string, unknown>,
+  ): Promise<void> {
+    if (typeof values.memberId === 'string') {
+      await assertOwnedReference(this.db, patients, userId, values.memberId);
+    }
   }
 
   allTransactions(userId: string) {

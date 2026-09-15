@@ -26,6 +26,7 @@ import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { parseBody } from '../../common/parse-body';
 import { UploadPolicy } from '../../common/files/upload-policy';
+import { assertOwnedStorageKey } from '../../common/files/storage-key';
 import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createPrescriptionSchema,
@@ -66,7 +67,6 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
       patientId: d.patientId,
       issuedDate: d.issuedDate,
       validUntil: d.validUntil ?? null,
-      documentUrl: d.documentUrl ?? null,
       notes: d.notes ?? null,
     };
   }
@@ -93,7 +93,6 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     if (d.patientId !== undefined) patch.patientId = d.patientId;
     if (d.issuedDate !== undefined) patch.issuedDate = d.issuedDate;
     if (d.validUntil !== undefined) patch.validUntil = d.validUntil;
-    if (d.documentUrl !== undefined) patch.documentUrl = d.documentUrl;
     if (d.notes !== undefined) patch.notes = d.notes;
     return patch;
   }
@@ -139,7 +138,9 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     const presc = await this.svc.getOne(u.id, id);
     if (!presc?.documentUrl)
       throw new NotFoundException('Document introuvable');
-    const obj = await this.storage.getStream(presc.documentUrl);
+    const obj = await this.storage.getStream(
+      assertOwnedStorageKey(u.id, presc.documentUrl, 'prescriptions'),
+    );
     if (!obj) throw new NotFoundException('Document introuvable');
     res.setHeader('Content-Type', obj.contentType);
     res.setHeader('Content-Disposition', 'attachment');
@@ -155,7 +156,10 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   ): Promise<void> {
     const presc = await this.svc.getOne(u.id, id);
     if (!presc) throw new NotFoundException('Non trouvé');
-    if (presc.documentUrl) await this.storage.delete(presc.documentUrl);
+    if (presc.documentUrl)
+      await this.storage.delete(
+        assertOwnedStorageKey(u.id, presc.documentUrl, 'prescriptions'),
+      );
     await this.svc.update(u.id, id, { documentUrl: null });
   }
 }

@@ -17,6 +17,9 @@ import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import { DemoModule } from '../modules/demo/demo.module';
 import type { Env } from '../config/env.schema';
 
+export const JWT_ISSUER = 'dashflow-api';
+export const JWT_AUDIENCE = 'dashflow-web';
+
 @Module({
   imports: [
     DemoModule,
@@ -24,7 +27,20 @@ import type { Env } from '../config/env.schema';
       inject: [ConfigService],
       useFactory: (c: ConfigService<Env, true>) => ({
         secret: c.get('JWT_SECRET', { infer: true }),
-        signOptions: { expiresIn: '7d' },
+        // Algorithme et audience explicites : un token signé autrement (ou pour un autre
+        // service partageant le secret) est refusé. Les tokens antérieurs à ce changement
+        // (sans iss/aud) deviennent invalides : reconnexion unique.
+        signOptions: {
+          expiresIn: '7d',
+          algorithm: 'HS256',
+          issuer: JWT_ISSUER,
+          audience: JWT_AUDIENCE,
+        },
+        verifyOptions: {
+          algorithms: ['HS256'],
+          issuer: JWT_ISSUER,
+          audience: JWT_AUDIENCE,
+        },
       }),
     }),
   ],

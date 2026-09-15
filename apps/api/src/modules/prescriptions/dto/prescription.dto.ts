@@ -12,7 +12,6 @@ export const createPrescriptionSchema = z.object({
   patientId: uuid,
   issuedDate: dateStr,
   validUntil: dateStr.nullable().optional(),
-  documentUrl: z.string().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 
@@ -29,7 +28,6 @@ export const updatePrescriptionSchema = z.object({
   patientId: uuid.optional(),
   issuedDate: dateStr.optional(),
   validUntil: dateStr.nullable().optional(),
-  documentUrl: z.string().nullable().optional(),
   notes: z.string().max(2000).nullable().optional(),
 });
 

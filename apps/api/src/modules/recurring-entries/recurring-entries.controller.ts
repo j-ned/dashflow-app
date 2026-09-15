@@ -25,6 +25,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { UploadPolicy } from '../../common/files/upload-policy';
+import { assertOwnedStorageKey } from '../../common/files/storage-key';
 import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createRecurringEntrySchema,
@@ -138,7 +139,9 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     const row = await this.svc.getOne(u.id, id);
     if (!row?.payslipKey)
       throw new NotFoundException('Fiche de paie introuvable');
-    const obj = await this.storage.getStream(row.payslipKey);
+    const obj = await this.storage.getStream(
+      assertOwnedStorageKey(u.id, row.payslipKey, 'payslips'),
+    );
     if (!obj) throw new NotFoundException('Fiche de paie introuvable');
     res.setHeader('Content-Type', obj.contentType);
     res.setHeader('Content-Disposition', 'attachment');
@@ -154,7 +157,10 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');
-    if (row.payslipKey) await this.storage.delete(row.payslipKey);
+    if (row.payslipKey)
+      await this.storage.delete(
+        assertOwnedStorageKey(u.id, row.payslipKey, 'payslips'),
+      );
     await this.svc.update(u.id, id, { payslipKey: null });
   }
 }

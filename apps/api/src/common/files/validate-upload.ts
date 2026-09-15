@@ -45,3 +45,25 @@ export async function assertValidUpload(file: {
     );
   }
 }
+
+const ALLOWED_IMAGE_MIME_TYPES: readonly string[] = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+];
+
+/** Variante images (avatar) : whitelist déclarative + magic-bytes, GIF exclu (animations, taille). */
+export async function assertValidImageUpload(file: {
+  buffer: Buffer;
+  mimetype: string;
+}): Promise<void> {
+  if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
+    throw new BadRequestException('Type image invalide');
+  }
+  const detected = await fileTypeFromBuffer(file.buffer);
+  if (!detected || !ALLOWED_IMAGE_MIME_TYPES.includes(detected.mime)) {
+    throw new BadRequestException(
+      "Contenu de l'image invalide (type réel non autorisé)",
+    );
+  }
+}

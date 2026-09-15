@@ -25,6 +25,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { UploadPolicy } from '../../common/files/upload-policy';
+import { assertOwnedStorageKey } from '../../common/files/storage-key';
 import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
 import {
   createDocumentSchema,
@@ -69,7 +70,6 @@ export class DocumentsController extends OwnedCrudController<unknown> {
       type: d.type,
       title: d.title,
       date: d.date,
-      fileUrl: d.fileUrl ?? null,
       notes: d.notes ?? null,
     };
   }
@@ -93,7 +93,6 @@ export class DocumentsController extends OwnedCrudController<unknown> {
     if (d.type !== undefined) patch.type = d.type;
     if (d.title !== undefined) patch.title = d.title;
     if (d.date !== undefined) patch.date = d.date;
-    if (d.fileUrl !== undefined) patch.fileUrl = d.fileUrl ?? null;
     if (d.notes !== undefined) patch.notes = d.notes ?? null;
     return patch;
   }
@@ -135,7 +134,9 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
     if (!doc?.fileUrl) throw new NotFoundException('Fichier introuvable');
-    const obj = await this.storage.getStream(doc.fileUrl);
+    const obj = await this.storage.getStream(
+      assertOwnedStorageKey(u.id, doc.fileUrl, 'documents'),
+    );
     if (!obj) throw new NotFoundException('Fichier introuvable');
     res.setHeader('Content-Type', obj.contentType);
     res.setHeader('Content-Disposition', 'attachment');
@@ -151,7 +152,10 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
     if (!doc) throw new NotFoundException('Non trouvé');
-    if (doc.fileUrl) await this.storage.delete(doc.fileUrl);
+    if (doc.fileUrl)
+      await this.storage.delete(
+        assertOwnedStorageKey(u.id, doc.fileUrl, 'documents'),
+      );
     await this.svc.update(u.id, id, { fileUrl: null });
   }
 }

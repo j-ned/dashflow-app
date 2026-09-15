@@ -18,7 +18,10 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
-import { createConsumableSchema } from './dto/consumable.dto';
+import {
+  createConsumableSchema,
+  updateConsumableSchema,
+} from './dto/consumable.dto';
 
 @UseGuards(JwtAuthGuard)
 @Controller('consumables')
@@ -44,6 +47,7 @@ export class ConsumablesController {
       lastRestocked: d.lastRestocked ?? null,
       installedAt: d.installedAt ?? null,
       estimatedLifetimeDays: d.estimatedLifetimeDays ?? null,
+      memberId: d.memberId ?? null,
     });
   }
 
@@ -52,31 +56,20 @@ export class ConsumablesController {
   async update(
     @CurrentUser() u: AuthUser,
     @Param('id') id: string,
-    @Body() body: Record<string, unknown>,
+    @Body() body: unknown,
   ) {
-    const { id: _i, userId: _u, ...rest } = body;
-    // Coerce numeric fields if present
-    const patch: Record<string, unknown> = { ...rest };
-    if (
-      'unitPrice' in patch &&
-      patch.unitPrice !== undefined &&
-      patch.unitPrice !== null
-    ) {
-      patch.unitPrice = String(Number(patch.unitPrice));
-    }
-    if ('quantity' in patch && patch.quantity !== undefined) {
-      patch.quantity = Number(patch.quantity);
-    }
-    if ('minThreshold' in patch && patch.minThreshold !== undefined) {
-      patch.minThreshold = Number(patch.minThreshold);
-    }
-    if (
-      'estimatedLifetimeDays' in patch &&
-      patch.estimatedLifetimeDays !== undefined &&
-      patch.estimatedLifetimeDays !== null
-    ) {
-      patch.estimatedLifetimeDays = Number(patch.estimatedLifetimeDays);
-    }
+    const d = parseBody(updateConsumableSchema, body);
+    const patch: Record<string, unknown> = {};
+    if (d.name !== undefined) patch.name = d.name;
+    if (d.category !== undefined) patch.category = d.category;
+    if (d.quantity !== undefined) patch.quantity = d.quantity;
+    if (d.minThreshold !== undefined) patch.minThreshold = d.minThreshold;
+    if (d.unitPrice !== undefined) patch.unitPrice = String(d.unitPrice);
+    if (d.lastRestocked !== undefined) patch.lastRestocked = d.lastRestocked;
+    if (d.installedAt !== undefined) patch.installedAt = d.installedAt;
+    if (d.estimatedLifetimeDays !== undefined)
+      patch.estimatedLifetimeDays = d.estimatedLifetimeDays;
+    if (d.memberId !== undefined) patch.memberId = d.memberId;
     const row = await this.svc.update(u.id, id, patch);
     if (!row) throw new NotFoundException('Non trouvé');
     return row;

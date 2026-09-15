@@ -2,8 +2,14 @@ import { Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { z } from 'zod';
 import { and, desc, eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { accountTransactions, bankAccounts } from '../../db/schema';
+import {
+  accountTransactions,
+  bankAccounts,
+  patients,
+  recurringEntries,
+} from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
+import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 
 type AccountTransaction = typeof accountTransactions.$inferSelect;
 
@@ -74,12 +80,32 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
     return rows.length > 0;
   }
 
+  // memberId / recurringEntryId sont des FK optionnelles vers des tables scopées user_id :
+  // sans ce contrôle, on lie sa transaction au membre ou à la récurrence d'un autre foyer.
+  private async assertOwnedOptionalFks(
+    userId: string,
+    values: Record<string, unknown>,
+  ): Promise<void> {
+    if (typeof values.memberId === 'string') {
+      await assertOwnedReference(this.db, patients, userId, values.memberId);
+    }
+    if (typeof values.recurringEntryId === 'string') {
+      await assertOwnedReference(
+        this.db,
+        recurringEntries,
+        userId,
+        values.recurringEntryId,
+      );
+    }
+  }
+
   async addTransaction(
     userId: string,
     accountId: string,
     values: NewTransactionValues,
   ) {
     if (!(await this.ownsAccount(userId, accountId))) return undefined;
+    await this.assertOwnedOptionalFks(userId, values);
     if (
       values.toAccountId &&
       !(await this.ownsAccount(userId, values.toAccountId))
@@ -100,6 +126,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
   ) {
     if (!(await this.ownsAccount(userId, accountId))) return undefined;
     for (const item of items) {
+      await this.assertOwnedOptionalFks(userId, item);
       if (
         item.toAccountId &&
         !(await this.ownsAccount(userId, item.toAccountId))
@@ -124,6 +151,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
     ) {
       throw new NotFoundException('Compte destination non trouvé');
     }
+    await this.assertOwnedOptionalFks(userId, patch);
     return super.update(userId, id, patch);
   }
 }

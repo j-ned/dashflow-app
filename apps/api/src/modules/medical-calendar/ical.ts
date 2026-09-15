@@ -3,6 +3,7 @@ export function escapeIcal(text: string): string {
     .replace(/\\/g, '\\\\')
     .replace(/;/g, '\\;')
     .replace(/,/g, '\\,')
+    .replace(/\r/g, '')
     .replace(/\n/g, '\\n');
 }
 
