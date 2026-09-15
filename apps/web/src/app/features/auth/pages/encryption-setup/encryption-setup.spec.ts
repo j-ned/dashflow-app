@@ -19,6 +19,7 @@ function makeComponent(
   opts: {
     get?: (path: string) => Observable<unknown>;
     migrateEncryption?: (data: unknown) => Promise<void>;
+    masterKey?: CryptoKey;
   } = {},
 ) {
   const migrateEncryption = opts.migrateEncryption ?? vi.fn(() => Promise.resolve());
@@ -36,8 +37,8 @@ function makeComponent(
         provide: CryptoStore,
         useValue: {
           unlock: () => Promise.resolve(),
-          // Clé factice non nulle : la boucle de migration s'exécute.
-          getMasterKey: () => ({}) as CryptoKey,
+          // Clé factice non nulle par défaut : la boucle de migration s'exécute.
+          getMasterKey: () => opts.masterKey ?? ({} as CryptoKey),
         },
       },
       {
@@ -76,6 +77,55 @@ describe('EncryptionSetup : migration E2EE (F003)', () => {
 
     expect(migrateEncryption).toHaveBeenCalledTimes(1);
     expect(cmp.step()).toBe('done');
+  });
+
+  it('migre aussi account_transactions : montant/date/libellé dans le blob, FK et direction en clair', async () => {
+    const masterKey = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
+    const tx = {
+      id: 'tx-1',
+      userId: 'u1',
+      accountId: 'acc-1',
+      toAccountId: null,
+      direction: 'expense',
+      memberId: null,
+      recurringEntryId: null,
+      amount: '42.50',
+      date: '2026-03-01',
+      category: 'Courses',
+      note: 'secret',
+      createdAt: '2026-03-01T10:00:00Z',
+    };
+    const migrateEncryption = vi.fn((_data: unknown) => Promise.resolve());
+    const { cmp } = makeComponent({
+      masterKey,
+      migrateEncryption,
+      get: (path) => (path === '/transactions/all' ? of([tx]) : of([])),
+    });
+
+    await cmp.migrateData();
+
+    expect(cmp.step()).toBe('done');
+    const data = migrateEncryption.mock.calls[0][0] as Record<
+      string,
+      { id: string; encryptedData: string }[]
+    >;
+    expect(data['accountTransactions']).toHaveLength(1);
+    expect(data['accountTransactions'][0].id).toBe('tx-1');
+    const blob = data['accountTransactions'][0].encryptedData;
+    expect(blob).not.toContain('42.50');
+    expect(blob).not.toContain('Courses');
+    // La transaction est bien chiffrée avec la clé maîtresse : on la relit.
+    const { decryptWithKey } = await import('@core/services/crypto/crypto.store');
+    const plain = JSON.parse(await decryptWithKey(blob, masterKey)) as Record<string, unknown>;
+    expect(plain).toEqual({
+      amount: '42.50',
+      date: '2026-03-01',
+      category: 'Courses',
+      note: 'secret',
+    });
   });
 });
 
