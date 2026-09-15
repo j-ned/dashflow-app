@@ -10,7 +10,10 @@ import {
 } from '@nestjs/common';
 import { SharedAccessService } from './shared-access.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Throttle } from '@nestjs/throttler';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
+import { STRICT_THROTTLE } from '../../auth/throttle';
 import {
   CurrentUser,
   type AuthUser,
@@ -28,7 +31,10 @@ export class SharedAccessController {
     return this.svc.list(u.id);
   }
 
-  @UseGuards(CsrfGuard)
+  // Envoie un e-mail depuis notre domaine vers une adresse libre : throttle strict, interdit en
+  // session démo, et plafonné par compte (cf. MAX_SHARED_ACCESS_PER_USER).
+  @UseGuards(CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
   @Post()
   @HttpCode(201)
   create(@CurrentUser() u: AuthUser, @Body() body: Record<string, unknown>) {

@@ -29,6 +29,7 @@ import { toPublicUser, toKeyMaterial } from './auth.response';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -84,8 +85,13 @@ export class AuthController {
   private async setSession(
     res: Response,
     user: { id: string; email: string },
+    opts: { demo?: boolean } = {},
   ): Promise<void> {
-    const jwt = await this.token.sign({ sub: user.id, email: user.email });
+    const jwt = await this.token.sign({
+      sub: user.id,
+      email: user.email,
+      ...(opts.demo ? { demo: true } : {}),
+    });
     res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
   }
 
@@ -148,7 +154,7 @@ export class AuthController {
     if (!this.demoEnabled) throw new NotFoundException();
     const r = await this.auth.demoLogin();
     if (!r.success) throw httpFrom(r);
-    await this.setSession(res, r.data);
+    await this.setSession(res, r.data, { demo: true });
     return { user: toPublicUser(r.data), keyMaterial: null };
   }
 
@@ -200,7 +206,7 @@ export class AuthController {
     return { ...toPublicUser(user), keyMaterial: toKeyMaterial(user) };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Patch('me')
   async updateProfile(
     @CurrentUser() u: AuthUser,
@@ -211,7 +217,7 @@ export class AuthController {
     return { ...toPublicUser(user), keyMaterial: toKeyMaterial(user) };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Patch('me/password')
   @HttpCode(200)
   async changePassword(
@@ -223,7 +229,7 @@ export class AuthController {
     return { message: 'Mot de passe mis à jour' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/set-password')
   @HttpCode(200)
   async setPassword(
@@ -235,7 +241,7 @@ export class AuthController {
     return { message: 'Mot de passe défini' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/2fa/setup')
   @HttpCode(200)
   async totpSetup(@CurrentUser() u: AuthUser) {
@@ -244,7 +250,7 @@ export class AuthController {
     return r.data;
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/2fa/verify')
   @HttpCode(200)
   async totpVerify(
@@ -256,7 +262,7 @@ export class AuthController {
     return { message: '2FA activée', totpEnabled: true };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/2fa/disable')
   @HttpCode(200)
   async totpDisable(
@@ -268,7 +274,7 @@ export class AuthController {
     return { message: '2FA désactivée', totpEnabled: false };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Delete('me')
   @HttpCode(204)
   async deleteAccount(
@@ -288,7 +294,7 @@ export class AuthController {
     return { message: 'Déconnecté' };
   }
 
-  @UseGuards(JwtAuthGuard, CsrfGuard)
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/avatar')
   @UseInterceptors(
     FileInterceptor('file', { limits: { fileSize: 2 * 1024 * 1024 } }),

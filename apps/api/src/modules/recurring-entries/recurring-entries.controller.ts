@@ -18,6 +18,7 @@ import { RecurringEntriesService } from './recurring-entries.service';
 import { StorageService } from '../../storage/storage.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -107,7 +108,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
 
   // --- Payslip file sub-routes ---
 
-  @UseGuards(CsrfGuard)
+  @UseGuards(CsrfGuard, DemoAccountGuard)
   @Post(':id/payslip')
   @UseInterceptors(
     FileInterceptor('payslip', {

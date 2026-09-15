@@ -54,20 +54,52 @@ describe('AuthService', () => {
     expect(m.sendAccountExists).not.toHaveBeenCalled();
   });
 
-  it('register : email existant NON vérifié → sendVerificationCode, PAS de createUser, retour générique ok', async () => {
+  it('register : email existant NON vérifié → le nouvel inscrit RÉ-APPROPRIE le compte (nouveau hash, 2FA effacée), code envoyé, PAS de createUser', async () => {
     r.findByEmail.mockResolvedValue({
       id: 'u1',
       email: 'a@b.com',
+      password: await argon2.hash('mot-de-passe-attaquant'),
+      totpSecret: 'SECRET-ATTAQUANT',
       emailVerified: null,
     });
+    r.updateUser.mockImplementation((_id, patch) =>
+      Promise.resolve({ id: 'u1', email: 'a@b.com', ...patch }),
+    );
     const res = await svc.register({
       email: 'a@b.com',
-      password: 'motdepasse-long',
+      password: 'motdepasse-victime',
+      displayName: 'Victime',
     });
     expect(res.success).toBe(true);
     expect(m.sendVerificationCode).toHaveBeenCalled();
     expect(r.createUser).not.toHaveBeenCalled();
     expect(m.sendAccountExists).not.toHaveBeenCalled();
+    // Pre-account-takeover : le mot de passe du premier « inscrit » ne doit plus être valide.
+    const patch = r.updateUser.mock.calls[0][1] as {
+      password: string;
+      totpSecret: unknown;
+      totpEnabled: unknown;
+      displayName: string;
+    };
+    expect(await argon2.verify(patch.password, 'motdepasse-victime')).toBe(
+      true,
+    );
+    expect(await argon2.verify(patch.password, 'mot-de-passe-attaquant')).toBe(
+      false,
+    );
+    expect(patch.totpSecret).toBeNull();
+    expect(patch.totpEnabled).toBeNull();
+    expect(patch.displayName).toBe('Victime');
+  });
+
+  it('register : email existant DÉJÀ vérifié → aucune écriture sur le compte (updateUser jamais appelé)', async () => {
+    r.findByEmail.mockResolvedValue({
+      id: 'u1',
+      email: 'a@b.com',
+      emailVerified: new Date(),
+    });
+    await svc.register({ email: 'a@b.com', password: 'motdepasse-long' });
+    expect(r.updateUser).not.toHaveBeenCalled();
   });
 
   it('register : email existant DÉJÀ vérifié → sendAccountExists seul, ni createUser ni sendVerificationCode, retour générique ok', async () => {

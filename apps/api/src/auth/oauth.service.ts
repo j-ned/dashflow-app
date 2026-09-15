@@ -52,12 +52,17 @@ export class OAuthService {
     const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokens.accessToken()}` },
     });
+    if (!res.ok) throw new Error('oauth_userinfo_failed');
     const p = (await res.json()) as {
-      id: string;
+      id?: string;
       email?: string;
+      verified_email?: boolean;
       name?: string;
     };
+    if (!p.id) throw new Error('oauth_no_id');
     if (!p.email) throw new Error('oauth_no_email');
+    // Un e-mail non vérifié chez Google ne prouve rien : refuser plutôt que lier un compte.
+    if (p.verified_email !== true) throw new Error('oauth_email_unverified');
     return {
       googleId: p.id,
       email: p.email.toLowerCase(),
@@ -70,9 +75,20 @@ export class OAuthService {
     if (byGoogle) return byGoogle;
     const byEmail = await this.repo.findByEmail(profile.email);
     if (byEmail) {
+      if (byEmail.emailVerified) {
+        return this.repo.updateUser(byEmail.id, { googleId: profile.googleId });
+      }
+      // Compte créé par /auth/register mais jamais vérifié : il n'appartient à personne.
+      // Le laisser tel quel permettrait à celui qui l'a créé (avec SON mot de passe) de se
+      // connecter sur le compte de la personne qui vient de prouver l'e-mail via Google
+      // (pre-account-takeover). On neutralise tout credential préexistant.
       return this.repo.updateUser(byEmail.id, {
         googleId: profile.googleId,
-        emailVerified: byEmail.emailVerified ?? new Date(),
+        password: null,
+        totpSecret: null,
+        totpEnabled: null,
+        displayName: profile.displayName,
+        emailVerified: new Date(),
       });
     }
     const created = await this.repo.createUser({

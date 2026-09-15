@@ -70,6 +70,37 @@ describe('Auth e2e', () => {
     expect(me.body.password).toBeUndefined();
   });
 
+  it('pre-account-takeover : le mot de passe du premier inscrit (non vérifié) est invalidé par la seconde inscription', async () => {
+    const server = app.getHttpServer();
+    const victim = `e2e-pat+${Date.now()}@dashflow.test`;
+
+    // 1. L'attaquant « réserve » l'e-mail de la victime avec SON mot de passe, sans le vérifier.
+    await request(server)
+      .post('/auth/register')
+      .send({ email: victim, password: 'mot-de-passe-attaquant' })
+      .expect(201);
+
+    // 2. La vraie personne s'inscrit à son tour et vérifie l'e-mail.
+    await request(server)
+      .post('/auth/register')
+      .send({ email: victim, password: 'mot-de-passe-victime-12' })
+      .expect(201);
+    await request(server)
+      .post('/auth/verify')
+      .send({ email: victim, code: mailer.lastCode })
+      .expect(200);
+
+    // 3. Seul le mot de passe de la personne qui a prouvé l'e-mail fonctionne.
+    await request(server)
+      .post('/auth/login')
+      .send({ email: victim, password: 'mot-de-passe-attaquant' })
+      .expect(401);
+    await request(server)
+      .post('/auth/login')
+      .send({ email: victim, password: 'mot-de-passe-victime-12' })
+      .expect(200);
+  });
+
   it('login mauvais mot de passe → 401', async () => {
     await request(app.getHttpServer())
       .post('/auth/login')

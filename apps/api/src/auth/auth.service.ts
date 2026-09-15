@@ -41,13 +41,23 @@ export class AuthService {
   async register(dto: RegisterDto): Promise<Result<User>> {
     const existing = await this.repo.findByEmail(dto.email);
     if (existing) {
-      await argon2.hash(dto.password); // anti-timing : égalise le coût argon2 avec le chemin « inconnu »
+      // Coût argon2 payé dans les deux branches : le temps de réponse ne révèle pas l'existence.
+      const hash = await argon2.hash(dto.password);
       if (existing.emailVerified) {
         await this.mailer.sendAccountExists(dto.email);
-      } else {
-        await this.sendCode(dto.email, 'verification');
+        return ok(existing);
       }
-      return ok(existing);
+      // Compte jamais vérifié : il n'appartient à personne. Le mot de passe et le nom deviennent
+      // ceux du nouvel inscrit, sinon le premier à avoir saisi l'e-mail (sans le posséder) garde
+      // un mot de passe valide sur le compte que la vraie personne s'apprête à vérifier.
+      const reclaimed = await this.repo.updateUser(existing.id, {
+        password: hash,
+        displayName: dto.displayName ?? null,
+        totpSecret: null,
+        totpEnabled: null,
+      });
+      await this.sendCode(dto.email, 'verification');
+      return ok(reclaimed);
     }
     const hash = await argon2.hash(dto.password);
     const user = await this.repo.createUser({

@@ -22,6 +22,22 @@ describe('JwtAuthGuard', () => {
     expect(c.switchToHttp().getRequest().user).toEqual({
       id: 'u1',
       email: 'a@b.com',
+      isDemo: false,
+    });
+  });
+  it('attache isDemo: true quand le JWT porte le claim demo (session /auth/demo-login)', async () => {
+    const token = {
+      verify: vi
+        .fn()
+        .mockResolvedValue({ sub: 'demo', email: 'demo@x.io', demo: true }),
+    };
+    const guard = new JwtAuthGuard(token as unknown as TokenService);
+    const c = ctx({ [SESSION_COOKIE]: 'tok' });
+    expect(await guard.canActivate(c)).toBe(true);
+    expect(c.switchToHttp().getRequest().user).toEqual({
+      id: 'demo',
+      email: 'demo@x.io',
+      isDemo: true,
     });
   });
   it('401 sans cookie', async () => {

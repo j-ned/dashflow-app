@@ -184,3 +184,75 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
     expect(mockAuth.setAvatar).not.toHaveBeenCalled();
   });
 });
+
+// Session démo (claim `demo` → request.user.isDemo). DemoAccountGuard n'est PAS surchargé :
+// c'est le vrai garde, appliqué par les décorateurs des routes, qui doit produire le 403.
+describe('AuthController — session démo : routes d’identité verrouillées', () => {
+  let app: INestApplication;
+  const mockAuth = {
+    updateProfile: vi.fn(),
+    setupTotp: vi.fn(),
+    deleteAccount: vi.fn(),
+  };
+  const mockDemo = { reset: vi.fn().mockResolvedValue(undefined) };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? true : 'test'),
+  };
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuth },
+        { provide: TokenService, useValue: {} },
+        { provide: DemoService, useValue: mockDemo },
+        { provide: StorageService, useValue: {} },
+        { provide: ConfigService, useValue: mockConfig },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (ctx: ExecutionContext) => {
+          ctx.switchToHttp().getRequest().user = {
+            id: 'demo',
+            email: 'demo@dashflow.app',
+            isDemo: true,
+          };
+          return true;
+        },
+      })
+      .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it.each([
+    ['patch', '/auth/me'],
+    ['patch', '/auth/me/password'],
+    ['post', '/auth/me/set-password'],
+    ['post', '/auth/me/2fa/setup'],
+    ['post', '/auth/me/2fa/verify'],
+    ['post', '/auth/me/2fa/disable'],
+    ['post', '/auth/me/avatar'],
+    ['delete', '/auth/me'],
+  ] as const)('%s %s → 403, service jamais appelé', async (method, path) => {
+    const res = await request(app.getHttpServer())[method](path).send({});
+    expect(res.status).toBe(403);
+    expect(mockAuth.updateProfile).not.toHaveBeenCalled();
+    expect(mockAuth.setupTotp).not.toHaveBeenCalled();
+    expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('post /auth/demo-reset reste autorisé au compte démo', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/demo-reset');
+    expect(res.status).toBe(200);
+    expect(mockDemo.reset).toHaveBeenCalledWith('demo');
+  });
+});

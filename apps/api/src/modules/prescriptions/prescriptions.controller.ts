@@ -17,6 +17,7 @@ import type { Response } from 'express';
 import { PrescriptionsService } from './prescriptions.service';
 import { StorageService } from '../../storage/storage.service';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
 import {
   CurrentUser,
   type AuthUser,
@@ -108,7 +109,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
 
   // --- Document file sub-routes ---
 
-  @UseGuards(CsrfGuard)
+  @UseGuards(CsrfGuard, DemoAccountGuard)
   @Post(':id/document')
   @UseInterceptors(
     FileInterceptor('document', {
