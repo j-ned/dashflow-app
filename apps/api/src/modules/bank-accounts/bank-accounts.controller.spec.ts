@@ -19,7 +19,7 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // la réponse HTTP des routes list/create/update.
 
 const ACCOUNT_ROW = {
-  id: 'acc-1',
+  id: '11111111-1111-4111-8111-111111111111',
   userId: 'u1',
   name: 'Compte courant',
   type: 'courant',
@@ -65,7 +65,9 @@ describe('BankAccountsController — DTO de sortie', () => {
   });
 
   beforeEach(() => {
-    mockSvc.list.mockReset().mockResolvedValue([ACCOUNT_ROW]);
+    mockSvc.list
+      .mockReset()
+      .mockResolvedValue({ items: [ACCOUNT_ROW], nextCursor: null });
     mockSvc.create.mockReset().mockResolvedValue(ACCOUNT_ROW);
     mockSvc.update.mockReset().mockResolvedValue(ACCOUNT_ROW);
   });
@@ -75,7 +77,7 @@ describe('BankAccountsController — DTO de sortie', () => {
 
     expect(res.status).toBe(200);
     expect(res.body[0].userId).toBeUndefined();
-    expect(res.body[0].id).toBe('acc-1');
+    expect(res.body[0].id).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   it('POST /bank-accounts → 201, réponse mappée sans userId', async () => {
@@ -89,7 +91,7 @@ describe('BankAccountsController — DTO de sortie', () => {
 
   it('PUT /bank-accounts/:id → 200, réponse mappée sans userId', async () => {
     const res = await request(app.getHttpServer())
-      .put('/bank-accounts/acc-1')
+      .put('/bank-accounts/11111111-1111-4111-8111-111111111111')
       .send({ name: 'Compte courant 2' });
 
     expect(res.status).toBe(200);

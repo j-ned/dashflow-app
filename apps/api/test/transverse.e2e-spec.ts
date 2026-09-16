@@ -67,12 +67,42 @@ describe('Transverse e2e', () => {
   it('reminders : CRUD + toggle', async () => {
     const a = await authedClient();
 
+    // Un rappel pointe toujours sur sa cible (le formulaire front l'impose, la base aussi).
+    const patient = await request(a.s)
+      .post('/patients')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ firstName: 'Ada', lastName: 'L', birthDate: '1815-12-10' })
+      .expect(201);
+    const practitioner = await request(a.s)
+      .post('/practitioners')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Dr Z', type: 'generaliste' })
+      .expect(201);
+    const appt = await request(a.s)
+      .post('/appointments')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        patientId: patient.body.id,
+        practitionerId: practitioner.body.id,
+        date: '2026-11-02',
+        time: '14:00',
+      })
+      .expect(201);
+
     // Create a reminder
     const created = await request(a.s)
       .post('/reminders')
       .set('Cookie', a.cookies)
       .set('X-CSRF-Token', a.csrf)
-      .send({ type: 'email', target: 'appointment', recipientEmail: 'x@y.com' })
+      .send({
+        type: 'email',
+        target: 'appointment',
+        appointmentId: appt.body.id,
+        recipientEmail: 'x@y.com',
+      })
       .expect(201);
     const id = created.body.id;
     expect(id).toBeTruthy();

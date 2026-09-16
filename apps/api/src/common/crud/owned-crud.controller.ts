@@ -5,19 +5,24 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { JwtAuthGuard } from '../guards/jwt-auth.guard';
 import { CsrfGuard } from '../guards/csrf.guard';
 import {
   CurrentUser,
   type AuthUser,
 } from '../decorators/current-user.decorator';
+import { parsePageQuery, sendPage, type Page, type PageQuery } from './keyset';
 
 export interface CrudService<T> {
-  list(userId: string): Promise<T[]>;
+  list(userId: string, q?: PageQuery): Promise<Page<T>>;
   getOne(userId: string, id: string): Promise<T | undefined>;
   create(userId: string, values: Record<string, unknown>): Promise<T>;
   update(
@@ -39,12 +44,19 @@ export abstract class OwnedCrudController<T> {
   ): Record<string, unknown>;
 
   @Get()
-  list(@CurrentUser() u: AuthUser) {
-    return this.svc.list(u.id);
+  async list(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendPage(res, await this.svc.list(u.id, parsePageQuery(query)));
   }
 
   @Get(':id')
-  async getOne(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async getOne(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');
     return row;
@@ -61,7 +73,7 @@ export abstract class OwnedCrudController<T> {
   @Put(':id')
   async update(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     const row = await this.svc.update(u.id, id, this.toUpdatePatch(body));
@@ -72,7 +84,10 @@ export abstract class OwnedCrudController<T> {
   @UseGuards(CsrfGuard)
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.svc.remove(u.id, id);
   }
 }

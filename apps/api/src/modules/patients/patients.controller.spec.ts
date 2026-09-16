@@ -42,37 +42,48 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
   });
 
   it('GET /patients → 200 et appelle svc.list(userId)', async () => {
-    const rows = [{ id: 'p1', firstName: 'A' }];
-    mockSvc.list.mockResolvedValueOnce(rows);
+    const rows = [
+      { id: '11111111-1111-4111-8111-111111111111', firstName: 'A' },
+    ];
+    mockSvc.list.mockResolvedValueOnce({ items: rows, nextCursor: null });
 
     const res = await request(app.getHttpServer()).get('/patients');
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(rows);
-    expect(mockSvc.list).toHaveBeenCalledWith('u1');
+    expect(mockSvc.list).toHaveBeenCalledWith('u1', {});
   });
 
   it('GET /patients/:id → 200 quand getOne renvoie un objet', async () => {
-    const row = { id: 'p1', firstName: 'A' };
+    const row = { id: '11111111-1111-4111-8111-111111111111', firstName: 'A' };
     mockSvc.getOne.mockResolvedValueOnce(row);
 
-    const res = await request(app.getHttpServer()).get('/patients/p1');
+    const res = await request(app.getHttpServer()).get(
+      '/patients/11111111-1111-4111-8111-111111111111',
+    );
 
     expect(res.status).toBe(200);
     expect(res.body).toEqual(row);
-    expect(mockSvc.getOne).toHaveBeenCalledWith('u1', 'p1');
+    expect(mockSvc.getOne).toHaveBeenCalledWith(
+      'u1',
+      '11111111-1111-4111-8111-111111111111',
+    );
   });
 
   it('GET /patients/:id → 404 quand getOne renvoie undefined', async () => {
     mockSvc.getOne.mockResolvedValueOnce(undefined);
 
-    const res = await request(app.getHttpServer()).get('/patients/x');
+    const res = await request(app.getHttpServer()).get(
+      '/patients/22222222-2222-4222-8222-222222222222',
+    );
 
     expect(res.status).toBe(404);
   });
 
   it('POST /patients → 201 et invoque le hook toCreateValues', async () => {
-    mockSvc.create.mockResolvedValueOnce({ id: 'p9' });
+    mockSvc.create.mockResolvedValueOnce({
+      id: '22222222-2222-4222-8222-222222222222',
+    });
 
     const res = await request(app.getHttpServer())
       .post('/patients')
@@ -86,16 +97,19 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
   });
 
   it('PUT /patients/:id → 200 quand update renvoie un objet', async () => {
-    mockSvc.update.mockResolvedValueOnce({ id: 'p1', notes: 'x' });
+    mockSvc.update.mockResolvedValueOnce({
+      id: '11111111-1111-4111-8111-111111111111',
+      notes: 'x',
+    });
 
     const res = await request(app.getHttpServer())
-      .put('/patients/p1')
+      .put('/patients/11111111-1111-4111-8111-111111111111')
       .send({ notes: 'x' });
 
     expect(res.status).toBe(200);
     expect(mockSvc.update).toHaveBeenCalledWith(
       'u1',
-      'p1',
+      '11111111-1111-4111-8111-111111111111',
       expect.objectContaining({ notes: 'x' }),
     );
   });
@@ -103,9 +117,40 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
   it('DELETE /patients/:id → 204', async () => {
     mockSvc.remove.mockResolvedValueOnce(undefined);
 
-    const res = await request(app.getHttpServer()).delete('/patients/p1');
+    const res = await request(app.getHttpServer()).delete(
+      '/patients/11111111-1111-4111-8111-111111111111',
+    );
 
     expect(res.status).toBe(204);
-    expect(mockSvc.remove).toHaveBeenCalledWith('u1', 'p1');
+    expect(mockSvc.remove).toHaveBeenCalledWith(
+      'u1',
+      '11111111-1111-4111-8111-111111111111',
+    );
+  });
+
+  it('GET /patients → X-Next-Cursor exposé quand une page suit, tableau inchangé', async () => {
+    mockSvc.list.mockResolvedValueOnce({
+      items: [{ id: '11111111-1111-4111-8111-111111111111' }],
+      nextCursor: 'curseur-opaque',
+    });
+    const res = await request(app.getHttpServer()).get('/patients?limit=1');
+    expect(res.status).toBe(200);
+    expect(res.headers['x-next-cursor']).toBe('curseur-opaque');
+    expect(res.body).toEqual([{ id: '11111111-1111-4111-8111-111111111111' }]);
+    expect(mockSvc.list).toHaveBeenCalledWith('u1', { limit: 1 });
+  });
+
+  it('GET /patients?limit=abc → 400 (pagination invalide)', async () => {
+    mockSvc.list.mockClear();
+    const res = await request(app.getHttpServer()).get('/patients?limit=abc');
+    expect(res.status).toBe(400);
+    expect(mockSvc.list).not.toHaveBeenCalled();
+  });
+
+  it('GET /patients/:id non-UUID → 400 sans toucher au service (plus de 500 drizzle)', async () => {
+    mockSvc.getOne.mockClear();
+    const res = await request(app.getHttpServer()).get('/patients/abc');
+    expect(res.status).toBe(400);
+    expect(mockSvc.getOne).not.toHaveBeenCalled();
   });
 });

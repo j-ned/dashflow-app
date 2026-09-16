@@ -6,6 +6,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UploadedFile,
@@ -118,7 +119,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   )
   async uploadPayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
@@ -133,7 +134,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   @Get(':id/payslip')
   async getPayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
@@ -153,7 +154,7 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
   @HttpCode(204)
   async deletePayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');

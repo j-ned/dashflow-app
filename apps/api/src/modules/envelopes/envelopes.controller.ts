@@ -5,11 +5,15 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Put,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { EnvelopesService } from './envelopes.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
@@ -20,6 +24,7 @@ import {
 import { parseBody } from '../../common/parse-body';
 import { today } from '../../common/today';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
+import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 import {
   createEnvelopeSchema,
   createEncryptedEnvelopeSchema,
@@ -39,13 +44,23 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
   }
 
   @Get()
-  override async list(@CurrentUser() u: AuthUser) {
-    const rows = await this.svc.list(u.id);
-    return rows.map(toEnvelopeResponse);
+  override async list(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const page = await this.svc.list(u.id, parsePageQuery(query));
+    return sendPage(res, {
+      ...page,
+      items: page.items.map(toEnvelopeResponse),
+    });
   }
 
   @Get(':id')
-  override async getOne(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  override async getOne(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');
     return toEnvelopeResponse(row);
@@ -66,7 +81,7 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
   @Put(':id')
   override async update(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     const row = await this.svc.update(u.id, id, this.toUpdatePatch(body));
@@ -124,15 +139,27 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
 
   // Static path must come before /:id to avoid capture by param route
   @Get('transactions/all')
-  allTransactions(@CurrentUser() u: AuthUser) {
-    return this.svc.allTransactions(u.id);
+  async allTransactions(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendPage(
+      res,
+      await this.svc.allTransactions(u.id, parsePageQuery(query)),
+    );
   }
 
   @Get(':id/transactions')
-  async transactionsOf(@CurrentUser() u: AuthUser, @Param('id') id: string) {
-    const rows = await this.svc.transactionsOf(u.id, id);
-    if (rows === undefined) throw new NotFoundException('Non trouvé');
-    return rows;
+  async transactionsOf(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const page = await this.svc.transactionsOf(u.id, id, parsePageQuery(query));
+    if (page === undefined) throw new NotFoundException('Non trouvé');
+    return sendPage(res, page);
   }
 
   @UseGuards(CsrfGuard)
@@ -140,7 +167,7 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
   @HttpCode(201)
   async addTransaction(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     if (body.encryptedData) {
@@ -167,7 +194,7 @@ export class EnvelopesController extends OwnedCrudController<unknown> {
   @Patch(':id/balance')
   async credit(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     if (body.encryptedData) {

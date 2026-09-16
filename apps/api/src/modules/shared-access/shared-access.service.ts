@@ -1,9 +1,18 @@
 import { ConflictException, Inject, Injectable } from '@nestjs/common';
-import { and, count, eq } from 'drizzle-orm';
+import { and, asc, count, eq, getTableColumns } from 'drizzle-orm';
 import { randomUUID } from 'node:crypto';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { sharedAccess, users } from '../../db/schema';
 import { MAILER, type Mailer } from '../../mail/mailer';
+import {
+  afterCreatedAt,
+  CURSOR_COLUMN,
+  createdAtCursorText,
+  pageLimit,
+  toPageByCreatedAt,
+  type Page,
+  type PageQuery,
+} from '../../common/crud/keyset';
 
 type SharedAccess = typeof sharedAccess.$inferSelect;
 
@@ -17,12 +26,24 @@ export class SharedAccessService {
     @Inject(MAILER) private readonly mailer: Mailer,
   ) {}
 
-  list(userId: string): Promise<SharedAccess[]> {
-    return this.db
-      .select()
-      .from(sharedAccess)
-      .where(eq(sharedAccess.userId, userId))
-      .limit(100);
+  async list(userId: string, q: PageQuery = {}): Promise<Page<SharedAccess>> {
+    const limit = pageLimit(q);
+    const t = sharedAccess;
+    const rows = await this.db
+      .select({
+        ...getTableColumns(t),
+        [CURSOR_COLUMN]: createdAtCursorText(t.createdAt),
+      })
+      .from(t)
+      .where(
+        and(
+          eq(t.userId, userId),
+          afterCreatedAt(t.createdAt, t.id, q.after, 'asc'),
+        ),
+      )
+      .orderBy(asc(t.createdAt), asc(t.id))
+      .limit(limit + 1);
+    return toPageByCreatedAt(rows, limit);
   }
 
   async create(userId: string, invitedEmail: string): Promise<SharedAccess> {

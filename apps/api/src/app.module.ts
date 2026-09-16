@@ -1,9 +1,10 @@
 import { Module } from '@nestjs/common';
-import { APP_GUARD } from '@nestjs/core';
+import { APP_FILTER, APP_GUARD } from '@nestjs/core';
 import { SentryModule } from '@sentry/nestjs/setup';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { ScheduleModule } from '@nestjs/schedule';
 import { ConfigModule } from './config/config.module';
+import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import { DrizzleModule } from './db/drizzle.module';
 import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
@@ -59,6 +60,11 @@ import { StorageModule } from './storage/storage.module';
     MedicalCalendarModule,
     StorageModule,
   ],
-  providers: [{ provide: APP_GUARD, useClass: ThrottlerGuard }],
+  providers: [
+    { provide: APP_GUARD, useClass: ThrottlerGuard },
+    // Filtre global déclaré ici (et non dans main.ts) : il s'applique aussi aux apps de test e2e,
+    // qui bootent AppModule sans passer par bootstrap().
+    { provide: APP_FILTER, useClass: HttpExceptionFilter },
+  ],
 })
 export class AppModule {}

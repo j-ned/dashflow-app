@@ -4,6 +4,7 @@ import {
   Get,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -102,7 +103,7 @@ export class MedicationsController extends OwnedCrudController<unknown> {
   @Patch(':id/refill')
   async refill(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     const { quantity } = parseBody(refillMedicationSchema, body);

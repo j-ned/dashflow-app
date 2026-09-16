@@ -1,13 +1,14 @@
 import {
   BadRequestException,
-  ForbiddenException,
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UploadedFile,
@@ -124,7 +125,10 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   @UseGuards(CsrfGuard)
   @Delete(':id')
   @HttpCode(204)
-  override async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  override async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Not found');
     await this.svc.remove(u.id, id);
@@ -141,7 +145,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   )
   async uploadPayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
@@ -156,7 +160,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   @Get(':id/payslip')
   async getPayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
@@ -176,7 +180,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
   @HttpCode(204)
   async deletePayslip(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const row = await this.svc.getOne(u.id, id);
     if (!row) throw new NotFoundException('Non trouvé');

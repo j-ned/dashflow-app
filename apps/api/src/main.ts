@@ -6,8 +6,8 @@ import { ConfigService } from '@nestjs/config';
 import helmet from 'helmet';
 import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
-import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 import type { Env } from './config/env.schema';
+import { NEXT_CURSOR_HEADER } from './common/crud/keyset';
 
 async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule);
@@ -25,8 +25,9 @@ async function bootstrap(): Promise<void> {
   app.enableCors({
     origin: config.get('CORS_ORIGIN', { infer: true }).split(','),
     credentials: true,
+    // Pagination par curseur : le front doit pouvoir lire l'en-tête de page suivante.
+    exposedHeaders: [NEXT_CURSOR_HEADER],
   });
-  app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();
 
   await app.listen(config.get('PORT', { infer: true }));

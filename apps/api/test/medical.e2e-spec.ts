@@ -162,4 +162,92 @@ describe('Medical e2e', () => {
       .send({ firstName: 'NoCsrf', lastName: 'Test', birthDate: '2000-01-01' })
       .expect(403);
   });
+
+  it('members : supprimer un membre qui a un dossier médical → 409 avec compteurs, puis ?force=true → 204 et cascade', async () => {
+    const a = await authedClient();
+    const member = await request(a.s)
+      .post('/members')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ firstName: 'Léa' })
+      .expect(201);
+    const practitioner = await request(a.s)
+      .post('/practitioners')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Dr Y', type: 'pediatre' })
+      .expect(201);
+    await request(a.s)
+      .post('/appointments')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        patientId: member.body.id,
+        practitionerId: practitioner.body.id,
+        date: '2026-10-01',
+        time: '09:00',
+      })
+      .expect(201);
+
+    const refused = await request(a.s)
+      .delete(`/members/${member.body.id}`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .expect(409);
+    expect(refused.body.code).toBe('MEMBER_HAS_MEDICAL_DATA');
+    expect(refused.body.details).toEqual({
+      appointments: 1,
+      prescriptions: 0,
+      medications: 0,
+      documents: 0,
+    });
+    // Toujours là.
+    const still = await request(a.s)
+      .get('/members')
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(still.body.map((m: { id: string }) => m.id)).toContain(
+      member.body.id,
+    );
+
+    await request(a.s)
+      .delete(`/members/${member.body.id}?force=true`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .expect(204);
+    const appts = await request(a.s)
+      .get('/appointments')
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(appts.body).toHaveLength(0);
+  });
+
+  it('members : sans dossier médical, DELETE direct → 204 (pas de friction inutile)', async () => {
+    const a = await authedClient();
+    const member = await request(a.s)
+      .post('/members')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ firstName: 'Tom' })
+      .expect(201);
+    await request(a.s)
+      .delete(`/members/${member.body.id}`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .expect(204);
+  });
+
+  it('reminders : cible incohérente (target=medication sans medicationId) → 400', async () => {
+    const a = await authedClient();
+    await request(a.s)
+      .post('/reminders')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        type: 'ical',
+        target: 'medication',
+        recipientEmail: 'x@dashflow.test',
+      })
+      .expect(400);
+  });
 });

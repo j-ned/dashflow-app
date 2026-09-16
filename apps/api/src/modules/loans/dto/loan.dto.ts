@@ -27,6 +27,10 @@ export const createLoanSchema = z
   .refine((d) => toCents(d.remaining) <= toCents(d.amount), {
     message: 'Le restant dû ne peut pas dépasser le montant du prêt',
     path: ['remaining'],
+  })
+  .refine((d) => !d.dueDate || d.dueDate >= d.date, {
+    message: "L'échéance ne peut pas précéder la date du prêt",
+    path: ['dueDate'],
   });
 
 export const createEncryptedLoanSchema = z.object({

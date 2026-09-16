@@ -6,6 +6,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UploadedFile,
@@ -99,7 +100,10 @@ export class DocumentsController extends OwnedCrudController<unknown> {
 
   // Static route must come before /:id to avoid param capture
   @Get('by-patient/:patientId')
-  byPatient(@CurrentUser() u: AuthUser, @Param('patientId') patientId: string) {
+  byPatient(
+    @CurrentUser() u: AuthUser,
+    @Param('patientId', ParseUUIDPipe) patientId: string,
+  ) {
     return this.svc.byPatient(u.id, patientId);
   }
 
@@ -114,7 +118,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   )
   async uploadFile(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
@@ -129,7 +133,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   @Get(':id/file')
   async getFile(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
@@ -148,7 +152,7 @@ export class DocumentsController extends OwnedCrudController<unknown> {
   @HttpCode(204)
   async deleteFile(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const doc = await this.svc.getOne(u.id, id);
     if (!doc) throw new NotFoundException('Non trouvé');

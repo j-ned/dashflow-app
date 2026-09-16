@@ -20,7 +20,7 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // doivent rester enregistrées malgré l'override + le re-mapping de la réponse.
 
 const LOAN_ROW = {
-  id: 'loan-1',
+  id: '11111111-1111-4111-8111-111111111111',
   userId: 'u1',
   memberId: null,
   person: 'Alice',
@@ -74,7 +74,9 @@ describe('LoansController — DTO de sortie', () => {
   });
 
   beforeEach(() => {
-    mockSvc.list.mockReset().mockResolvedValue([LOAN_ROW]);
+    mockSvc.list
+      .mockReset()
+      .mockResolvedValue({ items: [LOAN_ROW], nextCursor: null });
     mockSvc.getOne.mockReset().mockResolvedValue(LOAN_ROW);
     mockSvc.create.mockReset().mockResolvedValue(LOAN_ROW);
     mockSvc.update.mockReset().mockResolvedValue(LOAN_ROW);
@@ -86,7 +88,7 @@ describe('LoansController — DTO de sortie', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
       {
-        id: 'loan-1',
+        id: '11111111-1111-4111-8111-111111111111',
         memberId: null,
         person: 'Alice',
         direction: 'lent',
@@ -102,11 +104,13 @@ describe('LoansController — DTO de sortie', () => {
   });
 
   it('GET /loans/:id → 200, objet mappé sans userId', async () => {
-    const res = await request(app.getHttpServer()).get('/loans/loan-1');
+    const res = await request(app.getHttpServer()).get(
+      '/loans/11111111-1111-4111-8111-111111111111',
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.userId).toBeUndefined();
-    expect(res.body.id).toBe('loan-1');
+    expect(res.body.id).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   it('POST /loans → 201, réponse mappée sans userId', async () => {
@@ -132,7 +136,7 @@ describe('LoansController — DTO de sortie', () => {
       date: '2026-01-01',
     };
     const res = await request(app.getHttpServer())
-      .put('/loans/loan-1')
+      .put('/loans/11111111-1111-4111-8111-111111111111')
       .send(payload);
 
     expect(res.status).toBe(200);

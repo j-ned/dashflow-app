@@ -7,6 +7,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Req,
@@ -344,7 +345,7 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   @Get('avatar/:userId')
   async getAvatar(
-    @Param('userId') userId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
     @Res() res: Response,
   ): Promise<void> {
     const user = await this.auth.getById(userId);

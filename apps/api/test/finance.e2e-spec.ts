@@ -233,4 +233,144 @@ describe('Finance e2e', () => {
       .send({ name: 'NoCsrf', initialBalance: 0 })
       .expect(403);
   });
+
+  // Les tests ci-dessous partagent une session : /auth/register est throttlé par IP et la suite
+  // en consomme déjà plusieurs.
+  let sharedClient: Awaited<ReturnType<typeof authedClient>> | undefined;
+  async function shared() {
+    sharedClient ??= await authedClient();
+    return sharedClient;
+  }
+
+  it('transactions : pagination par curseur — X-Next-Cursor, ordre stable, aucune ligne perdue ni doublée', async () => {
+    const a = await shared();
+    const acc = await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Pagination', initialBalance: 0 })
+      .expect(201);
+    // 5 lignes en un seul INSERT (même created_at à la microseconde près : le cas piège).
+    const items = [1, 2, 3, 4, 5].map((i) => ({
+      amount: String(i),
+      direction: 'expense',
+      date: '2026-09-01',
+      note: `n${i}`,
+    }));
+    await request(a.s)
+      .post(`/bank-accounts/${acc.body.id}/transactions/batch`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ items })
+      .expect(201);
+
+    const seen: string[] = [];
+    let after: string | undefined;
+    let pages = 0;
+    do {
+      const q = after
+        ? `?limit=2&after=${encodeURIComponent(after)}`
+        : '?limit=2';
+      const res = await request(a.s)
+        .get(`/transactions/all${q}`)
+        .set('Cookie', a.cookies)
+        .expect(200);
+      expect(Array.isArray(res.body)).toBe(true);
+      expect(res.body.length).toBeLessThanOrEqual(2);
+      for (const row of res.body) {
+        expect(row._cursor).toBeUndefined(); // colonne technique jamais exposée
+        seen.push(row.id);
+      }
+      after = res.headers['x-next-cursor'];
+      pages++;
+    } while (after && pages < 10);
+    expect(pages).toBe(3);
+    expect(new Set(seen).size).toBe(5);
+
+    // Sans paramètre : tout d'un coup (≤ 500), pas d'en-tête de suite.
+    const all = await request(a.s)
+      .get('/transactions/all')
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(all.body).toHaveLength(5);
+    expect(all.headers['x-next-cursor']).toBeUndefined();
+
+    // Curseur forgé → 400, pas 500.
+    await request(a.s)
+      .get('/transactions/all?after=zzz')
+      .set('Cookie', a.cookies)
+      .expect(400);
+  });
+
+  it("transactions : virement vers le compte d'origine → 400", async () => {
+    const a = await shared();
+    const acc = await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Self', initialBalance: 0 })
+      .expect(201);
+    await request(a.s)
+      .post(`/bank-accounts/${acc.body.id}/transactions`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        amount: '10',
+        direction: 'transfer',
+        date: '2026-09-01',
+        toAccountId: acc.body.id,
+      })
+      .expect(400);
+  });
+
+  it('id non-UUID sur une route CRUD → 400 (plus de 500 remonté à Sentry)', async () => {
+    const a = await shared();
+    await request(a.s)
+      .get('/envelopes/abc')
+      .set('Cookie', a.cookies)
+      .expect(400);
+    await request(a.s)
+      .delete('/transactions/abc')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .expect(400);
+  });
+
+  it('recurring-entries : endDate < date refusé à la création (400) et par la base en update partiel (400 CHECK_VIOLATION)', async () => {
+    const a = await shared();
+    await request(a.s)
+      .post('/recurring-entries')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        label: 'Abonnement',
+        amount: '9.99',
+        type: 'expense',
+        dayOfMonth: 5,
+        date: '2026-09-01',
+        endDate: '2026-08-01',
+      })
+      .expect(400);
+
+    const created = await request(a.s)
+      .post('/recurring-entries')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        label: 'Abonnement',
+        amount: '9.99',
+        type: 'expense',
+        dayOfMonth: 5,
+        date: '2026-09-01',
+      })
+      .expect(201);
+    // Update partiel : Zod ne voit que endDate, c'est la contrainte CHECK qui tranche → mappée 400.
+    const res = await request(a.s)
+      .put(`/recurring-entries/${created.body.id}`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ endDate: '2026-01-01' })
+      .expect(400);
+    expect(res.body.code).toBe('CHECK_VIOLATION');
+  });
 });

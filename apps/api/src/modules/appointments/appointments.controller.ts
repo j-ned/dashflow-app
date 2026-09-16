@@ -3,6 +3,7 @@ import {
   Controller,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -85,7 +86,7 @@ export class AppointmentsController extends OwnedCrudController<unknown> {
   @Patch(':id/status')
   async setStatus(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     const { status } = parseBody(updateAppointmentStatusSchema, body);
