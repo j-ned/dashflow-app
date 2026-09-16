@@ -15,7 +15,8 @@ export const authGuard: CanMatchFn = async () => {
   }
 
   if (auth.needsEncryptionSetup()) {
-    return router.createUrlTree(['/auth/encryption-setup']);
+    // Premier contact : assistant en 4 écrans (qui saute à la protection si des données existent).
+    return router.createUrlTree(['/auth/onboarding']);
   }
 
   if (auth.needsUnlock()) {

@@ -215,12 +215,67 @@
         "repairFailed": "Clé de récupération invalide ou erreur de resynchronisation."
       }
     },
+    "onboarding": {
+      "eyebrow": "Étape {{step}} sur {{total}}",
+      "next": "Continuer",
+      "skip": "Passer cette étape",
+      "error": "Une erreur est survenue, réessayez.",
+      "steps": {
+        "1": "Votre foyer",
+        "2": "Votre compte",
+        "3": "Revenus et charges",
+        "4": "Protection"
+      },
+      "members": {
+        "title": "Qui vit avec vous ?",
+        "explain": "Les prénoms suffisent. Ils servent à répartir dépenses, enveloppes et rendez-vous médicaux par personne. Vous pourrez en ajouter plus tard.",
+        "placeholder": "Prénom",
+        "add": "Ajouter une personne",
+        "solo": "Je gère seul·e, passer"
+      },
+      "account": {
+        "title": "Votre compte principal",
+        "explain": "Celui sur lequel arrivent vos revenus. Le solde de départ est celui d'aujourd'hui : DashFlow calcule la suite à partir de là.",
+        "name": "Nom du compte",
+        "type": "Type",
+        "types": {
+          "courant": "Compte courant",
+          "épargne": "Épargne",
+          "carte": "Carte",
+          "espèces": "Espèces"
+        },
+        "balance": "Solde aujourd'hui",
+        "balanceHint": "Approximatif, c'est très bien. Vous l'ajusterez ensuite."
+      },
+      "entries": {
+        "title": "Vos revenus et charges fixes",
+        "explain": "Trois lignes suffisent pour un premier « reste à vivre » : un salaire, un loyer, un abonnement. Le reste viendra au fil du mois.",
+        "type": "Type",
+        "income": "Revenu",
+        "expense": "Prélèvement",
+        "label": "Libellé",
+        "incomePlaceholder": "Salaire",
+        "expensePlaceholder": "Loyer, énergie, abonnement…",
+        "amount": "Montant par mois",
+        "day": "Jour du mois",
+        "add": "Ajouter une ligne"
+      },
+      "protect": {
+        "title": "Protégez vos données",
+        "explain": "Dernière étape : vos finances et votre santé sont chiffrées sur cet appareil avant d'être envoyées. Personne d'autre ne peut les lire, pas même nous.",
+        "existingData": "Ce compte a déjà des données. Il ne lui manque que la protection : elles seront chiffrées sur cet appareil avant d'être renvoyées.",
+        "point1": "Vous seul·e détenez la clé, dérivée de votre mot de passe.",
+        "point2": "Vous recevrez une clé de récupération : votre double des clés, à ranger avec vos papiers.",
+        "point3": "Sans mot de passe ni clé de récupération, vos données ne peuvent pas être récupérées.",
+        "cta": "Protéger mes données"
+      }
+    },
     "encryptionSetup": {
-      "title": "Chiffrement de bout en bout",
-      "subtitle": "Vos données seront chiffrées localement. Seul vous pourrez y accéder.",
-      "warningTitle": "Attention",
-      "warningBody": "Si vous perdez votre mot de passe ET votre clé de récupération, vos données seront définitivement perdues. Il n'existe aucun moyen de les récupérer.",
-      "activate": "Activer le chiffrement",
+      "title": "Protégez vos données",
+      "subtitle": "Vos données sont chiffrées sur cet appareil avant d'être envoyées. Personne d'autre ne peut les lire, pas même nous.",
+      "warningTitle": "Votre double des clés",
+      "warningBody": "Vous allez recevoir une clé de récupération : gardez-la avec vos papiers. Si vous oubliez votre mot de passe, c'est elle qui rouvre vos données. Sans mot de passe ni clé, elles ne peuvent pas être récupérées.",
+      "activate": "Protéger mes données",
       "preparing": "Préparation...",
       "encryptingTable": "Chiffrement: {{table}}...",
       "sendingEncrypted": "Envoi des données chiffrées...",

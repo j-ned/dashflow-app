@@ -343,7 +343,7 @@ export class Login {
   private redirectAfterLogin(): void {
     this.toaster.success('auth.login.success');
     if (this.auth.needsEncryptionSetup()) {
-      this.router.navigate(['/auth/encryption-setup'], { replaceUrl: true });
+      this.router.navigate(['/auth/onboarding'], { replaceUrl: true });
     } else if (this.auth.needsUnlock()) {
       this.router.navigate(['/auth/unlock'], { replaceUrl: true });
     } else {

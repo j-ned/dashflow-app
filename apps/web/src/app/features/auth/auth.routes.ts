@@ -22,6 +22,11 @@ export const AUTH_ROUTES: Routes = [
     loadComponent: () => import('./pages/unlock/unlock').then((m) => m.Unlock),
   },
   {
+    path: 'onboarding',
+    canMatch: [sessionGuard],
+    loadComponent: () => import('./pages/onboarding/onboarding').then((m) => m.Onboarding),
+  },
+  {
     path: 'encryption-setup',
     canMatch: [sessionGuard],
     loadComponent: () =>
