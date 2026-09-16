@@ -5,7 +5,7 @@ import type { Request, Response } from 'express';
 import { OAuthService } from './oauth.service';
 import { TokenService } from './token.service';
 import {
-  SESSION_COOKIE,
+  sessionCookieName,
   OAUTH_STATE_COOKIE,
   OAUTH_VERIFIER_COOKIE,
   sessionCookieOptions,
@@ -72,7 +72,11 @@ export class OAuthController {
         email: user.email,
         sv: user.sessionVersion,
       });
-      res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
+      res.cookie(
+        sessionCookieName(this.isProd),
+        jwt,
+        sessionCookieOptions(this.isProd),
+      );
       res.redirect(`${this.frontUrl}/auth/login?oauth=success`);
     } catch (err) {
       const reason =

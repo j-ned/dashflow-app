@@ -33,4 +33,7 @@ COPY scripts ./scripts
 COPY src/db/migrations ./src/db/migrations
 USER node
 EXPOSE 3001
+# Swarm relance un conteneur mort, pas un process bloqué : la sonde HTTP fait la différence.
+HEALTHCHECK --interval=30s --timeout=5s --start-period=30s --retries=3 \
+  CMD wget -qO- "http://127.0.0.1:${PORT:-3001}/health" >/dev/null || exit 1
 CMD ["sh", "-c", "node /app/scripts/db/migrate.mjs && exec node dist/main"]

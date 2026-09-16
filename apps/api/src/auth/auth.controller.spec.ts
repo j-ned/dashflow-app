@@ -14,6 +14,7 @@ import type { INestApplication, ExecutionContext } from '@nestjs/common';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
+import { CsrfService } from './csrf.service';
 import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -42,6 +43,7 @@ describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () =
       providers: [
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
         { provide: DemoService, useValue: {} },
         { provide: StorageService, useValue: {} },
         { provide: ConfigService, useValue: mockConfig },
@@ -130,6 +132,7 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
       providers: [
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
         { provide: DemoService, useValue: {} },
         { provide: StorageService, useValue: mockStorage },
         { provide: ConfigService, useValue: mockConfig },
@@ -240,6 +243,7 @@ describe('AuthController — session démo : routes d’identité verrouillées'
       providers: [
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
         { provide: DemoService, useValue: mockDemo },
         { provide: StorageService, useValue: {} },
         { provide: ConfigService, useValue: mockConfig },

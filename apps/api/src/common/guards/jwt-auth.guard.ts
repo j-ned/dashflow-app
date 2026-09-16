@@ -8,7 +8,7 @@ import {
 import type { Request } from 'express';
 import { eq } from 'drizzle-orm';
 import { TokenService } from '../../auth/token.service';
-import { SESSION_COOKIE } from '../../auth/cookie';
+import { SESSION_COOKIE_NAMES } from '../../auth/cookie';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { users } from '../../db/schema';
 
@@ -23,9 +23,8 @@ export class JwtAuthGuard implements CanActivate {
     const req = context
       .switchToHttp()
       .getRequest<Request & { user?: unknown }>();
-    const raw = (req.cookies as Record<string, string> | undefined)?.[
-      SESSION_COOKIE
-    ];
+    const cookies = req.cookies as Record<string, string> | undefined;
+    const raw = SESSION_COOKIE_NAMES.map((n) => cookies?.[n]).find(Boolean);
     if (!raw) throw new UnauthorizedException('Non authentifié');
 
     let payload: Awaited<ReturnType<TokenService['verify']>>;
@@ -50,6 +49,7 @@ export class JwtAuthGuard implements CanActivate {
     (req as Request & { user: unknown }).user = {
       id: payload.sub,
       email: payload.email,
+      sessionVersion: payload.sv,
       isDemo: payload.demo === true,
     };
     return true;
