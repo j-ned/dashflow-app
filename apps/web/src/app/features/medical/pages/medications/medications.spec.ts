@@ -209,13 +209,13 @@ describe('Medications', () => {
     expect(success).not.toHaveBeenCalled();
   });
 
-  it('refillMedication : sélectionné → refill(id, quantity), toast success, modal fermée', async () => {
+  it('refillMedication : sélectionné → refill(medication, quantity), toast success, modal fermée', async () => {
     const { cmp, refill, success, refillModalClose } = make();
     cmp.selectedMedication.set(MEDICATION);
 
     await cmp.refillMedication({ quantity: 20 });
 
-    expect(refill).toHaveBeenCalledWith('m1', 20);
+    expect(refill).toHaveBeenCalledWith(expect.objectContaining({ id: 'm1' }), 20);
     expect(success).toHaveBeenCalledWith('medical.medication.feedback.refilled');
     expect(refillModalClose).toHaveBeenCalledTimes(1);
   });

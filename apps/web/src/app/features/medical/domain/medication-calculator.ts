@@ -21,10 +21,12 @@ export function computeMedicationStock(med: Medication, now = new Date()): Medic
   const consumedQuantity = Math.min(med.quantity, activeDaysSinceStart * med.dailyRate);
   const remainingQuantity = Math.max(0, med.quantity - consumedQuantity);
 
-  // Project forward from today with remaining stock
-  let daysRemaining = 0;
+  // Projection depuis aujourd'hui, ou depuis le début du traitement s'il est à venir : un
+  // traitement qui commence dans un mois ne peut pas être « à sec dans 3 jours ». Règle
+  // identique côté serveur (medication-stock.ts).
+  const runOutDate = new Date(startDate > today ? startDate : today);
+  let daysRemaining = Math.round((runOutDate.getTime() - today.getTime()) / 86_400_000);
   let takeDaysRemaining = 0;
-  const runOutDate = new Date(today);
 
   if (med.dailyRate > 0 && activeDaysPerWeek > 0 && remainingQuantity > 0) {
     let stock = remainingQuantity;

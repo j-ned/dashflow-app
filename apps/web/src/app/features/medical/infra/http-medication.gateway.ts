@@ -66,14 +66,17 @@ export class HttpMedicationGateway implements MedicationGateway {
     );
   }
 
-  refill(id: string, quantity: number): Observable<Medication> {
-    return mutateEncrypted(
-      { quantity },
-      CLEARTEXT_KEYS,
-      this.crypto.getMasterKey(),
-      (body) => this.api.patch<ApiRow>(`/medications/${id}/refill`, body),
-      { rowId: id },
-    );
+  refill(medication: Medication, quantity: number): Observable<Medication> {
+    const key = this.crypto.getMasterKey();
+    if (key) {
+      // E2EE : `quantity` vit dans le blob, le PATCH serveur n'y a pas accès (il attendait un
+      // entier en clair et répondait 400). On rechiffre le médicament avec le nouveau stock.
+      const { id, ...rest } = medication;
+      return this.update(id, { ...rest, quantity: medication.quantity + quantity });
+    }
+    return this.api
+      .patch<ApiRow>(`/medications/${medication.id}/refill`, { quantity })
+      .pipe(map((row) => row as unknown as Medication));
   }
 
   delete(id: string): Observable<void> {

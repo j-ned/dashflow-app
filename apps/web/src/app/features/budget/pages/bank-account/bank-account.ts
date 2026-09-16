@@ -881,6 +881,25 @@ export class BankAccount {
       category: e.category,
     }));
 
+    // Un mois = une archive : une clôture rejouée (double clic, second cycle le même mois)
+    // met à jour l'archive existante au lieu d'en créer une jumelle.
+    const existing = (await lastValueFrom(this.archiveGateway.getAll())).find(
+      (a) => a.month === month,
+    );
+    if (existing) {
+      await lastValueFrom(
+        this.archiveGateway.update(existing.id, {
+          ...existing,
+          salary,
+          totalExpenses,
+          totalSpendings,
+          spendings,
+          accountId: accountId ?? existing.accountId,
+        }),
+      );
+      return;
+    }
+
     const fd = new FormData();
     fd.append('month', month);
     fd.append('salary', String(salary));

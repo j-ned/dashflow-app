@@ -1719,6 +1719,7 @@
         "selectPlaceholder": "-- Sélectionner --",
         "appointment": "Rendez-vous",
         "recipientEmail": "Email destinataire",
+        "icalOnlyHint": "Le rappel s'exporte vers votre agenda (iCal). DashFlow n'envoie pas d'e-mails : vos données médicales sont chiffrées et le serveur ne peut pas les lire.",
         "emailRequired": "L'email est obligatoire.",
         "emailInvalid": "Format email invalide.",
         "submit": "Créer"
