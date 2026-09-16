@@ -8,6 +8,7 @@ import { environment } from '@env/environment';
 import { HttpAuthGateway } from './infra/http-auth.gateway';
 import { AuthUserSchema } from './infra/schemas/auth-user.schema';
 import { AuthUser } from './domain/models/auth-user.model';
+import { SecurityEvent } from './domain/models/security-event.model';
 import { KeyMaterial } from './domain/models/key-material.model';
 
 // Store de session/identité : signals-first, consomme HttpAuthGateway (infra/).
@@ -216,6 +217,10 @@ export class AuthStore {
     const user = this._user();
     if (user) this._user.set({ ...user, totpEnabled: true });
     return backupCodes ?? [];
+  }
+
+  async securityEvents(limit = 30): Promise<SecurityEvent[]> {
+    return firstValueFrom(this.gateway.getSecurityEvents(limit));
   }
 
   async backupCodesRemaining(): Promise<number> {

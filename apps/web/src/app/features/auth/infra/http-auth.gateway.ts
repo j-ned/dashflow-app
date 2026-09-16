@@ -3,6 +3,7 @@ import { Observable } from 'rxjs';
 import { ApiClient } from '@core/services/api/api-client';
 import { AuthUser } from '../domain/models/auth-user.model';
 import { KeyMaterial } from '../domain/models/key-material.model';
+import { SecurityEvent } from '../domain/models/security-event.model';
 
 export type LoginResponse =
   | { mfaRequired: true }
@@ -89,6 +90,10 @@ export class HttpAuthGateway {
   /** Active la 2FA ; les codes de secours ne sont renvoyés qu'ici, une seule fois. */
   verify2FA(code: string): Observable<{ backupCodes: string[] }> {
     return this.api.post('/auth/me/2fa/verify', { code });
+  }
+
+  getSecurityEvents(limit = 30): Observable<SecurityEvent[]> {
+    return this.api.get('/auth/me/security-events', { limit });
   }
 
   backupCodesStatus(): Observable<{ remaining: number }> {
