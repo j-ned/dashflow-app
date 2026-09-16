@@ -1,7 +1,7 @@
 import { describe, it, expect, vi } from 'vitest';
 import { UnauthorizedException, type ExecutionContext } from '@nestjs/common';
 import { JwtAuthGuard } from './jwt-auth.guard';
-import { SESSION_COOKIE } from '../../auth/cookie';
+import { SESSION_COOKIE, SESSION_COOKIE_HOST } from '../../auth/cookie';
 import type { TokenService } from '../../auth/token.service';
 import type { DrizzleDB } from '../../db/drizzle.constants';
 
@@ -34,6 +34,7 @@ describe('JwtAuthGuard', () => {
     expect(c.switchToHttp().getRequest().user).toEqual({
       id: 'u1',
       email: 'a@b.com',
+      sessionVersion: 3,
       isDemo: false,
     });
   });
@@ -48,6 +49,7 @@ describe('JwtAuthGuard', () => {
     expect(c.switchToHttp().getRequest().user).toEqual({
       id: 'demo',
       email: 'demo@x.io',
+      sessionVersion: 0,
       isDemo: true,
     });
   });
@@ -89,5 +91,14 @@ describe('JwtAuthGuard', () => {
     await expect(
       guard.canActivate(ctx({ [SESSION_COOKIE]: 'tok' })),
     ).rejects.toBeInstanceOf(UnauthorizedException);
+  });
+
+  it('lit aussi le cookie préfixé __Host- (nom de production)', async () => {
+    const guard = new JwtAuthGuard(
+      tokenWith({ sub: 'u1', email: 'a@b.com', sv: 3 }),
+      dbWith([{ sessionVersion: 3 }]),
+    );
+    const c = ctx({ [SESSION_COOKIE_HOST]: 'tok' });
+    expect(await guard.canActivate(c)).toBe(true);
   });
 });

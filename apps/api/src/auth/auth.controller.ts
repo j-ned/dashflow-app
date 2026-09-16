@@ -10,7 +10,6 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
-  Req,
   Res,
   UnauthorizedException,
   UploadedFile,
@@ -20,10 +19,10 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { Throttle } from '@nestjs/throttler';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { randomBytes } from 'node:crypto';
 import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
+import { CsrfService } from './csrf.service';
 import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { toPublicUser, toKeyMaterial } from './auth.response';
@@ -38,10 +37,9 @@ import {
   type AuthUser,
 } from '../common/decorators/current-user.decorator';
 import {
-  SESSION_COOKIE,
-  CSRF_COOKIE,
+  SESSION_COOKIE_NAMES,
+  sessionCookieName,
   sessionCookieOptions,
-  csrfCookieOptions,
 } from './cookie';
 import {
   registerSchema,
@@ -79,6 +77,7 @@ export class AuthController {
   constructor(
     private readonly auth: AuthService,
     private readonly token: TokenService,
+    private readonly csrfTokens: CsrfService,
     private readonly demo: DemoService,
     private readonly storage: StorageService,
     config: ConfigService<Env, true>,
@@ -87,18 +86,30 @@ export class AuthController {
     this.demoEnabled = config.get('DEMO_ENABLED', { infer: true });
   }
 
+  /** Pose le cookie de session et renvoie le jeton CSRF de cette session (à inclure dans la réponse). */
   private async setSession(
     res: Response,
     user: { id: string; email: string; sessionVersion: number },
     opts: { demo?: boolean } = {},
-  ): Promise<void> {
+  ): Promise<string> {
     const jwt = await this.token.sign({
       sub: user.id,
       email: user.email,
       sv: user.sessionVersion,
       ...(opts.demo ? { demo: true } : {}),
     });
-    res.cookie(SESSION_COOKIE, jwt, sessionCookieOptions(this.isProd));
+    res.cookie(
+      sessionCookieName(this.isProd),
+      jwt,
+      sessionCookieOptions(this.isProd),
+    );
+    return this.csrfTokens.tokenFor(user.id, user.sessionVersion);
+  }
+
+  private clearSession(res: Response): void {
+    for (const name of SESSION_COOKIE_NAMES) {
+      res.clearCookie(name, sessionCookieOptions(this.isProd));
+    }
   }
 
   @Throttle(STRICT_THROTTLE)
@@ -122,8 +133,12 @@ export class AuthController {
   ) {
     const r = await this.auth.verify(dto);
     if (!r.success) throw httpFrom(r);
-    await this.setSession(res, r.data);
-    return { user: toPublicUser(r.data), keyMaterial: toKeyMaterial(r.data) };
+    const csrfToken = await this.setSession(res, r.data);
+    return {
+      user: toPublicUser(r.data),
+      keyMaterial: toKeyMaterial(r.data),
+      csrfToken,
+    };
   }
 
   @UseGuards(EmailThrottlerGuard)
@@ -148,10 +163,11 @@ export class AuthController {
     const r = await this.auth.login(dto);
     if (!r.success) throw httpFrom(r);
     if (r.data.kind === 'mfa_required') return { mfaRequired: true };
-    await this.setSession(res, r.data.user);
+    const csrfToken = await this.setSession(res, r.data.user);
     return {
       user: toPublicUser(r.data.user),
       keyMaterial: toKeyMaterial(r.data.user),
+      csrfToken,
       // Présent seulement si la connexion a consommé un code de secours : le front prévient.
       ...(r.data.backupCodesRemaining !== undefined
         ? { backupCodesRemaining: r.data.backupCodesRemaining }
@@ -167,8 +183,8 @@ export class AuthController {
     if (!this.demoEnabled) throw new NotFoundException();
     const r = await this.auth.demoLogin();
     if (!r.success) throw httpFrom(r);
-    await this.setSession(res, r.data, { demo: true });
-    return { user: toPublicUser(r.data), keyMaterial: null };
+    const csrfToken = await this.setSession(res, r.data, { demo: true });
+    return { user: toPublicUser(r.data), keyMaterial: null, csrfToken };
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard)
@@ -204,13 +220,11 @@ export class AuthController {
     return { message: 'Mot de passe réinitialisé' };
   }
 
+  /** Jeton CSRF de la session courante (HMAC, sans cookie) : 401 sans session. */
+  @UseGuards(JwtAuthGuard)
   @Get('csrf')
-  csrf(@Req() req: Request, @Res({ passthrough: true }) res: Response) {
-    const existing = (req.cookies as Record<string, string>)?.[CSRF_COOKIE];
-    const token = existing ?? randomBytes(32).toString('hex');
-    if (!existing)
-      res.cookie(CSRF_COOKIE, token, csrfCookieOptions(this.isProd));
-    return { csrfToken: token };
+  csrf(@CurrentUser() u: AuthUser) {
+    return { csrfToken: this.csrfTokens.tokenFor(u.id, u.sessionVersion) };
   }
 
   @UseGuards(JwtAuthGuard)
@@ -335,7 +349,7 @@ export class AuthController {
   ): Promise<void> {
     const r = await this.auth.deleteAccount(u.id);
     if (!r.success) throw httpFrom(r);
-    res.clearCookie(SESSION_COOKIE, sessionCookieOptions(this.isProd));
+    this.clearSession(res);
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard)
@@ -346,7 +360,7 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     await this.auth.revokeSessions(u.id);
-    res.clearCookie(SESSION_COOKIE, sessionCookieOptions(this.isProd));
+    this.clearSession(res);
     return { message: 'Déconnecté' };
   }
 

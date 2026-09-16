@@ -5,6 +5,7 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { TokenService } from './token.service';
+import { CsrfService } from './csrf.service';
 import { TwoFactorService } from './two-factor.service';
 import { SecretCipherService } from './secret-cipher.service';
 import { EncryptionService } from './encryption.service';
@@ -51,6 +52,7 @@ export const JWT_AUDIENCE = 'dashflow-web';
     AuthService,
     AuthRepository,
     TokenService,
+    CsrfService,
     TwoFactorService,
     SecretCipherService,
     EncryptionService,
@@ -63,6 +65,7 @@ export const JWT_AUDIENCE = 'dashflow-web';
   ],
   exports: [
     TokenService,
+    CsrfService,
     JwtAuthGuard,
     CsrfGuard,
     DemoAccountGuard,

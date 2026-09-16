@@ -20,7 +20,17 @@ async function bootstrap(): Promise<void> {
 
   // Le front est servi sur une autre origine : les ressources embarquées (avatar via <img>)
   // sont régies par CORP, pas CORS. `same-origin` (défaut Helmet) les bloquerait → cross-origin.
-  app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
+  app.use(
+    helmet({
+      crossOriginResourcePolicy: { policy: 'cross-origin' },
+      // Une API JSON n'a aucune raison d'être encadrée : 'none' plutôt que le 'self' par défaut.
+      frameguard: { action: 'deny' },
+      contentSecurityPolicy: {
+        useDefaults: true,
+        directives: { 'frame-ancestors': ["'none'"] },
+      },
+    }),
+  );
   app.use(cookieParser());
   app.enableCors({
     origin: config.get('CORS_ORIGIN', { infer: true }).split(','),
