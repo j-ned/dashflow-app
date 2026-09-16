@@ -337,4 +337,40 @@ describe('Auth e2e', () => {
       .expect(200);
     expect(after.body.remaining).toBe(10);
   });
+
+  it('journal de sécurité : la vérification d’e-mail est tracée avec IP et navigateur, consultable par le compte', async () => {
+    const email = `e2esec+${Date.now()}@dashflow.test`;
+    const server = app.getHttpServer();
+    await request(server)
+      .post('/auth/register')
+      .send({ email, password: 'motdepasse-long-12' })
+      .expect(201);
+    const verify = await request(server)
+      .post('/auth/verify')
+      .set('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/130.0')
+      .send({ email, code: mailer.lastCode })
+      .expect(200);
+    const cookie = verify.headers['set-cookie'] as string | string[];
+    const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
+
+    const events = await request(server)
+      .get('/auth/me/security-events?limit=10')
+      .set('Cookie', cookieArr)
+      .expect(200);
+    expect(events.body).toHaveLength(1);
+    expect(events.body[0]).toMatchObject({
+      type: 'email_verified',
+      userAgent: 'Mozilla/5.0 (X11; Linux x86_64) Firefox/130.0',
+    });
+    expect(events.body[0].ip).toBeTruthy();
+    expect(events.body[0].at).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    // Rien d'autre que le journal : pas d'e-mail, pas de données métier.
+    expect(Object.keys(events.body[0]).sort()).toEqual([
+      'at',
+      'id',
+      'ip',
+      'type',
+      'userAgent',
+    ]);
+  });
 });

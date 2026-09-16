@@ -5,9 +5,12 @@ import {
   Patch,
   Post,
   UseGuards,
+  UseInterceptors,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
 import { EncryptionService } from './encryption.service';
+import { SecurityEvent } from '../security-events/security-event.decorator';
+import { SecurityEventsInterceptor } from '../security-events/security-events.interceptor';
 import { httpFrom } from './http-error';
 import { STRICT_THROTTLE } from './throttle';
 import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
@@ -32,10 +35,12 @@ import type {
 } from './dto/auth.dto';
 
 @Controller('auth')
+@UseInterceptors(SecurityEventsInterceptor)
 export class EncryptionController {
   constructor(private readonly enc: EncryptionService) {}
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @SecurityEvent({ success: 'encryption_keys_set' })
   @Patch('me/encryption-keys')
   @HttpCode(200)
   async setKeys(
@@ -60,6 +65,7 @@ export class EncryptionController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @SecurityEvent({ success: 'encryption_migrated' })
   @Post('me/migrate-encryption')
   @HttpCode(200)
   async migrate(
@@ -72,6 +78,7 @@ export class EncryptionController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @SecurityEvent({ success: 'encryption_wiped' })
   @Post('me/wipe-encryption')
   @HttpCode(200)
   async wipe(@CurrentUser() u: AuthUser) {
@@ -81,6 +88,7 @@ export class EncryptionController {
 
   @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'recovery_reset' })
   @Post('reset-password-with-recovery')
   @HttpCode(200)
   async resetWithRecovery(
