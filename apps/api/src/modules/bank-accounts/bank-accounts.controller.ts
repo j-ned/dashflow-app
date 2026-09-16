@@ -23,6 +23,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { parsePageQuery, sendPage } from '../../common/crud/keyset';
+import { clientRowId } from '../../common/crud/client-row-id';
 import {
   createBankAccountSchema,
   createEncryptedBankAccountSchema,
@@ -61,7 +62,11 @@ export class BankAccountsController {
         createEncryptedBankAccountSchema,
         body,
       );
-      const row = await this.svc.create(u.id, { name: '', encryptedData });
+      const row = await this.svc.create(u.id, {
+        name: '',
+        encryptedData,
+        ...clientRowId(body),
+      });
       return toBankAccountResponse(row);
     }
     const d = parseBody(createBankAccountSchema, body);

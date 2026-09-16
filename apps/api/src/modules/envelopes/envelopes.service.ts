@@ -103,6 +103,7 @@ export class EnvelopesService extends OwnedCrudService<Envelope> {
     userId: string,
     id: string,
     values: {
+      id?: string;
       amount: string;
       date: string;
       note?: string | null;

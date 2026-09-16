@@ -20,6 +20,7 @@ import {
   type AuthUser,
 } from '../decorators/current-user.decorator';
 import { parsePageQuery, sendPage, type Page, type PageQuery } from './keyset';
+import { clientRowId } from './client-row-id';
 
 export interface CrudService<T> {
   list(userId: string, q?: PageQuery): Promise<Page<T>>;
@@ -66,7 +67,11 @@ export abstract class OwnedCrudController<T> {
   @Post()
   @HttpCode(201)
   create(@CurrentUser() u: AuthUser, @Body() body: Record<string, unknown>) {
-    return this.svc.create(u.id, this.toCreateValues(body));
+    // E2EE : le front fixe l'id pour lier le blob chiffré à sa ligne (cf. clientRowId).
+    return this.svc.create(u.id, {
+      ...this.toCreateValues(body),
+      ...clientRowId(body),
+    });
   }
 
   @UseGuards(CsrfGuard)

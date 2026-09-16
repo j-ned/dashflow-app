@@ -25,6 +25,7 @@ import {
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
 import { parsePageQuery, sendPage } from '../../common/crud/keyset';
+import { clientRowId } from '../../common/crud/client-row-id';
 import {
   updateMemberColorSchema,
   createMemberSchema,
@@ -57,7 +58,7 @@ export class MembersController {
   ) {
     if (body.encryptedData) {
       const { encryptedData } = parseBody(encryptedMemberSchema, body);
-      return this.svc.create(u.id, { encryptedData });
+      return this.svc.create(u.id, { encryptedData, ...clientRowId(body) });
     }
     const d = parseBody(createMemberSchema, body);
     return this.svc.create(u.id, {

@@ -36,7 +36,10 @@ import { StorageModule } from './storage/storage.module';
     ConfigModule,
     DrizzleModule,
     ScheduleModule.forRoot(),
-    ThrottlerModule.forRoot([{ ttl: 900_000, limit: 100 }]),
+    // Plafond global par IP (les routes d'auth sensibles ont leur STRICT_THROTTLE à part).
+    // 100 / 15 min était atteignable par un foyer actif derrière une même IP, surtout depuis que
+    // le front suit la pagination ; 1000 reste une borne anti-abus, pas une limite d'usage.
+    ThrottlerModule.forRoot([{ ttl: 900_000, limit: 1000 }]),
     MailModule,
     AuthModule,
     HealthModule,

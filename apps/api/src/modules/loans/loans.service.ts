@@ -99,7 +99,12 @@ export class LoansService extends OwnedCrudService<Loan> {
   async addTransaction(
     userId: string,
     id: string,
-    values: { amount: string; date: string; encryptedData?: string },
+    values: {
+      id?: string;
+      amount: string;
+      date: string;
+      encryptedData?: string;
+    },
   ) {
     const loan = await this.getOne(userId, id);
     if (!loan) return undefined;
