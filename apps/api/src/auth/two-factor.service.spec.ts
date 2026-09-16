@@ -56,4 +56,23 @@ describe('TwoFactorService.verifyStep (anti-rejeu)', () => {
     // Même si `previous` ≠ `current` (changement de fenêtre), l'ordre des pas est monotone.
     expect(stepPrev as number).toBeLessThanOrEqual(stepNow as number);
   });
+
+  it('codes de secours : 10 codes xxxxx-xxxxx, uniques, alphabet sans ambiguïté', () => {
+    const svc = new TwoFactorService();
+    const codes = svc.generateBackupCodes();
+    expect(codes).toHaveLength(10);
+    expect(new Set(codes).size).toBe(10);
+    for (const c of codes)
+      expect(c).toMatch(/^[a-hj-km-np-z2-9]{5}-[a-hj-km-np-z2-9]{5}$/);
+  });
+
+  it('normalizeBackupCode : casse, tiret et espaces libres ; TOTP et bruit → null', () => {
+    const svc = new TwoFactorService();
+    expect(svc.normalizeBackupCode('ABCDE-FGHJK')).toBe('abcde-fghjk');
+    expect(svc.normalizeBackupCode(' abcdefghjk ')).toBe('abcde-fghjk');
+    expect(svc.normalizeBackupCode('123456')).toBeNull();
+    expect(svc.normalizeBackupCode('abcde-fghj0')).toBeNull(); // 0 hors alphabet
+    expect(svc.isTotpCode('123456')).toBe(true);
+    expect(svc.isTotpCode('abcde-fghjk')).toBe(false);
+  });
 });

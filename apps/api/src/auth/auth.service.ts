@@ -8,6 +8,7 @@ import {
 import { MAILER, type Mailer } from '../mail/mailer';
 import { ok, fail, type Result } from './auth.result';
 import { TwoFactorService } from './two-factor.service';
+import { SecretCipherService } from './secret-cipher.service';
 import { StorageService } from '../storage/storage.service';
 import type { users } from '../db/schema';
 import type {
@@ -21,7 +22,7 @@ import type {
 
 type User = typeof users.$inferSelect;
 export type LoginOutcome =
-  | { kind: 'authenticated'; user: User }
+  | { kind: 'authenticated'; user: User; backupCodesRemaining?: number }
   | { kind: 'mfa_required' };
 const CODE_TTL_MS = 10 * 60 * 1000;
 const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
@@ -36,6 +37,7 @@ export class AuthService {
     @Inject(MAILER) private readonly mailer: Mailer,
     private readonly twoFactor: TwoFactorService,
     private readonly storage: StorageService,
+    private readonly cipher: SecretCipherService,
   ) {}
 
   async register(dto: RegisterDto): Promise<Result<User>> {
@@ -99,10 +101,27 @@ export class AuthService {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
       if (!dto.totpCode) return ok({ kind: 'mfa_required' });
-      const step = this.twoFactor.verifyStep(user.totpSecret, dto.totpCode);
-      if (step === null || this.isReplayedTotp(user, step))
+      const code = dto.totpCode.trim();
+      if (this.twoFactor.isTotpCode(code)) {
+        const secret = await this.totpSecretOf(user);
+        const step = this.twoFactor.verifyStep(secret, code);
+        if (step === null || this.isReplayedTotp(user, step))
+          return fail(401, 'Code 2FA invalide');
+        await this.repo.updateUser(user.id, { totpLastUsedStep: step });
+        return ok({ kind: 'authenticated', user });
+      }
+      // Code de secours : à usage unique, consommé atomiquement.
+      const backup = this.twoFactor.normalizeBackupCode(code);
+      if (
+        !backup ||
+        !(await this.repo.consumeBackupCode(user.id, this.cipher.hmac(backup)))
+      )
         return fail(401, 'Code 2FA invalide');
-      await this.repo.updateUser(user.id, { totpLastUsedStep: step });
+      return ok({
+        kind: 'authenticated',
+        user,
+        backupCodesRemaining: await this.repo.countUnusedBackupCodes(user.id),
+      });
     }
     return ok({ kind: 'authenticated', user });
   }
@@ -193,23 +212,78 @@ export class AuthService {
         'La 2FA est déjà active : désactivez-la avant de la reconfigurer',
       );
     const { secret, otpauthUri } = this.twoFactor.generateSecret(user.email);
-    await this.repo.updateUser(userId, { totpSecret: secret });
+    // Jamais en clair en base : un dump ne suffit pas à cloner l'authentificateur.
+    await this.repo.updateUser(userId, {
+      totpSecret: this.cipher.encrypt(secret),
+    });
     const qrCode = await this.twoFactor.buildQrDataUrl(otpauthUri);
     return ok({ qrCode, secret, uri: otpauthUri });
   }
 
-  async enableTotp(userId: string, code: string): Promise<Result<null>> {
+  /** Active la 2FA et renvoie les codes de secours — la seule fois où ils sont lisibles. */
+  async enableTotp(
+    userId: string,
+    code: string,
+  ): Promise<Result<{ backupCodes: string[] }>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.totpSecret)
       return fail(400, 'Aucun secret 2FA en attente');
-    const step = this.twoFactor.verifyStep(user.totpSecret, code);
+    if (user.totpEnabled) return fail(409, 'La 2FA est déjà active');
+    const step = this.twoFactor.verifyStep(await this.totpSecretOf(user), code);
     if (step === null || this.isReplayedTotp(user, step))
       return fail(400, 'Code 2FA invalide');
     await this.repo.updateUser(userId, {
       totpEnabled: new Date(),
       totpLastUsedStep: step,
     });
-    return ok(null);
+    const backupCodes = await this.issueBackupCodes(userId);
+    return ok({ backupCodes });
+  }
+
+  async backupCodesStatus(
+    userId: string,
+  ): Promise<Result<{ remaining: number }>> {
+    const user = await this.repo.findById(userId);
+    if (!user) return fail(404, 'Compte introuvable');
+    if (!user.totpEnabled) return ok({ remaining: 0 });
+    return ok({ remaining: await this.repo.countUnusedBackupCodes(userId) });
+  }
+
+  /** Nouveau jeu de 10 codes ; les anciens (utilisés ou non) ne valent plus. Mot de passe requis. */
+  async regenerateBackupCodes(
+    userId: string,
+    password: string,
+  ): Promise<Result<{ backupCodes: string[] }>> {
+    const user = await this.repo.findById(userId);
+    if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
+    if (!user.totpEnabled) return fail(409, "La 2FA n'est pas active");
+    if (!(await argon2.verify(user.password, password)))
+      return fail(401, 'Mot de passe incorrect');
+    return ok({ backupCodes: await this.issueBackupCodes(userId) });
+  }
+
+  private async issueBackupCodes(userId: string): Promise<string[]> {
+    const codes = this.twoFactor.generateBackupCodes();
+    await this.repo.replaceBackupCodes(
+      userId,
+      codes.map((c) => this.cipher.hmac(c)),
+    );
+    return codes;
+  }
+
+  /**
+   * Secret TOTP en clair pour vérification. Les secrets antérieurs au chiffrement au repos
+   * sont en clair en base : on les ré-écrit chiffrés au passage (migration opportuniste).
+   */
+  private async totpSecretOf(user: User): Promise<string> {
+    const stored = user.totpSecret ?? '';
+    if (stored && !this.cipher.isEncrypted(stored)) {
+      await this.repo.updateUser(user.id, {
+        totpSecret: this.cipher.encrypt(stored),
+      });
+      return stored;
+    }
+    return this.cipher.decrypt(stored);
   }
 
   /** Renvoie l'utilisateur mis à jour (session_version incrémentée) : le controller ré-émet le cookie. */
@@ -223,6 +297,7 @@ export class AuthService {
       totpEnabled: null,
       totpLastUsedStep: null,
     });
+    await this.repo.deleteBackupCodes(userId);
     return ok(await this.repo.bumpSessionVersion(userId));
   }
 
