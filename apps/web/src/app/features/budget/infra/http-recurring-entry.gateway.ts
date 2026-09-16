@@ -56,6 +56,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/recurring-entries/${id}`, body),
+      { rowId: id },
     );
   }
 

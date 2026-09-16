@@ -107,10 +107,10 @@ describe('HttpBankAccountGateway (E2EE) : régression fuite initialBalance en cl
     expect(req.request.body.name).toBeUndefined();
 
     const row = await encryptEntity(ACCOUNT as Record<string, unknown>, CLEARTEXT_KEYS, key);
-    req.flush(row);
+    req.flush({ ...row, id: (req.request.body['id'] as string | undefined) ?? row['id'] });
     httpMock.verify();
 
-    expect(await promise).toEqual(ACCOUNT);
+    expect(await promise).toEqual({ ...ACCOUNT, id: req.request.body['id'] });
   });
 
   it('getAll() déchiffre initialBalance en number malgré un compte legacy dont il est encore en clair', async () => {

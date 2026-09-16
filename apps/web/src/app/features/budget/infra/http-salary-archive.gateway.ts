@@ -42,9 +42,12 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
       if (field !== 'payslip') jsonFields[field] = value;
     });
 
-    const response$ = from(encryptEntity(jsonFields, CLEARTEXT_KEYS, key)).pipe(
+    // Id fixé côté client pour lier le blob à sa ligne (cf. entity-crypto v2).
+    const rowId = crypto.randomUUID();
+    const response$ = from(encryptEntity(jsonFields, CLEARTEXT_KEYS, key, { rowId })).pipe(
       switchMap((encrypted) => {
         const fd = new FormData();
+        fd.append('id', rowId);
         if (file) {
           return from(encryptFile(file, key)).pipe(
             switchMap((encryptedBlob) => {

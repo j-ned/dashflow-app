@@ -62,6 +62,7 @@ export class HttpLoanGateway implements LoanGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/loans/${id}`, body),
+      { rowId: id },
     );
   }
 

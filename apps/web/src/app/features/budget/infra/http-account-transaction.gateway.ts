@@ -71,6 +71,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/transactions/${id}`, body),
+      { rowId: id },
     );
   }
 
@@ -85,9 +86,16 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
     const key = this.crypto.getMasterKey();
     const url = `/bank-accounts/${accountId}/transactions/batch`;
     if (!key) return this.api.post<AccountTransaction[]>(url, { items });
+    // Chaque ligne reçoit son id côté client : le blob est lié à cet id (cf. entity-crypto v2).
     return from(
       Promise.all(
-        items.map((it) => encryptEntity(it as Record<string, unknown>, CLEARTEXT_KEYS, key)),
+        items.map(async (it) => {
+          const id = crypto.randomUUID();
+          const enc = await encryptEntity(it as Record<string, unknown>, CLEARTEXT_KEYS, key, {
+            rowId: id,
+          });
+          return { ...enc, id };
+        }),
       ),
     ).pipe(
       switchMap((encrypted) => this.api.post<AccountTransaction[]>(url, { items: encrypted })),

@@ -118,9 +118,15 @@ describe('EncryptionSetup : migration E2EE (F003)', () => {
     expect(blob).not.toContain('42.50');
     expect(blob).not.toContain('Courses');
     // La transaction est bien chiffrée avec la clé maîtresse : on la relit.
-    const { decryptWithKey } = await import('@core/services/crypto/crypto.store');
-    const plain = JSON.parse(await decryptWithKey(blob, masterKey)) as Record<string, unknown>;
+    // Blob lié à sa ligne (v2) : se déchiffre avec l'id de la transaction, pas sans.
+    const { decryptEntity } = await import('@core/services/crypto/entity-crypto');
+    expect(blob.startsWith('v2.')).toBe(true);
+    const plain = await decryptEntity<Record<string, unknown>>(
+      { id: 'tx-1', encryptedData: blob },
+      masterKey,
+    );
     expect(plain).toEqual({
+      id: 'tx-1',
       amount: '42.50',
       date: '2026-03-01',
       category: 'Courses',

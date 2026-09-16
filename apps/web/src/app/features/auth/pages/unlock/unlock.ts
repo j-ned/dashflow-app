@@ -1,6 +1,6 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AuthStore } from '../../auth.store';
 import { AuthEncryptionStore } from '../../auth-encryption.store';
@@ -70,6 +70,14 @@ type Mode = 'password' | 'recovery' | 'repair';
               }
             }
           </p>
+          @if (lockedByInactivity()) {
+            <p
+              class="mt-3 rounded-lg border border-ib-blue/20 bg-ib-blue/5 p-3 text-sm text-text-primary"
+              data-testid="inactivity-notice"
+            >
+              {{ 'auth.unlock.inactivityNotice' | transloco }}
+            </p>
+          }
         </header>
 
         @if (error()) {
@@ -310,7 +318,13 @@ export class Unlock {
   protected readonly auth = inject(AuthStore);
   private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly _i18n = inject(TranslocoService);
+
+  /** Verrouillé par inactivité (cf. AutoLockStore) : on le dit, l'utilisateur comprend pourquoi. */
+  protected readonly lockedByInactivity = computed(
+    () => this.route.snapshot.queryParams['reason'] === 'inactivity',
+  );
 
   protected readonly showPassword = signal(false);
   protected readonly loading = signal(false);
@@ -357,7 +371,7 @@ export class Unlock {
     try {
       const { password } = this.form.getRawValue();
       await this.authEncryption.unlockWithPassword(password);
-      this.router.navigate(['/budget']);
+      this.navigateBack();
     } catch {
       this.passwordFailed.set(true);
       this.error.set(this._i18n.translate('auth.unlock.errors.wrongPassword'));
@@ -375,7 +389,7 @@ export class Unlock {
     try {
       const { recoveryKey } = this.recoveryForm.getRawValue();
       await this.authEncryption.unlockWithRecovery(recoveryKey.replace(/\s/g, ''));
-      this.router.navigate(['/budget']);
+      this.navigateBack();
     } catch {
       this.error.set(this._i18n.translate('auth.unlock.errors.invalidRecoveryKey'));
     } finally {
@@ -392,7 +406,7 @@ export class Unlock {
     try {
       const { recoveryKey, password } = this.repairForm.getRawValue();
       await this.authEncryption.repairWithRecovery(recoveryKey.replace(/\s/g, ''), password);
-      this.router.navigate(['/budget']);
+      this.navigateBack();
     } catch {
       this.error.set(this._i18n.translate('auth.unlock.errors.repairFailed'));
     } finally {
@@ -403,5 +417,15 @@ export class Unlock {
   protected async logout(): Promise<void> {
     await this.auth.logout();
     this.router.navigate(['/auth/login']);
+  }
+
+  /** Retour à la page quittée par le verrouillage, sinon au budget. Chemin interne uniquement. */
+  private navigateBack(): void {
+    const returnUrl = this.route.snapshot.queryParams['returnUrl'];
+    if (typeof returnUrl === 'string' && /^\/(?!\/)/.test(returnUrl)) {
+      void this.router.navigateByUrl(returnUrl);
+      return;
+    }
+    this.router.navigate(['/budget']);
   }
 }

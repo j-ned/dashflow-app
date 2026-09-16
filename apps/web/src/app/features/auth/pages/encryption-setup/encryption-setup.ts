@@ -306,7 +306,9 @@ export class EncryptionSetup {
           if (rows.length > 0) {
             const encrypted: { id: string; encryptedData: string }[] = [];
             for (const row of rows) {
-              const result = await encryptEntity(row, CLEARTEXT_KEYS[tableName], masterKey);
+              const result = await encryptEntity(row, CLEARTEXT_KEYS[tableName], masterKey, {
+                rowId: row['id'] as string,
+              });
               encrypted.push({ id: row['id'] as string, encryptedData: result.encryptedData });
             }
             encryptedData[tableName] = encrypted;

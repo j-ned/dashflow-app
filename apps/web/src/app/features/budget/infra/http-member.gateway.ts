@@ -40,6 +40,7 @@ export class HttpMemberGateway implements MemberGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/members/${id}`, body),
+      { rowId: id },
     );
   }
 
@@ -48,8 +49,12 @@ export class HttpMemberGateway implements MemberGateway {
   }
 
   updateColor(id: string, color: string | null): Observable<Member> {
-    return mutateEncrypted({ color }, CLEARTEXT_KEYS, this.crypto.getMasterKey(), (body) =>
-      this.api.patch<ApiRow>(`/members/${id}/color`, body),
+    return mutateEncrypted(
+      { color },
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.patch<ApiRow>(`/members/${id}/color`, body),
+      { rowId: id },
     );
   }
 }

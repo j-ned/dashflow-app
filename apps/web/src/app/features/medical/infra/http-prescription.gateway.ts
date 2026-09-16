@@ -79,6 +79,7 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/prescriptions/${id}`, body),
+      { rowId: id },
     );
   }
 

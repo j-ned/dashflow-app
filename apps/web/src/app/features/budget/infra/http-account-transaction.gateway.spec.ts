@@ -164,7 +164,7 @@ describe('HttpAccountTransactionGateway (E2EE)', () => {
       CLEARTEXT_KEYS,
       key,
     );
-    req.flush(row);
+    req.flush({ ...row, id: (req.request.body['id'] as string | undefined) ?? row['id'] });
     httpMock.verify();
 
     const result = await promise;

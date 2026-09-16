@@ -193,10 +193,11 @@ describe('HttpEnvelopeGateway (E2EE)', () => {
     expect(req.request.body.memberId).toBe('m-1');
 
     const row = await encryptEntity(ENVELOPE as Record<string, unknown>, CLEARTEXT_KEYS, key);
-    req.flush(row);
+    // Le serveur adopte l'id client sur les créations E2EE : la réponse simulée le reflète.
+    req.flush({ ...row, id: req.request.body['id'] as string });
     httpController.verify();
 
-    expect(await promise).toEqual(ENVELOPE);
+    expect(await promise).toEqual({ ...ENVELOPE, id: req.request.body['id'] });
   });
 
   it('getAllTransactions() decrypts encrypted transaction rows', async () => {

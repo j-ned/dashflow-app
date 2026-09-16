@@ -55,6 +55,7 @@ export class HttpPractitionerGateway implements PractitionerGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/practitioners/${id}`, body),
+      { rowId: id },
     );
   }
 
