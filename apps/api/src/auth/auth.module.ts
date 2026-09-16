@@ -18,6 +18,7 @@ import { UploadPolicy } from '../common/files/upload-policy';
 import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { DemoModule } from '../modules/demo/demo.module';
+import { SecurityEventsModule } from '../security-events/security-events.module';
 import type { Env } from '../config/env.schema';
 
 export const JWT_ISSUER = 'dashflow-api';
@@ -26,6 +27,7 @@ export const JWT_AUDIENCE = 'dashflow-web';
 @Module({
   imports: [
     DemoModule,
+    SecurityEventsModule,
     JwtModule.registerAsync({
       inject: [ConfigService],
       useFactory: (c: ConfigService<Env, true>) => ({

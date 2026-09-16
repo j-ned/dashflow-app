@@ -10,6 +10,7 @@ import {
   ParseUUIDPipe,
   Patch,
   Post,
+  Query,
   Res,
   UnauthorizedException,
   UploadedFile,
@@ -23,6 +24,9 @@ import type { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { CsrfService } from './csrf.service';
+import { SecurityEvent } from '../security-events/security-event.decorator';
+import { SecurityEventsInterceptor } from '../security-events/security-events.interceptor';
+import { SecurityEventsService } from '../security-events/security-events.service';
 import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { toPublicUser, toKeyMaterial } from './auth.response';
@@ -71,6 +75,7 @@ import { httpFrom } from './http-error';
 import { STRICT_THROTTLE } from './throttle';
 
 @Controller('auth')
+@UseInterceptors(SecurityEventsInterceptor)
 export class AuthController {
   private readonly isProd: boolean;
   private readonly demoEnabled: boolean;
@@ -78,6 +83,7 @@ export class AuthController {
     private readonly auth: AuthService,
     private readonly token: TokenService,
     private readonly csrfTokens: CsrfService,
+    private readonly securityEvents: SecurityEventsService,
     private readonly demo: DemoService,
     private readonly storage: StorageService,
     config: ConfigService<Env, true>,
@@ -125,6 +131,7 @@ export class AuthController {
 
   @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'email_verified' })
   @Post('verify')
   @HttpCode(200)
   async verify(
@@ -154,6 +161,7 @@ export class AuthController {
 
   @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'login_success', failure: 'login_failed' })
   @Post('login')
   @HttpCode(200)
   async login(
@@ -199,6 +207,7 @@ export class AuthController {
 
   @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'password_reset_requested' })
   @Post('forgot-password')
   @HttpCode(200)
   async forgot(
@@ -210,6 +219,7 @@ export class AuthController {
 
   @UseGuards(EmailThrottlerGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'password_reset' })
   @Post('reset-password')
   @HttpCode(200)
   async reset(
@@ -225,6 +235,21 @@ export class AuthController {
   @Get('csrf')
   csrf(@CurrentUser() u: AuthUser) {
     return { csrfToken: this.csrfTokens.tokenFor(u.id, u.sessionVersion) };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  /** Activité récente du compte (connexions, changements sensibles), la plus récente d'abord. */
+  @UseGuards(JwtAuthGuard)
+  @Get('me/security-events')
+  securityEventsList(
+    @CurrentUser() u: AuthUser,
+    @Query('limit') limit?: string,
+  ) {
+    const n = Number(limit);
+    return this.securityEvents.listFor(
+      u.id,
+      Number.isInteger(n) && n > 0 ? n : 50,
+    );
   }
 
   @UseGuards(JwtAuthGuard)
@@ -248,6 +273,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'password_changed' })
   @Patch('me/password')
   @HttpCode(200)
   async changePassword(
@@ -264,6 +290,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'password_set' })
   @Post('me/set-password')
   @HttpCode(200)
   async setPassword(
@@ -287,6 +314,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'totp_enabled' })
   @Post('me/2fa/verify')
   @HttpCode(200)
   async totpVerify(
@@ -313,6 +341,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'backup_codes_regenerated' })
   @Post('me/2fa/backup-codes')
   @HttpCode(200)
   async backupCodesRegenerate(
@@ -327,6 +356,7 @@ export class AuthController {
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Throttle(STRICT_THROTTLE)
+  @SecurityEvent({ success: 'totp_disabled' })
   @Post('me/2fa/disable')
   @HttpCode(200)
   async totpDisable(
@@ -353,6 +383,7 @@ export class AuthController {
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard)
+  @SecurityEvent({ success: 'logout' })
   @Post('logout')
   @HttpCode(200)
   async logout(

@@ -15,6 +15,8 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { TokenService } from './token.service';
 import { CsrfService } from './csrf.service';
+import { SecurityEventsService } from '../security-events/security-events.service';
+import { SecurityEventsInterceptor } from '../security-events/security-events.interceptor';
 import { DemoService } from '../modules/demo/demo.service';
 import { StorageService } from '../storage/storage.service';
 import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
@@ -44,6 +46,15 @@ describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () =
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
         { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
         { provide: DemoService, useValue: {} },
         { provide: StorageService, useValue: {} },
         { provide: ConfigService, useValue: mockConfig },
@@ -133,6 +144,15 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
         { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
         { provide: DemoService, useValue: {} },
         { provide: StorageService, useValue: mockStorage },
         { provide: ConfigService, useValue: mockConfig },
@@ -244,6 +264,15 @@ describe('AuthController — session démo : routes d’identité verrouillées'
         { provide: AuthService, useValue: mockAuth },
         { provide: TokenService, useValue: {} },
         { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
         { provide: DemoService, useValue: mockDemo },
         { provide: StorageService, useValue: {} },
         { provide: ConfigService, useValue: mockConfig },

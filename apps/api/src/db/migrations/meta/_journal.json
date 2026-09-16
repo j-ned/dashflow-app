@@ -85,6 +85,13 @@
       "when": 1789581954910,
       "tag": "0011_totp-backup-codes",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1789587473351,
+      "tag": "0012_security-events",
+      "breakpoints": true
     }
   ]
 }

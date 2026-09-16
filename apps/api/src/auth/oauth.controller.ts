@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { OAuthService } from './oauth.service';
 import { TokenService } from './token.service';
+import { SecurityEventsService } from '../security-events/security-events.service';
 import {
   sessionCookieName,
   OAUTH_STATE_COOKIE,
@@ -21,6 +22,7 @@ export class OAuthController {
   constructor(
     private readonly oauth: OAuthService,
     private readonly token: TokenService,
+    private readonly securityEvents: SecurityEventsService,
     config: ConfigService<Env, true>,
   ) {
     this.isProd = config.get('NODE_ENV', { infer: true }) === 'production';
@@ -77,6 +79,7 @@ export class OAuthController {
         jwt,
         sessionCookieOptions(this.isProd),
       );
+      await this.securityEvents.record('login_oauth', user.id, req);
       res.redirect(`${this.frontUrl}/auth/login?oauth=success`);
     } catch (err) {
       const reason =
