@@ -313,6 +313,34 @@
         "setFailed": "Erreur lors de la définition du mot de passe."
       }
     },
+    "activity": {
+      "title": "Activité récente",
+      "subtitle": "Connexions et changements sensibles sur votre compte, 6 derniers mois.",
+      "refresh": "Actualiser",
+      "empty": "Aucune activité enregistrée pour le moment.",
+      "error": "Impossible de charger l'activité récente.",
+      "types": {
+        "email_verified": "Adresse e-mail vérifiée",
+        "login_success": "Connexion",
+        "login_failed": "Tentative de connexion refusée",
+        "login_oauth": "Connexion avec Google",
+        "backup_code_used": "Connexion avec un code de secours",
+        "logout": "Déconnexion de tous les appareils",
+        "password_changed": "Mot de passe modifié",
+        "password_set": "Mot de passe défini",
+        "password_reset_requested": "Réinitialisation du mot de passe demandée",
+        "password_reset": "Mot de passe réinitialisé",
+        "totp_enabled": "Authentification à deux facteurs activée",
+        "totp_disabled": "Authentification à deux facteurs désactivée",
+        "backup_codes_regenerated": "Codes de secours régénérés",
+        "encryption_keys_set": "Chiffrement de bout en bout configuré",
+        "encryption_migrated": "Données migrées vers le chiffrement",
+        "encryption_wiped": "Clés de chiffrement supprimées",
+        "recovery_reset": "Mot de passe réinitialisé avec la clé de récupération",
+        "account_deleted": "Compte supprimé",
+        "unknown": "Événement de sécurité"
+      }
+    },
     "twoFactor": {
       "title": "Authentification à deux facteurs",
       "subtitle": "Protégez votre compte avec une application TOTP.",
