@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { AutoLockStore } from '@core/services/crypto/auto-lock.store';
 import { CsrfStore } from '@core/services/csrf/csrf-store';
 import { validateOne } from '@core/services/crypto/validate-decrypted';
 import { firstValueFrom } from 'rxjs';
@@ -16,6 +17,7 @@ import { KeyMaterial } from './domain/models/key-material.model';
 export class AuthStore {
   private readonly gateway = inject(HttpAuthGateway);
   private readonly crypto = inject(CryptoStore);
+  private readonly autoLock = inject(AutoLockStore);
   private readonly csrf = inject(CsrfStore);
 
   private readonly _user = signal<AuthUser | null>(null);
@@ -87,7 +89,9 @@ export class AuthStore {
       this._keyMaterial = keyMaterial ?? null;
 
       if (user.encryptionVersion === 1) {
-        await this.crypto.restoreFromStorage();
+        // Rechargement après une longue absence : on verrouille au lieu de restaurer la clé.
+        if (this.autoLock.isExpired()) await this.crypto.lock();
+        else await this.crypto.restoreFromStorage();
       }
     } catch {
       this._isAuthenticated.set(false);

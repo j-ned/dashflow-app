@@ -62,6 +62,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/envelopes/${id}`, body),
+      { rowId: id },
     );
   }
 

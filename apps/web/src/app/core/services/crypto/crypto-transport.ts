@@ -1,5 +1,11 @@
 import { from, Observable, switchMap } from 'rxjs';
-import { ApiRow, encryptEntity, decryptEntity, decryptEntities } from './entity-crypto';
+import {
+  ApiRow,
+  BlobBindingError,
+  encryptEntity,
+  decryptEntity,
+  decryptEntities,
+} from './entity-crypto';
 import { decryptFile } from './file-crypto';
 
 const identity = <T>(row: ApiRow): T => row as T;
@@ -30,16 +36,36 @@ export function decryptOne<T>(
   );
 }
 
+export type MutateOptions = {
+  /** Ligne existante (PUT/PATCH) : le blob est lié à cet id. Absent = création. */
+  rowId?: string;
+};
+
+/**
+ * Chiffre `data` puis envoie. À la création (pas de `rowId`), génère l'id de la ligne côté client,
+ * l'inclut dans le corps et lie le blob à cet id ; le serveur doit renvoyer une ligne portant le
+ * même id (sinon le blob serait illisible : on refuse plutôt que d'afficher du vide).
+ */
 export function mutateEncrypted<T>(
   data: Record<string, unknown>,
   cleartextKeys: readonly string[],
   key: CryptoKey | null,
   call: (body: Record<string, unknown>) => Observable<ApiRow>,
+  options: MutateOptions = {},
 ): Observable<T> {
   if (!key) return call(data) as Observable<T>;
-  return from(encryptEntity(data, cleartextKeys, key)).pipe(
-    switchMap((enc) => call(enc)),
-    switchMap((row) => (row.encryptedData ? from(decryptEntity<T>(row, key)) : from([row as T]))),
+  const rowId = options.rowId ?? crypto.randomUUID();
+  const creating = options.rowId === undefined;
+  return from(encryptEntity(data, cleartextKeys, key, { rowId })).pipe(
+    switchMap((enc) => call(creating ? { ...enc, id: rowId } : enc)),
+    switchMap((row) => {
+      if (creating && row['id'] !== rowId) {
+        throw new BlobBindingError(
+          "Le serveur n'a pas adopté l'id de la ligne : version de l'API trop ancienne",
+        );
+      }
+      return row.encryptedData ? from(decryptEntity<T>(row, key)) : from([row as T]);
+    }),
   );
 }
 

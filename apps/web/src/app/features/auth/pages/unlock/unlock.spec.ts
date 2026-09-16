@@ -1,5 +1,5 @@
 import { TestBed } from '@angular/core/testing';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { AuthStore } from '../../auth.store';
 import { AuthEncryptionStore } from '../../auth-encryption.store';
@@ -54,7 +54,8 @@ function makeComponent(
     providers: [
       { provide: AuthStore, useValue: auth },
       { provide: AuthEncryptionStore, useValue: authEncryption },
-      { provide: Router, useValue: { navigate } },
+      { provide: Router, useValue: { navigate, navigateByUrl: vi.fn() } },
+      { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
     ],
   });
@@ -201,7 +202,8 @@ describe('Unlock : rendu réel du template (F014)', () => {
       providers: [
         { provide: AuthStore, useValue: auth },
         { provide: AuthEncryptionStore, useValue: authEncryption },
-        { provide: Router, useValue: { navigate: vi.fn() } },
+        { provide: Router, useValue: { navigate: vi.fn(), navigateByUrl: vi.fn() } },
+        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
       ],
     });
     const fixture = TestBed.createComponent(Unlock);

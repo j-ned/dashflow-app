@@ -217,10 +217,22 @@ async function idbDelete(id: string): Promise<void> {
   }
 }
 
-export async function encryptWithKey(plaintext: string, key: CryptoKey): Promise<string> {
+/**
+ * `aad` (données associées, non chiffrées, non transmises) lie le chiffré à un contexte : le
+ * déchiffrement échoue si le contexte diffère. Sert à attacher un blob à sa ligne (id).
+ */
+export async function encryptWithKey(
+  plaintext: string,
+  key: CryptoKey,
+  aad?: string,
+): Promise<string> {
   const iv = crypto.getRandomValues(new Uint8Array(IV_BYTES));
   const encoded = new TextEncoder().encode(plaintext);
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, encoded);
+  const ciphertext = await crypto.subtle.encrypt(
+    { name: 'AES-GCM', iv, ...(aad ? { additionalData: new TextEncoder().encode(aad) } : {}) },
+    key,
+    encoded,
+  );
 
   const combined = new Uint8Array(IV_BYTES + ciphertext.byteLength);
   combined.set(iv);
@@ -229,11 +241,15 @@ export async function encryptWithKey(plaintext: string, key: CryptoKey): Promise
   return bufferToBase64(combined.buffer);
 }
 
-export async function decryptWithKey(blob: string, key: CryptoKey): Promise<string> {
+export async function decryptWithKey(blob: string, key: CryptoKey, aad?: string): Promise<string> {
   const combined = new Uint8Array(base64ToBuffer(blob));
   const iv = combined.slice(0, IV_BYTES);
   const ciphertext = combined.slice(IV_BYTES);
-  const plainBuffer = await crypto.subtle.decrypt({ name: 'AES-GCM', iv }, key, ciphertext);
+  const plainBuffer = await crypto.subtle.decrypt(
+    { name: 'AES-GCM', iv, ...(aad ? { additionalData: new TextEncoder().encode(aad) } : {}) },
+    key,
+    ciphertext,
+  );
   return new TextDecoder().decode(plainBuffer);
 }
 

@@ -3,6 +3,7 @@ import { Router } from '@angular/router';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { AUTO_LOCK_OPTIONS, AutoLockStore } from '@core/services/crypto/auto-lock.store';
 import { RecoveryKeyModal } from '@features/auth/components/recovery-key-modal/recovery-key-modal';
 import { Toaster } from '@shared/components/toast/toast';
 
@@ -79,6 +80,32 @@ import { Toaster } from '@shared/components/toast/toast';
             {{ 'settings.encryption.protectedNote' | transloco }}
           </div>
 
+          <div class="space-y-1.5">
+            <label for="auto-lock" class="text-sm font-medium text-text-primary">
+              {{ 'settings.encryption.autoLock.label' | transloco }}
+            </label>
+            <select
+              id="auto-lock"
+              data-testid="auto-lock-select"
+              [value]="autoLock.minutes()"
+              (change)="setAutoLock($event)"
+              class="w-full rounded-lg border border-border bg-surface px-4 py-2.5 text-sm text-text-primary transition-colors focus:border-ib-blue focus:outline-none focus:ring-1 focus:ring-ib-blue"
+            >
+              @for (option of autoLockOptions; track option) {
+                <option [value]="option" [selected]="option === autoLock.minutes()">
+                  {{
+                    option === 0
+                      ? ('settings.encryption.autoLock.never' | transloco)
+                      : ('settings.encryption.autoLock.minutes' | transloco: { count: option })
+                  }}
+                </option>
+              }
+            </select>
+            <p class="text-xs text-text-muted">
+              {{ 'settings.encryption.autoLock.help' | transloco }}
+            </p>
+          </div>
+
           <button
             type="button"
             (click)="regenerateRecoveryKey()"
@@ -108,9 +135,16 @@ export class EncryptionSection {
   private readonly router = inject(Router);
   private readonly toaster = inject(Toaster);
 
+  protected readonly autoLock = inject(AutoLockStore);
+  protected readonly autoLockOptions = AUTO_LOCK_OPTIONS;
+
   protected readonly encryptionLoading = signal(false);
   protected readonly settingsRecoveryKey = signal('');
   private readonly recoveryModal = viewChild(RecoveryKeyModal);
+
+  protected setAutoLock(event: Event): void {
+    this.autoLock.setMinutes(Number((event.target as HTMLSelectElement).value));
+  }
 
   protected goToEncryptionSetup(): void {
     this.router.navigate(['/auth/encryption-setup']);

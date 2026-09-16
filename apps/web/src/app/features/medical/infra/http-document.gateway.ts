@@ -72,6 +72,7 @@ export class HttpDocumentGateway implements DocumentGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/documents/${id}`, body),
+      { rowId: id },
     );
   }
 

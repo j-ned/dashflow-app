@@ -55,6 +55,7 @@ export class HttpPatientGateway implements PatientGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/patients/${id}`, body),
+      { rowId: id },
     );
   }
 

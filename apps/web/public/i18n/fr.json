@@ -185,6 +185,7 @@
     "unlock": {
       "title": "Déverrouiller vos données",
       "explain": "Vos données sont chiffrées. Saisissez votre mot de passe pour y accéder.",
+      "inactivityNotice": "Vos données ont été verrouillées après une période d'inactivité. Ressaisissez votre mot de passe pour reprendre où vous en étiez.",
       "repairTitle": "Réparer la synchronisation",
       "repairExplain": "Votre clé de chiffrement est désynchronisée avec votre mot de passe. Saisissez votre clé de récupération et votre mot de passe actuel pour resynchroniser.",
       "legend": "Déverrouillage",
@@ -359,6 +360,12 @@
       "notActiveExplain": "Le chiffrement n'est pas encore activé. Activez-le pour protéger vos données.",
       "activate": "Activer le chiffrement",
       "protectedNote": "Vos données sont protégées par un chiffrement AES-256-GCM.",
+      "autoLock": {
+        "label": "Verrouillage automatique",
+        "help": "Sans activité pendant ce délai, vos données sont reverrouillées : il faudra ressaisir votre mot de passe. Vaut aussi au rechargement de la page.",
+        "minutes": "Après {{count}} min d'inactivité",
+        "never": "Jamais (déconseillé)"
+      },
       "regenerate": "Régénérer la clé de récupération",
       "regenerating": "Génération...",
       "feedback": {

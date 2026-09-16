@@ -5,8 +5,8 @@ import { HttpTestingController, provideHttpClientTesting } from '@angular/common
 import { firstValueFrom } from 'rxjs';
 import { environment } from '@env/environment';
 import { HttpSalaryArchiveGateway } from './http-salary-archive.gateway';
-import { CryptoStore, decryptWithKey } from '@core/services/crypto/crypto.store';
-import { encryptEntity } from '@core/services/crypto/entity-crypto';
+import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { decryptEntity, encryptEntity } from '@core/services/crypto/entity-crypto';
 import { SalaryArchive } from '../domain/models/salary-archive.model';
 
 const BASE = environment.apiUrl;
@@ -155,7 +155,11 @@ describe('HttpSalaryArchiveGateway (compte chiffré, E2EE) : create()', () => {
 
     const body = req.request.body as FormData;
     const encryptedData = body.get('encryptedData') as string;
-    const sensitive = JSON.parse(await decryptWithKey(encryptedData, key));
+    // Blob lié à la ligne (v2) : l'id envoyé dans le formulaire est la donnée associée.
+    const sensitive = await decryptEntity<Record<string, unknown>>(
+      { id: body.get('id') as string, encryptedData },
+      key,
+    );
     expect(sensitive).not.toHaveProperty('payslip');
   });
 

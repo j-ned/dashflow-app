@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { encryptEntity, decryptEntity, decryptEntities } from './entity-crypto';
+import { BlobBindingError, encryptEntity, decryptEntity, decryptEntities } from './entity-crypto';
 
 describe('entity-crypto', () => {
   let key: CryptoKey;
@@ -58,5 +58,44 @@ describe('entity-crypto', () => {
     const decrypted = await decryptEntity<typeof complex>(encrypted, key);
 
     expect(decrypted).toEqual(complex);
+  });
+});
+
+describe('entity-crypto : blobs liés à leur ligne (v2)', () => {
+  let key: CryptoKey;
+  beforeAll(async () => {
+    key = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, [
+      'encrypt',
+      'decrypt',
+    ]);
+  });
+  const KEYS = ['id'] as const;
+
+  it('avec rowId : préfixe v2., et roundtrip sur la même ligne', async () => {
+    const enc = await encryptEntity({ id: 'r1', amount: 42 }, KEYS, key, { rowId: 'r1' });
+    expect(enc.encryptedData.startsWith('v2.')).toBe(true);
+    expect(await decryptEntity({ id: 'r1', encryptedData: enc.encryptedData }, key)).toEqual({
+      id: 'r1',
+      amount: 42,
+    });
+  });
+
+  it('un blob v2 déplacé sur une autre ligne ne se déchiffre pas (BlobBindingError)', async () => {
+    const enc = await encryptEntity({ id: 'r1', amount: 42 }, KEYS, key, { rowId: 'r1' });
+    await expect(
+      decryptEntity({ id: 'r2', encryptedData: enc.encryptedData }, key),
+    ).rejects.toBeInstanceOf(BlobBindingError);
+    await expect(decryptEntity({ encryptedData: enc.encryptedData }, key)).rejects.toBeInstanceOf(
+      BlobBindingError,
+    );
+  });
+
+  it('un blob historique (sans préfixe) se déchiffre toujours, quelle que soit la ligne', async () => {
+    const legacy = await encryptEntity({ id: 'r1', amount: 1 }, KEYS, key);
+    expect(legacy.encryptedData.startsWith('v2.')).toBe(false);
+    expect(await decryptEntity({ id: 'autre', encryptedData: legacy.encryptedData }, key)).toEqual({
+      id: 'autre',
+      amount: 1,
+    });
   });
 });

@@ -56,6 +56,7 @@ export class HttpBankAccountGateway implements BankAccountGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/bank-accounts/${id}`, body),
+      { rowId: id },
     );
   }
 

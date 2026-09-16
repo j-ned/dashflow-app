@@ -185,6 +185,7 @@
     "unlock": {
       "title": "Unlock your data",
       "explain": "Your data is encrypted. Enter your password to access it.",
+      "inactivityNotice": "Your data was locked after a period of inactivity. Enter your password again to pick up where you left off.",
       "repairTitle": "Repair synchronization",
       "repairExplain": "Your encryption key is out of sync with your password. Enter your recovery key and current password to resync.",
       "legend": "Unlock",
@@ -359,6 +360,12 @@
       "notActiveExplain": "Encryption is not enabled yet. Enable it to protect your data.",
       "activate": "Enable encryption",
       "protectedNote": "Your data is protected with AES-256-GCM encryption.",
+      "autoLock": {
+        "label": "Automatic lock",
+        "help": "After this period without activity, your data is locked again and your password is required. Also applies when the page is reloaded.",
+        "minutes": "After {{count}} min of inactivity",
+        "never": "Never (not recommended)"
+      },
       "regenerate": "Regenerate recovery key",
       "regenerating": "Generating...",
       "feedback": {

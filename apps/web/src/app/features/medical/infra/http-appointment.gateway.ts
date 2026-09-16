@@ -55,12 +55,17 @@ export class HttpAppointmentGateway implements AppointmentGateway {
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.put<ApiRow>(`/appointments/${id}`, body),
+      { rowId: id },
     );
   }
 
   updateStatus(id: string, status: string): Observable<Appointment> {
-    return mutateEncrypted({ status }, CLEARTEXT_KEYS, this.crypto.getMasterKey(), (body) =>
-      this.api.patch<ApiRow>(`/appointments/${id}/status`, body),
+    return mutateEncrypted(
+      { status },
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.patch<ApiRow>(`/appointments/${id}/status`, body),
+      { rowId: id },
     );
   }
 
