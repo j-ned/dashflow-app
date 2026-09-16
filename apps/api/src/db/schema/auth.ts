@@ -8,6 +8,7 @@ import {
   boolean,
   pgEnum,
   index,
+  uniqueIndex,
 } from 'drizzle-orm/pg-core';
 
 export const verificationCodePurposeEnum = pgEnum('verification_code_purpose', [
@@ -62,4 +63,27 @@ export const verificationCodes = pgTable(
       .defaultNow(),
   },
   (t) => [index('verification_codes_email_purpose_idx').on(t.email, t.purpose)],
+);
+
+/**
+ * Codes de secours 2FA : 10 codes à usage unique, stockés en HMAC-SHA256 (clé serveur). Un code
+ * consommé garde sa ligne (`used_at`) pour compter ce qui reste ; la régénération remplace tout.
+ */
+export const totpBackupCodes = pgTable(
+  'totp_backup_codes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    codeHash: varchar('code_hash', { length: 64 }).notNull(),
+    usedAt: timestamp('used_at', { withTimezone: true }),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index('totp_backup_codes_user_idx').on(t.userId),
+    uniqueIndex('totp_backup_codes_user_hash_uq').on(t.userId, t.codeHash),
+  ],
 );

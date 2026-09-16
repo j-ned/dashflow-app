@@ -55,6 +55,7 @@ import {
   setPasswordSchema,
   totpVerifySchema,
   totpDisableSchema,
+  backupCodesRegenerateSchema,
 } from './dto/auth.dto';
 import type {
   RegisterDto,
@@ -65,6 +66,7 @@ import type {
   SetPasswordDto,
   TotpVerifyDto,
   TotpDisableDto,
+  BackupCodesRegenerateDto,
 } from './dto/auth.dto';
 import type { Env } from '../config/env.schema';
 import { httpFrom } from './http-error';
@@ -150,6 +152,10 @@ export class AuthController {
     return {
       user: toPublicUser(r.data.user),
       keyMaterial: toKeyMaterial(r.data.user),
+      // Présent seulement si la connexion a consommé un code de secours : le front prévient.
+      ...(r.data.backupCodesRemaining !== undefined
+        ? { backupCodesRemaining: r.data.backupCodesRemaining }
+        : {}),
     };
   }
 
@@ -275,7 +281,34 @@ export class AuthController {
   ) {
     const r = await this.auth.enableTotp(u.id, dto.code);
     if (!r.success) throw httpFrom(r);
-    return { message: '2FA activée', totpEnabled: true };
+    // Les codes de secours ne sont montrés qu'ici, une fois ; seul leur HMAC est conservé.
+    return {
+      message: '2FA activée',
+      totpEnabled: true,
+      backupCodes: r.data.backupCodes,
+    };
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('me/2fa/backup-codes')
+  async backupCodesStatus(@CurrentUser() u: AuthUser) {
+    const r = await this.auth.backupCodesStatus(u.id);
+    if (!r.success) throw httpFrom(r);
+    return r.data;
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
+  @Post('me/2fa/backup-codes')
+  @HttpCode(200)
+  async backupCodesRegenerate(
+    @CurrentUser() u: AuthUser,
+    @Body(new ZodValidationPipe(backupCodesRegenerateSchema))
+    dto: BackupCodesRegenerateDto,
+  ) {
+    const r = await this.auth.regenerateBackupCodes(u.id, dto.password);
+    if (!r.success) throw httpFrom(r);
+    return { backupCodes: r.data.backupCodes };
   }
 
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)

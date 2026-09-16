@@ -3,10 +3,12 @@ import argon2 from 'argon2';
 import * as OTPAuth from 'otpauth';
 import { AuthService } from './auth.service';
 import { TwoFactorService } from './two-factor.service';
+import { SecretCipherService } from './secret-cipher.service';
+import type { ConfigService } from '@nestjs/config';
+import type { StorageService } from '../storage/storage.service';
 import type { Result } from './auth.result';
 import type { AuthRepository } from './auth.repository';
 import type { Mailer } from '../mail/mailer';
-import type { StorageService } from '../storage/storage.service';
 
 const repo = () => ({
   findByEmail: vi.fn(),
@@ -19,7 +21,15 @@ const repo = () => ({
   insertCode: vi.fn(),
   findValidCode: vi.fn(),
   deleteCodes: vi.fn(),
+  replaceBackupCodes: vi.fn(() => Promise.resolve()),
+  consumeBackupCode: vi.fn(() => Promise.resolve(false)),
+  countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
+  deleteBackupCodes: vi.fn(() => Promise.resolve()),
 });
+const cipher = () =>
+  new SecretCipherService({
+    get: (k: string) => ({ TOTP_ENC_KEY: 'c'.repeat(64) })[k],
+  } as unknown as ConfigService);
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
   sendPasswordResetCode: vi.fn(),
@@ -37,6 +47,8 @@ describe('AuthService', () => {
       r as unknown as AuthRepository,
       m as unknown as Mailer,
       new TwoFactorService(),
+      {} as StorageService,
+      cipher(),
     );
   });
   afterEach(() => vi.restoreAllMocks());
@@ -276,6 +288,8 @@ describe('AuthService', () => {
       r as unknown as AuthRepository,
       m as unknown as Mailer,
       tf,
+      {} as StorageService,
+      cipher(),
     );
     r.findById.mockResolvedValue({
       id: 'u1',
@@ -302,6 +316,8 @@ describe('AuthService', () => {
       r as unknown as AuthRepository,
       m as unknown as Mailer,
       tf,
+      {} as StorageService,
+      cipher(),
     );
     r.findById.mockResolvedValue({
       id: 'u1',
@@ -363,6 +379,10 @@ describe('AuthService', () => {
 // Le storage (4e dépendance) est injecté en plus du repo + mailer + twoFactor.
 describe('AuthService.deleteAccount (RGPD)', () => {
   const repoFor = () => ({
+    replaceBackupCodes: vi.fn(() => Promise.resolve()),
+    consumeBackupCode: vi.fn(() => Promise.resolve(false)),
+    countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
+    deleteBackupCodes: vi.fn(() => Promise.resolve()),
     findById: vi.fn(),
     deleteUser: vi.fn(),
     findByEmail: vi.fn(),
@@ -390,6 +410,7 @@ describe('AuthService.deleteAccount (RGPD)', () => {
       } as unknown as ConstructorParameters<typeof AuthService>[1],
       new TwoFactorService(),
       s as unknown as never,
+      cipher(),
     );
 
   afterEach(() => vi.restoreAllMocks());
@@ -433,6 +454,10 @@ describe('AuthService.deleteAccount (RGPD)', () => {
 
 describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
   const repoWithBump = () => ({
+    replaceBackupCodes: vi.fn(() => Promise.resolve()),
+    consumeBackupCode: vi.fn(() => Promise.resolve(false)),
+    countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
+    deleteBackupCodes: vi.fn(() => Promise.resolve()),
     ...repo(),
     bumpSessionVersion: vi.fn((id: string) =>
       Promise.resolve({ id, sessionVersion: 1 }),
@@ -451,6 +476,7 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
       m as unknown as Mailer,
       tf,
       { deletePrefix: vi.fn() } as unknown as StorageService,
+      cipher(),
     );
   });
 
@@ -541,5 +567,149 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
       totpCode: code,
     });
     expect(replay).toMatchObject({ success: false, status: 401 });
+  });
+
+  // 2FA au repos + codes de secours
+
+  it('setupTotp : le secret est stocké chiffré (v1.…), pas le base32 renvoyé au client', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      email: 'a@b.com',
+      totpEnabled: null,
+    });
+    r.updateUser.mockResolvedValue({});
+    const res = await svc.setupTotp('u1');
+    expect(res.success).toBe(true);
+    const stored = r.updateUser.mock.calls[0][1].totpSecret as string;
+    expect(stored.startsWith('v1.')).toBe(true);
+    if (res.success) {
+      expect(stored).not.toContain(res.data.secret);
+      expect(cipher().decrypt(stored)).toBe(res.data.secret);
+    }
+  });
+
+  it('enableTotp : accepte le code, active, et émet 10 codes de secours stockés en HMAC', async () => {
+    const secret = new OTPAuth.Secret({ size: 20 }).base32;
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      totpSecret: cipher().encrypt(secret),
+      totpEnabled: null,
+      totpLastUsedStep: null,
+    });
+    r.updateUser.mockResolvedValue({});
+    const code = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(secret),
+    }).generate();
+    const res = await svc.enableTotp('u1', code);
+    expect(res.success).toBe(true);
+    if (!res.success) return;
+    expect(res.data.backupCodes).toHaveLength(10);
+    const hashes = r.replaceBackupCodes.mock.calls[0][1] as string[];
+    expect(hashes).toHaveLength(10);
+    for (const c of res.data.backupCodes)
+      expect(hashes).toContain(cipher().hmac(c));
+    expect(hashes).not.toContain(res.data.backupCodes[0]);
+  });
+
+  it('login : un secret historique en clair est accepté puis ré-écrit chiffré', async () => {
+    const secret = new OTPAuth.Secret({ size: 20 }).base32;
+    const hash = await argon2.hash('motdepasse-long-12');
+    r.findByEmail.mockResolvedValue({
+      id: 'u1',
+      password: hash,
+      emailVerified: new Date(),
+      totpEnabled: new Date(),
+      totpSecret: secret, // clair (avant chiffrement au repos)
+      totpLastUsedStep: null,
+    });
+    r.updateUser.mockResolvedValue({});
+    const code = new OTPAuth.TOTP({
+      secret: OTPAuth.Secret.fromBase32(secret),
+    }).generate();
+    const res = await svc.login({
+      email: 'a@b.com',
+      password: 'motdepasse-long-12',
+      totpCode: code,
+    });
+    expect(res.success).toBe(true);
+    const rewrite = r.updateUser.mock.calls.find(
+      (c) => 'totpSecret' in (c[1] as object),
+    );
+    expect(rewrite).toBeDefined();
+    expect(
+      (rewrite![1] as { totpSecret: string }).totpSecret.startsWith('v1.'),
+    ).toBe(true);
+  });
+
+  it('login : un code de secours valide est consommé (HMAC) et renvoie le restant ; invalide → 401', async () => {
+    const hash = await argon2.hash('motdepasse-long-12');
+    r.findByEmail.mockResolvedValue({
+      id: 'u1',
+      password: hash,
+      emailVerified: new Date(),
+      totpEnabled: new Date(),
+      totpSecret: cipher().encrypt('JBSWY3DPEHPK3PXP'),
+      totpLastUsedStep: null,
+    });
+    r.consumeBackupCode.mockResolvedValueOnce(true);
+    r.countUnusedBackupCodes.mockResolvedValueOnce(9);
+    const res = await svc.login({
+      email: 'a@b.com',
+      password: 'motdepasse-long-12',
+      totpCode: 'ABCDE FGHJK',
+    });
+    expect(res.success).toBe(true);
+    if (res.success && res.data.kind === 'authenticated') {
+      expect(res.data.backupCodesRemaining).toBe(9);
+    }
+    expect(r.consumeBackupCode).toHaveBeenCalledWith(
+      'u1',
+      cipher().hmac('abcde-fghjk'),
+    );
+
+    r.consumeBackupCode.mockResolvedValueOnce(false);
+    const bad = await svc.login({
+      email: 'a@b.com',
+      password: 'motdepasse-long-12',
+      totpCode: 'abcde-fghjk',
+    });
+    expect(bad.success).toBe(false);
+    if (!bad.success) expect(bad.status).toBe(401);
+  });
+
+  it('regenerateBackupCodes : mot de passe requis, 2FA active requise', async () => {
+    const hash = await argon2.hash('motdepasse-long-12');
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: hash,
+      totpEnabled: new Date(),
+    });
+    const wrong = await svc.regenerateBackupCodes('u1', 'nope');
+    expect(wrong.success).toBe(false);
+    if (!wrong.success) expect(wrong.status).toBe(401);
+    const res = await svc.regenerateBackupCodes('u1', 'motdepasse-long-12');
+    expect(res.success).toBe(true);
+    if (res.success) expect(res.data.backupCodes).toHaveLength(10);
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: hash,
+      totpEnabled: null,
+    });
+    const off = await svc.regenerateBackupCodes('u1', 'motdepasse-long-12');
+    expect(off.success).toBe(false);
+    if (!off.success) expect(off.status).toBe(409);
+  });
+
+  it('disableTotp : purge les codes de secours', async () => {
+    const hash = await argon2.hash('motdepasse-long-12');
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: hash,
+      totpEnabled: new Date(),
+    });
+    r.updateUser.mockResolvedValue({});
+    const res = await svc.disableTotp('u1', 'motdepasse-long-12');
+    expect(res.success).toBe(true);
+    expect(r.deleteBackupCodes).toHaveBeenCalledWith('u1');
   });
 });

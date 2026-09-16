@@ -10,6 +10,12 @@ const envBaseSchema = z.object({
   JWT_SECRET: z
     .string()
     .min(32, 'JWT_SECRET doit faire au moins 32 caractères'),
+  // Clé AES-256 (32 octets, hex ou base64) chiffrant les secrets TOTP au repos et signant les
+  // codes de secours. Absente → dérivée de JWT_SECRET (cf. SecretCipherService).
+  TOTP_ENC_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().min(43).optional(),
+  ),
   MAILER: z.enum(['console', 'smtp']).default('console'),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),

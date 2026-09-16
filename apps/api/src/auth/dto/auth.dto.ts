@@ -24,7 +24,8 @@ export const resendSchema = z.object({ email });
 export const loginSchema = z.object({
   email,
   password: z.string().min(1, 'Mot de passe requis'),
-  totpCode: z.string().length(6).optional(),
+  // Code TOTP à 6 chiffres, ou code de secours `xxxxx-xxxxx` (tiret et casse libres).
+  totpCode: z.string().min(6).max(12).optional(),
 });
 export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({
@@ -48,6 +49,8 @@ export const totpVerifySchema = z.object({
 export const totpDisableSchema = z.object({
   password: z.string().min(1, 'Mot de passe requis'),
 });
+/** Régénérer les codes de secours = même exigence que désactiver : le mot de passe courant. */
+export const backupCodesRegenerateSchema = totpDisableSchema;
 
 export const setupEncryptionKeysSchema = z.object({
   salt: z.string().min(1),
@@ -85,6 +88,9 @@ export type UpdatePasswordDto = z.infer<typeof updatePasswordSchema>;
 export type SetPasswordDto = z.infer<typeof setPasswordSchema>;
 export type TotpVerifyDto = z.infer<typeof totpVerifySchema>;
 export type TotpDisableDto = z.infer<typeof totpDisableSchema>;
+export type BackupCodesRegenerateDto = z.infer<
+  typeof backupCodesRegenerateSchema
+>;
 export type SetupEncryptionKeysDto = z.infer<typeof setupEncryptionKeysSchema>;
 export type MigrateEncryptionDto = z.infer<typeof migrateEncryptionSchema>;
 export type ResetWithRecoveryDto = z.infer<typeof resetWithRecoverySchema>;

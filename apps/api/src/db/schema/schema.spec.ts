@@ -22,10 +22,11 @@ const EXPECTED_TABLES = [
   'documents',
   'reminders',
   'shared_access',
+  'totp_backup_codes',
 ];
 
 describe('schéma Drizzle porté', () => {
-  it('exporte exactement les 19 tables attendues', () => {
+  it('exporte exactement les 20 tables attendues', () => {
     const tables = Object.values(schema).filter((v) => {
       try {
         return getTableName(v as never) !== undefined;
@@ -35,6 +36,6 @@ describe('schéma Drizzle porté', () => {
     });
     const names = tables.map((t) => getTableName(t as never));
     expect(new Set(names)).toEqual(new Set(EXPECTED_TABLES));
-    expect(names).toHaveLength(19);
+    expect(names).toHaveLength(20);
   });
 });

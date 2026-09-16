@@ -1,8 +1,8 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { Inject, Injectable } from '@nestjs/common';
-import { and, eq, gt, sql } from 'drizzle-orm';
+import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
-import { users, verificationCodes } from '../db/schema';
+import { totpBackupCodes, users, verificationCodes } from '../db/schema';
 
 type User = typeof users.$inferSelect;
 export type VerificationCodePurpose = 'verification' | 'reset';
@@ -169,5 +169,53 @@ export class AuthRepository {
 
   async deleteUser(userId: string): Promise<void> {
     await this.db.delete(users).where(eq(users.id, userId));
+  }
+
+  // ── Codes de secours 2FA (stockés en HMAC, cf. SecretCipherService.hmac) ──
+
+  /** Remplace tout le jeu : les anciens codes, utilisés ou non, cessent de valoir. */
+  async replaceBackupCodes(userId: string, hashes: string[]): Promise<void> {
+    await this.db.transaction(async (tx) => {
+      await tx
+        .delete(totpBackupCodes)
+        .where(eq(totpBackupCodes.userId, userId));
+      if (hashes.length > 0) {
+        await tx
+          .insert(totpBackupCodes)
+          .values(hashes.map((codeHash) => ({ userId, codeHash })));
+      }
+    });
+  }
+
+  /** Consomme le code en une seule requête : deux logins simultanés ne peuvent pas le partager. */
+  async consumeBackupCode(userId: string, hash: string): Promise<boolean> {
+    const rows = await this.db
+      .update(totpBackupCodes)
+      .set({ usedAt: new Date() })
+      .where(
+        and(
+          eq(totpBackupCodes.userId, userId),
+          eq(totpBackupCodes.codeHash, hash),
+          isNull(totpBackupCodes.usedAt),
+        ),
+      )
+      .returning({ id: totpBackupCodes.id });
+    return rows.length > 0;
+  }
+
+  async countUnusedBackupCodes(userId: string): Promise<number> {
+    const [{ total }] = await this.db
+      .select({ total: count() })
+      .from(totpBackupCodes)
+      .where(
+        and(eq(totpBackupCodes.userId, userId), isNull(totpBackupCodes.usedAt)),
+      );
+    return Number(total);
+  }
+
+  async deleteBackupCodes(userId: string): Promise<void> {
+    await this.db
+      .delete(totpBackupCodes)
+      .where(eq(totpBackupCodes.userId, userId));
   }
 }

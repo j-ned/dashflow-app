@@ -6,6 +6,7 @@ import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
 import { TokenService } from './token.service';
 import { TwoFactorService } from './two-factor.service';
+import { SecretCipherService } from './secret-cipher.service';
 import { EncryptionService } from './encryption.service';
 import { EncryptionController } from './encryption.controller';
 import { OAuthService } from './oauth.service';
@@ -51,6 +52,7 @@ export const JWT_AUDIENCE = 'dashflow-web';
     AuthRepository,
     TokenService,
     TwoFactorService,
+    SecretCipherService,
     EncryptionService,
     OAuthService,
     JwtAuthGuard,

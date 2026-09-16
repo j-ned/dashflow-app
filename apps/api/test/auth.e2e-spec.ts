@@ -263,12 +263,21 @@ describe('Auth e2e', () => {
       secret: OTPAuth.Secret.fromBase32(secret),
     });
 
-    await request(server)
+    const enabled = await request(server)
       .post('/auth/me/2fa/verify')
       .set('Cookie', allCookies)
       .set('X-CSRF-Token', csrfToken)
       .send({ code: totp.generate() })
       .expect(200);
+    const backupCodes = enabled.body.backupCodes as string[];
+    expect(backupCodes).toHaveLength(10);
+    for (const c of backupCodes) expect(c).toMatch(/^[a-z2-9]{5}-[a-z2-9]{5}$/);
+
+    const status = await request(server)
+      .get('/auth/me/2fa/backup-codes')
+      .set('Cookie', allCookies)
+      .expect(200);
+    expect(status.body.remaining).toBe(10);
 
     const noCode = await request(server)
       .post('/auth/login')
@@ -285,5 +294,47 @@ describe('Auth e2e', () => {
         totpCode: totp.generate({ timestamp: Date.now() + 30_000 }),
       })
       .expect(200);
+
+    // Code de secours : accepté une fois (casse et tiret libres), avec le restant ; rejoué → 401.
+    // (Le login est throttlé à 10 / 15 min par IP : on limite le nombre de tentatives ici.)
+    const viaBackup = await request(server)
+      .post('/auth/login')
+      .send({
+        email: email2,
+        password: 'motdepasse-long-12',
+        totpCode: backupCodes[0].toUpperCase().replace('-', ' '),
+      })
+      .expect(200);
+    expect(viaBackup.body.backupCodesRemaining).toBe(9);
+    expect(viaBackup.body.user.email).toBe(email2);
+    await request(server)
+      .post('/auth/login')
+      .send({
+        email: email2,
+        password: 'motdepasse-long-12',
+        totpCode: backupCodes[0],
+      })
+      .expect(401);
+
+    // Régénération : mot de passe exigé ; nouveau jeu complet.
+    await request(server)
+      .post('/auth/me/2fa/backup-codes')
+      .set('Cookie', allCookies)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ password: 'mauvais' })
+      .expect(401);
+    const regen = await request(server)
+      .post('/auth/me/2fa/backup-codes')
+      .set('Cookie', allCookies)
+      .set('X-CSRF-Token', csrfToken)
+      .send({ password: 'motdepasse-long-12' })
+      .expect(200);
+    expect(regen.body.backupCodes).toHaveLength(10);
+    expect(regen.body.backupCodes).not.toContain(backupCodes[1]);
+    const after = await request(server)
+      .get('/auth/me/2fa/backup-codes')
+      .set('Cookie', allCookies)
+      .expect(200);
+    expect(after.body.remaining).toBe(10);
   });
 });
