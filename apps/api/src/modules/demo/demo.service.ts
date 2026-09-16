@@ -58,6 +58,9 @@ const INSERT_ORDER = [
 // user_id — elles référencent leur parent par id, conservé tel quel dans le snapshot.)
 const USER_SCOPED: ReadonlySet<string> = new Set(DELETE_USER_ORDER);
 
+// Clé arbitraire mais fixe du verrou consultatif Postgres de la réinitialisation démo.
+const DEMO_RESET_LOCK_KEY = 8_213_047;
+
 @Injectable()
 export class DemoService {
   private readonly logger = new Logger(DemoService.name);
@@ -87,6 +90,17 @@ export class DemoService {
     const id = demo.id;
 
     await this.db.transaction(async (tx) => {
+      // Verrou consultatif (libéré en fin de transaction) : deux instances du backend, ou le cron
+      // et un reset manuel, ne peuvent pas rejouer la purge/restauration en parallèle.
+      const [lock] = await tx.execute<{ locked: boolean }>(
+        sql`select pg_try_advisory_xact_lock(${DEMO_RESET_LOCK_KEY}) as locked`,
+      );
+      if (!lock?.locked) {
+        this.logger.warn(
+          'Réinit démo ignorée : une autre réinitialisation est en cours',
+        );
+        return;
+      }
       // 0. Garde-fou : si un snapshot manque, on ABORTE AVANT toute purge — sinon on viderait le
       //    démo sans pouvoir le restaurer. (Cause de l'incident initial : aucune table demo_seed_*
       //    n'existait → le snapshot est généré par scripts/demo-seed-snapshot.sql.)
@@ -130,8 +144,21 @@ export class DemoService {
             sql`update ${sql.identifier(seed)} set user_id = ${id}`,
           );
         }
+        // Colonnes nommées (intersection table ↔ snapshot) : `insert … select *` dépendait de
+        // l'ordre des colonnes, et la première migration ajoutant une colonne cassait le reset.
+        const columns = await tx.execute<{ column_name: string }>(
+          sql`select t.column_name from information_schema.columns t
+              join information_schema.columns s
+                on s.column_name = t.column_name and s.table_schema = 'public' and s.table_name = ${seed}
+              where t.table_schema = 'public' and t.table_name = ${table}
+              order by t.ordinal_position`,
+        );
+        const cols = sql.join(
+          columns.map((c) => sql.identifier(c.column_name)),
+          sql`, `,
+        );
         await tx.execute(
-          sql`insert into ${sql.identifier(table)} select * from ${sql.identifier(seed)}`,
+          sql`insert into ${sql.identifier(table)} (${cols}) select ${cols} from ${sql.identifier(seed)}`,
         );
       }
     });

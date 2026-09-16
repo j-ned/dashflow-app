@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { RecurringEntriesService } from './recurring-entries.service';
 import { StorageService } from '../../storage/storage.service';
+import { deleteStorageObjectQuietly } from '../../common/files/storage-cleanup';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
@@ -128,6 +129,10 @@ export class RecurringEntriesController extends OwnedCrudController<unknown> {
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.payslipKey(u.id, id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype);
+    // Remplacement avec un autre MIME → autre extension → autre clé : l'ancien objet partirait orphelin.
+    if (existing.payslipKey && existing.payslipKey !== key) {
+      await deleteStorageObjectQuietly(this.storage, existing.payslipKey);
+    }
     return this.svc.update(u.id, id, { payslipKey: key });
   }
 

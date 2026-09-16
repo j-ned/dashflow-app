@@ -4,6 +4,8 @@ import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { salaryArchives, bankAccounts } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
+import { StorageService } from '../../storage/storage.service';
+import { deleteStorageObjectQuietly } from '../../common/files/storage-cleanup';
 import {
   decodeCursor,
   pageLimit,
@@ -16,7 +18,10 @@ type SalaryArchive = typeof salaryArchives.$inferSelect;
 
 @Injectable()
 export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(
+    @Inject(DRIZZLE) db: DrizzleDB,
+    private readonly storage: StorageService,
+  ) {
     super(db, salaryArchives);
   }
 
@@ -72,5 +77,13 @@ export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
       .orderBy(desc(salaryArchives.month), desc(salaryArchives.id))
       .limit(limit + 1);
     return toPage(rows, limit, (r) => [r.month, r.id]);
+  }
+
+  /** Le fichier R2 part avec la ligne : plus d'objets orphelins à chaque suppression. */
+  override async remove(userId: string, id: string): Promise<void> {
+    const row = await this.getOne(userId, id);
+    if (!row) return;
+    await deleteStorageObjectQuietly(this.storage, row.payslipKey);
+    await super.remove(userId, id);
   }
 }
