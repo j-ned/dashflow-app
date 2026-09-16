@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -12,6 +12,13 @@ type LoginFormShape = {
   email: FormControl<string>;
   password: FormControl<string>;
 };
+
+/** 6 chiffres (TOTP) ou 10 caractères alphanumériques avec tiret/espace optionnel (code de secours). */
+export function isSecondFactorCode(input: string): boolean {
+  const v = input.trim();
+  if (/^\d{6}$/.test(v)) return true;
+  return /^[a-z0-9]{5}[\s-]?[a-z0-9]{5}$/i.test(v);
+}
 
 @Component({
   selector: 'app-login',
@@ -183,19 +190,23 @@ type LoginFormShape = {
                   #totpInput
                   id="totp"
                   type="text"
-                  inputmode="numeric"
-                  pattern="[0-9]{6}"
-                  maxlength="6"
+                  inputmode="text"
+                  maxlength="12"
                   autocomplete="one-time-code"
-                  class="w-full rounded-lg border border-border bg-canvas px-4 py-3 text-center text-xl tracking-[0.5em] font-mono text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                  autocapitalize="off"
+                  spellcheck="false"
+                  class="w-full rounded-lg border border-border bg-canvas px-4 py-3 text-center text-xl tracking-[0.3em] font-mono text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
                   placeholder="000000"
                   (input)="totpValue.set(totpInput.value)"
                 />
+                <p class="mt-1.5 text-xs text-text-muted text-center">
+                  {{ 'auth.login.totpBackupHint' | transloco }}
+                </p>
               </div>
 
               <button
                 type="submit"
-                [disabled]="totpValue().length !== 6 || loading()"
+                [disabled]="!totpValueValid() || loading()"
                 class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ (loading() ? 'auth.login.verifying' : 'auth.login.verify') | transloco }}
@@ -228,6 +239,8 @@ export class Login {
   protected readonly error = signal('');
   protected readonly step = signal<'credentials' | 'totp'>('credentials');
   protected readonly totpValue = signal('');
+  /** Code TOTP à 6 chiffres ou code de secours `xxxxx-xxxxx` (casse, tiret, espaces libres). */
+  protected readonly totpValueValid = computed(() => isSecondFactorCode(this.totpValue()));
 
   constructor() {
     this.handleOAuthCallback();
@@ -301,7 +314,7 @@ export class Login {
 
   protected async submitTotp(): Promise<void> {
     const code = this.totpValue().trim();
-    if (code.length !== 6) return;
+    if (!isSecondFactorCode(code)) return;
 
     this.loading.set(true);
     this.error.set('');
@@ -309,6 +322,10 @@ export class Login {
     try {
       const { email, password } = this.form.getRawValue();
       await this.auth.login(email, password, code);
+      const remaining = this.auth.lastBackupCodesRemaining();
+      if (remaining !== null) {
+        this.toaster.info('auth.login.backupCodeUsed', { count: remaining });
+      }
       this.redirectAfterLogin();
     } catch {
       this.error.set(this._i18n.translate('auth.login.errors.invalidTotp'));

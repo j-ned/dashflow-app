@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  DestroyRef,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { AuthStore } from '@features/auth/auth.store';
 import { Icon } from '@shared/components/icon/icon';
@@ -36,12 +43,70 @@ import { Toaster } from '@shared/components/toast/toast';
       </div>
 
       <div class="p-6">
-        @if (auth.totpEnabled()) {
-          <!-- 2FA is enabled: show disable option -->
+        @if (backupCodes(); as codes) {
+          <!-- Codes de secours : montrés une seule fois -->
+          <div class="space-y-4" data-testid="backup-codes-panel">
+            <div class="rounded-lg border border-ib-yellow/30 bg-ib-yellow/5 p-4">
+              <p class="text-sm font-semibold text-text-primary">
+                {{ 'settings.twoFactor.backup.title' | transloco }}
+              </p>
+              <p class="mt-1 text-sm text-text-muted">
+                {{ 'settings.twoFactor.backup.explain' | transloco }}
+              </p>
+            </div>
+            <ol
+              class="grid grid-cols-2 gap-2 rounded-lg border border-border bg-canvas p-4 font-mono text-sm text-text-primary select-all"
+              [attr.aria-label]="'settings.twoFactor.backup.listAria' | transloco"
+            >
+              @for (code of codes; track code) {
+                <li class="tabular-nums">{{ code }}</li>
+              }
+            </ol>
+            <div class="flex flex-wrap gap-3">
+              <button
+                type="button"
+                (click)="copyBackupCodes()"
+                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-raised"
+              >
+                <app-icon [name]="copied() ? 'check' : 'copy'" size="16" />
+                {{
+                  (copied() ? 'settings.twoFactor.backup.copied' : 'settings.twoFactor.backup.copy')
+                    | transloco
+                }}
+              </button>
+              <button
+                type="button"
+                (click)="downloadBackupCodes()"
+                class="flex-1 inline-flex items-center justify-center gap-2 rounded-lg border border-border px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-raised"
+              >
+                <app-icon name="download" size="16" />
+                {{ 'settings.twoFactor.backup.download' | transloco }}
+              </button>
+            </div>
+            <button
+              type="button"
+              (click)="dismissBackupCodes()"
+              class="w-full inline-flex items-center justify-center rounded-lg px-6 py-2.5 text-sm font-medium text-canvas transition hover:shadow-md hover:-translate-y-0.5 bg-ib-blue"
+            >
+              {{ 'settings.twoFactor.backup.saved' | transloco }}
+            </button>
+          </div>
+        } @else if (auth.totpEnabled()) {
+          <!-- 2FA is enabled: show backup codes status + disable option -->
           <div class="space-y-4">
             <p class="text-sm text-text-primary">
               {{ 'settings.twoFactor.enabledExplain' | transloco }}
             </p>
+            @if (remaining(); as r) {
+              <p
+                class="text-sm"
+                [class.text-text-muted]="r.count > 2"
+                [class.text-ib-orange]="r.count <= 2"
+                data-testid="backup-codes-remaining"
+              >
+                {{ 'settings.twoFactor.backup.remaining' | transloco: { count: r.count } }}
+              </p>
+            }
             <div class="space-y-1.5">
               <label for="disable-2fa-password" class="text-sm font-medium text-text-primary">
                 {{ 'settings.twoFactor.passwordLabel' | transloco }}
@@ -67,17 +132,27 @@ import { Toaster } from '@shared/components/toast/toast';
                 </button>
               </div>
             </div>
-            <button
-              type="button"
-              (click)="disable2FA()"
-              [disabled]="!disablePassword() || totpLoading()"
-              class="w-full inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {{
-                (totpLoading() ? 'settings.twoFactor.disabling' : 'settings.twoFactor.disable')
-                  | transloco
-              }}
-            </button>
+            <div class="flex flex-col gap-3 sm:flex-row">
+              <button
+                type="button"
+                (click)="regenerateBackupCodes()"
+                [disabled]="!disablePassword() || totpLoading()"
+                class="flex-1 inline-flex items-center justify-center rounded-lg border border-border px-6 py-2.5 text-sm font-medium text-text-primary transition hover:bg-raised disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{ 'settings.twoFactor.backup.regenerate' | transloco }}
+              </button>
+              <button
+                type="button"
+                (click)="disable2FA()"
+                [disabled]="!disablePassword() || totpLoading()"
+                class="flex-1 inline-flex items-center justify-center rounded-lg border border-ib-red/30 bg-ib-red/5 px-6 py-2.5 text-sm font-medium text-ib-red transition hover:bg-ib-red/10 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{
+                  (totpLoading() ? 'settings.twoFactor.disabling' : 'settings.twoFactor.disable')
+                    | transloco
+                }}
+              </button>
+            </div>
           </div>
         } @else if (totpSetup()) {
           <!-- Setup in progress: show QR + verify -->
@@ -176,12 +251,84 @@ import { Toaster } from '@shared/components/toast/toast';
 export class TwoFactorSection {
   protected readonly auth = inject(AuthStore);
   private readonly toaster = inject(Toaster);
+  private readonly destroyRef = inject(DestroyRef);
 
   protected readonly showDisable2faPassword = signal(false);
   protected readonly totpSetup = signal<{ qrCode: string; secret: string } | null>(null);
   protected readonly totpVerifyCode = signal('');
   protected readonly totpLoading = signal(false);
   protected readonly disablePassword = signal('');
+  /** Codes de secours fraîchement émis : visibles jusqu'à « J'ai enregistré mes codes ». */
+  protected readonly backupCodes = signal<string[] | null>(null);
+  protected readonly copied = signal(false);
+  /** Codes restants (objet pour distinguer « 0 » de « pas encore chargé » dans le template). */
+  protected readonly remaining = signal<{ count: number } | null>(null);
+  private _copiedTimeout: ReturnType<typeof setTimeout> | undefined;
+
+  constructor() {
+    // Compteur rechargé quand la 2FA devient active (activation, hydratation de session).
+    effect(() => {
+      if (this.auth.totpEnabled()) void this.refreshRemaining();
+      else this.remaining.set(null);
+    });
+    this.destroyRef.onDestroy(() => clearTimeout(this._copiedTimeout));
+  }
+
+  private async refreshRemaining(): Promise<void> {
+    try {
+      this.remaining.set({ count: await this.auth.backupCodesRemaining() });
+    } catch {
+      this.remaining.set(null);
+    }
+  }
+
+  protected async copyBackupCodes(): Promise<void> {
+    const codes = this.backupCodes();
+    if (!codes) return;
+    try {
+      await navigator.clipboard.writeText(codes.join('\n'));
+      this.copied.set(true);
+      clearTimeout(this._copiedTimeout);
+      this._copiedTimeout = setTimeout(() => this.copied.set(false), 2000);
+    } catch {
+      this.toaster.error('settings.twoFactor.backup.copyFailed');
+    }
+  }
+
+  protected downloadBackupCodes(): void {
+    const codes = this.backupCodes();
+    if (!codes) return;
+    const blob = new Blob([`DashFlow — codes de secours 2FA\n\n${codes.join('\n')}\n`], {
+      type: 'text/plain;charset=utf-8',
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'dashflow-codes-de-secours.txt';
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  protected dismissBackupCodes(): void {
+    this.backupCodes.set(null);
+    void this.refreshRemaining();
+  }
+
+  protected async regenerateBackupCodes(): Promise<void> {
+    const password = this.disablePassword();
+    if (!password) return;
+    this.totpLoading.set(true);
+    try {
+      const codes = await this.auth.regenerateBackupCodes(password);
+      this.disablePassword.set('');
+      this.backupCodes.set(codes);
+      this.toaster.success('settings.twoFactor.backup.regenerated');
+    } catch {
+      this.toaster.error('settings.twoFactor.feedback.wrongPassword');
+    } finally {
+      this.totpLoading.set(false);
+    }
+  }
 
   protected async setup2FA() {
     this.totpLoading.set(true);
@@ -201,9 +348,10 @@ export class TwoFactorSection {
 
     this.totpLoading.set(true);
     try {
-      await this.auth.verify2FA(code);
+      const codes = await this.auth.verify2FA(code);
       this.totpSetup.set(null);
       this.totpVerifyCode.set('');
+      this.backupCodes.set(codes.length > 0 ? codes : null);
       this.toaster.success('settings.twoFactor.feedback.activated');
     } catch {
       this.toaster.error('settings.twoFactor.feedback.invalidCode');
@@ -220,6 +368,7 @@ export class TwoFactorSection {
     try {
       await this.auth.disable2FA(password);
       this.disablePassword.set('');
+      this.backupCodes.set(null);
       this.toaster.success('settings.twoFactor.feedback.deactivated');
     } catch {
       this.toaster.error('settings.twoFactor.feedback.wrongPassword');

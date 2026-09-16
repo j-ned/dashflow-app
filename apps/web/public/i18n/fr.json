@@ -80,6 +80,8 @@
       "signUp": "S'inscrire",
       "totpPrompt": "Entrez le code de votre application d'authentification",
       "totpLabel": "Code 2FA",
+      "totpBackupHint": "Code à 6 chiffres de votre application, ou un de vos codes de secours.",
+      "backupCodeUsed": "Connexion par code de secours : il vous en reste {{count}}.",
       "verify": "Vérifier",
       "verifying": "Vérification...",
       "back": "Retour",
@@ -328,6 +330,19 @@
       "setupExplain": "Ajoutez une couche de sécurité supplémentaire en activant l'authentification à deux facteurs. Vous aurez besoin d'une application comme Google Authenticator ou Authy.",
       "setup": "Configurer la 2FA",
       "settingUp": "Configuration...",
+      "backup": {
+        "title": "Codes de secours",
+        "explain": "Chacun de ces 10 codes remplace une fois votre application si vous perdez votre téléphone. Ils ne seront plus affichés : copiez-les ou téléchargez-les maintenant, et rangez-les hors de cet appareil.",
+        "listAria": "Codes de secours à usage unique",
+        "copy": "Copier",
+        "copied": "Copiés",
+        "copyFailed": "Impossible de copier : sélectionnez les codes à la main.",
+        "download": "Télécharger (.txt)",
+        "saved": "J'ai enregistré mes codes",
+        "remaining": "Codes de secours restants : {{count}}. Régénérez-en si vous en manquez.",
+        "regenerate": "Régénérer les codes de secours",
+        "regenerated": "Nouveaux codes de secours générés. Les anciens ne fonctionnent plus."
+      },
       "feedback": {
         "setupFailed": "Erreur lors de la configuration de la 2FA.",
         "activated": "Authentification à deux facteurs activée.",

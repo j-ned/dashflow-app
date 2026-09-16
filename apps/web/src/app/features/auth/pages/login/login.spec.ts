@@ -3,7 +3,7 @@ import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
 import { AuthStore } from '../../auth.store';
 import { Toaster } from '@shared/components/toast/toast';
-import { Login } from './login';
+import { isSecondFactorCode, Login } from './login';
 
 type Cmp = {
   submitLogin: () => Promise<void>;
@@ -21,6 +21,7 @@ type AuthStoreMock = {
   needsUnlock: () => boolean;
   login: ReturnType<typeof vi.fn>;
   hydrateFromCookie: ReturnType<typeof vi.fn>;
+  lastBackupCodesRemaining: () => number | null;
 };
 
 function makeComponent(
@@ -34,6 +35,7 @@ function makeComponent(
     needsEncryptionSetup?: boolean;
     needsUnlock?: boolean;
     queryParams?: Record<string, string>;
+    lastBackupCodesRemaining?: number | null;
   } = {},
 ) {
   const auth: AuthStoreMock = {
@@ -41,9 +43,11 @@ function makeComponent(
     needsUnlock: () => opts.needsUnlock ?? false,
     login: vi.fn(opts.login ?? (() => Promise.resolve('authenticated'))),
     hydrateFromCookie: vi.fn(opts.hydrateFromCookie ?? (() => Promise.resolve())),
+    lastBackupCodesRemaining: () => opts.lastBackupCodesRemaining ?? null,
   };
   const navigate = vi.fn();
   const success = vi.fn();
+  const info = vi.fn();
 
   TestBed.configureTestingModule({
     providers: [
@@ -54,7 +58,7 @@ function makeComponent(
         useValue: { snapshot: { queryParams: opts.queryParams ?? {} } },
       },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
-      { provide: Toaster, useValue: { success } },
+      { provide: Toaster, useValue: { success, info } },
     ],
   });
   TestBed.overrideComponent(Login, { set: { template: '', imports: [] } });
@@ -64,6 +68,7 @@ function makeComponent(
     auth,
     navigate,
     success,
+    info,
   };
 }
 
@@ -294,6 +299,7 @@ describe('Login : rendu réel du template (F014)', () => {
       needsUnlock: () => false,
       login: vi.fn(opts.login ?? (() => Promise.resolve('authenticated'))),
       hydrateFromCookie: vi.fn(() => Promise.resolve()),
+      lastBackupCodesRemaining: () => null,
     };
     TestBed.configureTestingModule({
       imports: [
@@ -349,5 +355,27 @@ describe('Login : rendu réel du template (F014)', () => {
       '[data-testid="login-totp-step"]',
     );
     expect(totpStep).not.toBeNull();
+  });
+
+  it('isSecondFactorCode : 6 chiffres ou code de secours (casse, tiret, espace libres)', () => {
+    expect(isSecondFactorCode('123456')).toBe(true);
+    expect(isSecondFactorCode('abcde-fghjk')).toBe(true);
+    expect(isSecondFactorCode('ABCDE FGHJK')).toBe(true);
+    expect(isSecondFactorCode('abcdefghjk')).toBe(true);
+    expect(isSecondFactorCode('12345')).toBe(false);
+    expect(isSecondFactorCode('abc-de')).toBe(false);
+    expect(isSecondFactorCode('')).toBe(false);
+  });
+
+  it('connexion par code de secours → toast info avec le nombre restant', async () => {
+    const { cmp, info } = makeComponent({
+      login: (_e, _p, code) => Promise.resolve(code ? 'authenticated' : 'mfa_required'),
+      lastBackupCodesRemaining: 9,
+    });
+    cmp.form.setValue({ email: 'a@b.com', password: 'motdepasse-long-12' });
+    await cmp.submitLogin();
+    cmp.totpValue.set('abcde-fghjk');
+    await cmp.submitTotp();
+    expect(info).toHaveBeenCalledWith('auth.login.backupCodeUsed', { count: 9 });
   });
 });
