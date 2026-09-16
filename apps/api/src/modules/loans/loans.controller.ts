@@ -25,6 +25,7 @@ import { parseBody } from '../../common/parse-body';
 import { today } from '../../common/today';
 import { OwnedCrudController } from '../../common/crud/owned-crud.controller';
 import { parsePageQuery, sendPage } from '../../common/crud/keyset';
+import { clientRowId } from '../../common/crud/client-row-id';
 import {
   createLoanSchema,
   createEncryptedLoanSchema,
@@ -69,7 +70,10 @@ export class LoansController extends OwnedCrudController<unknown> {
     @CurrentUser() u: AuthUser,
     @Body() body: Record<string, unknown>,
   ) {
-    const row = await this.svc.create(u.id, this.toCreateValues(body));
+    const row = await this.svc.create(u.id, {
+      ...this.toCreateValues(body),
+      ...clientRowId(body),
+    });
     return toLoanResponse(row);
   }
 
@@ -176,6 +180,7 @@ export class LoansController extends OwnedCrudController<unknown> {
   ) {
     if (body.encryptedData) {
       const row = await this.svc.addTransaction(u.id, id, {
+        ...clientRowId(body),
         amount: '0',
         date: today(),
         encryptedData: body.encryptedData as string,

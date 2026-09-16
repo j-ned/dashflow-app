@@ -27,6 +27,7 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { clientRowId } from '../../common/crud/client-row-id';
 import { UploadPolicy } from '../../common/files/upload-policy';
 import { assertOwnedStorageKey } from '../../common/files/storage-key';
 import { UPLOAD_MULTER_LIMIT_BYTES } from '../../common/files/validate-upload';
@@ -60,6 +61,7 @@ export class SalaryArchivesController extends OwnedCrudController<unknown> {
         body,
       );
       return {
+        ...clientRowId(body),
         accountId: accountId ?? null,
         month: '0000-00',
         salary: '0',

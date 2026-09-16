@@ -28,6 +28,7 @@ import {
 type AccountTransaction = typeof accountTransactions.$inferSelect;
 
 type NewTransactionValues = {
+  id?: string;
   amount: string;
   direction: 'income' | 'expense' | 'transfer';
   date: string;

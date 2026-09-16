@@ -31,6 +31,7 @@ import {
 } from './dto/account-transaction.dto';
 import { today } from '../../common/today';
 import { parsePageQuery, sendPage } from '../../common/crud/keyset';
+import { clientRowId } from '../../common/crud/client-row-id';
 
 @UseGuards(JwtAuthGuard)
 @Controller()
@@ -70,6 +71,7 @@ export class AccountTransactionsController {
     if (body.encryptedData) {
       const d = parseBody(createEncryptedTransactionSchema, body);
       const row = await this.svc.addTransaction(u.id, accountId, {
+        ...clientRowId(body),
         amount: '0',
         date: today(),
         direction: d.direction,
@@ -109,6 +111,7 @@ export class AccountTransactionsController {
       if (raw.encryptedData) {
         const d = parseBody(createEncryptedTransactionSchema, raw);
         return {
+          ...clientRowId(raw),
           amount: '0',
           date: today(),
           direction: d.direction,

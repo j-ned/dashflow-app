@@ -373,4 +373,58 @@ describe('Finance e2e', () => {
       .expect(400);
     expect(res.body.code).toBe('CHECK_VIOLATION');
   });
+
+  it("E2EE : le client peut fixer l'id de la ligne créée (liaison blob ↔ ligne) ; doublon → 409 ; ignoré en clair", async () => {
+    const a = await shared();
+    const id = crypto.randomUUID();
+    const created = await request(a.s)
+      .post('/envelopes')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ id, encryptedData: 'v2.blob', type: 'épargne' })
+      .expect(201);
+    expect(created.body.id).toBe(id);
+
+    const dup = await request(a.s)
+      .post('/envelopes')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ id, encryptedData: 'v2.autre', type: 'épargne' })
+      .expect(409);
+    expect(dup.body.code).toBe('UNIQUE_VIOLATION');
+
+    // Hors E2EE l'id client est ignoré : le serveur génère.
+    const plainId = crypto.randomUUID();
+    const plain = await request(a.s)
+      .post('/envelopes')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ id: plainId, name: 'Clair', type: 'épargne', balance: '0' })
+      .expect(201);
+    expect(plain.body.id).not.toBe(plainId);
+
+    // Transactions de compte : id client accepté aussi en batch.
+    const acc = await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ encryptedData: 'v2.acc', id: crypto.randomUUID() })
+      .expect(201);
+    const t1 = crypto.randomUUID();
+    const t2 = crypto.randomUUID();
+    const batch = await request(a.s)
+      .post(`/bank-accounts/${acc.body.id}/transactions/batch`)
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        items: [
+          { id: t1, encryptedData: 'v2.t1', direction: 'expense' },
+          { id: t2, encryptedData: 'v2.t2', direction: 'income' },
+        ],
+      })
+      .expect(201);
+    expect(batch.body.map((r: { id: string }) => r.id).sort()).toEqual(
+      [t1, t2].sort(),
+    );
+  });
 });
