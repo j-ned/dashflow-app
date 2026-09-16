@@ -10,6 +10,8 @@ export type LoginResponse =
       token?: string;
       user: AuthUser;
       keyMaterial?: KeyMaterial;
+      /** Jeton anti-CSRF de la session ouverte (HMAC côté serveur, sans cookie). */
+      csrfToken?: string;
       /** Présent si la connexion a consommé un code de secours 2FA. */
       backupCodesRemaining?: number;
     };
@@ -31,14 +33,24 @@ export class HttpAuthGateway {
     return this.api.post('/auth/register', { email, password, displayName });
   }
 
-  demoLogin(): Observable<{ token: string; user: AuthUser; keyMaterial: null }> {
+  demoLogin(): Observable<{
+    token: string;
+    user: AuthUser;
+    keyMaterial: null;
+    csrfToken?: string;
+  }> {
     return this.api.post('/auth/demo-login', {});
   }
 
   verifyCode(
     email: string,
     code: string,
-  ): Observable<{ token: string; user: AuthUser; keyMaterial?: KeyMaterial }> {
+  ): Observable<{
+    token: string;
+    user: AuthUser;
+    keyMaterial?: KeyMaterial;
+    csrfToken?: string;
+  }> {
     return this.api.post('/auth/verify', { email, code });
   }
 
