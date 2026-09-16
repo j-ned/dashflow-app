@@ -3,7 +3,7 @@ import { CanMatchFn, Router } from '@angular/router';
 import { AuthStore } from '@features/auth/auth.store';
 
 // Exige une session active, sans les redirections d'état de chiffrement de authGuard
-// (needsEncryptionSetup/needsUnlock) : /auth/unlock et /auth/encryption-setup EN SONT la cible,
+// (needsEncryptionSetup/needsUnlock) : /auth/unlock, /auth/onboarding et /auth/encryption-setup EN SONT la cible,
 // un authGuard classique y créerait une boucle de redirection.
 export const sessionGuard: CanMatchFn = async () => {
   const auth = inject(AuthStore);

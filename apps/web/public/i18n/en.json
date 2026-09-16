@@ -215,12 +215,67 @@
         "repairFailed": "Invalid recovery key or resync error."
       }
     },
+    "onboarding": {
+      "eyebrow": "Step {{step}} of {{total}}",
+      "next": "Continue",
+      "skip": "Skip this step",
+      "error": "Something went wrong, please try again.",
+      "steps": {
+        "1": "Your household",
+        "2": "Your account",
+        "3": "Income and bills",
+        "4": "Protection"
+      },
+      "members": {
+        "title": "Who lives with you?",
+        "explain": "First names are enough. They let you split expenses, envelopes and medical appointments per person. You can add more later.",
+        "placeholder": "First name",
+        "add": "Add a person",
+        "solo": "Just me, skip"
+      },
+      "account": {
+        "title": "Your main account",
+        "explain": "The one your income lands on. The starting balance is today's: DashFlow computes everything from there.",
+        "name": "Account name",
+        "type": "Type",
+        "types": {
+          "courant": "Current account",
+          "épargne": "Savings",
+          "carte": "Card",
+          "espèces": "Cash"
+        },
+        "balance": "Balance today",
+        "balanceHint": "Roughly is fine. You can adjust it later."
+      },
+      "entries": {
+        "title": "Your income and fixed bills",
+        "explain": "Three lines are enough for a first “left to live”: a salary, a rent, a subscription. The rest comes along the month.",
+        "type": "Type",
+        "income": "Income",
+        "expense": "Bill",
+        "label": "Label",
+        "incomePlaceholder": "Salary",
+        "expensePlaceholder": "Rent, energy, subscription…",
+        "amount": "Amount per month",
+        "day": "Day of month",
+        "add": "Add a line"
+      },
+      "protect": {
+        "title": "Protect your data",
+        "explain": "Last step: your finances and health are encrypted on this device before being sent. Nobody else can read them, not even us.",
+        "existingData": "This account already has data. Only protection is missing: it will be encrypted on this device before being sent back.",
+        "point1": "You alone hold the key, derived from your password.",
+        "point2": "You will get a recovery key: your spare key, to keep with your papers.",
+        "point3": "Without your password or the recovery key, your data cannot be recovered.",
+        "cta": "Protect my data"
+      }
+    },
     "encryptionSetup": {
-      "title": "End-to-end encryption",
-      "subtitle": "Your data will be encrypted locally. Only you can access it.",
-      "warningTitle": "Warning",
-      "warningBody": "If you lose both your password AND your recovery key, your data will be permanently lost. There is no way to recover it.",
-      "activate": "Enable encryption",
+      "title": "Protect your data",
+      "subtitle": "Your data is encrypted on this device before being sent. Nobody else can read it, not even us.",
+      "warningTitle": "Your spare key",
+      "warningBody": "You are about to get a recovery key: keep it with your papers. If you forget your password, it is what reopens your data. Without your password or the key, it cannot be recovered.",
+      "activate": "Protect my data",
       "preparing": "Preparing...",
       "encryptingTable": "Encrypting: {{table}}...",
       "sendingEncrypted": "Sending encrypted data...",

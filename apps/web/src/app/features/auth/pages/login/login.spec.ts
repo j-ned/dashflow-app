@@ -90,13 +90,13 @@ describe('Login : authentification 2 étapes (sécurité)', () => {
     expect(cmp.loading()).toBe(false);
   });
 
-  it('connexion réussie, chiffrement à configurer → navigue vers /auth/encryption-setup', async () => {
+  it('connexion réussie, chiffrement à configurer → navigue vers /auth/onboarding', async () => {
     const { cmp, navigate } = makeComponent({ needsEncryptionSetup: true });
     cmp.form.setValue(VALID);
 
     await cmp.submitLogin();
 
-    expect(navigate).toHaveBeenCalledWith(['/auth/encryption-setup'], { replaceUrl: true });
+    expect(navigate).toHaveBeenCalledWith(['/auth/onboarding'], { replaceUrl: true });
   });
 
   it('connexion réussie, déverrouillage requis → navigue vers /auth/unlock', async () => {
