@@ -14,7 +14,7 @@ type ReminderModel = {
 };
 
 const EMPTY_MODEL: ReminderModel = {
-  type: 'email',
+  type: 'ical',
   target: 'medication',
   medicationId: '',
   appointmentId: '',
@@ -43,9 +43,11 @@ const EMPTY_MODEL: ReminderModel = {
               aria-required="true"
               class="form-select"
             >
-              <option value="email">{{ 'medical.reminder.typeEmail' | transloco }}</option>
               <option value="ical">{{ 'medical.reminder.typeIcal' | transloco }}</option>
             </select>
+            <p class="mt-1 text-xs text-text-muted">
+              {{ 'medical.reminder.form.icalOnlyHint' | transloco }}
+            </p>
           </div>
           <div>
             <label for="rem-target" class="form-label">

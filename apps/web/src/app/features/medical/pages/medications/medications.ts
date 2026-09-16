@@ -362,10 +362,10 @@ export class Medications {
   }
 
   protected async refillMedication(event: { quantity: number }) {
-    const id = this.selectedMedication()?.id;
-    if (!id) return;
+    const medication = this.selectedMedication();
+    if (!medication) return;
     try {
-      await lastValueFrom(this.medicationGw.refill(id, event.quantity));
+      await lastValueFrom(this.medicationGw.refill(medication, event.quantity));
       this.toaster.success('medical.medication.feedback.refilled');
       this.refillModalRef().close();
       this._refresh.update((v) => v + 1);

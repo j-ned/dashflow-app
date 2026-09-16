@@ -1719,6 +1719,7 @@
         "selectPlaceholder": "-- Select --",
         "appointment": "Appointment",
         "recipientEmail": "Recipient email",
+        "icalOnlyHint": "The reminder is exported to your calendar (iCal). DashFlow does not send e-mails: your medical data is encrypted and the server cannot read it.",
         "emailRequired": "Email is required.",
         "emailInvalid": "Invalid email format.",
         "submit": "Create"

@@ -54,6 +54,8 @@ function makeComponent(
     entryDeleteImpl?: (id: string) => Observable<unknown>;
     accountDeleteImpl?: () => Observable<unknown>;
     archiveCreateImpl?: (data: FormData) => Observable<unknown>;
+    archiveGetAllImpl?: () => Observable<unknown[]>;
+    archiveUpdateImpl?: (id: string, archive: Record<string, unknown>) => Observable<unknown>;
     choose?: () => Promise<'confirm' | 'alternative' | 'cancel'>;
     toaster?: { success: () => void; error: () => void; info: () => void };
   } = {},
@@ -81,8 +83,9 @@ function makeComponent(
       {
         provide: SalaryArchiveGateway,
         useValue: {
-          getAll: () => of([]),
+          getAll: opts.archiveGetAllImpl ?? (() => of([])),
           create: opts.archiveCreateImpl ?? (() => of({ id: 'arch' })),
+          update: opts.archiveUpdateImpl ?? (() => of({ id: 'arch' })),
         },
       },
       {
@@ -800,6 +803,39 @@ describe('BankAccount : nouveau cycle (revenu existant + « Nouveau cycle »)', 
     await cmp.createEntry(NEW_INCOME);
 
     expect(capturedMonth).toBe(previousMonth(new Date()));
+  });
+
+  it('une archive existe déjà pour le mois précédent → mise à jour, pas de doublon', async () => {
+    const month = previousMonth(new Date());
+    const existing = {
+      id: 'arch-existante',
+      accountId: null,
+      month,
+      salary: 1000,
+      totalExpenses: 0,
+      totalSpendings: 0,
+      spendings: [],
+      payslipKey: 'payslips/u/arch-existante.bin',
+    };
+    const create = vi.fn(() => of({ id: 'arch' }));
+    const update = vi.fn((_id: string, _archive: Record<string, unknown>) => of(existing));
+    const cmp = makeComponent({
+      entries: [INCOME],
+      choose: () => Promise.resolve('confirm'),
+      archiveGetAllImpl: () => of([existing]),
+      archiveCreateImpl: create,
+      archiveUpdateImpl: update,
+    }) as unknown as CycleCmp;
+
+    await cmp.createEntry(NEW_INCOME);
+
+    expect(create).not.toHaveBeenCalled();
+    expect(update).toHaveBeenCalledTimes(1);
+    const [id, archive] = update.mock.calls[0];
+    expect(id).toBe('arch-existante');
+    expect(archive['month']).toBe(month);
+    // Les champs non recalculés (fiche de paie) sont conservés.
+    expect(archive['payslipKey']).toBe('payslips/u/arch-existante.bin');
   });
 
   it('archivage KO → ni suppression de revenus ni création du nouveau salaire, toast erreur', async () => {
