@@ -1,4 +1,6 @@
 import { Inject, Injectable } from '@nestjs/common';
+import { StorageService } from '../../storage/storage.service';
+import { purgePatientFiles } from '../../common/files/storage-cleanup';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
@@ -56,7 +58,10 @@ const count = (table: PgTable & { patientId: PgColumn }) =>
 
 @Injectable()
 export class MembersService {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(
+    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly storage: StorageService,
+  ) {}
 
   async list(userId: string, q: PageQuery = {}): Promise<Page<MemberRow>> {
     const limit = pageLimit(q);
@@ -119,6 +124,8 @@ export class MembersService {
   }
 
   async remove(userId: string, id: string) {
+    // La cascade SQL efface documents et ordonnances : leurs fichiers R2 doivent partir avant.
+    await purgePatientFiles(this.db, this.storage, userId, id);
     await this.db
       .delete(patients)
       .where(and(eq(patients.id, id), eq(patients.userId, userId)));

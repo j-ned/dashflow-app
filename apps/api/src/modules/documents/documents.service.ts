@@ -4,12 +4,17 @@ import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { documents, patients, practitioners } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
+import { StorageService } from '../../storage/storage.service';
+import { deleteStorageObjectQuietly } from '../../common/files/storage-cleanup';
 
 type Document = typeof documents.$inferSelect;
 
 @Injectable()
 export class DocumentsService extends OwnedCrudService<Document> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(
+    @Inject(DRIZZLE) db: DrizzleDB,
+    private readonly storage: StorageService,
+  ) {
     super(db, documents);
   }
 
@@ -58,5 +63,13 @@ export class DocumentsService extends OwnedCrudService<Document> {
         and(eq(documents.userId, userId), eq(documents.patientId, patientId)),
       )
       .limit(100);
+  }
+
+  /** Le fichier R2 part avec la ligne : plus d'objets orphelins à chaque suppression. */
+  override async remove(userId: string, id: string): Promise<void> {
+    const row = await this.getOne(userId, id);
+    if (!row) return;
+    await deleteStorageObjectQuietly(this.storage, row.fileUrl);
+    await super.remove(userId, id);
   }
 }

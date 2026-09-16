@@ -250,4 +250,103 @@ describe('Medical e2e', () => {
       })
       .expect(400);
   });
+
+  it('medications : refill atomique et scopé (cross-user → 404) ; alerts exclut les lignes E2EE', async () => {
+    const a = await authedClient();
+    const patient = await request(a.s)
+      .post('/patients')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ firstName: 'Zoé', lastName: 'M', birthDate: '2015-05-05' })
+      .expect(201);
+    const med = await request(a.s)
+      .post('/medications')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        patientId: patient.body.id,
+        name: 'Doliprane',
+        type: 'comprime',
+        dosage: '500 mg',
+        quantity: 2,
+        dailyRate: '1',
+        startDate: '2026-09-01',
+        alertDaysBefore: 7,
+      })
+      .expect(201);
+
+    // Deux réassorts concurrents s'additionnent (UPDATE … SET quantity = quantity + n).
+    await Promise.all([
+      request(a.s)
+        .patch(`/medications/${med.body.id}/refill`)
+        .set('Cookie', a.cookies)
+        .set('X-CSRF-Token', a.csrf)
+        .send({ quantity: 10 })
+        .expect(200),
+      request(a.s)
+        .patch(`/medications/${med.body.id}/refill`)
+        .set('Cookie', a.cookies)
+        .set('X-CSRF-Token', a.csrf)
+        .send({ quantity: 20 })
+        .expect(200),
+    ]);
+    const after = await request(a.s)
+      .get(`/medications/${med.body.id}`)
+      .set('Cookie', a.cookies)
+      .expect(200);
+    expect(after.body.quantity).toBe(32);
+
+    // Un autre utilisateur ne peut pas réassortir ce médicament (avant : lu par id seul).
+    const b = await authedClient();
+    await request(b.s)
+      .patch(`/medications/${med.body.id}/refill`)
+      .set('Cookie', b.cookies)
+      .set('X-CSRF-Token', b.csrf)
+      .send({ quantity: 1 })
+      .expect(404);
+
+    // Alerts : ligne E2EE (placeholders) exclue ; ligne en clair presque à sec incluse.
+    await request(a.s)
+      .post('/medications')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        patientId: patient.body.id,
+        encryptedData: 'v2.blob',
+        id: crypto.randomUUID(),
+      })
+      .expect(201);
+    const low = await request(a.s)
+      .post('/medications')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        patientId: patient.body.id,
+        name: 'Presque vide',
+        type: 'comprime',
+        dosage: '1',
+        quantity: 1,
+        dailyRate: '1',
+        startDate: '2020-01-01',
+        alertDaysBefore: 7,
+      })
+      .expect(201);
+    const alerts = await request(a.s)
+      .get('/medications/alerts')
+      .set('Cookie', a.cookies)
+      .expect(200);
+    const ids = alerts.body.map((m: { id: string }) => m.id);
+    expect(ids).toContain(low.body.id);
+    expect(
+      alerts.body.every(
+        (m: { encryptedData: string | null }) => !m.encryptedData,
+      ),
+    ).toBe(true);
+    const lowRow = alerts.body.find(
+      (m: { id: string }) => m.id === low.body.id,
+    );
+    expect(lowRow.isLow).toBe(true);
+    expect(lowRow.remainingQuantity).toBe(0);
+    expect(lowRow.runOutDate).toMatch(/^\d{4}-\d{2}-\d{2}$/);
+  });
 });

@@ -17,6 +17,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import type { Response } from 'express';
 import { PrescriptionsService } from './prescriptions.service';
 import { StorageService } from '../../storage/storage.service';
+import { deleteStorageObjectQuietly } from '../../common/files/storage-cleanup';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
 import { DemoAccountGuard } from '../../common/guards/demo-account.guard';
 import {
@@ -127,6 +128,10 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
     if (!existing) throw new NotFoundException('Non trouvé');
     const key = this.storage.prescriptionKey(u.id, id, file.mimetype);
     await this.storage.upload(key, file.buffer, file.mimetype);
+    // Remplacement avec un autre MIME → autre extension → autre clé : l'ancien objet partirait orphelin.
+    if (existing.documentUrl && existing.documentUrl !== key) {
+      await deleteStorageObjectQuietly(this.storage, existing.documentUrl);
+    }
     return this.svc.update(u.id, id, { documentUrl: key });
   }
 

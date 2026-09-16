@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
 import { AuthModule } from '../../auth/auth.module';
+import { StorageModule } from '../../storage/storage.module';
 import { RecurringEntriesController } from './recurring-entries.controller';
 import { RecurringEntriesService } from './recurring-entries.service';
 
 @Module({
-  imports: [AuthModule],
+  imports: [AuthModule, StorageModule],
   controllers: [RecurringEntriesController],
   providers: [RecurringEntriesService],
 })
