@@ -17,7 +17,7 @@ export class HttpMedicationGateway implements MedicationGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Medication[]> {
-    return this.api.get<ApiRow[]>('/medications').pipe(
+    return this.api.getList<ApiRow>('/medications').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Medication[]]);
@@ -42,7 +42,7 @@ export class HttpMedicationGateway implements MedicationGateway {
 
   getAlerts(): Observable<MedicationWithStock[]> {
     return decryptList<MedicationWithStock>(
-      this.api.get<ApiRow[]>('/medications/alerts'),
+      this.api.getList<ApiRow>('/medications/alerts'),
       this.crypto.getMasterKey(),
     );
   }

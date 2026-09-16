@@ -590,7 +590,16 @@
       "deleted": "Member deleted",
       "error": "Something went wrong",
       "deleteConfirmTitle": "Delete member",
-      "deleteConfirmMessage": "Delete {{name}}? This person will be removed from the whole household (budget and, if any, medical)."
+      "deleteConfirmMessage": "Delete {{name}}? This person will be removed from the whole household (budget and, if any, medical).",
+      "medicalDeleteTitle": "Medical records attached",
+      "medicalDeleteMessage": "{{name}} has medical records ({{summary}}). Everything will be permanently deleted with this member. Continue?",
+      "medicalDeleteConfirm": "Delete everything",
+      "footprint": {
+        "appointments": "{{count}} appointment(s)",
+        "prescriptions": "{{count}} prescription(s)",
+        "medications": "{{count}} medication(s)",
+        "documents": "{{count}} document(s)"
+      }
     },
     "bankAccount": {
       "title": "Bank account",

@@ -17,7 +17,7 @@ export class HttpPractitionerGateway implements PractitionerGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Practitioner[]> {
-    return this.api.get<ApiRow[]>('/practitioners').pipe(
+    return this.api.getList<ApiRow>('/practitioners').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Practitioner[]]);

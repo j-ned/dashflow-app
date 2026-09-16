@@ -26,7 +26,7 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Prescription[]> {
-    return this.api.get<ApiRow[]>('/prescriptions').pipe(
+    return this.api.getList<ApiRow>('/prescriptions').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Prescription[]]);
@@ -50,7 +50,7 @@ export class HttpPrescriptionGateway implements PrescriptionGateway {
   }
 
   getByAppointment(appointmentId: string): Observable<Prescription[]> {
-    return this.api.get<ApiRow[]>(`/prescriptions/by-appointment/${appointmentId}`).pipe(
+    return this.api.getList<ApiRow>(`/prescriptions/by-appointment/${appointmentId}`).pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Prescription[]]);

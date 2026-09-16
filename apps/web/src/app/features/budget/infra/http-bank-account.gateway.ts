@@ -33,7 +33,7 @@ export class HttpBankAccountGateway implements BankAccountGateway {
   getAll(): Observable<BankAccount[]> {
     // coerce appliqué APRÈS décryptage (decryptList ne mappe que le chemin plaintext) → vaut pour E2EE aussi.
     return decryptList<ApiRow>(
-      this.api.get<ApiRow[]>('/bank-accounts'),
+      this.api.getList<ApiRow>('/bank-accounts'),
       this.crypto.getMasterKey(),
     ).pipe(
       map((rows) => rows.map(coerceBankAccount)),

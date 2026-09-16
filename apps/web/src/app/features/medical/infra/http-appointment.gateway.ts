@@ -17,7 +17,7 @@ export class HttpAppointmentGateway implements AppointmentGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Appointment[]> {
-    return this.api.get<ApiRow[]>('/appointments').pipe(
+    return this.api.getList<ApiRow>('/appointments').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Appointment[]]);

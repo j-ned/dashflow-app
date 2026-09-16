@@ -33,7 +33,7 @@ export class HttpRecurringEntryGateway implements RecurringEntryGateway {
 
   getAll(): Observable<RecurringEntry[]> {
     return decryptList<RecurringEntry>(
-      this.api.get<ApiRow[]>('/recurring-entries'),
+      this.api.getList<ApiRow>('/recurring-entries'),
       this.crypto.getMasterKey(),
     ).pipe(
       map((list) => list.map(normalizeRecurringEntry)),

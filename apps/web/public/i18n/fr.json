@@ -590,7 +590,16 @@
       "deleted": "Membre supprimé",
       "error": "Une erreur est survenue",
       "deleteConfirmTitle": "Supprimer le membre",
-      "deleteConfirmMessage": "Supprimer {{name}} ? Cette personne sera retirée de tout le foyer (budget et, le cas échéant, médical)."
+      "deleteConfirmMessage": "Supprimer {{name}} ? Cette personne sera retirée de tout le foyer (budget et, le cas échéant, médical).",
+      "medicalDeleteTitle": "Dossier médical lié",
+      "medicalDeleteMessage": "{{name}} a un dossier médical ({{summary}}). Tout sera supprimé définitivement avec ce membre. Continuer ?",
+      "medicalDeleteConfirm": "Tout supprimer",
+      "footprint": {
+        "appointments": "{{count}} rendez-vous",
+        "prescriptions": "{{count}} ordonnance(s)",
+        "medications": "{{count}} médicament(s)",
+        "documents": "{{count}} document(s)"
+      }
     },
     "bankAccount": {
       "title": "Compte bancaire",
