@@ -19,7 +19,7 @@ export class HttpDocumentGateway implements DocumentGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<MedicalDocument[]> {
-    return this.api.get<ApiRow[]>('/documents').pipe(
+    return this.api.getList<ApiRow>('/documents').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as MedicalDocument[]]);
@@ -43,7 +43,7 @@ export class HttpDocumentGateway implements DocumentGateway {
   }
 
   getByPatient(patientId: string): Observable<MedicalDocument[]> {
-    return this.api.get<ApiRow[]>(`/documents/by-patient/${patientId}`).pipe(
+    return this.api.getList<ApiRow>(`/documents/by-patient/${patientId}`).pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as MedicalDocument[]]);

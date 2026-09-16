@@ -32,7 +32,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
 
   getForAccount(accountId: string): Observable<AccountTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>(`/bank-accounts/${accountId}/transactions`),
+      this.api.getList<ApiRow>(`/bank-accounts/${accountId}/transactions`),
       this.crypto.getMasterKey(),
       coerceTransaction,
     ).pipe(
@@ -42,7 +42,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
 
   getAll(): Observable<AccountTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>('/transactions/all'),
+      this.api.getList<ApiRow>('/transactions/all'),
       this.crypto.getMasterKey(),
       coerceTransaction,
     ).pipe(

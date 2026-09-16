@@ -33,7 +33,7 @@ export class HttpLoanGateway implements LoanGateway {
 
   getAll(): Observable<Loan[]> {
     return decryptList(
-      this.api.get<ApiRow[]>('/loans'),
+      this.api.getList<ApiRow>('/loans'),
       this.crypto.getMasterKey(),
       coerceLoan,
     ).pipe(map((loans) => validateList(LoanSchema, loans, { entity: 'Loan' })));
@@ -86,14 +86,14 @@ export class HttpLoanGateway implements LoanGateway {
 
   getTransactions(loanId: string): Observable<LoanTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>(`/loans/${loanId}/transactions`),
+      this.api.getList<ApiRow>(`/loans/${loanId}/transactions`),
       this.crypto.getMasterKey(),
     );
   }
 
   getAllTransactions(): Observable<LoanTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>('/loans/transactions/all'),
+      this.api.getList<ApiRow>('/loans/transactions/all'),
       this.crypto.getMasterKey(),
     );
   }

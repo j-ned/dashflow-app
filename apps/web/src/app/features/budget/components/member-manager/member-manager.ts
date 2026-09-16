@@ -14,6 +14,7 @@ import { Icon } from '@shared/components/icon/icon';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
+import { ApiError } from '@core/services/api/api-client';
 import { MemberGateway } from '../../domain/gateways/member.gateway';
 import { Member } from '../../domain/models/member.model';
 import { MEMBER_PALETTE } from '../../domain/member-map';
@@ -190,12 +191,11 @@ export class MemberManager {
   }
 
   protected async remove(member: Member): Promise<void> {
+    const name = `${member.firstName} ${member.lastName}`.trim();
     if (
       !(await this.confirm.confirm({
         title: this._i18n.translate('budget.members.deleteConfirmTitle'),
-        message: this._i18n.translate('budget.members.deleteConfirmMessage', {
-          name: `${member.firstName} ${member.lastName}`,
-        }),
+        message: this._i18n.translate('budget.members.deleteConfirmMessage', { name }),
         confirmLabel: this._i18n.translate('budget.actions.delete'),
         variant: 'danger',
       }))
@@ -203,12 +203,43 @@ export class MemberManager {
       return;
     try {
       await lastValueFrom(this.gateway.delete(member.id));
-      this.toaster.success('budget.members.deleted');
-      if (this.editingId() === member.id) this.resetForm();
-      this._refresh.update((v) => v + 1);
-      this.changed.emit();
-    } catch {
-      this.toaster.error('budget.members.error');
+    } catch (e) {
+      const err = e as ApiError;
+      if (err.status !== 409 || err.code !== 'MEMBER_HAS_MEDICAL_DATA') {
+        this.toaster.error('budget.members.error');
+        return;
+      }
+      // La personne est aussi un patient : on énumère ce qui disparaîtrait avant de forcer.
+      const summary = this.describeFootprint(err.details);
+      if (
+        !(await this.confirm.confirm({
+          title: this._i18n.translate('budget.members.medicalDeleteTitle'),
+          message: this._i18n.translate('budget.members.medicalDeleteMessage', { name, summary }),
+          confirmLabel: this._i18n.translate('budget.members.medicalDeleteConfirm'),
+          variant: 'danger',
+        }))
+      )
+        return;
+      try {
+        await lastValueFrom(this.gateway.delete(member.id, { force: true }));
+      } catch {
+        this.toaster.error('budget.members.error');
+        return;
+      }
     }
+    this.toaster.success('budget.members.deleted');
+    if (this.editingId() === member.id) this.resetForm();
+    this._refresh.update((v) => v + 1);
+    this.changed.emit();
+  }
+
+  /** « 2 rendez-vous, 1 ordonnance » à partir des compteurs renvoyés par le serveur. */
+  private describeFootprint(details: unknown): string {
+    const counts = (details ?? {}) as Record<string, unknown>;
+    return (['appointments', 'prescriptions', 'medications', 'documents'] as const)
+      .map((key) => ({ key, count: Number(counts[key] ?? 0) }))
+      .filter(({ count }) => count > 0)
+      .map(({ key, count }) => this._i18n.translate(`budget.members.footprint.${key}`, { count }))
+      .join(', ');
   }
 }

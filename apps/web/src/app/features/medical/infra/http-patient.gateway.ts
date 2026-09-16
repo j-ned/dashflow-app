@@ -17,7 +17,7 @@ export class HttpPatientGateway implements PatientGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Patient[]> {
-    return this.api.get<ApiRow[]>('/patients').pipe(
+    return this.api.getList<ApiRow>('/patients').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
         if (!key || !rows[0]?.encryptedData) return from([rows as Patient[]]);

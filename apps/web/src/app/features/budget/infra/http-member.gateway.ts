@@ -17,7 +17,7 @@ export class HttpMemberGateway implements MemberGateway {
   private readonly crypto = inject(CryptoStore);
 
   getAll(): Observable<Member[]> {
-    return decryptList(this.api.get<ApiRow[]>('/members'), this.crypto.getMasterKey()).pipe(
+    return decryptList(this.api.getList<ApiRow>('/members'), this.crypto.getMasterKey()).pipe(
       map((members) => validateList(MemberSchema, members, { entity: 'Member' })),
     );
   }
@@ -43,8 +43,8 @@ export class HttpMemberGateway implements MemberGateway {
     );
   }
 
-  delete(id: string): Observable<void> {
-    return this.api.delete(`/members/${id}`);
+  delete(id: string, options?: { force?: boolean }): Observable<void> {
+    return this.api.delete(`/members/${id}${options?.force ? '?force=true' : ''}`);
   }
 
   updateColor(id: string, color: string | null): Observable<Member> {

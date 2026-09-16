@@ -33,7 +33,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
 
   getAll(): Observable<Envelope[]> {
     return decryptList(
-      this.api.get<ApiRow[]>('/envelopes'),
+      this.api.getList<ApiRow>('/envelopes'),
       this.crypto.getMasterKey(),
       coerceEnvelope,
     ).pipe(map((envs) => validateList(EnvelopeSchema, envs, { entity: 'Envelope' })));
@@ -98,14 +98,14 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
 
   getTransactions(envelopeId: string): Observable<EnvelopeTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>(`/envelopes/${envelopeId}/transactions`),
+      this.api.getList<ApiRow>(`/envelopes/${envelopeId}/transactions`),
       this.crypto.getMasterKey(),
     );
   }
 
   getAllTransactions(): Observable<EnvelopeTransaction[]> {
     return decryptList(
-      this.api.get<ApiRow[]>('/envelopes/transactions/all'),
+      this.api.getList<ApiRow>('/envelopes/transactions/all'),
       this.crypto.getMasterKey(),
     );
   }

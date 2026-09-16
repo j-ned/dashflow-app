@@ -21,7 +21,7 @@ export class HttpSalaryArchiveGateway implements SalaryArchiveGateway {
 
   getAll(): Observable<SalaryArchive[]> {
     return decryptList<SalaryArchive>(
-      this.api.get<ApiRow[]>('/salary-archives'),
+      this.api.getList<ApiRow>('/salary-archives'),
       this.crypto.getMasterKey(),
     ).pipe(
       map((archives) =>
