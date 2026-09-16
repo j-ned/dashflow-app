@@ -6,7 +6,13 @@ import { KeyMaterial } from '../domain/models/key-material.model';
 
 export type LoginResponse =
   | { mfaRequired: true }
-  | { token?: string; user: AuthUser; keyMaterial?: KeyMaterial };
+  | {
+      token?: string;
+      user: AuthUser;
+      keyMaterial?: KeyMaterial;
+      /** Présent si la connexion a consommé un code de secours 2FA. */
+      backupCodesRemaining?: number;
+    };
 
 // Une seule implémentation : classe concrète directe (YAGNI gateway), pas d'abstract.
 @Injectable({ providedIn: 'root' })
@@ -68,8 +74,17 @@ export class HttpAuthGateway {
     return this.api.post('/auth/me/2fa/setup', {});
   }
 
-  verify2FA(code: string): Observable<void> {
+  /** Active la 2FA ; les codes de secours ne sont renvoyés qu'ici, une seule fois. */
+  verify2FA(code: string): Observable<{ backupCodes: string[] }> {
     return this.api.post('/auth/me/2fa/verify', { code });
+  }
+
+  backupCodesStatus(): Observable<{ remaining: number }> {
+    return this.api.get('/auth/me/2fa/backup-codes');
+  }
+
+  regenerateBackupCodes(password: string): Observable<{ backupCodes: string[] }> {
+    return this.api.post('/auth/me/2fa/backup-codes', { password });
   }
 
   disable2FA(password: string): Observable<void> {

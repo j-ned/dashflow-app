@@ -80,6 +80,8 @@
       "signUp": "Sign up",
       "totpPrompt": "Enter the code from your authenticator app",
       "totpLabel": "2FA code",
+      "totpBackupHint": "6-digit code from your app, or one of your backup codes.",
+      "backupCodeUsed": "Signed in with a backup code: {{count}} left.",
       "verify": "Verify",
       "verifying": "Verifying...",
       "back": "Back",
@@ -328,6 +330,19 @@
       "setupExplain": "Add an extra layer of security by enabling two-factor authentication. You'll need an app like Google Authenticator or Authy.",
       "setup": "Set up 2FA",
       "settingUp": "Setting up...",
+      "backup": {
+        "title": "Backup codes",
+        "explain": "Each of these 10 codes replaces your app once if you lose your phone. They will not be shown again: copy or download them now, and keep them away from this device.",
+        "listAria": "Single-use backup codes",
+        "copy": "Copy",
+        "copied": "Copied",
+        "copyFailed": "Could not copy: select the codes manually.",
+        "download": "Download (.txt)",
+        "saved": "I have saved my codes",
+        "remaining": "Backup codes left: {{count}}. Regenerate if you are running low.",
+        "regenerate": "Regenerate backup codes",
+        "regenerated": "New backup codes generated. The old ones no longer work."
+      },
       "feedback": {
         "setupFailed": "Failed to set up 2FA.",
         "activated": "Two-factor authentication enabled.",

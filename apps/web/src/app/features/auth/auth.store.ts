@@ -132,6 +132,8 @@ export class AuthStore {
     // 2FA activé sans code : le backend renvoie 200 + { mfaRequired: true } (pas une erreur).
     if ('mfaRequired' in res) return 'mfa_required';
 
+    // Renseigné seulement quand un code de secours a servi : la page de login prévient.
+    this._lastBackupCodesRemaining.set(res.backupCodesRemaining ?? null);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -188,14 +190,30 @@ export class AuthStore {
   }
 
   // ── 2FA ──
+  private readonly _lastBackupCodesRemaining = signal<number | null>(null);
+  /** Codes de secours restants après une connexion par code de secours (sinon `null`). */
+  readonly lastBackupCodesRemaining = this._lastBackupCodesRemaining.asReadonly();
+
   async setup2FA(): Promise<{ qrCode: string; secret: string }> {
     return firstValueFrom(this.gateway.setup2FA());
   }
 
-  async verify2FA(code: string): Promise<void> {
-    await firstValueFrom(this.gateway.verify2FA(code));
+  /** Renvoie les codes de secours : c'est la seule occasion de les afficher. */
+  async verify2FA(code: string): Promise<string[]> {
+    const { backupCodes } = await firstValueFrom(this.gateway.verify2FA(code));
     const user = this._user();
     if (user) this._user.set({ ...user, totpEnabled: true });
+    return backupCodes ?? [];
+  }
+
+  async backupCodesRemaining(): Promise<number> {
+    const { remaining } = await firstValueFrom(this.gateway.backupCodesStatus());
+    return remaining;
+  }
+
+  async regenerateBackupCodes(password: string): Promise<string[]> {
+    const { backupCodes } = await firstValueFrom(this.gateway.regenerateBackupCodes(password));
+    return backupCodes;
   }
 
   async disable2FA(password: string): Promise<void> {
