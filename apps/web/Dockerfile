@@ -12,7 +12,10 @@ RUN pnpm build
 # ── Stage 2: serve static SPA via nginx ──
 # NOTE: déploiement prod (proxy /api → backend NestJS, repo nest-dashflow-app) à finaliser
 # dans une étape dédiée (Dokploy 2 services). Cette image ne sert que le statique Angular.
-FROM nginx:alpine AS runtime
+# nginx sans root : écoute sur 8080 (à reporter dans le port interne du service Dokploy).
+FROM nginxinc/nginx-unprivileged:alpine AS runtime
 COPY --from=build /app/dist/dash-flow/browser/ /usr/share/nginx/html/
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-EXPOSE 80
+EXPOSE 8080
+HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:8080/index.html >/dev/null || exit 1

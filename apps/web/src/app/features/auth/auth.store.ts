@@ -79,9 +79,10 @@ export class AuthStore {
   private async performCheckSession(): Promise<void> {
     this._isLoading.set(true);
     try {
+      const res = await firstValueFrom(this.gateway.getMe());
+      // Le jeton CSRF est dérivé de la session : il n'existe qu'une fois celle-ci confirmée.
       const { csrfToken } = await firstValueFrom(this.gateway.getCsrfToken());
       this.csrf.setToken(csrfToken);
-      const res = await firstValueFrom(this.gateway.getMe());
       const { keyMaterial, ...rawUser } = res;
       const user = validateOne(AuthUserSchema, rawUser, { entity: 'AuthUser' });
       this._user.set(user);
@@ -108,6 +109,7 @@ export class AuthStore {
     this._isLoading.set(true);
     try {
       const res = await firstValueFrom(this.gateway.demoLogin());
+      this.csrf.setToken(res.csrfToken ?? null);
       this._user.set(res.user);
       this._isAuthenticated.set(true);
       this._keyMaterial = null;
@@ -118,6 +120,7 @@ export class AuthStore {
 
   async verifyCode(email: string, code: string): Promise<void> {
     const res = await firstValueFrom(this.gateway.verifyCode(email, code));
+    this.csrf.setToken(res.csrfToken ?? null);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -138,6 +141,7 @@ export class AuthStore {
 
     // Renseigné seulement quand un code de secours a servi : la page de login prévient.
     this._lastBackupCodesRemaining.set(res.backupCodesRemaining ?? null);
+    this.csrf.setToken(res.csrfToken ?? null);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
@@ -163,6 +167,9 @@ export class AuthStore {
 
   async hydrateFromCookie(): Promise<void> {
     const res = await firstValueFrom(this.gateway.getMe());
+    // Retour OAuth : la session vient d'être posée par redirection, le jeton CSRF reste à prendre.
+    const { csrfToken } = await firstValueFrom(this.gateway.getCsrfToken());
+    this.csrf.setToken(csrfToken);
     const { keyMaterial, ...rawUser } = res;
     this._user.set(validateOne(AuthUserSchema, rawUser, { entity: 'AuthUser' }));
     this._isAuthenticated.set(true);
@@ -179,6 +186,7 @@ export class AuthStore {
     this._user.set(null);
     this._isAuthenticated.set(false);
     this._keyMaterial = null;
+    this.csrf.setToken(null); // le jeton est lié à la session révoquée
   }
 
   async updateProfile(data: { displayName?: string }): Promise<void> {
