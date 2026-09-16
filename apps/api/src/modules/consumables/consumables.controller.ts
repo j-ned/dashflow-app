@@ -6,10 +6,14 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { ConsumablesService } from './consumables.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
@@ -18,6 +22,7 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 import {
   createConsumableSchema,
   updateConsumableSchema,
@@ -29,8 +34,12 @@ export class ConsumablesController {
   constructor(private readonly svc: ConsumablesService) {}
 
   @Get()
-  list(@CurrentUser() u: AuthUser) {
-    return this.svc.list(u.id);
+  async list(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendPage(res, await this.svc.list(u.id, parsePageQuery(query)));
   }
 
   @UseGuards(CsrfGuard)
@@ -55,7 +64,7 @@ export class ConsumablesController {
   @Put(':id')
   async update(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: unknown,
   ) {
     const d = parseBody(updateConsumableSchema, body);
@@ -78,7 +87,10 @@ export class ConsumablesController {
   @UseGuards(CsrfGuard)
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.svc.remove(u.id, id);
   }
 }

@@ -7,6 +7,7 @@ import {
   integer,
   boolean,
   pgEnum,
+  index,
 } from 'drizzle-orm/pg-core';
 
 export const verificationCodePurposeEnum = pgEnum('verification_code_purpose', [
@@ -43,18 +44,22 @@ export const users = pgTable('users', {
     .defaultNow(),
 });
 
-export const verificationCodes = pgTable('verification_codes', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  email: varchar('email', { length: 255 }).notNull(),
-  // SHA-256 (hex) du code à 6 chiffres : une lecture DB ne donne pas le code.
-  code: varchar('code', { length: 64 }).notNull(),
-  // Échecs de vérification ; le code est détruit au 5e (anti brute-force distribué par IP).
-  attempts: integer('attempts').notNull().default(0),
-  purpose: verificationCodePurposeEnum('purpose')
-    .notNull()
-    .default('verification'),
-  expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
-  createdAt: timestamp('created_at', { withTimezone: true })
-    .notNull()
-    .defaultNow(),
-});
+export const verificationCodes = pgTable(
+  'verification_codes',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    email: varchar('email', { length: 255 }).notNull(),
+    // SHA-256 (hex) du code à 6 chiffres : une lecture DB ne donne pas le code.
+    code: varchar('code', { length: 64 }).notNull(),
+    // Échecs de vérification ; le code est détruit au 5e (anti brute-force distribué par IP).
+    attempts: integer('attempts').notNull().default(0),
+    purpose: verificationCodePurposeEnum('purpose')
+      .notNull()
+      .default('verification'),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [index('verification_codes_email_purpose_idx').on(t.email, t.purpose)],
+);

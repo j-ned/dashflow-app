@@ -5,9 +5,13 @@ import {
   Get,
   HttpCode,
   Param,
+  ParseUUIDPipe,
   Post,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { SharedAccessService } from './shared-access.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { Throttle } from '@nestjs/throttler';
@@ -19,6 +23,7 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 import { createSharedAccessSchema } from './dto/shared-access.dto';
 
 @UseGuards(JwtAuthGuard)
@@ -27,8 +32,12 @@ export class SharedAccessController {
   constructor(private readonly svc: SharedAccessService) {}
 
   @Get()
-  list(@CurrentUser() u: AuthUser) {
-    return this.svc.list(u.id);
+  async list(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendPage(res, await this.svc.list(u.id, parsePageQuery(query)));
   }
 
   // Envoie un e-mail depuis notre domaine vers une adresse libre : throttle strict, interdit en
@@ -45,7 +54,10 @@ export class SharedAccessController {
   @UseGuards(CsrfGuard)
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.svc.remove(u.id, id);
   }
 }

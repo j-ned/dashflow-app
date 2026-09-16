@@ -6,10 +6,14 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { BankAccountsService } from './bank-accounts.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
@@ -18,6 +22,7 @@ import {
   type AuthUser,
 } from '../../common/decorators/current-user.decorator';
 import { parseBody } from '../../common/parse-body';
+import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 import {
   createBankAccountSchema,
   createEncryptedBankAccountSchema,
@@ -32,9 +37,16 @@ export class BankAccountsController {
   constructor(private readonly svc: BankAccountsService) {}
 
   @Get()
-  async list(@CurrentUser() u: AuthUser) {
-    const rows = await this.svc.list(u.id);
-    return rows.map(toBankAccountResponse);
+  async list(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    const page = await this.svc.list(u.id, parsePageQuery(query));
+    return sendPage(res, {
+      ...page,
+      items: page.items.map(toBankAccountResponse),
+    });
   }
 
   @UseGuards(CsrfGuard)
@@ -67,7 +79,7 @@ export class BankAccountsController {
   @Put(':id')
   async update(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     let patch: Record<string, unknown>;
@@ -92,7 +104,10 @@ export class BankAccountsController {
   @UseGuards(CsrfGuard)
   @Delete(':id')
   @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.svc.remove(u.id, id);
   }
 }

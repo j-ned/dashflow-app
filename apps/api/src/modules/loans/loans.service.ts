@@ -4,9 +4,20 @@ import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { loans, loanTransactions, patients } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
+import {
+  afterCreatedAt,
+  CURSOR_COLUMN,
+  createdAtCursorText,
+  pageLimit,
+  toPageByCreatedAt,
+  type Page,
+  type PageQuery,
+} from '../../common/crud/keyset';
 import { addMoney, toCents } from '../../common/money';
 import { today } from '../../common/today';
 import type { Loan } from './loan.response';
+
+type LoanTransaction = typeof loanTransactions.$inferSelect;
 
 @Injectable()
 export class LoansService extends OwnedCrudService<Loan> {
@@ -40,26 +51,49 @@ export class LoansService extends OwnedCrudService<Loan> {
     }
   }
 
-  allTransactions(userId: string) {
+  allTransactions(
+    userId: string,
+    q: PageQuery = {},
+  ): Promise<Page<LoanTransaction>> {
+    const t = loanTransactions;
+    const limit = pageLimit(q);
     return this.db
-      .select(getTableColumns(loanTransactions))
-      .from(loanTransactions)
-      .innerJoin(
-        loans,
-        and(eq(loanTransactions.loanId, loans.id), eq(loans.userId, userId)),
-      )
-      .limit(1000);
+      .select({
+        ...getTableColumns(t),
+        [CURSOR_COLUMN]: createdAtCursorText(t.createdAt),
+      })
+      .from(t)
+      .innerJoin(loans, and(eq(t.loanId, loans.id), eq(loans.userId, userId)))
+      .where(afterCreatedAt(t.createdAt, t.id, q.after, 'desc'))
+      .orderBy(desc(t.createdAt), desc(t.id))
+      .limit(limit + 1)
+      .then((rows) => toPageByCreatedAt(rows, limit));
   }
 
-  async transactionsOf(userId: string, id: string) {
+  async transactionsOf(
+    userId: string,
+    id: string,
+    q: PageQuery = {},
+  ): Promise<Page<LoanTransaction> | undefined> {
     const loan = await this.getOne(userId, id);
     if (!loan) return undefined;
-    return this.db
-      .select()
-      .from(loanTransactions)
-      .where(eq(loanTransactions.loanId, id))
-      .orderBy(desc(loanTransactions.date), desc(loanTransactions.createdAt))
-      .limit(100);
+    const t = loanTransactions;
+    const limit = pageLimit(q);
+    const rows = await this.db
+      .select({
+        ...getTableColumns(t),
+        [CURSOR_COLUMN]: createdAtCursorText(t.createdAt),
+      })
+      .from(t)
+      .where(
+        and(
+          eq(t.loanId, id),
+          afterCreatedAt(t.createdAt, t.id, q.after, 'desc'),
+        ),
+      )
+      .orderBy(desc(t.createdAt), desc(t.id))
+      .limit(limit + 1);
+    return toPageByCreatedAt(rows, limit);
   }
 
   async addTransaction(

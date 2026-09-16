@@ -2,6 +2,7 @@ import {
   Controller,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Patch,
   UseGuards,
 } from '@nestjs/common';
@@ -53,7 +54,10 @@ export class RemindersController extends OwnedCrudController<unknown> {
 
   @UseGuards(CsrfGuard)
   @Patch(':id/toggle')
-  async toggle(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async toggle(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     const row = await this.svc.toggle(u.id, id);
     if (row === undefined) throw new NotFoundException('Non trouvé');
     return row;

@@ -1,9 +1,16 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { salaryArchives, bankAccounts } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
+import {
+  decodeCursor,
+  pageLimit,
+  toPage,
+  type Page,
+  type PageQuery,
+} from '../../common/crud/keyset';
 
 type SalaryArchive = typeof salaryArchives.$inferSelect;
 
@@ -44,13 +51,26 @@ export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
     return super.update(userId, id, patch);
   }
 
-  /** Trie par mois décroissant. */
-  override list(userId: string): Promise<SalaryArchive[]> {
-    return this.db
+  /** Trie par mois décroissant ; curseur (month, id). */
+  override async list(
+    userId: string,
+    q: PageQuery = {},
+  ): Promise<Page<SalaryArchive>> {
+    const limit = pageLimit(q);
+    const c = decodeCursor(q.after, 2);
+    const rows = await this.db
       .select()
       .from(salaryArchives)
-      .where(eq(salaryArchives.userId, userId))
-      .orderBy(desc(salaryArchives.month))
-      .limit(200);
+      .where(
+        and(
+          eq(salaryArchives.userId, userId),
+          c
+            ? sql`(${salaryArchives.month}, ${salaryArchives.id}) < (${c[0]}, ${c[1]}::uuid)`
+            : undefined,
+        ),
+      )
+      .orderBy(desc(salaryArchives.month), desc(salaryArchives.id))
+      .limit(limit + 1);
+    return toPage(rows, limit, (r) => [r.month, r.id]);
   }
 }

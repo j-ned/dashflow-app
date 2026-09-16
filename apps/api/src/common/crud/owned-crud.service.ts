@@ -1,9 +1,24 @@
-import { and, eq } from 'drizzle-orm';
+import { and, asc, eq, getTableColumns } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
 import type { DrizzleDB } from '../../db/drizzle.constants';
+import {
+  afterCreatedAt,
+  afterId,
+  CURSOR_COLUMN,
+  createdAtCursorText,
+  pageLimit,
+  toPage,
+  toPageByCreatedAt,
+  type Page,
+  type PageQuery,
+} from './keyset';
 
-/** Table Drizzle possédant les colonnes `id` et `userId`. */
-export type OwnedTable = PgTable & { id: PgColumn; userId: PgColumn };
+/** Table Drizzle possédant les colonnes `id` et `userId` (et, souvent, `createdAt`). */
+export type OwnedTable = PgTable & {
+  id: PgColumn;
+  userId: PgColumn;
+  createdAt?: PgColumn;
+};
 
 export class OwnedCrudService<TRow> {
   constructor(
@@ -11,12 +26,38 @@ export class OwnedCrudService<TRow> {
     protected readonly table: OwnedTable,
   ) {}
 
-  list(userId: string): Promise<TRow[]> {
-    return this.db
+  /**
+   * Liste paginée par curseur. Ordre d'insertion `(created_at, id)` quand la table le permet —
+   * c'est l'ordre que les utilisateurs voient déjà (premier compte = compte par défaut,
+   * couleur des membres par index) — sinon par `id`.
+   */
+  async list(userId: string, q: PageQuery = {}): Promise<Page<TRow>> {
+    const limit = pageLimit(q);
+    const { id, userId: owner, createdAt } = this.table;
+    if (createdAt) {
+      const rows = await this.db
+        .select({
+          ...getTableColumns(this.table),
+          [CURSOR_COLUMN]: createdAtCursorText(createdAt),
+        })
+        .from(this.table)
+        .where(
+          and(eq(owner, userId), afterCreatedAt(createdAt, id, q.after, 'asc')),
+        )
+        .orderBy(asc(createdAt), asc(id))
+        .limit(limit + 1);
+      return toPageByCreatedAt(
+        rows as Array<TRow & { id: string; [CURSOR_COLUMN]: string }>,
+        limit,
+      ) as Page<TRow>;
+    }
+    const rows = await this.db
       .select()
       .from(this.table)
-      .where(eq(this.table.userId, userId))
-      .limit(100) as Promise<TRow[]>;
+      .where(and(eq(owner, userId), afterId(id, q.after)))
+      .orderBy(asc(id))
+      .limit(limit + 1);
+    return toPage(rows as TRow[], limit, (r) => [(r as { id: string }).id]);
   }
 
   async getOne(userId: string, id: string): Promise<TRow | undefined> {

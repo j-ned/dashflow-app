@@ -6,6 +6,7 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Res,
   UploadedFile,
@@ -101,7 +102,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   @Get('by-appointment/:appointmentId')
   byAppointment(
     @CurrentUser() u: AuthUser,
-    @Param('appointmentId') appointmentId: string,
+    @Param('appointmentId', ParseUUIDPipe) appointmentId: string,
   ) {
     return this.svc.byAppointment(u.id, appointmentId);
   }
@@ -117,7 +118,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   )
   async uploadDocument(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @UploadedFile() file: { buffer: Buffer; mimetype: string } | undefined,
   ) {
     if (!file) throw new BadRequestException('Fichier requis');
@@ -132,7 +133,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   @Get(':id/document')
   async getDocument(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Res() res: Response,
   ): Promise<void> {
     const presc = await this.svc.getOne(u.id, id);
@@ -152,7 +153,7 @@ export class PrescriptionsController extends OwnedCrudController<unknown> {
   @HttpCode(204)
   async deleteDocument(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
   ): Promise<void> {
     const presc = await this.svc.getOne(u.id, id);
     if (!presc) throw new NotFoundException('Non trouvé');

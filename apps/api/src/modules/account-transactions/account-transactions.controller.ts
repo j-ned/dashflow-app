@@ -6,10 +6,14 @@ import {
   HttpCode,
   NotFoundException,
   Param,
+  ParseUUIDPipe,
   Post,
   Put,
+  Query,
+  Res,
   UseGuards,
 } from '@nestjs/common';
+import type { Response } from 'express';
 import { AccountTransactionsService } from './account-transactions.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
@@ -26,6 +30,7 @@ import {
   batchTransactionSchema,
 } from './dto/account-transaction.dto';
 import { today } from '../../common/today';
+import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 
 @UseGuards(JwtAuthGuard)
 @Controller()
@@ -33,16 +38,25 @@ export class AccountTransactionsController {
   constructor(private readonly svc: AccountTransactionsService) {}
 
   @Get('transactions/all')
-  listAll(@CurrentUser() u: AuthUser) {
-    return this.svc.listAll(u.id);
+  async listAll(
+    @CurrentUser() u: AuthUser,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
+  ) {
+    return sendPage(res, await this.svc.listAll(u.id, parsePageQuery(query)));
   }
 
   @Get('bank-accounts/:accountId/transactions')
-  listOfAccount(
+  async listOfAccount(
     @CurrentUser() u: AuthUser,
-    @Param('accountId') accountId: string,
+    @Param('accountId', ParseUUIDPipe) accountId: string,
+    @Query() query: unknown,
+    @Res({ passthrough: true }) res: Response,
   ) {
-    return this.svc.listOfAccount(u.id, accountId);
+    return sendPage(
+      res,
+      await this.svc.listOfAccount(u.id, accountId, parsePageQuery(query)),
+    );
   }
 
   @UseGuards(CsrfGuard)
@@ -50,7 +64,7 @@ export class AccountTransactionsController {
   @HttpCode(201)
   async create(
     @CurrentUser() u: AuthUser,
-    @Param('accountId') accountId: string,
+    @Param('accountId', ParseUUIDPipe) accountId: string,
     @Body() body: Record<string, unknown>,
   ) {
     if (body.encryptedData) {
@@ -87,7 +101,7 @@ export class AccountTransactionsController {
   @HttpCode(201)
   async createBatch(
     @CurrentUser() u: AuthUser,
-    @Param('accountId') accountId: string,
+    @Param('accountId', ParseUUIDPipe) accountId: string,
     @Body() body: Record<string, unknown>,
   ) {
     const { items } = parseBody(batchTransactionSchema, body);
@@ -125,7 +139,7 @@ export class AccountTransactionsController {
   @Put('transactions/:id')
   async update(
     @CurrentUser() u: AuthUser,
-    @Param('id') id: string,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() body: Record<string, unknown>,
   ) {
     let patch: Record<string, unknown>;
@@ -158,7 +172,10 @@ export class AccountTransactionsController {
   @UseGuards(CsrfGuard)
   @Delete('transactions/:id')
   @HttpCode(204)
-  async remove(@CurrentUser() u: AuthUser, @Param('id') id: string) {
+  async remove(
+    @CurrentUser() u: AuthUser,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
     await this.svc.remove(u.id, id);
   }
 }

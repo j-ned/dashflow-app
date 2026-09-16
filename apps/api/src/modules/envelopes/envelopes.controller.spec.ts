@@ -20,7 +20,7 @@ import { CsrfGuard } from '../../common/guards/csrf.guard';
 // doivent rester enregistrées malgré l'override + le re-mapping de la réponse.
 
 const ENV_ROW = {
-  id: 'env-1',
+  id: '11111111-1111-4111-8111-111111111111',
   userId: 'u1',
   memberId: null,
   name: 'Vacances',
@@ -72,7 +72,9 @@ describe('EnvelopesController — DTO de sortie', () => {
   });
 
   beforeEach(() => {
-    mockSvc.list.mockReset().mockResolvedValue([ENV_ROW]);
+    mockSvc.list
+      .mockReset()
+      .mockResolvedValue({ items: [ENV_ROW], nextCursor: null });
     mockSvc.getOne.mockReset().mockResolvedValue(ENV_ROW);
     mockSvc.create.mockReset().mockResolvedValue(ENV_ROW);
     mockSvc.update.mockReset().mockResolvedValue(ENV_ROW);
@@ -84,7 +86,7 @@ describe('EnvelopesController — DTO de sortie', () => {
     expect(res.status).toBe(200);
     expect(res.body).toEqual([
       {
-        id: 'env-1',
+        id: '11111111-1111-4111-8111-111111111111',
         memberId: null,
         name: 'Vacances',
         type: 'vacances',
@@ -98,11 +100,13 @@ describe('EnvelopesController — DTO de sortie', () => {
   });
 
   it('GET /envelopes/:id → 200, objet mappé sans userId', async () => {
-    const res = await request(app.getHttpServer()).get('/envelopes/env-1');
+    const res = await request(app.getHttpServer()).get(
+      '/envelopes/11111111-1111-4111-8111-111111111111',
+    );
 
     expect(res.status).toBe(200);
     expect(res.body.userId).toBeUndefined();
-    expect(res.body.id).toBe('env-1');
+    expect(res.body.id).toBe('11111111-1111-4111-8111-111111111111');
   });
 
   it('POST /envelopes → 201, réponse mappée sans userId', async () => {
@@ -116,7 +120,7 @@ describe('EnvelopesController — DTO de sortie', () => {
 
   it('PUT /envelopes/:id → 200, réponse mappée sans userId', async () => {
     const res = await request(app.getHttpServer())
-      .put('/envelopes/env-1')
+      .put('/envelopes/11111111-1111-4111-8111-111111111111')
       .send({ name: 'Vacances 2026', type: 'vacances' });
 
     expect(res.status).toBe(200);
@@ -133,7 +137,7 @@ describe('EnvelopesController — DTO de sortie', () => {
     async (_l, body) => {
       mockSvc.credit.mockClear();
       const res = await request(app.getHttpServer())
-        .patch('/envelopes/env-1/balance')
+        .patch('/envelopes/11111111-1111-4111-8111-111111111111/balance')
         .send(body);
 
       expect(res.status).toBe(400);
@@ -142,19 +146,24 @@ describe('EnvelopesController — DTO de sortie', () => {
   );
 
   it('PATCH /envelopes/:id/balance accepte un retrait (montant négatif à 2 décimales)', async () => {
-    mockSvc.credit
-      .mockClear()
-      .mockResolvedValue({ id: 'env-1', balance: '-2.50' });
+    mockSvc.credit.mockClear().mockResolvedValue({
+      id: '11111111-1111-4111-8111-111111111111',
+      balance: '-2.50',
+    });
     const res = await request(app.getHttpServer())
-      .patch('/envelopes/env-1/balance')
+      .patch('/envelopes/11111111-1111-4111-8111-111111111111/balance')
       .send({ amount: '-2.5' });
 
     expect(res.status).toBe(200);
-    expect(mockSvc.credit).toHaveBeenCalledWith('u1', 'env-1', {
-      amount: -2.5,
-      date: undefined,
-      note: null,
-    });
+    expect(mockSvc.credit).toHaveBeenCalledWith(
+      'u1',
+      '11111111-1111-4111-8111-111111111111',
+      {
+        amount: -2.5,
+        date: undefined,
+        note: null,
+      },
+    );
   });
 
   it('POST /envelopes avec un objectif négatif → 400', async () => {
