@@ -30,8 +30,11 @@ export class HttpAuthGateway {
     return this.api.get('/auth/me');
   }
 
-  register(email: string, password: string, displayName?: string): Observable<void> {
-    return this.api.post('/auth/register', { email, password, displayName });
+  // `authKey` / `secret` : jamais le mot de passe. Les stores dérivent la clé d'authentification
+  // (deriveAuthKey) avant d'appeler ce gateway ; seul un compte pas encore migré présente encore
+  // son mot de passe, le temps d'un login.
+  register(email: string, authKey: string, displayName?: string): Observable<void> {
+    return this.api.post('/auth/register', { email, password: authKey, displayName });
   }
 
   demoLogin(): Observable<{
@@ -59,16 +62,26 @@ export class HttpAuthGateway {
     return this.api.post('/auth/resend-code', { email });
   }
 
-  login(email: string, password: string, totpCode?: string): Observable<LoginResponse> {
-    return this.api.post('/auth/login', { email, password, totpCode });
+  /** Ce que le serveur attend pour cet e-mail : 1 = clé d'authentification, 0 = mot de passe (compte pas encore migré). */
+  prelogin(email: string): Observable<{ authVersion: number }> {
+    return this.api.post('/auth/prelogin', { email });
+  }
+
+  login(email: string, secret: string, totpCode?: string): Observable<LoginResponse> {
+    return this.api.post('/auth/login', { email, password: secret, totpCode });
+  }
+
+  /** Bascule le compte sur la clé d'authentification, juste après un login au mot de passe. */
+  upgradeAuth(currentPassword: string, authKey: string): Observable<AuthUser> {
+    return this.api.post('/auth/me/upgrade-auth', { currentPassword, authKey });
   }
 
   forgotPassword(email: string): Observable<void> {
     return this.api.post('/auth/forgot-password', { email });
   }
 
-  resetPassword(email: string, code: string, newPassword: string): Observable<void> {
-    return this.api.post('/auth/reset-password', { email, code, newPassword });
+  resetPassword(email: string, code: string, authKey: string): Observable<void> {
+    return this.api.post('/auth/reset-password', { email, code, newPassword: authKey });
   }
 
   /** Reset d'un compte chiffré : clé maîtresse ré-emballée, ou effacement si la clé de récupération est perdue. */
@@ -110,12 +123,12 @@ export class HttpAuthGateway {
     return this.api.get('/auth/me/2fa/backup-codes');
   }
 
-  regenerateBackupCodes(password: string): Observable<{ backupCodes: string[] }> {
-    return this.api.post('/auth/me/2fa/backup-codes', { password });
+  regenerateBackupCodes(secret: string): Observable<{ backupCodes: string[] }> {
+    return this.api.post('/auth/me/2fa/backup-codes', { password: secret });
   }
 
-  disable2FA(password: string): Observable<void> {
-    return this.api.post('/auth/me/2fa/disable', { password });
+  disable2FA(secret: string): Observable<void> {
+    return this.api.post('/auth/me/2fa/disable', { password: secret });
   }
 
   updatePassword(body: Record<string, string>): Observable<void> {
@@ -131,8 +144,16 @@ export class HttpAuthGateway {
   }
 
   /** `currentPassword` : exigé par le serveur quand des clés existent déjà (remplacement). */
-  patchEncryptionKeys(keyMaterial: KeyMaterial, currentPassword?: string): Observable<void> {
-    return this.api.patch('/auth/me/encryption-keys', { ...keyMaterial, currentPassword });
+  patchEncryptionKeys(keyMaterial: KeyMaterial, currentSecret?: string): Observable<void> {
+    return this.api.patch('/auth/me/encryption-keys', {
+      ...keyMaterial,
+      currentPassword: currentSecret,
+    });
+  }
+
+  /** Compte OAuth : signale qu'une passphrase protège les clés. La passphrase ne quitte pas le client. */
+  markEncryptionPassphrase(): Observable<void> {
+    return this.api.post('/auth/me/encryption-passphrase', {});
   }
 
   migrateEncryption(

@@ -5,7 +5,8 @@ import { AuthStore } from './auth.store';
 import { AuthUser } from './domain/models/auth-user.model';
 import { HttpAuthGateway } from './infra/http-auth.gateway';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
-import { of } from 'rxjs';
+import { deriveAuthKey } from '@core/services/crypto/auth-key';
+import { of, throwError } from 'rxjs';
 
 describe('AuthStore : demo account bypass', () => {
   function makeUser(over: Partial<AuthUser> = {}): AuthUser {
@@ -16,6 +17,7 @@ describe('AuthStore : demo account bypass', () => {
       avatarUrl: null,
       totpEnabled: false,
       hasPassword: true,
+      authVersion: 1,
       googleLinked: false,
       encryptionVersion: 0,
       hasEncryptionPassphrase: false,
@@ -38,6 +40,11 @@ describe('AuthStore : demo account bypass', () => {
     demoLogin: vi.fn(),
     logout: vi.fn(),
     setPassword: vi.fn(),
+    prelogin: vi.fn(),
+    login: vi.fn(),
+    upgradeAuth: vi.fn(),
+    register: vi.fn(),
+    disable2FA: vi.fn(),
   };
   const mockCrypto = {
     isUnlocked: () => false,
@@ -212,7 +219,10 @@ describe('AuthStore : demo account bypass', () => {
       await store.setPassword('nouveau-mdp-123456');
 
       expect(mockGateway.setPassword).toHaveBeenCalledWith(
-        expect.objectContaining({ newPassword: 'nouveau-mdp-123456' }),
+        expect.objectContaining({
+          newPassword: await deriveAuthKey('nouveau-mdp-123456', 'x@x'),
+          newWrappedMasterKey: 'wrapped',
+        }),
       );
     });
 
@@ -230,7 +240,90 @@ describe('AuthStore : demo account bypass', () => {
 
       await store.setPassword('nouveau-mdp-123456');
 
-      expect(mockGateway.setPassword).toHaveBeenCalledWith({ newPassword: 'nouveau-mdp-123456' });
+      expect(mockGateway.setPassword).toHaveBeenCalledWith({
+        newPassword: await deriveAuthKey('nouveau-mdp-123456', 'x@x'),
+      });
+    });
+  });
+
+  describe('le mot de passe ne part jamais au serveur', () => {
+    const EMAIL = 'julie@dash.flow';
+    const PASSWORD = 'correct horse battery';
+
+    it('register : envoie la clé d’authentification dérivée, pas le mot de passe', async () => {
+      mockGateway.register.mockReturnValue(of(undefined));
+
+      await store.register(EMAIL, PASSWORD, 'Julie');
+
+      expect(mockGateway.register).toHaveBeenCalledWith(
+        EMAIL,
+        await deriveAuthKey(PASSWORD, EMAIL),
+        'Julie',
+      );
+    });
+
+    it('login, compte migré (prelogin 1) : seule la clé part, aucune bascule', async () => {
+      mockGateway.prelogin.mockReturnValue(of({ authVersion: 1 }));
+      mockGateway.login.mockReturnValue(of({ user: makeUser({ email: EMAIL }), csrfToken: 't' }));
+
+      expect(await store.login(EMAIL, PASSWORD)).toBe('authenticated');
+
+      expect(mockGateway.login).toHaveBeenCalledWith(
+        EMAIL,
+        await deriveAuthKey(PASSWORD, EMAIL),
+        undefined,
+      );
+      expect(JSON.stringify(mockGateway.login.mock.calls)).not.toContain(PASSWORD);
+      expect(mockGateway.upgradeAuth).not.toHaveBeenCalled();
+    });
+
+    it('login, compte d’avant la dérivation (prelogin 0) : mot de passe une dernière fois, puis bascule sur la clé', async () => {
+      mockGateway.prelogin.mockReturnValue(of({ authVersion: 0 }));
+      mockGateway.login.mockReturnValue(
+        of({ user: makeUser({ email: EMAIL, authVersion: 0 }), csrfToken: 't' }),
+      );
+      mockGateway.upgradeAuth.mockReturnValue(of(makeUser({ email: EMAIL, authVersion: 1 })));
+
+      await store.login(EMAIL, PASSWORD);
+
+      expect(mockGateway.login).toHaveBeenCalledWith(EMAIL, PASSWORD, undefined);
+      expect(mockGateway.upgradeAuth).toHaveBeenCalledWith(
+        PASSWORD,
+        await deriveAuthKey(PASSWORD, EMAIL),
+      );
+      expect(store.user()?.authVersion).toBe(1);
+    });
+
+    it('login, bascule en échec : la session reste ouverte en version 0 et prouve encore par le mot de passe', async () => {
+      mockGateway.prelogin.mockReturnValue(of({ authVersion: 0 }));
+      mockGateway.login.mockReturnValue(
+        of({ user: makeUser({ email: EMAIL, authVersion: 0 }), csrfToken: 't' }),
+      );
+      mockGateway.upgradeAuth.mockReturnValue(throwError(() => new Error('réseau')));
+      mockGateway.disable2FA.mockReturnValue(of(undefined));
+
+      expect(await store.login(EMAIL, PASSWORD)).toBe('authenticated');
+      await store.disable2FA(PASSWORD);
+
+      expect(store.user()?.authVersion).toBe(0);
+      expect(mockGateway.disable2FA).toHaveBeenCalledWith(PASSWORD);
+    });
+
+    it('login avec 2FA requise : pas de session, donc pas de bascule', async () => {
+      mockGateway.prelogin.mockReturnValue(of({ authVersion: 0 }));
+      mockGateway.login.mockReturnValue(of({ mfaRequired: true }));
+
+      expect(await store.login(EMAIL, PASSWORD)).toBe('mfa_required');
+      expect(mockGateway.upgradeAuth).not.toHaveBeenCalled();
+    });
+
+    it('preuve du mot de passe en session migrée (désactivation 2FA) : la clé, pas le mot de passe', async () => {
+      internals()._user.set(makeUser({ email: EMAIL, totpEnabled: true }));
+      mockGateway.disable2FA.mockReturnValue(of(undefined));
+
+      await store.disable2FA(PASSWORD);
+
+      expect(mockGateway.disable2FA).toHaveBeenCalledWith(await deriveAuthKey(PASSWORD, EMAIL));
     });
   });
 });

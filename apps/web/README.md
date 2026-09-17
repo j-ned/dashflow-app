@@ -101,7 +101,9 @@ Même en cas de compromission serveur : aucune donnée exploitable.
 
 ```mermaid
 graph LR
-  A[Mot de passe utilisateur] -->|PBKDF2 600k itérations| B[Clé de chiffrement dérivée KEK]
+  A[Mot de passe utilisateur] -->|PBKDF2 600k, sel aléatoire du compte| B[Clé de chiffrement dérivée KEK]
+  A -->|PBKDF2 600k, sel = e-mail| G[Clé d'authentification]
+  G -->|HTTPS, seule donnée de connexion envoyée| H[Serveur : Argon2id de la clé]
   B -->|AES-KW key wrapping| C[Clé de données DEK chiffrée]
   D[Données métier] -->|AES-256-GCM avec DEK| E[Payload chiffré]
   E -->|HTTPS| F[(PostgreSQL - payload opaque)]
@@ -113,6 +115,7 @@ graph LR
 - **Rotation de mot de passe** sans rechiffrer toute la base : on ré-emballe (AES-KW) uniquement la DEK avec une nouvelle KEK
 - **Multi-device** : chaque appareil peut déchiffrer la DEK avec le mot de passe, sans partager la clé dérivée
 - **Zero-knowledge serveur** : le backend ne stocke jamais la KEK, uniquement la DEK chiffrée
+- **Le mot de passe ne quitte pas le navigateur** : le serveur ne reçoit qu'une clé d'authentification dérivée, indépendante de la KEK (autre sel). Même compromis, il ne voit rien qui permette de déballer la DEK. La passphrase d'un compte Google reste elle aussi côté client
 
 ### Garanties
 
@@ -121,7 +124,7 @@ graph LR
 - ✅ **IV unique** par payload (jamais réutilisé)
 - ✅ **2FA TOTP** optionnel
 - ✅ **Rate limiting** sur toutes les routes sensibles
-- ✅ **Argon2id** pour les hashs de mot de passe côté serveur
+- ✅ **Argon2id** côté serveur, appliqué à la clé d'authentification (jamais au mot de passe, que le serveur ne reçoit pas)
 - ✅ **JWT refresh tokens** avec rotation
 
 ---

@@ -247,9 +247,7 @@ export class EncryptionSetup {
     this.error.set('');
 
     try {
-      await firstValueFrom(
-        this.api.post('/auth/me/encryption-passphrase', { passphrase: password }),
-      );
+      await this.authEncryption.markPassphraseProtected();
 
       const key = await this.authEncryption.setupEncryption(password);
       this.recoveryKey.set(key);

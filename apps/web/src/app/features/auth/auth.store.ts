@@ -1,5 +1,6 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { deriveAuthKey } from '@core/services/crypto/auth-key';
 import { AutoLockStore } from '@core/services/crypto/auto-lock.store';
 import { CsrfStore } from '@core/services/csrf/csrf-store';
 import { validateOne } from '@core/services/crypto/validate-decrypted';
@@ -103,7 +104,8 @@ export class AuthStore {
   }
 
   async register(email: string, password: string, displayName?: string): Promise<void> {
-    await firstValueFrom(this.gateway.register(email, password, displayName));
+    const authKey = await deriveAuthKey(password, email);
+    await firstValueFrom(this.gateway.register(email, authKey, displayName));
   }
 
   async demoLogin(): Promise<void> {
@@ -136,7 +138,13 @@ export class AuthStore {
     password: string,
     totpCode?: string,
   ): Promise<'authenticated' | 'mfa_required'> {
-    const res = await firstValueFrom(this.gateway.login(email, password, totpCode));
+    // Le serveur ne reçoit que la clé d'authentification. Seul un compte d'avant cette dérivation
+    // présente encore son mot de passe, une dernière fois : il est basculé dès la session ouverte.
+    const { authVersion } = await firstValueFrom(this.gateway.prelogin(email));
+    const authKey = await deriveAuthKey(password, email);
+    const res = await firstValueFrom(
+      this.gateway.login(email, authVersion === 0 ? password : authKey, totpCode),
+    );
     // 2FA activé sans code : le backend renvoie 200 + { mfaRequired: true } (pas une erreur).
     if ('mfaRequired' in res) return 'mfa_required';
 
@@ -146,6 +154,14 @@ export class AuthStore {
     this._user.set(res.user);
     this._isAuthenticated.set(true);
     this._keyMaterial = res.keyMaterial ?? null;
+
+    if (res.user.authVersion === 0) {
+      try {
+        this._user.set(await firstValueFrom(this.gateway.upgradeAuth(password, authKey)));
+      } catch {
+        // Non bloquant : la session est ouverte, la bascule sera retentée au prochain login.
+      }
+    }
 
     if (res.keyMaterial && res.user.encryptionVersion === 1) {
       try {
@@ -163,7 +179,8 @@ export class AuthStore {
   }
 
   async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
-    await firstValueFrom(this.gateway.resetPassword(email, code, newPassword));
+    const authKey = await deriveAuthKey(newPassword, email);
+    await firstValueFrom(this.gateway.resetPassword(email, code, authKey));
   }
 
   async hydrateFromCookie(): Promise<void> {
@@ -229,22 +246,51 @@ export class AuthStore {
   }
 
   async regenerateBackupCodes(password: string): Promise<string[]> {
-    const { backupCodes } = await firstValueFrom(this.gateway.regenerateBackupCodes(password));
+    const { backupCodes } = await firstValueFrom(
+      this.gateway.regenerateBackupCodes(await this.presentedSecret(password)),
+    );
     return backupCodes;
   }
 
   async disable2FA(password: string): Promise<void> {
-    await firstValueFrom(this.gateway.disable2FA(password));
+    await firstValueFrom(this.gateway.disable2FA(await this.presentedSecret(password)));
     const user = this._user();
     if (user) this._user.set({ ...user, totpEnabled: false });
   }
 
   async updatePassword(currentPassword: string, newPassword: string): Promise<void> {
-    await firstValueFrom(this.gateway.updatePassword({ currentPassword, newPassword }));
+    await firstValueFrom(
+      this.gateway.updatePassword({
+        currentPassword: await this.presentedSecret(currentPassword),
+        newPassword: await this.authKeyFor(newPassword),
+      }),
+    );
+    this.markAuthKeyInUse();
+  }
+
+  /** Clé d'authentification du compte connecté pour ce mot de passe (nouveau secret de connexion). */
+  async authKeyFor(password: string): Promise<string> {
+    const email = this._user()?.email;
+    if (!email) throw new Error('Not authenticated');
+    return deriveAuthKey(password, email);
+  }
+
+  /**
+   * Preuve du mot de passe courant à envoyer au serveur : la clé d'authentification, sauf pour la
+   * session d'un compte pas encore basculé (ouverte avant la migration, ou bascule échouée).
+   */
+  async presentedSecret(password: string): Promise<string> {
+    return this._user()?.authVersion === 0 ? password : this.authKeyFor(password);
+  }
+
+  /** Après un changement ou une pose de mot de passe : le serveur vérifie désormais la clé. */
+  markAuthKeyInUse(): void {
+    const user = this._user();
+    if (user) this._user.set({ ...user, authVersion: 1 });
   }
 
   async setPassword(newPassword: string): Promise<void> {
-    const body: Record<string, string> = { newPassword };
+    const body: Record<string, string> = { newPassword: await this.authKeyFor(newPassword) };
 
     // If crypto is unlocked, re-wrap master key with the new password
     // so future email+password logins auto-unlock E2EE transparently
@@ -265,7 +311,14 @@ export class AuthStore {
 
     await firstValueFrom(this.gateway.setPassword(body));
     const user = this._user();
-    if (user) this._user.set({ ...user, hasPassword: true, hasEncryptionPassphrase: false });
+    if (user) {
+      this._user.set({
+        ...user,
+        hasPassword: true,
+        hasEncryptionPassphrase: false,
+        authVersion: 1,
+      });
+    }
 
     // Update local key material
     if (body['newSalt'] && body['newWrappedMasterKey']) {
