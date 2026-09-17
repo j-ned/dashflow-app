@@ -8,7 +8,6 @@ import {
   NotFoundException,
   Param,
   ParseUUIDPipe,
-  Patch,
   Post,
   Put,
   Query,
@@ -27,7 +26,6 @@ import { parseBody } from '../../common/parse-body';
 import { parsePageQuery, sendPage } from '../../common/crud/keyset';
 import { clientRowId } from '../../common/crud/client-row-id';
 import {
-  updateMemberColorSchema,
   createMemberSchema,
   updateMemberSchema,
   encryptedMemberSchema,
@@ -116,18 +114,5 @@ export class MembersController {
       });
     }
     await this.svc.remove(u.id, id);
-  }
-
-  @UseGuards(CsrfGuard)
-  @Patch(':id/color')
-  async color(
-    @CurrentUser() u: AuthUser,
-    @Param('id', ParseUUIDPipe) id: string,
-    @Body() body: unknown,
-  ) {
-    const { color } = parseBody(updateMemberColorSchema, body);
-    const row = await this.svc.updateColor(u.id, id, color);
-    if (!row) throw new NotFoundException('Non trouvé');
-    return row;
   }
 }
