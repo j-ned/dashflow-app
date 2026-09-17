@@ -451,9 +451,22 @@
       "regenerate": "Régénérer la clé de récupération",
       "regenerating": "Génération...",
       "feedback": {
-        "locked": "Vos données ne sont pas déverrouillées.",
-        "regenFailed": "Erreur lors de la régénération de la clé.",
-        "regenerated": "Clé de récupération régénérée avec succès."
+        "regenFailed": "Régénération impossible : vérifiez votre mot de passe.",
+        "regenerated": "Clé de récupération régénérée avec succès.",
+        "recoveryValid": "Votre clé de récupération est valide.",
+        "recoveryInvalid": "Cette clé n'ouvre pas vos données. Générez-en une nouvelle et conservez-la.",
+        "recoveryCheckFailed": "Vérification impossible pour le moment."
+      },
+      "recovery": {
+        "title": "Clé de récupération",
+        "due": "Avez-vous toujours votre clé de récupération ? C'est le seul moyen de retrouver vos données si vous oubliez votre mot de passe. Vérifiez-la maintenant, ou générez-en une nouvelle.",
+        "verifyOpen": "Vérifier ma clé",
+        "verifyLabel": "Collez votre clé de récupération (64 caractères). Elle n'est pas envoyée au serveur.",
+        "verify": "Vérifier",
+        "cancel": "Annuler",
+        "rotateExplain": "Une nouvelle clé remplace l'ancienne, qui ne fonctionnera plus.",
+        "passwordLabel": "Votre mot de passe actuel",
+        "passphraseLabel": "Votre passphrase de chiffrement"
       }
     },
     "danger": {
