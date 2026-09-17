@@ -16,13 +16,6 @@ class CapturingMailer implements Mailer {
     this.lastCode = code;
     return Promise.resolve();
   }
-  async sendCalendarInvitation(
-    _to: string,
-    _senderName: string,
-    _calendarToken: string,
-  ) {
-    /* no-op */
-  }
 }
 
 describe('Transverse e2e', () => {
@@ -131,31 +124,5 @@ describe('Transverse e2e', () => {
       .set('Cookie', a.cookies)
       .set('X-CSRF-Token', a.csrf)
       .expect(204);
-  });
-
-  it('shared-access → public calendar', async () => {
-    const a = await authedClient();
-
-    // Create shared access — returns the inserted row including calendarToken
-    const created = await request(a.s)
-      .post('/shared-access')
-      .set('Cookie', a.cookies)
-      .set('X-CSRF-Token', a.csrf)
-      .send({ invitedEmail: 'a@b.com' })
-      .expect(201);
-    const calendarToken = created.body.calendarToken as string;
-    expect(calendarToken).toBeTruthy();
-
-    // Public GET — no cookie, proves no auth required
-    const cal = await request(a.s)
-      .get(`/medical/calendar/${calendarToken}`)
-      .expect(200);
-    expect(cal.headers['content-type']).toContain('text/calendar');
-    expect(cal.text).toContain('BEGIN:VCALENDAR');
-  });
-
-  it('calendar unknown token → 404', async () => {
-    const s = app.getHttpServer();
-    await request(s).get('/medical/calendar/nope').expect(404);
   });
 });

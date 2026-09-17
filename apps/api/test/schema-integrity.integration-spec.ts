@@ -22,7 +22,6 @@ const EXPECTED_TABLES = [
   'medications',
   'documents',
   'reminders',
-  'shared_access',
 ];
 
 describe('intégrité schéma porté ↔ DB locale', () => {

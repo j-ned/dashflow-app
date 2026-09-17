@@ -17,8 +17,6 @@ DELETE FROM recurring_entries
    AND label = 'TEST virement Livret';
 
 -- ── Tables scopées par user_id ───────────────────────────────────────────────
-DROP TABLE IF EXISTS demo_seed_shared_access;
-CREATE TABLE demo_seed_shared_access      AS SELECT * FROM shared_access      WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
 DROP TABLE IF EXISTS demo_seed_patients;
 CREATE TABLE demo_seed_patients           AS SELECT * FROM patients           WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
 DROP TABLE IF EXISTS demo_seed_practitioners;

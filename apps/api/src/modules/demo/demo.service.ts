@@ -28,13 +28,11 @@ const DELETE_USER_ORDER = [
   'bank_accounts',
   'practitioners',
   'patients',
-  'shared_access',
 ] as const;
 
 // Ordre de restauration : parents avant enfants (FK). Inclut les tables enfants sans user_id.
 // account_transactions après bank_accounts (account_id) + patients (member_id) + recurring_entries.
 const INSERT_ORDER = [
-  'shared_access',
   'patients',
   'practitioners',
   'bank_accounts',

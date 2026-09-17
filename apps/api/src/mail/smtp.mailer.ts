@@ -3,7 +3,6 @@ import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
-import { escapeHtml, sanitizeSenderName } from './sanitize-sender-name';
 
 const shell = (subtitle: string, inner: string): string => `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -82,36 +81,6 @@ export class SmtpMailer implements Mailer {
         'Réinitialisation de votre mot de passe',
         codeCard('Votre code de réinitialisation', code) +
           `<p style="color: #9ca3af; font-size: 12px; text-align: center;">Ce code expire dans 10 minutes.<br/>Si vous n'avez pas demandé cette réinitialisation, ignorez cet email.</p>`,
-      ),
-    });
-  }
-
-  async sendCalendarInvitation(
-    to: string,
-    rawSenderName: string,
-    calendarToken: string,
-  ): Promise<void> {
-    const senderName = sanitizeSenderName(rawSenderName);
-    const senderHtml = escapeHtml(senderName);
-    const calendarUrl = `${this.appUrl}/medical/calendar/${calendarToken}`;
-    const webcalUrl = calendarUrl.replace(/^https?:\/\//, 'webcal://');
-    const googleCalUrl = `https://calendar.google.com/calendar/r?cid=${encodeURIComponent(webcalUrl)}`;
-    await this.transporter.sendMail({
-      from: this.from,
-      to,
-      subject: `${senderName} partage son calendrier médical avec vous - DashFlow`,
-      text: `${senderName} vous invite à suivre son calendrier médical DashFlow.\n\nLien d'abonnement : ${webcalUrl}\nGoogle Calendar : ${googleCalUrl}\nApple / Outlook / Thunderbird : ${calendarUrl}`,
-      html: shell(
-        'Invitation calendrier médical',
-        `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
-          <p style="color: #374151; font-size: 14px; margin: 0 0 16px 0;"><strong>${senderHtml}</strong> vous invite à suivre son calendrier médical</p>
-          <a href="${googleCalUrl}" style="display: inline-block; background: #4285f4; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Ajouter à Google Calendar</a><br/>
-          <a href="${webcalUrl}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-top: 8px;">S'abonner (Apple / Outlook / Thunderbird)</a>
-        </div>
-        <div style="background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 8px; padding: 16px;">
-          <p style="color: #6b7280; font-size: 12px; margin: 0 0 8px 0;">Ou copiez ce lien dans votre calendrier :</p>
-          <p style="font-family: monospace; font-size: 11px; color: #374151; word-break: break-all; margin: 0; background: #fff; padding: 8px; border-radius: 4px; border: 1px solid #e5e7eb;">${calendarUrl}</p>
-        </div>`,
       ),
     });
   }
