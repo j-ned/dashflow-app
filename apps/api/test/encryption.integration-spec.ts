@@ -17,15 +17,33 @@ const repo = {
     await db.update(schema.users).set(patch).where(eq(schema.users.id, id));
     return undefined;
   },
+  findById: (id: string) =>
+    db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, id))
+      .then((r) => r[0]),
+  findByEmail: (email: string) =>
+    db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.email, email))
+      .then((r) => r[0]),
+  findValidCode: () => Promise.resolve({ id: 'code' }),
+  bumpSessionVersion: () => Promise.resolve(undefined),
+  deleteCodes: () => Promise.resolve(undefined),
 } as unknown as AuthRepository;
 const enc = new EncryptionService(repo, db);
 
-async function makeUser(): Promise<string> {
+async function makeUser(
+  extra: Partial<typeof schema.users.$inferInsert> = {},
+): Promise<string> {
   const [u] = await db
     .insert(schema.users)
     .values({
       email: `enc+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`,
       password: 'x',
+      ...extra,
     })
     .returning();
   return u.id;
@@ -159,12 +177,50 @@ describe('EncryptionService intégration', () => {
     expect(user.encryptionVersion).toBe(0);
   });
 
-  it('wipe : supprime les lignes + reset état', async () => {
-    const userId = await makeUser();
+  it('migrate : refusée (409) sur un compte déjà chiffré, clés intactes', async () => {
+    const userId = await makeUser({
+      encryptionVersion: 1,
+      encryptionSalt: 'old-s',
+      wrappedMasterKey: 'old-w',
+      recoveryWrappedKey: 'old-r',
+    });
+    const res = await enc.migrate(userId, {
+      keyMaterial: {
+        salt: 's',
+        wrappedMasterKey: 'w',
+        recoveryWrappedKey: 'r',
+      },
+      data: {},
+    });
+    expect(res).toMatchObject({ success: false, status: 409 });
+    const [user] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+    expect(user.wrappedMasterKey).toBe('old-w');
+  });
+
+  it('reset avec effacement : supprime les lignes, remet les clés à zéro et change le mot de passe', async () => {
+    const userId = await makeUser({
+      encryptionVersion: 1,
+      encryptionSalt: 's',
+      wrappedMasterKey: 'w',
+      recoveryWrappedKey: 'r',
+    });
     await db
       .insert(schema.bankAccounts)
       .values({ userId, name: 'X', initialBalance: '0' });
-    await enc.wipe(userId);
+    const [{ email }] = await db
+      .select()
+      .from(schema.users)
+      .where(eq(schema.users.id, userId));
+    const res = await enc.resetPasswordWithRecovery({
+      email,
+      code: '123456',
+      newPassword: 'nouveau-long-123',
+      wipe: true,
+    });
+    expect(res.success).toBe(true);
     const rows = await db
       .select()
       .from(schema.bankAccounts)
@@ -176,5 +232,6 @@ describe('EncryptionService intégration', () => {
       .where(eq(schema.users.id, userId));
     expect(user.encryptionVersion).toBe(0);
     expect(user.wrappedMasterKey).toBeNull();
+    expect(user.password).not.toBe('x');
   });
 });

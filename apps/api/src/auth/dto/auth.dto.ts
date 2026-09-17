@@ -52,10 +52,15 @@ export const totpDisableSchema = z.object({
 /** Régénérer les codes de secours = même exigence que désactiver : le mot de passe courant. */
 export const backupCodesRegenerateSchema = totpDisableSchema;
 
-export const setupEncryptionKeysSchema = z.object({
+const keyMaterial = {
   salt: z.string().min(1),
   wrappedMasterKey: z.string().min(1),
   recoveryWrappedKey: z.string().min(1),
+};
+/** `currentPassword` : exigé par le service dès que des clés existent déjà (remplacement). */
+export const setupEncryptionKeysSchema = z.object({
+  ...keyMaterial,
+  currentPassword: z.string().min(1).optional(),
 });
 export const encryptionPassphraseSchema = z.object({
   passphrase: z
@@ -66,7 +71,7 @@ export const encryptionPassphraseSchema = z.object({
     ),
 });
 export const migrateEncryptionSchema = z.object({
-  keyMaterial: setupEncryptionKeysSchema,
+  keyMaterial: z.object(keyMaterial),
   data: z.record(
     z.string(),
     z.array(z.object({ id: z.string().uuid(), encryptedData: z.string() })),
@@ -76,8 +81,10 @@ export const resetWithRecoverySchema = z.object({
   email,
   code: z.string().length(6),
   newPassword: password,
-  newSalt: z.string().optional(),
-  newWrappedMasterKey: z.string().optional(),
+  newSalt: z.string().min(1).optional(),
+  newWrappedMasterKey: z.string().min(1).optional(),
+  /** Clé de récupération perdue : repartir de zéro (données chiffrées et clés supprimées). */
+  wipe: z.literal(true).optional(),
 });
 
 export type RegisterDto = z.infer<typeof registerSchema>;

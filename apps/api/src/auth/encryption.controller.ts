@@ -48,7 +48,8 @@ export class EncryptionController {
     @Body(new ZodValidationPipe(setupEncryptionKeysSchema))
     dto: SetupEncryptionKeysDto,
   ) {
-    await this.enc.setKeys(u.id, dto);
+    const r = await this.enc.setKeys(u.id, dto);
+    if (!r.success) throw httpFrom(r);
     return { message: 'Clés de chiffrement configurées' };
   }
 
@@ -73,17 +74,9 @@ export class EncryptionController {
     @Body(new ZodValidationPipe(migrateEncryptionSchema))
     dto: MigrateEncryptionDto,
   ) {
-    await this.enc.migrate(u.id, dto);
+    const r = await this.enc.migrate(u.id, dto);
+    if (!r.success) throw httpFrom(r);
     return { message: 'Migration chiffrement terminée' };
-  }
-
-  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
-  @SecurityEvent({ success: 'encryption_wiped' })
-  @Post('me/wipe-encryption')
-  @HttpCode(200)
-  async wipe(@CurrentUser() u: AuthUser) {
-    await this.enc.wipe(u.id);
-    return { message: 'Données chiffrées supprimées' };
   }
 
   @UseGuards(EmailThrottlerGuard)

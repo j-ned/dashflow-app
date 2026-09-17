@@ -176,10 +176,24 @@ export class EncryptionService {
     @Inject(DRIZZLE) private readonly db: DrizzleDB,
   ) {}
 
+  /**
+   * Première pose des clés : libre. Remplacement de clés existantes : le mot de passe courant
+   * est exigé, une session volée ne doit pas pouvoir rendre les données indéchiffrables.
+   * Un compte sans mot de passe (OAuth seul) n'a rien à présenter : il reste sur la session.
+   */
   async setKeys(
     userId: string,
     dto: SetupEncryptionKeysDto,
   ): Promise<Result<null>> {
+    const user = await this.repo.findById(userId);
+    if (!user) return fail(404, 'Compte introuvable');
+    if (user.encryptionVersion === 1 && user.password) {
+      const verified =
+        !!dto.currentPassword &&
+        (await argon2.verify(user.password, dto.currentPassword));
+      if (!verified)
+        return fail(403, 'Mot de passe actuel requis', 'REAUTH_REQUIRED');
+    }
     await this.repo.updateUser(userId, {
       encryptionSalt: dto.salt,
       wrappedMasterKey: dto.wrappedMasterKey,
@@ -194,6 +208,11 @@ export class EncryptionService {
     return ok(null);
   }
 
+  /**
+   * Reset par code e-mail d'un compte E2EE, en une seule écriture : soit la clé maîtresse
+   * ré-emballée avec le nouveau mot de passe (le client l'a ouverte avec la clé de récupération),
+   * soit l'effacement des données chiffrées quand cette clé est perdue.
+   */
   async resetPasswordWithRecovery(
     dto: ResetWithRecoveryDto,
   ): Promise<Result<null>> {
@@ -201,14 +220,32 @@ export class EncryptionService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
-    const patch: Record<string, unknown> = {
-      password: await argon2.hash(dto.newPassword),
-    };
-    if (dto.newSalt && dto.newWrappedMasterKey) {
-      patch.encryptionSalt = dto.newSalt;
-      patch.wrappedMasterKey = dto.newWrappedMasterKey;
+    const encrypted = user.encryptionVersion === 1;
+    const rewrap = !!dto.newSalt && !!dto.newWrappedMasterKey;
+    if (encrypted && rewrap === !!dto.wipe) {
+      return fail(
+        400,
+        'Clé ré-emballée ou effacement requis, pas les deux',
+        'E2EE_RECOVERY_REQUIRED',
+      );
     }
-    await this.repo.updateUser(user.id, patch);
+    const password = await argon2.hash(dto.newPassword);
+    if (encrypted && dto.wipe) {
+      await this.db.transaction(async (tx) => {
+        await this.wipeIn(tx, user.id, { password });
+      });
+    } else {
+      await this.repo.updateUser(user.id, {
+        password,
+        ...(encrypted
+          ? {
+              encryptionSalt: dto.newSalt,
+              wrappedMasterKey: dto.newWrappedMasterKey,
+              encryptionPassphrase: false,
+            }
+          : {}),
+      });
+    }
     await this.repo.bumpSessionVersion(user.id);
     await this.repo.deleteCodes(dto.email, 'reset');
     return ok(null);
@@ -223,6 +260,11 @@ export class EncryptionService {
     userId: string,
     dto: MigrateEncryptionDto,
   ): Promise<Result<null>> {
+    // Rejouer la migration sur un compte déjà chiffré remplacerait ses clés sans réauthentification.
+    const user = await this.repo.findById(userId);
+    if (!user) return fail(404, 'Compte introuvable');
+    if (user.encryptionVersion === 1)
+      return fail(409, 'Chiffrement déjà actif', 'ALREADY_ENCRYPTED');
     await this.db.transaction(async (tx) => {
       for (const [tableName, rows] of Object.entries(dto.data)) {
         const mapping = MIGRATE_TABLES[tableName];
@@ -258,21 +300,24 @@ export class EncryptionService {
     return ok(null);
   }
 
-  async wipe(userId: string): Promise<Result<null>> {
-    await this.db.transaction(async (tx) => {
-      for (const table of WIPE_TABLES) {
-        await tx.delete(table).where(eq(table.userId, userId));
-      }
-      await tx
-        .update(schema.users)
-        .set({
-          encryptionSalt: null,
-          wrappedMasterKey: null,
-          recoveryWrappedKey: null,
-          encryptionVersion: 0,
-        })
-        .where(eq(schema.users.id, userId));
-    });
-    return ok(null);
+  private async wipeIn(
+    tx: Parameters<Parameters<DrizzleDB['transaction']>[0]>[0],
+    userId: string,
+    extra: Partial<typeof schema.users.$inferInsert> = {},
+  ): Promise<void> {
+    for (const table of WIPE_TABLES) {
+      await tx.delete(table).where(eq(table.userId, userId));
+    }
+    await tx
+      .update(schema.users)
+      .set({
+        ...extra,
+        encryptionSalt: null,
+        wrappedMasterKey: null,
+        recoveryWrappedKey: null,
+        encryptionVersion: 0,
+        encryptionPassphrase: false,
+      })
+      .where(eq(schema.users.id, userId));
   }
 }

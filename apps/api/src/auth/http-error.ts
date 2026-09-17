@@ -6,7 +6,13 @@ type ResultError = Extract<Result<unknown>, { success: false }>;
 /** Traduit un échec du Result pattern en `HttpException` au bord du controller. */
 export function httpFrom(r: ResultError): HttpException {
   return new HttpException(
-    r.code ? { message: r.error, code: r.code } : r.error,
+    r.code
+      ? {
+          message: r.error,
+          code: r.code,
+          ...(r.details !== undefined ? { details: r.details } : {}),
+        }
+      : r.error,
     r.status,
   );
 }
