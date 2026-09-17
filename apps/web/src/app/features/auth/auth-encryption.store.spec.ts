@@ -6,6 +6,7 @@ import { AuthStore } from './auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { HttpAuthGateway } from './infra/http-auth.gateway';
 import { KeyMaterial } from './domain/models/key-material.model';
+import { deriveAuthKey } from '@core/services/crypto/auth-key';
 
 describe('AuthEncryptionStore', () => {
   let store: AuthEncryptionStore;
@@ -13,6 +14,10 @@ describe('AuthEncryptionStore', () => {
     getKeyMaterial: vi.fn<() => KeyMaterial | null>(),
     updateKeyMaterial: vi.fn(),
     setEncryptionVersion: vi.fn(),
+    // Preuve du mot de passe courant / clé d'authentification d'un nouveau mot de passe.
+    presentedSecret: vi.fn((password: string) => Promise.resolve(`proof(${password})`)),
+    authKeyFor: vi.fn((password: string) => Promise.resolve(`key(${password})`)),
+    markAuthKeyInUse: vi.fn(),
   };
   const mockCrypto = {
     unlock: vi.fn(),
@@ -108,7 +113,7 @@ describe('AuthEncryptionStore', () => {
           wrappedMasterKey: 'new-wrapped',
           recoveryWrappedKey: 'wrapped-recovery',
         }),
-        'nouveau-mdp-1234',
+        'proof(nouveau-mdp-1234)',
       );
       expect(mockAuth.updateKeyMaterial).toHaveBeenCalledWith(
         expect.objectContaining({ wrappedMasterKey: 'new-wrapped' }),
@@ -142,7 +147,7 @@ describe('AuthEncryptionStore', () => {
       expect(mockGateway.resetPasswordWithRecovery).toHaveBeenCalledWith({
         email: RESET.email,
         code: RESET.code,
-        newPassword: RESET.newPassword,
+        newPassword: await deriveAuthKey(RESET.newPassword, RESET.email),
         newSalt: '010203',
         newWrappedMasterKey: 'new-wrapped',
       });
@@ -174,7 +179,7 @@ describe('AuthEncryptionStore', () => {
       expect(mockGateway.resetPasswordWithRecovery).toHaveBeenCalledWith({
         email: 'user@dash.flow',
         code: '123456',
-        newPassword: 'nouveau-mdp-1234',
+        newPassword: await deriveAuthKey('nouveau-mdp-1234', 'user@dash.flow'),
         wipe: true,
       });
       expect(mockCrypto.unlockWithRecovery).not.toHaveBeenCalled();
@@ -232,14 +237,15 @@ describe('AuthEncryptionStore', () => {
 
       expect(mockGateway.updatePassword).toHaveBeenCalledWith(
         expect.objectContaining({
-          currentPassword: 'ancien-mdp-123',
-          newPassword: 'nouveau-mdp-456',
+          currentPassword: 'proof(ancien-mdp-123)',
+          newPassword: 'key(nouveau-mdp-456)',
           newWrappedMasterKey: 'new-wrapped',
         }),
       );
       expect(mockAuth.updateKeyMaterial).toHaveBeenCalledWith(
         expect.objectContaining({ wrappedMasterKey: 'new-wrapped' }),
       );
+      expect(mockAuth.markAuthKeyInUse).toHaveBeenCalledTimes(1);
     });
 
     it('given crypto verrouillé, when updatePasswordWithReWrap, then lève une erreur sans PATCH', async () => {

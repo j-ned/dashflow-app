@@ -9,6 +9,7 @@ const VALID = {
   avatarUrl: null,
   totpEnabled: false,
   hasPassword: true,
+  authVersion: 1,
   googleLinked: false,
   encryptionVersion: 0,
   hasEncryptionPassphrase: false,

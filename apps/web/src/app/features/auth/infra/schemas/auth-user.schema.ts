@@ -9,6 +9,7 @@ export const AuthUserSchema = z.object({
   avatarUrl: z.nullable(z.string()),
   totpEnabled: z.boolean(),
   hasPassword: z.boolean(),
+  authVersion: z.number(),
   googleLinked: z.boolean(),
   encryptionVersion: z.number(),
   hasEncryptionPassphrase: z.boolean(),

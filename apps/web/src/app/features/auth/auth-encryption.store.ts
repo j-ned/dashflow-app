@@ -1,6 +1,7 @@
 import { inject, Injectable } from '@angular/core';
 import { CryptoStore, bytesToHex } from '@core/services/crypto/crypto.store';
 import { AuthStore } from './auth.store';
+import { deriveAuthKey } from '@core/services/crypto/auth-key';
 import { HttpAuthGateway } from './infra/http-auth.gateway';
 import { firstValueFrom } from 'rxjs';
 
@@ -41,7 +42,7 @@ export class AuthEncryptionStore {
     await firstValueFrom(
       this.gateway.patchEncryptionKeys(
         { salt: saltHex, wrappedMasterKey, recoveryWrappedKey },
-        password,
+        await this.auth.presentedSecret(password),
       ),
     );
 
@@ -72,7 +73,7 @@ export class AuthEncryptionStore {
         this.gateway.resetPasswordWithRecovery({
           email: reset.email,
           code: reset.code,
-          newPassword: reset.newPassword,
+          newPassword: await deriveAuthKey(reset.newPassword, reset.email),
           newSalt: saltHex,
           newWrappedMasterKey: wrappedMasterKey,
         }),
@@ -85,8 +86,18 @@ export class AuthEncryptionStore {
   /** Clé de récupération perdue : nouveau mot de passe, données chiffrées et clés effacées. */
   async resetPasswordWithWipe(email: string, code: string, newPassword: string): Promise<void> {
     await firstValueFrom(
-      this.gateway.resetPasswordWithRecovery({ email, code, newPassword, wipe: true }),
+      this.gateway.resetPasswordWithRecovery({
+        email,
+        code,
+        newPassword: await deriveAuthKey(newPassword, email),
+        wipe: true,
+      }),
     );
+  }
+
+  /** Compte OAuth : une passphrase (qui ne quitte jamais le client) protégera les clés. */
+  async markPassphraseProtected(): Promise<void> {
+    await firstValueFrom(this.gateway.markEncryptionPassphrase());
   }
 
   async setupEncryption(password: string): Promise<string> {
@@ -131,12 +142,13 @@ export class AuthEncryptionStore {
 
     await firstValueFrom(
       this.gateway.updatePassword({
-        currentPassword,
-        newPassword,
+        currentPassword: await this.auth.presentedSecret(currentPassword),
+        newPassword: await this.auth.authKeyFor(newPassword),
         newSalt: saltHex,
         newWrappedMasterKey: wrappedMasterKey,
       }),
     );
+    this.auth.markAuthKeyInUse();
 
     const current = this.auth.getKeyMaterial();
     this.auth.updateKeyMaterial({
