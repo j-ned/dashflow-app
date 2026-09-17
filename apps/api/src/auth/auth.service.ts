@@ -144,6 +144,17 @@ export class AuthService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
+    // Compte E2EE : changer le seul mot de passe laisserait la clé maîtresse emballée avec
+    // l'ancien. Le code reste valide, le client enchaîne sur /auth/reset-password-with-recovery
+    // avec la clé ré-emballée (ou l'effacement), à partir du blob de récupération renvoyé ici.
+    if (user.encryptionVersion === 1) {
+      return fail(
+        409,
+        'Compte chiffré : clé de récupération requise',
+        'E2EE_RECOVERY_REQUIRED',
+        { recoveryWrappedKey: user.recoveryWrappedKey },
+      );
+    }
     await this.repo.updateUser(user.id, {
       password: await argon2.hash(dto.newPassword),
     });

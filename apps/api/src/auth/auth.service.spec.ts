@@ -359,20 +359,27 @@ describe('AuthService', () => {
     });
   });
 
-  it('resetPassword : compte chiffré (v=1) SANS clés → succès (pas de 400)', async () => {
+  it('resetPassword : compte chiffré (v=1) → 409 avec le blob de récupération, mot de passe et code intacts', async () => {
     r.findValidCode.mockResolvedValue({ id: 'c1' });
     r.findByEmail.mockResolvedValue({
       id: 'u1',
       email: 'a@b.com',
       encryptionVersion: 1,
+      recoveryWrappedKey: 'rwk',
     });
-    r.updateUser.mockResolvedValue({ id: 'u1' });
     const res = await svc.resetPassword({
       email: 'a@b.com',
       code: '123456',
       newPassword: 'nouveau-long-123',
     });
-    expect(res.success).toBe(true);
+    expect(res).toMatchObject({
+      success: false,
+      status: 409,
+      code: 'E2EE_RECOVERY_REQUIRED',
+      details: { recoveryWrappedKey: 'rwk' },
+    });
+    expect(r.updateUser).not.toHaveBeenCalled();
+    expect(r.deleteCodes).not.toHaveBeenCalled();
   });
 });
 
