@@ -14,6 +14,7 @@ describe('AuthEncryptionStore', () => {
     getKeyMaterial: vi.fn<() => KeyMaterial | null>(),
     updateKeyMaterial: vi.fn(),
     setEncryptionVersion: vi.fn(),
+    user: vi.fn(() => ({ hasPassword: true })),
     // Preuve du mot de passe courant / clé d'authentification d'un nouveau mot de passe.
     presentedSecret: vi.fn((password: string) => Promise.resolve(`proof(${password})`)),
     authKeyFor: vi.fn((password: string) => Promise.resolve(`key(${password})`)),
@@ -29,6 +30,7 @@ describe('AuthEncryptionStore', () => {
     deriveWrappingKeyFromRecovery: vi.fn(),
     wrapKey: vi.fn(),
     generateMasterKey: vi.fn(),
+    unwrapKey: vi.fn(),
     lock: vi.fn(),
   };
   const mockGateway = {
@@ -183,6 +185,66 @@ describe('AuthEncryptionStore', () => {
         wipe: true,
       });
       expect(mockCrypto.unlockWithRecovery).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('rotateRecoveryKey', () => {
+    it('given le bon mot de passe, when rotateRecoveryKey, then enregistre la nouvelle enveloppe (sel et clé emballée inchangés, preuve du mot de passe) AVANT de rendre la clé', async () => {
+      mockCrypto.generateRecoveryKey.mockReturnValue('f'.repeat(64));
+      mockCrypto.wrapKey.mockResolvedValue('new-recovery-wrapped');
+
+      const recoveryKey = await store.rotateRecoveryKey('mon-mdp-1234');
+
+      expect(mockCrypto.unlock).toHaveBeenCalledWith('mon-mdp-1234', 'aabbcc', 'wrapped-master');
+      expect(mockGateway.patchEncryptionKeys).toHaveBeenCalledWith(
+        { ...KEY_MATERIAL, recoveryWrappedKey: 'new-recovery-wrapped' },
+        'proof(mon-mdp-1234)',
+      );
+      expect(mockAuth.updateKeyMaterial).toHaveBeenCalledWith({
+        ...KEY_MATERIAL,
+        recoveryWrappedKey: 'new-recovery-wrapped',
+      });
+      expect(recoveryKey).toBe('f'.repeat(64));
+    });
+
+    it('given un mauvais mot de passe, when rotateRecoveryKey, then rien n’est envoyé ni rendu', async () => {
+      mockCrypto.unlock.mockRejectedValueOnce(new Error('unwrap failed'));
+
+      await expect(store.rotateRecoveryKey('faux')).rejects.toThrow('unwrap failed');
+      expect(mockGateway.patchEncryptionKeys).not.toHaveBeenCalled();
+    });
+
+    it('given le serveur refuse, when rotateRecoveryKey, then l’ancienne enveloppe reste en mémoire et aucune clé n’est rendue', async () => {
+      mockGateway.patchEncryptionKeys.mockReturnValue(
+        throwError(() => ({ status: 403, message: 'Mot de passe actuel requis' })),
+      );
+
+      await expect(store.rotateRecoveryKey('mon-mdp-1234')).rejects.toMatchObject({ status: 403 });
+      expect(mockAuth.updateKeyMaterial).not.toHaveBeenCalled();
+    });
+
+    it('given un compte Google sans mot de passe, when rotateRecoveryKey, then aucune preuve n’est jointe', async () => {
+      mockAuth.user.mockReturnValue({ hasPassword: false });
+
+      await store.rotateRecoveryKey('ma-passphrase');
+
+      expect(mockGateway.patchEncryptionKeys).toHaveBeenCalledWith(expect.anything(), undefined);
+    });
+  });
+
+  describe('verifyRecoveryKey', () => {
+    it('given une clé qui ouvre l’enveloppe, then true, sans toucher à l’état', async () => {
+      mockCrypto.unwrapKey.mockResolvedValue({} as CryptoKey);
+
+      expect(await store.verifyRecoveryKey('a'.repeat(64))).toBe(true);
+      expect(mockCrypto.unwrapKey).toHaveBeenCalledWith('wrapped-recovery', expect.anything());
+      expect(mockCrypto.unlockWithRecovery).not.toHaveBeenCalled();
+    });
+
+    it('given une clé qui n’ouvre rien, then false', async () => {
+      mockCrypto.unwrapKey.mockRejectedValue(new Error('OperationError'));
+
+      expect(await store.verifyRecoveryKey('b'.repeat(64))).toBe(false);
     });
   });
 

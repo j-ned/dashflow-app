@@ -451,9 +451,22 @@
       "regenerate": "Regenerate recovery key",
       "regenerating": "Generating...",
       "feedback": {
-        "locked": "Your data is not unlocked.",
-        "regenFailed": "Failed to regenerate the key.",
-        "regenerated": "Recovery key regenerated successfully."
+        "regenFailed": "Could not regenerate the key: check your password.",
+        "regenerated": "Recovery key regenerated successfully.",
+        "recoveryValid": "Your recovery key is valid.",
+        "recoveryInvalid": "This key does not open your data. Generate a new one and keep it safe.",
+        "recoveryCheckFailed": "Could not check the key right now."
+      },
+      "recovery": {
+        "title": "Recovery key",
+        "due": "Do you still have your recovery key? It is the only way to get your data back if you forget your password. Check it now, or generate a new one.",
+        "verifyOpen": "Check my key",
+        "verifyLabel": "Paste your recovery key (64 characters). It is not sent to the server.",
+        "verify": "Check",
+        "cancel": "Cancel",
+        "rotateExplain": "A new key replaces the old one, which will stop working.",
+        "passwordLabel": "Your current password",
+        "passphraseLabel": "Your encryption passphrase"
       }
     },
     "danger": {

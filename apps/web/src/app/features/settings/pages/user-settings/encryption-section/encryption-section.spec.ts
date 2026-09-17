@@ -1,16 +1,36 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter, Router } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { AuthStore } from '@features/auth/auth.store';
-import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { AuthEncryptionStore } from '@features/auth/auth-encryption.store';
+import { RecoveryKeyCheckStore } from '@features/auth/recovery-key-check.store';
 import { Toaster } from '@shared/components/toast/toast';
 import { EncryptionSection } from './encryption-section';
 
-function mount(opts: { version?: number; masterKey?: unknown } = {}) {
+type Cmp = {
+  goToEncryptionSetup: () => void;
+  openPanel: (panel: 'verify' | 'rotate') => void;
+  panel: () => string;
+  secret: { set: (v: string) => void };
+  panelError: () => string;
+  checkDue: () => boolean;
+  settingsRecoveryKey: () => string;
+  verifyRecoveryKey: () => Promise<void>;
+  regenerateRecoveryKey: () => Promise<void>;
+};
+
+function mount(
+  opts: {
+    version?: number;
+    rotateRecoveryKey?: () => Promise<string>;
+    verifyRecoveryKey?: () => Promise<boolean>;
+  } = {},
+) {
   const success = vi.fn();
   const error = vi.fn();
-  const wrapKey = vi.fn(() => Promise.resolve('wrapped'));
+  const rotateRecoveryKey = vi.fn(opts.rotateRecoveryKey ?? (() => Promise.resolve('NEW-KEY')));
+  const verifyRecoveryKey = vi.fn(opts.verifyRecoveryKey ?? (() => Promise.resolve(true)));
   TestBed.configureTestingModule({
     imports: [
       EncryptionSection,
@@ -21,52 +41,99 @@ function mount(opts: { version?: number; masterKey?: unknown } = {}) {
     ],
     providers: [
       provideRouter([]),
-      { provide: AuthStore, useValue: { encryptionVersion: () => opts.version ?? 1 } },
       {
-        provide: CryptoStore,
+        provide: AuthStore,
         useValue: {
-          getRewrappableMasterKey: () => opts.masterKey ?? null,
-          generateRecoveryKey: () => 'RECOVERY-KEY',
-          deriveWrappingKeyFromRecovery: () => Promise.resolve({} as CryptoKey),
-          wrapKey,
+          encryptionVersion: () => opts.version ?? 1,
+          user: () => ({ id: 'u1', hasEncryptionPassphrase: false }),
         },
       },
+      { provide: AuthEncryptionStore, useValue: { rotateRecoveryKey, verifyRecoveryKey } },
       { provide: Toaster, useValue: { success, error } },
     ],
   });
   const fixture = TestBed.createComponent(EncryptionSection);
   fixture.detectChanges();
-  return { fixture, success, error, wrapKey };
+  return {
+    fixture,
+    cmp: fixture.componentInstance as unknown as Cmp,
+    el: fixture.nativeElement as HTMLElement,
+    success,
+    rotateRecoveryKey,
+    verifyRecoveryKey,
+  };
 }
 
 describe('EncryptionSection', () => {
+  beforeEach(() => localStorage.clear());
+
   it('version 0 : goToEncryptionSetup navigue vers /auth/encryption-setup', () => {
-    const { fixture } = mount({ version: 0 });
-    const router = TestBed.inject(Router);
-    const navSpy = vi.spyOn(router, 'navigate').mockResolvedValue(true);
-    const cmp = fixture.componentInstance as unknown as { goToEncryptionSetup: () => void };
+    const { cmp } = mount({ version: 0 });
+    const navSpy = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+
     cmp.goToEncryptionSetup();
+
     expect(navSpy).toHaveBeenCalledWith(['/auth/encryption-setup']);
   });
 
-  it('regenerateRecoveryKey sans masterKey → toast erreur, pas de wrap', async () => {
-    const { fixture, error, wrapKey } = mount({ version: 1, masterKey: null });
-    const cmp = fixture.componentInstance as unknown as {
-      regenerateRecoveryKey: () => Promise<void>;
-    };
-    await cmp.regenerateRecoveryKey();
-    expect(error).toHaveBeenCalledTimes(1);
-    expect(wrapKey).not.toHaveBeenCalled();
+  describe('régénération de la clé de récupération', () => {
+    it('la clé n’est montrée qu’après son enregistrement par le store (mot de passe saisi transmis)', async () => {
+      const { cmp, rotateRecoveryKey } = mount();
+      cmp.openPanel('rotate');
+      cmp.secret.set('mon-mot-de-passe');
+
+      await cmp.regenerateRecoveryKey();
+
+      expect(rotateRecoveryKey).toHaveBeenCalledWith('mon-mot-de-passe');
+      expect(cmp.settingsRecoveryKey()).toBe('NEW-KEY');
+      expect(cmp.panel()).toBe('none');
+      expect(cmp.checkDue()).toBe(false);
+    });
+
+    it('échec (mauvais mot de passe, refus serveur) → aucune clé affichée, erreur dans le panneau', async () => {
+      const { cmp } = mount({ rotateRecoveryKey: () => Promise.reject(new Error('bad')) });
+      cmp.openPanel('rotate');
+      cmp.secret.set('faux');
+
+      await cmp.regenerateRecoveryKey();
+
+      expect(cmp.settingsRecoveryKey()).toBe('');
+      expect(cmp.panel()).toBe('rotate');
+      expect(cmp.panelError()).toBe('settings.encryption.feedback.regenFailed');
+    });
   });
 
-  it('regenerateRecoveryKey avec masterKey → wrap + settingsRecoveryKey peuplée', async () => {
-    const { fixture, wrapKey } = mount({ version: 1, masterKey: {} });
-    const cmp = fixture.componentInstance as unknown as {
-      regenerateRecoveryKey: () => Promise<void>;
-      settingsRecoveryKey: () => string;
-    };
-    await cmp.regenerateRecoveryKey();
-    expect(wrapKey).toHaveBeenCalledTimes(1);
-    expect(cmp.settingsRecoveryKey()).toBe('RECOVERY-KEY');
+  describe('vérification de la clé de récupération', () => {
+    it('jamais vérifiée sur cet appareil → rappel affiché', () => {
+      const { el } = mount();
+
+      expect(el.querySelector('[data-testid="recovery-check-due"]')).not.toBeNull();
+    });
+
+    it('clé valide (espaces ignorés) → date mémorisée, rappel retiré, toast', async () => {
+      const { fixture, cmp, el, success, verifyRecoveryKey } = mount();
+      cmp.openPanel('verify');
+      cmp.secret.set(`${'ab'.repeat(16)} \n${'cd'.repeat(16)}`);
+
+      await cmp.verifyRecoveryKey();
+      fixture.detectChanges();
+
+      expect(verifyRecoveryKey).toHaveBeenCalledWith('ab'.repeat(16) + 'cd'.repeat(16));
+      expect(success).toHaveBeenCalledWith('settings.encryption.feedback.recoveryValid');
+      expect(TestBed.inject(RecoveryKeyCheckStore).isDue()).toBe(false);
+      expect(el.querySelector('[data-testid="recovery-check-due"]')).toBeNull();
+    });
+
+    it('clé qui n’ouvre rien → erreur dans le panneau, rappel maintenu', async () => {
+      const { cmp, success } = mount({ verifyRecoveryKey: () => Promise.resolve(false) });
+      cmp.openPanel('verify');
+      cmp.secret.set('ab'.repeat(32));
+
+      await cmp.verifyRecoveryKey();
+
+      expect(cmp.panelError()).toBe('settings.encryption.feedback.recoveryInvalid');
+      expect(success).not.toHaveBeenCalled();
+      expect(cmp.checkDue()).toBe(true);
+    });
   });
 });

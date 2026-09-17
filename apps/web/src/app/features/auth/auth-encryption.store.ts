@@ -100,6 +100,48 @@ export class AuthEncryptionStore {
     await firstValueFrom(this.gateway.markEncryptionPassphrase());
   }
 
+  /**
+   * Remplace la clé de récupération. `secret` est ce qui déverrouille les données (mot de passe,
+   * ou passphrase d'un compte Google) : il rouvre la clé maîtresse même après un rechargement et
+   * sert de réauthentification au serveur. La nouvelle clé n'est renvoyée qu'une fois enregistrée
+   * côté serveur : avant, elle n'ouvrirait rien.
+   */
+  async rotateRecoveryKey(secret: string): Promise<string> {
+    const keyMaterial = this.auth.getKeyMaterial();
+    if (!keyMaterial) throw new Error('No key material');
+    await this.crypto.unlock(secret, keyMaterial.salt, keyMaterial.wrappedMasterKey);
+    const masterKey = this.crypto.getRewrappableMasterKey();
+    if (!masterKey) throw new Error('CryptoStore is locked');
+
+    const recoveryKey = this.crypto.generateRecoveryKey();
+    const recoveryWrappingKey = await this.crypto.deriveWrappingKeyFromRecovery(recoveryKey);
+    const rotated = {
+      ...keyMaterial,
+      recoveryWrappedKey: await this.crypto.wrapKey(masterKey, recoveryWrappingKey),
+    };
+    await firstValueFrom(
+      this.gateway.patchEncryptionKeys(
+        rotated,
+        this.auth.user()?.hasPassword ? await this.auth.presentedSecret(secret) : undefined,
+      ),
+    );
+    this.auth.updateKeyMaterial(rotated);
+    return recoveryKey;
+  }
+
+  /** Vrai si cette clé de récupération ouvre bien la clé maîtresse du compte. Rien n'est modifié. */
+  async verifyRecoveryKey(recoveryHex: string): Promise<boolean> {
+    const wrapped = this.auth.getKeyMaterial()?.recoveryWrappedKey;
+    if (!wrapped) throw new Error('No recovery key material');
+    try {
+      const wrappingKey = await this.crypto.deriveWrappingKeyFromRecovery(recoveryHex);
+      await this.crypto.unwrapKey(wrapped, wrappingKey);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   async setupEncryption(password: string): Promise<string> {
     const masterKey = await this.crypto.generateMasterKey();
     const salt = this.crypto.generateSalt();

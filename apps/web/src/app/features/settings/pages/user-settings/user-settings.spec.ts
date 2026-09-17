@@ -3,6 +3,7 @@ import { provideRouter } from '@angular/router';
 import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it, vi } from 'vitest';
 import { AuthStore } from '../../../auth/auth.store';
+import { AuthEncryptionStore } from '../../../auth/auth-encryption.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
@@ -29,8 +30,10 @@ function mount() {
           hasPassword: () => true,
           totpEnabled: () => false,
           encryptionVersion: () => 1,
+          user: () => ({ id: 'u1', hasEncryptionPassphrase: false }),
         },
       },
+      { provide: AuthEncryptionStore, useValue: {} },
       { provide: CryptoStore, useValue: { isUnlocked: () => true, getMasterKey: () => null } },
       { provide: ConfirmService, useValue: { confirm: () => Promise.resolve(false) } },
       { provide: Toaster, useValue: { success: vi.fn(), error: vi.fn() } },
