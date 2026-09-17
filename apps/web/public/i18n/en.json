@@ -1492,6 +1492,11 @@
     },
     "appointment": {
       "title": "Appointments",
+      "groups": {
+        "thisWeek": "This week",
+        "later": "Later",
+        "past": "Past"
+      },
       "subtitle": "Manage your medical appointments",
       "create": "New appointment",
       "listLabel": "Appointment list",

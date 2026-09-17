@@ -57,6 +57,10 @@ type Cmp = {
   updateStatus: (appointment: Appointment, status: AppointmentStatus) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
   patientName: (id: string) => string;
+  groups: () => {
+    key: string;
+    rows: { appointment: Appointment; patientName: string; practitionerName: string }[];
+  }[];
   practitionerName: (id: string) => string;
   selectedAppointment: { set: (v: Appointment | null) => void };
 };
@@ -254,6 +258,18 @@ describe('Appointments', () => {
 
     expect(error).toHaveBeenCalledWith('medical.appointment.feedback.deleteFailed');
     expect(success).not.toHaveBeenCalled();
+  });
+
+  it('groups : la ligne porte le rendez-vous tel que reçu (celui qui repart au gateway), les libellés à côté', async () => {
+    const { fixture, cmp } = make();
+    await fixture.whenStable();
+
+    const [group] = cmp.groups();
+
+    expect(group.rows[0].appointment).toBe(APPOINTMENT);
+    expect(Object.keys(group.rows[0].appointment)).not.toContain('patientName');
+    expect(group.rows[0].patientName).toBe('Jean Valjean');
+    expect(group.rows[0].practitionerName).toBe('Dr House');
   });
 
   it('patientName : id connu → "prénom nom"', () => {
