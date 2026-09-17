@@ -358,6 +358,60 @@ describe('AuthService', () => {
     });
   });
 
+  it.each([
+    ['e-mail inconnu', undefined, 1],
+    ['compte OAuth sans mot de passe', { password: null, authVersion: 0 }, 1],
+    ['compte migré', { password: 'h', authVersion: 1 }, 1],
+    ['compte pas encore migré', { password: 'h', authVersion: 0 }, 0],
+  ])('prelogin : %s → authVersion %i', async (_label, user, expected) => {
+    r.findByEmail.mockResolvedValue(user);
+    expect(await svc.prelogin('a@b.com')).toEqual({ authVersion: expected });
+  });
+
+  it('upgradeAuth : bon mot de passe → le hash couvre la clé d’authentification, authVersion = 1', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      authVersion: 0,
+      password: await argon2.hash('mot-de-passe-historique'),
+    });
+    r.updateUser.mockImplementation((_id: string, patch: object) =>
+      Promise.resolve({ id: 'u1', ...patch }),
+    );
+    const key = 'ab'.repeat(32);
+    const res = await svc.upgradeAuth('u1', {
+      currentPassword: 'mot-de-passe-historique',
+      authKey: key,
+    });
+    expect(res.success).toBe(true);
+    const patch = r.updateUser.mock.calls[0][1];
+    expect(patch.authVersion).toBe(1);
+    expect(await argon2.verify(patch.password, key)).toBe(true);
+  });
+
+  it('upgradeAuth : mauvais mot de passe → 401, rien écrit', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      authVersion: 0,
+      password: await argon2.hash('mot-de-passe-historique'),
+    });
+    const res = await svc.upgradeAuth('u1', {
+      currentPassword: 'autre',
+      authKey: 'ab'.repeat(32),
+    });
+    expect(res).toMatchObject({ success: false, status: 401 });
+    expect(r.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('upgradeAuth : compte déjà migré → idempotent, rien écrit', async () => {
+    r.findById.mockResolvedValue({ id: 'u1', authVersion: 1, password: 'h' });
+    const res = await svc.upgradeAuth('u1', {
+      currentPassword: 'peu-importe',
+      authKey: 'ab'.repeat(32),
+    });
+    expect(res.success).toBe(true);
+    expect(r.updateUser).not.toHaveBeenCalled();
+  });
+
   it('resetPassword : compte chiffré (v=1) → 409 avec le blob de récupération, mot de passe et code intacts', async () => {
     r.findValidCode.mockResolvedValue({ id: 'c1' });
     r.findByEmail.mockResolvedValue({

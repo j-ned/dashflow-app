@@ -9,6 +9,7 @@ export function toPublicUser(u: User) {
     avatarUrl: u.avatarUrl ? `/auth/avatar/${u.id}` : null,
     totpEnabled: !!u.totpEnabled,
     hasPassword: !!u.password,
+    authVersion: u.authVersion,
     googleLinked: !!u.googleId,
     encryptionVersion: u.encryptionVersion,
     hasEncryptionPassphrase: u.encryptionPassphrase,

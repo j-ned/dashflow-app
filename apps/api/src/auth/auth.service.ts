@@ -15,6 +15,7 @@ import type {
   RegisterDto,
   VerifyDto,
   LoginDto,
+  UpgradeAuthDto,
   ResetPasswordDto,
   UpdatePasswordDto,
   SetPasswordDto,
@@ -54,6 +55,7 @@ export class AuthService {
       // un mot de passe valide sur le compte que la vraie personne s'apprête à vérifier.
       const reclaimed = await this.repo.updateUser(existing.id, {
         password: hash,
+        authVersion: 1,
         displayName: dto.displayName ?? null,
         totpSecret: null,
         totpEnabled: null,
@@ -66,6 +68,7 @@ export class AuthService {
       email: dto.email,
       password: hash,
       displayName: dto.displayName,
+      authVersion: 1,
     });
     await this.sendCode(dto.email, 'verification');
     return ok(user);
@@ -85,6 +88,35 @@ export class AuthService {
     });
     await this.repo.deleteCodes(dto.email, 'verification');
     return ok(updated);
+  }
+
+  /**
+   * Ce que le client doit présenter au login : la clé d'authentification (1) ou, pour un compte
+   * pas encore migré, le mot de passe (0). Un e-mail inconnu, un compte sans mot de passe et un
+   * compte migré répondent tous 1 : seule l'existence d'un compte non migré est observable, le
+   * temps qu'il se reconnecte une fois.
+   */
+  async prelogin(email: string): Promise<{ authVersion: number }> {
+    const user = await this.repo.findByEmail(email);
+    return { authVersion: user?.password ? user.authVersion : 1 };
+  }
+
+  /** Appelé par le client juste après un login au mot de passe : le hash passe à la clé d'authentification. */
+  async upgradeAuth(
+    userId: string,
+    dto: UpgradeAuthDto,
+  ): Promise<Result<User>> {
+    const user = await this.repo.findById(userId);
+    if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
+    if (user.authVersion === 1) return ok(user);
+    if (!(await argon2.verify(user.password, dto.currentPassword)))
+      return fail(401, 'Mot de passe actuel incorrect');
+    return ok(
+      await this.repo.updateUser(userId, {
+        password: await argon2.hash(dto.authKey),
+        authVersion: 1,
+      }),
+    );
   }
 
   async login(dto: LoginDto): Promise<Result<LoginOutcome>> {
@@ -157,6 +189,7 @@ export class AuthService {
     }
     await this.repo.updateUser(user.id, {
       password: await argon2.hash(dto.newPassword),
+      authVersion: 1,
     });
     await this.repo.bumpSessionVersion(user.id); // déconnecte un éventuel voleur de cookie
     await this.repo.deleteCodes(dto.email, 'reset');
@@ -180,6 +213,7 @@ export class AuthService {
     if (!rewrap.success) return rewrap;
     await this.repo.updateUser(userId, {
       password: await argon2.hash(dto.newPassword),
+      authVersion: 1,
       ...rewrap.data,
     });
     return ok(await this.repo.bumpSessionVersion(userId));
@@ -199,6 +233,7 @@ export class AuthService {
     if (!rewrap.success) return rewrap;
     await this.repo.updateUser(userId, {
       password: await argon2.hash(dto.newPassword),
+      authVersion: 1,
       ...rewrap.data,
     });
     return ok(null);

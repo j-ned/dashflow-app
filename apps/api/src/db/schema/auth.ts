@@ -33,6 +33,10 @@ export const users = pgTable('users', {
   encryptionPassphrase: boolean('encryption_passphrase')
     .notNull()
     .default(false),
+  // 0 = le hash couvre le mot de passe lui-même (comptes d'avant la dérivation côté client) ;
+  // 1 = il couvre la clé d'authentification dérivée par le client : le serveur ne reçoit plus
+  // jamais le mot de passe, qui sert aussi à dériver la clé de chiffrement.
+  authVersion: integer('auth_version').notNull().default(0),
   isDemoAccount: boolean('is_demo_account').notNull().default(false),
   // Incrémenté à chaque événement de sécurité (logout, reset/changement de mot de passe,
   // désactivation 2FA) : tout JWT dont le claim `sv` diffère est refusé → révocation réelle.

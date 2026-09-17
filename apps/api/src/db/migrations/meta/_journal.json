@@ -99,6 +99,13 @@
       "when": 1789655902658,
       "tag": "0013_remove-family-sharing",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1789656275974,
+      "tag": "0014_auth-version",
+      "breakpoints": true
     }
   ]
 }

@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { MAILER, type Mailer } from '../src/mail/mailer';
+import { authKey } from './auth-key';
 
 class CapturingMailer implements Mailer {
   lastCode = '';
@@ -46,7 +47,7 @@ describe('Encryption e2e', () => {
 
   it('compte E2EE : remplacer les clés exige le mot de passe, le reset classique est refusé et le reset avec récupération est atomique', async () => {
     const email = `e2ekeys+${Date.now()}@dashflow.test`;
-    const password = 'motdepasse-long-12';
+    const password = authKey('motdepasse-long-12');
     const server = app.getHttpServer();
     await request(server)
       .post('/auth/register')
@@ -76,7 +77,9 @@ describe('Encryption e2e', () => {
     const denied = await patchKeys({ ...keys, wrappedMasterKey: 'pwned' });
     expect(denied.status).toBe(403);
     expect(denied.body.code).toBe('REAUTH_REQUIRED');
-    await patchKeys({ ...keys, currentPassword: 'pas-le-bon' }).expect(403);
+    await patchKeys({ ...keys, currentPassword: authKey('pas-le-bon') }).expect(
+      403,
+    );
     await patchKeys({
       ...keys,
       wrappedMasterKey: 'w2',
@@ -98,7 +101,7 @@ describe('Encryption e2e', () => {
     const code = mailer.lastCode;
     const refused = await request(server)
       .post('/auth/reset-password')
-      .send({ email, code, newPassword: 'nouveau-motdepasse-12' });
+      .send({ email, code, newPassword: authKey('nouveau-motdepasse-12') });
     expect(refused.status).toBe(409);
     expect(refused.body.code).toBe('E2EE_RECOVERY_REQUIRED');
     expect(refused.body.details).toEqual({ recoveryWrappedKey: 'r1' });
@@ -109,14 +112,14 @@ describe('Encryption e2e', () => {
 
     await request(server)
       .post('/auth/reset-password-with-recovery')
-      .send({ email, code, newPassword: 'nouveau-motdepasse-12' })
+      .send({ email, code, newPassword: authKey('nouveau-motdepasse-12') })
       .expect(400);
     await request(server)
       .post('/auth/reset-password-with-recovery')
       .send({
         email,
         code,
-        newPassword: 'nouveau-motdepasse-12',
+        newPassword: authKey('nouveau-motdepasse-12'),
         newSalt: 's3',
         newWrappedMasterKey: 'w3',
       })
@@ -124,7 +127,7 @@ describe('Encryption e2e', () => {
 
     const login = await request(server)
       .post('/auth/login')
-      .send({ email, password: 'nouveau-motdepasse-12' })
+      .send({ email, password: authKey('nouveau-motdepasse-12') })
       .expect(200);
     expect(login.body.keyMaterial).toMatchObject({
       salt: 's3',

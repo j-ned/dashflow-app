@@ -139,7 +139,10 @@ describe('EncryptionService (ops user)', () => {
       newSalt: 's',
       newWrappedMasterKey: 'w',
     });
-    expect(Object.keys(r.updateUser.mock.calls[0][1])).toEqual(['password']);
+    expect(Object.keys(r.updateUser.mock.calls[0][1])).toEqual([
+      'password',
+      'authVersion',
+    ]);
   });
 
   it('resetPasswordWithRecovery : code invalide → fail', async () => {
