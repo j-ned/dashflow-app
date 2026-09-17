@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AuthEncryptionStore } from './auth-encryption.store';
 import { AuthStore } from './auth.store';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
@@ -24,11 +24,13 @@ describe('AuthEncryptionStore', () => {
     deriveWrappingKeyFromRecovery: vi.fn(),
     wrapKey: vi.fn(),
     generateMasterKey: vi.fn(),
+    lock: vi.fn(),
   };
   const mockGateway = {
     patchEncryptionKeys: vi.fn(),
     migrateEncryption: vi.fn(),
     updatePassword: vi.fn(),
+    resetPasswordWithRecovery: vi.fn(),
   };
 
   const KEY_MATERIAL: KeyMaterial = {
@@ -48,6 +50,7 @@ describe('AuthEncryptionStore', () => {
     mockGateway.patchEncryptionKeys.mockReturnValue(of(undefined));
     mockGateway.migrateEncryption.mockReturnValue(of(undefined));
     mockGateway.updatePassword.mockReturnValue(of(undefined));
+    mockGateway.resetPasswordWithRecovery.mockReturnValue(of(undefined));
 
     TestBed.configureTestingModule({
       providers: [
@@ -93,7 +96,7 @@ describe('AuthEncryptionStore', () => {
   });
 
   describe('repairWithRecovery', () => {
-    it('given une récupération réussie, when repairWithRecovery, then PATCH encryption-keys puis met à jour le keyMaterial local', async () => {
+    it('given une récupération réussie, when repairWithRecovery, then PATCH encryption-keys avec le mot de passe courant (réauthentification) puis met à jour le keyMaterial local', async () => {
       await store.repairWithRecovery('a'.repeat(64), 'nouveau-mdp-1234');
 
       expect(mockCrypto.unlockWithRecovery).toHaveBeenCalledWith(
@@ -105,6 +108,7 @@ describe('AuthEncryptionStore', () => {
           wrappedMasterKey: 'new-wrapped',
           recoveryWrappedKey: 'wrapped-recovery',
         }),
+        'nouveau-mdp-1234',
       );
       expect(mockAuth.updateKeyMaterial).toHaveBeenCalledWith(
         expect.objectContaining({ wrappedMasterKey: 'new-wrapped' }),
@@ -119,6 +123,61 @@ describe('AuthEncryptionStore', () => {
       );
       expect(mockGateway.patchEncryptionKeys).not.toHaveBeenCalled();
       expect(mockAuth.updateKeyMaterial).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('resetPasswordWithRecovery (hors session)', () => {
+    const RESET = {
+      email: 'user@dash.flow',
+      code: '123456',
+      newPassword: 'nouveau-mdp-1234',
+      recoveryHex: 'a'.repeat(64),
+      recoveryWrappedKey: 'rwk-from-409',
+    };
+
+    it('given une clé de récupération valide, when resetPasswordWithRecovery, then envoie code, mot de passe et clé ré-emballée en une requête, puis reverrouille', async () => {
+      await store.resetPasswordWithRecovery(RESET);
+
+      expect(mockCrypto.unlockWithRecovery).toHaveBeenCalledWith(RESET.recoveryHex, 'rwk-from-409');
+      expect(mockGateway.resetPasswordWithRecovery).toHaveBeenCalledWith({
+        email: RESET.email,
+        code: RESET.code,
+        newPassword: RESET.newPassword,
+        newSalt: '010203',
+        newWrappedMasterKey: 'new-wrapped',
+      });
+      expect(mockCrypto.lock).toHaveBeenCalledTimes(1);
+      expect(mockAuth.updateKeyMaterial).not.toHaveBeenCalled();
+    });
+
+    it('given une clé de récupération invalide, when resetPasswordWithRecovery, then aucune requête', async () => {
+      mockCrypto.unlockWithRecovery.mockRejectedValueOnce(new Error('bad key'));
+
+      await expect(store.resetPasswordWithRecovery(RESET)).rejects.toThrow('bad key');
+      expect(mockGateway.resetPasswordWithRecovery).not.toHaveBeenCalled();
+    });
+
+    it('given le serveur refuse (code expiré), when resetPasswordWithRecovery, then propage et reverrouille quand même', async () => {
+      mockGateway.resetPasswordWithRecovery.mockReturnValue(
+        throwError(() => ({ status: 400, message: 'Code invalide ou expiré' })),
+      );
+
+      await expect(store.resetPasswordWithRecovery(RESET)).rejects.toMatchObject({ status: 400 });
+      expect(mockCrypto.lock).toHaveBeenCalledTimes(1);
+    });
+  });
+
+  describe('resetPasswordWithWipe', () => {
+    it('given une clé de récupération perdue, when resetPasswordWithWipe, then demande l’effacement sans aucune opération crypto', async () => {
+      await store.resetPasswordWithWipe('user@dash.flow', '123456', 'nouveau-mdp-1234');
+
+      expect(mockGateway.resetPasswordWithRecovery).toHaveBeenCalledWith({
+        email: 'user@dash.flow',
+        code: '123456',
+        newPassword: 'nouveau-mdp-1234',
+        wipe: true,
+      });
+      expect(mockCrypto.unlockWithRecovery).not.toHaveBeenCalled();
     });
   });
 

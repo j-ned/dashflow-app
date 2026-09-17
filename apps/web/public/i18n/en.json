@@ -168,7 +168,6 @@
       "skipConfirmTitle": "Continue without a recovery key?",
       "skipConfirm": "Are you sure? All your encrypted data will be permanently lost.",
       "doneMessage": "Your password has been reset successfully.",
-      "doneMessageMfa": "Your password has been reset. Sign back in with your 2FA code. If your encrypted data stays locked, use your recovery key on the unlock screen.",
       "doneSignIn": "Sign in",
       "errors": {
         "generic": "Something went wrong. Please try again.",

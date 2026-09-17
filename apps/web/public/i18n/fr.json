@@ -168,7 +168,6 @@
       "skipConfirmTitle": "Continuer sans clé de récupération ?",
       "skipConfirm": "Êtes-vous sûr ? Toutes vos données chiffrées seront définitivement perdues.",
       "doneMessage": "Votre mot de passe a été réinitialisé avec succès.",
-      "doneMessageMfa": "Votre mot de passe a été réinitialisé. Reconnectez-vous avec votre code 2FA. Si vos données chiffrées restent verrouillées, utilisez votre clé de récupération sur l'écran de déverrouillage.",
       "doneSignIn": "Se connecter",
       "errors": {
         "generic": "Une erreur est survenue. Veuillez réessayer.",

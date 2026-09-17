@@ -71,6 +71,16 @@ export class HttpAuthGateway {
     return this.api.post('/auth/reset-password', { email, code, newPassword });
   }
 
+  /** Reset d'un compte chiffré : clé maîtresse ré-emballée, ou effacement si la clé de récupération est perdue. */
+  resetPasswordWithRecovery(
+    body: { email: string; code: string; newPassword: string } & (
+      | { newSalt: string; newWrappedMasterKey: string }
+      | { wipe: true }
+    ),
+  ): Observable<void> {
+    return this.api.post('/auth/reset-password-with-recovery', body);
+  }
+
   logout(): Observable<void> {
     return this.api.post('/auth/logout', {});
   }
@@ -120,8 +130,9 @@ export class HttpAuthGateway {
     return this.api.delete('/auth/me');
   }
 
-  patchEncryptionKeys(keyMaterial: KeyMaterial): Observable<void> {
-    return this.api.patch('/auth/me/encryption-keys', keyMaterial);
+  /** `currentPassword` : exigé par le serveur quand des clés existent déjà (remplacement). */
+  patchEncryptionKeys(keyMaterial: KeyMaterial, currentPassword?: string): Observable<void> {
+    return this.api.patch('/auth/me/encryption-keys', { ...keyMaterial, currentPassword });
   }
 
   migrateEncryption(

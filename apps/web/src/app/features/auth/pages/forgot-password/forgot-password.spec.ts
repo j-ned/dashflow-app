@@ -1,8 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
-import { Observable, of, throwError } from 'rxjs';
-import { ApiClient } from '@core/services/api/api-client';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { AuthStore } from '../../auth.store';
 import { AuthEncryptionStore } from '../../auth-encryption.store';
@@ -22,46 +20,39 @@ type Cmp = {
   step: () => 'email' | 'reset' | 'recovery' | 'done';
   pendingEmail: () => string;
   recoveryKeyValue: () => string;
-  mfaRequiredAfterReset: () => boolean;
   emailForm: { setValue: (v: { email: string }) => void };
   resetForm: {
     setValue: (v: { code: string; newPassword: string; confirmPassword: string }) => void;
   };
+  _resetCode: string;
   _resetPassword: string;
+  _recoveryWrappedKey: string;
 };
-
-type AuthUserShape = { encryptionVersion: number };
-type KeyMaterialShape = { recoveryWrappedKey: string | null };
 
 type AuthStoreMock = {
   forgotPassword: ReturnType<typeof vi.fn>;
   resetPassword: ReturnType<typeof vi.fn>;
-  login: ReturnType<typeof vi.fn>;
-  logout: ReturnType<typeof vi.fn>;
-  user: () => AuthUserShape | null;
-  getKeyMaterial: () => KeyMaterialShape | null;
 };
 
 type AuthEncryptionStoreMock = {
-  repairWithRecovery: ReturnType<typeof vi.fn>;
+  resetPasswordWithRecovery: ReturnType<typeof vi.fn>;
+  resetPasswordWithWipe: ReturnType<typeof vi.fn>;
 };
 
-type ApiClientMock = {
-  patch: ReturnType<typeof vi.fn>;
-  post: ReturnType<typeof vi.fn>;
-};
+/** Refus du reset classique par le serveur pour un compte chiffré (forme normalisée ApiClient). */
+const recoveryRequired = (recoveryWrappedKey: string | null = 'recovery-wrapped') => ({
+  status: 409,
+  message: 'Compte chiffré : clé de récupération requise',
+  code: 'E2EE_RECOVERY_REQUIRED',
+  details: { recoveryWrappedKey },
+});
 
 function makeComponent(
   opts: {
     forgotPassword?: (email: string) => Promise<void>;
     resetPassword?: (email: string, code: string, newPassword: string) => Promise<void>;
-    login?: (email: string, password: string) => Promise<unknown>;
-    logout?: () => Promise<void>;
-    repairWithRecovery?: () => Promise<void>;
-    user?: AuthUserShape | null;
-    keyMaterial?: KeyMaterialShape | null;
-    apiPatch?: () => Observable<unknown>;
-    apiPost?: () => Observable<unknown>;
+    resetPasswordWithRecovery?: () => Promise<void>;
+    resetPasswordWithWipe?: () => Promise<void>;
     confirmed?: boolean;
   } = {},
 ) {
@@ -69,25 +60,16 @@ function makeComponent(
   const auth: AuthStoreMock = {
     forgotPassword: vi.fn(opts.forgotPassword ?? (() => Promise.resolve())),
     resetPassword: vi.fn(opts.resetPassword ?? (() => Promise.resolve())),
-    login: vi.fn(opts.login ?? (() => Promise.resolve(undefined))),
-    logout: vi.fn(opts.logout ?? (() => Promise.resolve())),
-    user: () => opts.user ?? null,
-    getKeyMaterial: () => opts.keyMaterial ?? null,
   };
   const authEncryption: AuthEncryptionStoreMock = {
-    repairWithRecovery: vi.fn(opts.repairWithRecovery ?? (() => Promise.resolve())),
-  };
-
-  const api: ApiClientMock = {
-    patch: vi.fn(opts.apiPatch ?? (() => of(undefined))),
-    post: vi.fn(opts.apiPost ?? (() => of(undefined))),
+    resetPasswordWithRecovery: vi.fn(opts.resetPasswordWithRecovery ?? (() => Promise.resolve())),
+    resetPasswordWithWipe: vi.fn(opts.resetPasswordWithWipe ?? (() => Promise.resolve())),
   };
 
   TestBed.configureTestingModule({
     providers: [
       { provide: AuthStore, useValue: auth },
       { provide: AuthEncryptionStore, useValue: authEncryption },
-      { provide: ApiClient, useValue: api },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
       { provide: ConfirmService, useValue: confirmService },
     ],
@@ -98,9 +80,16 @@ function makeComponent(
     cmp: fixture.componentInstance as unknown as Cmp,
     auth,
     authEncryption,
-    api,
     confirmService,
   };
+}
+
+/** Amène le composant à l'étape recovery : e-mail saisi, puis reset classique refusé (409). */
+async function reachRecoveryStep(cmp: Cmp): Promise<void> {
+  cmp.emailForm.setValue(VALID_EMAIL);
+  await cmp.submitEmail();
+  cmp.resetForm.setValue(VALID_RESET);
+  await cmp.submitReset();
 }
 
 const VALID_EMAIL = { email: 'user@dash.flow' };
@@ -171,8 +160,8 @@ describe('ForgotPassword : réinitialisation multi-étapes (sécurité E2EE)', (
   });
 
   describe('submitReset : soumission code + nouveau mot de passe', () => {
-    it('reset OK, compte non chiffré (encryptionVersion 0) → logout puis étape done', async () => {
-      const { cmp, auth } = makeComponent({ user: { encryptionVersion: 0 } });
+    it('compte non chiffré : reset accepté → étape done, sans ouvrir de session, secrets oubliés', async () => {
+      const { cmp, auth } = makeComponent();
       cmp.emailForm.setValue(VALID_EMAIL);
       await cmp.submitEmail();
       cmp.resetForm.setValue(VALID_RESET);
@@ -184,85 +173,37 @@ describe('ForgotPassword : réinitialisation multi-étapes (sécurité E2EE)', (
         VALID_RESET.code,
         VALID_RESET.newPassword,
       );
-      expect(auth.login).toHaveBeenCalledWith(VALID_EMAIL.email, VALID_RESET.newPassword);
-      expect(auth.logout).toHaveBeenCalledTimes(1);
       expect(cmp.step()).toBe('done');
       expect(cmp.error()).toBe('');
+      expect(cmp._resetPassword).toBe('');
       expect(cmp.loading()).toBe(false);
     });
 
-    it("reset OK, compte chiffré (encryptionVersion 1) → passe à l'étape recovery, pas de logout", async () => {
-      const { cmp, auth } = makeComponent({ user: { encryptionVersion: 1 } });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
+    it('compte chiffré : le serveur refuse (409 E2EE_RECOVERY_REQUIRED) → étape recovery avec le blob, le code et le mot de passe gardés pour la requête unique', async () => {
+      const { cmp } = makeComponent({ resetPassword: () => Promise.reject(recoveryRequired()) });
 
-      await cmp.submitReset();
+      await reachRecoveryStep(cmp);
 
-      expect(auth.login).toHaveBeenCalledTimes(1);
-      expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.step()).toBe('recovery');
-      expect(cmp.loading()).toBe(false);
-    });
-
-    it('given un compte protégé par 2FA (régression sécurité), when submitReset, then ne saute jamais silencieusement le rewrap E2EE : détecte mfa_required et redirige vers un login normal sans toucher au crypto', async () => {
-      const { cmp, auth, authEncryption } = makeComponent({
-        login: () => Promise.resolve('mfa_required'),
-      });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-
-      await cmp.submitReset();
-
-      // Ne doit RIEN tenter côté crypto : ni passer à l'étape recovery (qui suppose une
-      // session authentifiée), ni logout (aucune session n'a été ouverte par login()).
-      expect(cmp.step()).toBe('done');
-      expect(cmp.mfaRequiredAfterReset()).toBe(true);
-      expect(auth.logout).not.toHaveBeenCalled();
-      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
-      expect(cmp.loading()).toBe(false);
-    });
-
-    it('given un reset réussi sans 2FA, when submitReset, then mfaRequiredAfterReset reste false', async () => {
-      const { cmp } = makeComponent({ user: { encryptionVersion: 0 } });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-
-      await cmp.submitReset();
-
-      expect(cmp.mfaRequiredAfterReset()).toBe(false);
-    });
-
-    it('reset OK mais login échoue → étape done (catch interne), pas de logout', async () => {
-      const { cmp, auth } = makeComponent({
-        login: () => Promise.reject(new Error('login boom')),
-      });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-
-      await cmp.submitReset();
-
-      expect(auth.resetPassword).toHaveBeenCalledTimes(1);
-      expect(auth.logout).not.toHaveBeenCalled();
-      expect(cmp.step()).toBe('done');
       expect(cmp.error()).toBe('');
+      expect(cmp._recoveryWrappedKey).toBe('recovery-wrapped');
+      expect(cmp._resetCode).toBe(VALID_RESET.code);
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
       expect(cmp.loading()).toBe(false);
     });
 
-    it("resetPassword échoue → erreur codeInvalid, reste à l'étape reset", async () => {
-      const { cmp, auth } = makeComponent({
-        resetPassword: () => Promise.reject(new Error('bad code')),
-      });
+    it.each([
+      ['409 d’un autre code', { status: 409, message: 'x', code: 'AUTRE' }],
+      ['400 code invalide', { status: 400, message: 'Code invalide ou expiré' }],
+      ['erreur réseau', new Error('network')],
+    ])("%s → erreur codeInvalid, reste à l'étape reset", async (_label, rejection) => {
+      const { cmp } = makeComponent({ resetPassword: () => Promise.reject(rejection) });
       cmp.emailForm.setValue(VALID_EMAIL);
       await cmp.submitEmail();
       cmp.resetForm.setValue(VALID_RESET);
 
       await expect(cmp.submitReset()).resolves.toBeUndefined();
 
-      expect(auth.login).not.toHaveBeenCalled();
       expect(cmp.step()).toBe('reset');
       expect(cmp.error()).toBe('auth.forgot.errors.codeInvalid');
       expect(cmp.loading()).toBe(false);
@@ -329,17 +270,16 @@ describe('ForgotPassword : réinitialisation multi-étapes (sécurité E2EE)', (
       expect(cmp.success()).toBe('');
     });
 
-    it('given un mot de passe réinitialisé en mémoire (F018), when backToEmail, then le zéroise', async () => {
-      const { cmp } = makeComponent({ user: { encryptionVersion: 1 } });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-      await cmp.submitReset();
+    it('given des secrets en mémoire à l’étape recovery (F018), when backToEmail, then les zéroise', async () => {
+      const { cmp } = makeComponent({ resetPassword: () => Promise.reject(recoveryRequired()) });
+      await reachRecoveryStep(cmp);
       expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
 
       cmp.backToEmail();
 
       expect(cmp._resetPassword).toBe('');
+      expect(cmp._resetCode).toBe('');
+      expect(cmp._recoveryWrappedKey).toBe('');
     });
   });
 
@@ -353,146 +293,127 @@ describe('ForgotPassword : réinitialisation multi-étapes (sécurité E2EE)', (
     });
   });
 
-  describe('recoverWithKey : délègue à authEncryption.repairWithRecovery (F007, converge sur le store)', () => {
-    it('clé de longueur != 64 → return immédiat, aucun appel repairWithRecovery', async () => {
-      const { cmp, auth, authEncryption } = makeComponent();
-      setRecoveryKey(cmp, 'deadbeef'); // 8 chars
+  describe('recoverWithKey : reset et ré-emballage en une seule requête', () => {
+    it('clé de longueur != 64 → return immédiat, aucun appel', async () => {
+      const { cmp, authEncryption } = makeComponent();
+      setRecoveryKey(cmp, 'deadbeef');
 
       await cmp.recoverWithKey();
 
-      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
-      expect(auth.logout).not.toHaveBeenCalled();
+      expect(authEncryption.resetPasswordWithRecovery).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
 
-    it('pas de recoveryWrappedKey en mémoire → erreur noRecoveryKey, pas de repairWithRecovery', async () => {
-      const { cmp, authEncryption } = makeComponent({ keyMaterial: { recoveryWrappedKey: null } });
-      setRecoveryKey(cmp, 'a'.repeat(64));
-
-      await cmp.recoverWithKey();
-
-      expect(cmp.error()).toBe('auth.forgot.errors.noRecoveryKey');
-      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
-      expect(cmp.loading()).toBe(false);
-    });
-
-    it('keyMaterial absent → erreur noRecoveryKey (optional chaining)', async () => {
-      const { cmp, authEncryption } = makeComponent({ keyMaterial: null });
-      setRecoveryKey(cmp, 'a'.repeat(64));
-
-      await cmp.recoverWithKey();
-
-      expect(cmp.error()).toBe('auth.forgot.errors.noRecoveryKey');
-      expect(authEncryption.repairWithRecovery).not.toHaveBeenCalled();
-    });
-
-    it('chemin complet de récupération → repairWithRecovery(recoveryHex, motDePasseSaisi) puis logout et done', async () => {
-      const { cmp, auth, authEncryption } = makeComponent({
-        keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        user: { encryptionVersion: 1 },
+    it('compte chiffré sans blob de récupération (409 avec null) → erreur noRecoveryKey, aucun appel', async () => {
+      const { cmp, authEncryption } = makeComponent({
+        resetPassword: () => Promise.reject(recoveryRequired(null)),
       });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-      await cmp.submitReset(); // mémorise _resetPassword et bascule sur l'étape recovery
+      await reachRecoveryStep(cmp);
+      expect(cmp.step()).toBe('recovery');
+      setRecoveryKey(cmp, 'a'.repeat(64));
+
+      await cmp.recoverWithKey();
+
+      expect(cmp.error()).toBe('auth.forgot.errors.noRecoveryKey');
+      expect(authEncryption.resetPasswordWithRecovery).not.toHaveBeenCalled();
+      expect(cmp.loading()).toBe(false);
+    });
+
+    it('chemin complet → e-mail, code, mot de passe, clé saisie et blob transmis au store, puis done et secrets oubliés', async () => {
+      const { cmp, authEncryption } = makeComponent({
+        resetPassword: () => Promise.reject(recoveryRequired()),
+      });
+      await reachRecoveryStep(cmp);
       const recoveryHex = 'a'.repeat(64);
       setRecoveryKey(cmp, recoveryHex);
 
       await cmp.recoverWithKey();
 
-      expect(authEncryption.repairWithRecovery).toHaveBeenCalledWith(
+      expect(authEncryption.resetPasswordWithRecovery).toHaveBeenCalledWith({
+        email: VALID_EMAIL.email,
+        code: VALID_RESET.code,
+        newPassword: VALID_RESET.newPassword,
         recoveryHex,
-        VALID_RESET.newPassword,
-      );
-      expect(auth.logout).toHaveBeenCalledTimes(1);
+        recoveryWrappedKey: 'recovery-wrapped',
+      });
       expect(cmp.step()).toBe('done');
       expect(cmp.error()).toBe('');
-      expect(cmp.loading()).toBe(false);
-      expect(cmp._resetPassword).toBe(''); // F018 : plus besoin du mot de passe une fois rewrap fait
-    });
-
-    it('échec côté store (mauvaise clé ou PATCH serveur) → erreur invalidRecoveryKey, pas de logout', async () => {
-      const { cmp, auth } = makeComponent({
-        keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        repairWithRecovery: vi.fn(() => Promise.reject(new Error('bad key'))),
-      });
-      setRecoveryKey(cmp, 'a'.repeat(64));
-
-      await expect(cmp.recoverWithKey()).resolves.toBeUndefined();
-
-      expect(auth.logout).not.toHaveBeenCalled();
-      expect(cmp.error()).toBe('auth.forgot.errors.invalidRecoveryKey');
-      expect(cmp.step()).toBe('email');
+      expect(cmp._resetPassword).toBe('');
       expect(cmp.loading()).toBe(false);
     });
 
-    it('given un échec de repairWithRecovery (mauvaise clé de récupération), when recoverWithKey, then conserve _resetPassword pour permettre une nouvelle tentative', async () => {
-      const { cmp } = makeComponent({
-        keyMaterial: { recoveryWrappedKey: 'recovery-wrapped' },
-        user: { encryptionVersion: 1 },
-        repairWithRecovery: vi.fn(() => Promise.reject(new Error('bad recovery key'))),
-      });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-      await cmp.submitReset();
-      setRecoveryKey(cmp, 'a'.repeat(64));
+    it.each([
+      ['mauvaise clé de récupération (erreur crypto)', new Error('bad key'), 'invalidRecoveryKey'],
+      [
+        'code expiré (erreur HTTP)',
+        { status: 400, message: 'Code invalide ou expiré' },
+        'codeInvalid',
+      ],
+    ])(
+      '%s → erreur dédiée, reste sur recovery et garde les secrets pour réessayer',
+      async (_label, rejection, errorKey) => {
+        const { cmp } = makeComponent({
+          resetPassword: () => Promise.reject(recoveryRequired()),
+          resetPasswordWithRecovery: () => Promise.reject(rejection),
+        });
+        await reachRecoveryStep(cmp);
+        setRecoveryKey(cmp, 'a'.repeat(64));
 
-      await cmp.recoverWithKey();
+        await expect(cmp.recoverWithKey()).resolves.toBeUndefined();
 
-      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
-    });
+        expect(cmp.error()).toBe(`auth.forgot.errors.${errorKey}`);
+        expect(cmp.step()).toBe('recovery');
+        expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
+        expect(cmp.loading()).toBe(false);
+      },
+    );
   });
 
-  describe('skipRecovery : confirmation via ConfirmService (régression F008 : plus de confirm() natif) + wipe chiffrement', () => {
-    it('confirmation refusée → return immédiat, aucun appel API', async () => {
-      const { cmp, api, auth, confirmService } = makeComponent({ confirmed: false });
+  describe('skipRecovery : confirmation via ConfirmService puis reset avec effacement', () => {
+    it('confirmation refusée → return immédiat, aucun appel', async () => {
+      const { cmp, authEncryption, confirmService } = makeComponent({ confirmed: false });
 
       await cmp.skipRecovery();
 
       expect(confirmService.confirm).toHaveBeenCalledWith(
         expect.objectContaining({ variant: 'danger' }),
       );
-      expect(api.post).not.toHaveBeenCalled();
-      expect(auth.logout).not.toHaveBeenCalled();
+      expect(authEncryption.resetPasswordWithWipe).not.toHaveBeenCalled();
       expect(cmp.loading()).toBe(false);
     });
 
-    it('confirmation acceptée → POST wipe-encryption, logout puis étape done', async () => {
-      const { cmp, api, auth } = makeComponent({ confirmed: true });
-
-      await cmp.skipRecovery();
-
-      expect(api.post).toHaveBeenCalledWith('/auth/me/wipe-encryption', {});
-      expect(auth.logout).toHaveBeenCalledTimes(1);
-      expect(cmp.step()).toBe('done');
-      expect(cmp.error()).toBe('');
-      expect(cmp.loading()).toBe(false);
-    });
-
-    it('given un mot de passe réinitialisé en mémoire (F018), when skipRecovery confirmé, then le zéroise', async () => {
-      const { cmp } = makeComponent({ confirmed: true, user: { encryptionVersion: 1 } });
-      cmp.emailForm.setValue(VALID_EMAIL);
-      await cmp.submitEmail();
-      cmp.resetForm.setValue(VALID_RESET);
-      await cmp.submitReset();
-      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
-
-      await cmp.skipRecovery();
-
-      expect(cmp._resetPassword).toBe('');
-    });
-
-    it('confirmation acceptée mais wipe échoue → erreur wipeFailed, pas de logout', async () => {
-      const { cmp, auth } = makeComponent({
+    it('confirmation acceptée → reset avec effacement (e-mail, code, mot de passe), done et secrets oubliés', async () => {
+      const { cmp, authEncryption } = makeComponent({
         confirmed: true,
-        apiPost: () => throwError(() => new Error('boom')),
+        resetPassword: () => Promise.reject(recoveryRequired()),
       });
+      await reachRecoveryStep(cmp);
+
+      await cmp.skipRecovery();
+
+      expect(authEncryption.resetPasswordWithWipe).toHaveBeenCalledWith(
+        VALID_EMAIL.email,
+        VALID_RESET.code,
+        VALID_RESET.newPassword,
+      );
+      expect(cmp.step()).toBe('done');
+      expect(cmp._resetPassword).toBe('');
+      expect(cmp.loading()).toBe(false);
+    });
+
+    it('effacement refusé par le serveur → erreur wipeFailed, reste sur recovery avec ses secrets', async () => {
+      const { cmp } = makeComponent({
+        confirmed: true,
+        resetPassword: () => Promise.reject(recoveryRequired()),
+        resetPasswordWithWipe: () => Promise.reject(new Error('boom')),
+      });
+      await reachRecoveryStep(cmp);
 
       await expect(cmp.skipRecovery()).resolves.toBeUndefined();
 
-      expect(auth.logout).not.toHaveBeenCalled();
       expect(cmp.error()).toBe('auth.forgot.errors.wipeFailed');
+      expect(cmp.step()).toBe('recovery');
+      expect(cmp._resetPassword).toBe(VALID_RESET.newPassword);
       expect(cmp.loading()).toBe(false);
     });
   });
@@ -503,12 +424,11 @@ describe('ForgotPassword : rendu réel du template (F014)', () => {
     const auth = {
       forgotPassword: vi.fn(opts.forgotPassword ?? (() => Promise.resolve())),
       resetPassword: vi.fn(() => Promise.resolve()),
-      login: vi.fn(() => Promise.resolve(undefined)),
-      logout: vi.fn(() => Promise.resolve()),
-      user: () => null,
-      getKeyMaterial: () => null,
     };
-    const authEncryption = { repairWithRecovery: vi.fn(() => Promise.resolve()) };
+    const authEncryption = {
+      resetPasswordWithRecovery: vi.fn(() => Promise.resolve()),
+      resetPasswordWithWipe: vi.fn(() => Promise.resolve()),
+    };
     TestBed.configureTestingModule({
       imports: [
         ForgotPassword,
@@ -521,7 +441,6 @@ describe('ForgotPassword : rendu réel du template (F014)', () => {
         provideRouter([]),
         { provide: AuthStore, useValue: auth },
         { provide: AuthEncryptionStore, useValue: authEncryption },
-        { provide: ApiClient, useValue: { patch: () => of(undefined), post: () => of(undefined) } },
       ],
     });
     const fixture = TestBed.createComponent(ForgotPassword);
