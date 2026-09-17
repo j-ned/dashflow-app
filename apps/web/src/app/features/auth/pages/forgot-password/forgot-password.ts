@@ -3,11 +3,10 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { RouterLink } from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
-import { ApiClient } from '@core/services/api/api-client';
+import type { ApiError } from '@core/services/api/api-client';
 import { AuthStore } from '../../auth.store';
 import { AuthEncryptionStore } from '../../auth-encryption.store';
 import { Icon } from '@shared/components/icon/icon';
-import { firstValueFrom } from 'rxjs';
 import { PASSWORD_MIN_LENGTH, passwordMatchValidator } from '@shared/validators/form-validators';
 import { ConfirmDialog, ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 
@@ -302,10 +301,7 @@ type ResetFormShape = {
               </svg>
             </div>
             <p class="text-center text-sm text-text-primary">
-              {{
-                (mfaRequiredAfterReset() ? 'auth.forgot.doneMessageMfa' : 'auth.forgot.doneMessage')
-                  | transloco
-              }}
+              {{ 'auth.forgot.doneMessage' | transloco }}
             </p>
             <a
               routerLink="/auth/login"
@@ -325,7 +321,6 @@ export class ForgotPassword {
   private readonly auth = inject(AuthStore);
   private readonly authEncryption = inject(AuthEncryptionStore);
   private readonly confirmService = inject(ConfirmService);
-  private readonly api = inject(ApiClient);
   private readonly _i18n = inject(TranslocoService);
 
   protected readonly showNewPassword = signal(false);
@@ -336,9 +331,12 @@ export class ForgotPassword {
   protected readonly step = signal<'email' | 'reset' | 'recovery' | 'done'>('email');
   protected readonly pendingEmail = signal('');
   protected readonly recoveryKeyValue = signal('');
-  protected readonly mfaRequiredAfterReset = signal(false);
 
+  // Conservés le temps de l'étape recovery : le reset d'un compte chiffré se fait en une seule
+  // requête (code + nouveau mot de passe + clé ré-emballée), une fois la clé de récupération saisie.
+  private _resetCode = '';
   private _resetPassword = '';
+  private _recoveryWrappedKey = '';
 
   protected readonly emailForm = new FormGroup<EmailFormShape>({
     email: new FormControl('', {
@@ -397,36 +395,22 @@ export class ForgotPassword {
 
     try {
       const { code, newPassword } = this.resetForm.getRawValue();
+      this._resetCode = code;
       this._resetPassword = newPassword;
 
       await this.auth.resetPassword(this.pendingEmail(), code, newPassword);
-
-      this.mfaRequiredAfterReset.set(false);
-      try {
-        const loginResult = await this.auth.login(this.pendingEmail(), newPassword);
-        if (loginResult === 'mfa_required') {
-          // La 2FA bloque l'auto-login : impossible de savoir ici si l'E2EE a besoin d'un
-          // rewrap (needsUnlock ne peut être évalué sans session). On ne touche à AUCUNE
-          // opération crypto ici : l'utilisateur se reconnecte normalement (login.ts gère la
-          // 2FA), et si son déverrouillage auto échoue ensuite, /auth/unlock (mode "repair",
-          // déjà correct) prend le relais avec sa clé de récupération.
-          this.mfaRequiredAfterReset.set(true);
-          this.step.set('done');
-          return;
-        }
-        const user = this.auth.user();
-        if (user && user.encryptionVersion === 1) {
-          this.step.set('recovery');
-        } else {
-          await this.auth.logout();
-          this.step.set('done');
-        }
-      } catch (e) {
-        Sentry.captureException(e, { tags: { flow: 'reset-password-auto-login' } });
-        this.step.set('done');
+      this.forgetSecrets();
+      this.step.set('done');
+    } catch (e) {
+      // Compte chiffré : le serveur n'a rien changé et renvoie la clé maîtresse emballée par la
+      // clé de récupération. Le code reste valide pour le reset avec récupération.
+      const recoveryWrappedKey = recoveryWrappedKeyFrom(e);
+      if (recoveryWrappedKey !== undefined) {
+        this._recoveryWrappedKey = recoveryWrappedKey;
+        this.step.set('recovery');
+      } else {
+        this.error.set(this._i18n.translate('auth.forgot.errors.codeInvalid'));
       }
-    } catch {
-      this.error.set(this._i18n.translate('auth.forgot.errors.codeInvalid'));
     } finally {
       this.loading.set(false);
     }
@@ -452,8 +436,8 @@ export class ForgotPassword {
     this.error.set('');
     this.success.set('');
     this.resetForm.reset();
-    // Abandon du flux : le mot de passe réinitialisé n'a plus lieu d'être conservé en mémoire.
-    this._resetPassword = '';
+    // Abandon du flux : le mot de passe saisi n'a plus lieu d'être conservé en mémoire.
+    this.forgetSecrets();
   }
 
   protected async recoverWithKey(): Promise<void> {
@@ -464,21 +448,28 @@ export class ForgotPassword {
     this.error.set('');
 
     try {
-      const keyMaterial = this.auth.getKeyMaterial();
-      if (!keyMaterial?.recoveryWrappedKey) {
+      if (!this._recoveryWrappedKey) {
         this.error.set(this._i18n.translate('auth.forgot.errors.noRecoveryKey'));
         return;
       }
 
-      await this.authEncryption.repairWithRecovery(recoveryHex, this._resetPassword);
-      // Succès : le mot de passe a rempli son rôle (rewrap de la clé maîtresse), on ne le garde pas.
-      this._resetPassword = '';
-
-      await this.auth.logout();
+      await this.authEncryption.resetPasswordWithRecovery({
+        email: this.pendingEmail(),
+        code: this._resetCode,
+        newPassword: this._resetPassword,
+        recoveryHex,
+        recoveryWrappedKey: this._recoveryWrappedKey,
+      });
+      this.forgetSecrets();
       this.step.set('done');
     } catch (e) {
-      Sentry.captureException(e, { tags: { flow: 'e2ee-recovery' } });
-      this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
+      // Une erreur HTTP = code expiré ou refusé ; sinon la clé de récupération n'ouvre rien.
+      if (isApiError(e)) {
+        this.error.set(this._i18n.translate('auth.forgot.errors.codeInvalid'));
+      } else {
+        Sentry.captureException(e, { tags: { flow: 'e2ee-recovery' } });
+        this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
+      }
     } finally {
       this.loading.set(false);
     }
@@ -495,12 +486,14 @@ export class ForgotPassword {
 
     this.loading.set(true);
     this.error.set('');
-    // Abandon de la récupération (chiffrement remis à zéro) : le mot de passe ne sert plus.
-    this._resetPassword = '';
 
     try {
-      await firstValueFrom(this.api.post('/auth/me/wipe-encryption', {}));
-      await this.auth.logout();
+      await this.authEncryption.resetPasswordWithWipe(
+        this.pendingEmail(),
+        this._resetCode,
+        this._resetPassword,
+      );
+      this.forgetSecrets();
       this.step.set('done');
     } catch {
       this.error.set(this._i18n.translate('auth.forgot.errors.wipeFailed'));
@@ -508,4 +501,21 @@ export class ForgotPassword {
       this.loading.set(false);
     }
   }
+
+  private forgetSecrets(): void {
+    this._resetCode = '';
+    this._resetPassword = '';
+    this._recoveryWrappedKey = '';
+  }
+}
+
+function isApiError(e: unknown): e is ApiError {
+  return !!e && typeof e === 'object' && typeof (e as ApiError).status === 'number';
+}
+
+/** Blob de récupération porté par le 409 `E2EE_RECOVERY_REQUIRED`, `undefined` pour toute autre erreur. */
+function recoveryWrappedKeyFrom(e: unknown): string | undefined {
+  if (!isApiError(e) || e.code !== 'E2EE_RECOVERY_REQUIRED') return undefined;
+  const details = e.details as { recoveryWrappedKey?: unknown } | undefined;
+  return typeof details?.recoveryWrappedKey === 'string' ? details.recoveryWrappedKey : '';
 }

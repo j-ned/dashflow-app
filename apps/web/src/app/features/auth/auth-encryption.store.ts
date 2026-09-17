@@ -34,17 +34,59 @@ export class AuthEncryptionStore {
     const masterKey = this.crypto.getRewrappableMasterKey();
     if (!masterKey) throw new Error('Failed to unlock with recovery');
 
-    const salt = this.crypto.generateSalt();
-    const wrappingKey = await this.crypto.deriveWrappingKey(password, salt);
-    const wrappedMasterKey = await this.crypto.wrapKey(masterKey, wrappingKey);
-    const saltHex = bytesToHex(salt);
+    const { saltHex, wrappedMasterKey } = await this.wrapWithPassword(masterKey, password);
     const recoveryWrappedKey = keyMaterial.recoveryWrappedKey;
 
+    // Remplacer des clés existantes : le serveur exige le mot de passe courant.
     await firstValueFrom(
-      this.gateway.patchEncryptionKeys({ salt: saltHex, wrappedMasterKey, recoveryWrappedKey }),
+      this.gateway.patchEncryptionKeys(
+        { salt: saltHex, wrappedMasterKey, recoveryWrappedKey },
+        password,
+      ),
     );
 
     this.auth.updateKeyMaterial({ salt: saltHex, wrappedMasterKey, recoveryWrappedKey });
+  }
+
+  /**
+   * Mot de passe oublié sur un compte chiffré, hors session : ouvre la clé maîtresse avec la clé
+   * de récupération, la ré-emballe avec le nouveau mot de passe, et envoie le tout en une requête.
+   * La clé ne reste pas déverrouillée : personne n'est connecté à ce stade.
+   */
+  async resetPasswordWithRecovery(reset: {
+    email: string;
+    code: string;
+    newPassword: string;
+    recoveryHex: string;
+    recoveryWrappedKey: string;
+  }): Promise<void> {
+    await this.crypto.unlockWithRecovery(reset.recoveryHex, reset.recoveryWrappedKey);
+    try {
+      const masterKey = this.crypto.getRewrappableMasterKey();
+      if (!masterKey) throw new Error('Failed to unlock with recovery');
+      const { saltHex, wrappedMasterKey } = await this.wrapWithPassword(
+        masterKey,
+        reset.newPassword,
+      );
+      await firstValueFrom(
+        this.gateway.resetPasswordWithRecovery({
+          email: reset.email,
+          code: reset.code,
+          newPassword: reset.newPassword,
+          newSalt: saltHex,
+          newWrappedMasterKey: wrappedMasterKey,
+        }),
+      );
+    } finally {
+      await this.crypto.lock();
+    }
+  }
+
+  /** Clé de récupération perdue : nouveau mot de passe, données chiffrées et clés effacées. */
+  async resetPasswordWithWipe(email: string, code: string, newPassword: string): Promise<void> {
+    await firstValueFrom(
+      this.gateway.resetPasswordWithRecovery({ email, code, newPassword, wipe: true }),
+    );
   }
 
   async setupEncryption(password: string): Promise<string> {
@@ -85,10 +127,7 @@ export class AuthEncryptionStore {
     const masterKey = this.crypto.getRewrappableMasterKey();
     if (!masterKey) throw new Error('CryptoStore is locked');
 
-    const salt = this.crypto.generateSalt();
-    const wrappingKey = await this.crypto.deriveWrappingKey(newPassword, salt);
-    const wrappedMasterKey = await this.crypto.wrapKey(masterKey, wrappingKey);
-    const saltHex = bytesToHex(salt);
+    const { saltHex, wrappedMasterKey } = await this.wrapWithPassword(masterKey, newPassword);
 
     await firstValueFrom(
       this.gateway.updatePassword({
@@ -105,5 +144,17 @@ export class AuthEncryptionStore {
       salt: saltHex,
       wrappedMasterKey,
     });
+  }
+
+  private async wrapWithPassword(
+    masterKey: CryptoKey,
+    password: string,
+  ): Promise<{ saltHex: string; wrappedMasterKey: string }> {
+    const salt = this.crypto.generateSalt();
+    const wrappingKey = await this.crypto.deriveWrappingKey(password, salt);
+    return {
+      saltHex: bytesToHex(salt),
+      wrappedMasterKey: await this.crypto.wrapKey(masterKey, wrappingKey),
+    };
   }
 }
