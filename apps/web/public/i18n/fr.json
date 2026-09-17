@@ -1492,6 +1492,11 @@
     },
     "appointment": {
       "title": "Rendez-vous",
+      "groups": {
+        "thisWeek": "Cette semaine",
+        "later": "Plus tard",
+        "past": "Passés"
+      },
       "subtitle": "Gérez vos rendez-vous médicaux",
       "create": "Nouveau rendez-vous",
       "listLabel": "Liste des rendez-vous",
