@@ -130,13 +130,4 @@ export class MembersService {
       .delete(patients)
       .where(and(eq(patients.id, id), eq(patients.userId, userId)));
   }
-
-  async updateColor(userId: string, id: string, color: string | null) {
-    const rows = await this.db
-      .update(patients)
-      .set({ color })
-      .where(and(eq(patients.id, id), eq(patients.userId, userId)))
-      .returning(MEMBER_PROJECTION);
-    return rows[0];
-  }
 }
