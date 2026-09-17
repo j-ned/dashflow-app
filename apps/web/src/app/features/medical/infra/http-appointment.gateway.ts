@@ -5,7 +5,7 @@ import { CryptoStore } from '@core/services/crypto/crypto.store';
 import { ApiRow, decryptEntities, decryptEntity } from '@core/services/crypto/entity-crypto';
 import { mutateEncrypted } from '@core/services/crypto/crypto-transport';
 import { validateList, validateOne } from '@core/services/crypto/validate-decrypted';
-import { Appointment } from '../domain/models/appointment.model';
+import { Appointment, AppointmentStatus } from '../domain/models/appointment.model';
 import { AppointmentGateway } from '../domain/gateways/appointment.gateway';
 import { AppointmentSchema } from './schemas/appointment.schema';
 
@@ -59,14 +59,17 @@ export class HttpAppointmentGateway implements AppointmentGateway {
     );
   }
 
-  updateStatus(id: string, status: string): Observable<Appointment> {
-    return mutateEncrypted(
-      { status },
-      CLEARTEXT_KEYS,
-      this.crypto.getMasterKey(),
-      (body) => this.api.patch<ApiRow>(`/appointments/${id}/status`, body),
-      { rowId: id },
-    );
+  updateStatus(appointment: Appointment, status: AppointmentStatus): Observable<Appointment> {
+    const key = this.crypto.getMasterKey();
+    if (key) {
+      // E2EE : `status` vit dans le blob, le PATCH serveur l'attend en clair et répondait 400.
+      // On rechiffre le rendez-vous complet avec son nouveau statut.
+      const { id, ...rest } = appointment;
+      return this.update(id, { ...rest, status });
+    }
+    return this.api
+      .patch<ApiRow>(`/appointments/${appointment.id}/status`, { status })
+      .pipe(map((row) => row as unknown as Appointment));
   }
 
   delete(id: string): Observable<void> {

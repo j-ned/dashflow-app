@@ -138,14 +138,14 @@ import { Icon } from '@shared/components/icon/icon';
                       <button
                         type="button"
                         class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-green hover:border-ib-green/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-green"
-                        (click)="updateStatus(appt.id, 'completed')"
+                        (click)="updateStatus(appt, 'completed')"
                       >
                         {{ 'medical.appointment.complete' | transloco }}
                       </button>
                       <button
                         type="button"
                         class="rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-yellow hover:border-ib-yellow/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-yellow"
-                        (click)="updateStatus(appt.id, 'cancelled')"
+                        (click)="updateStatus(appt, 'cancelled')"
                       >
                         {{ 'medical.appointment.cancel' | transloco }}
                       </button>
@@ -319,9 +319,9 @@ export class Appointments {
     }
   }
 
-  protected async updateStatus(id: string, status: AppointmentStatus) {
+  protected async updateStatus(appointment: Appointment, status: AppointmentStatus) {
     try {
-      await lastValueFrom(this.appointmentGw.updateStatus(id, status));
+      await lastValueFrom(this.appointmentGw.updateStatus(appointment, status));
       this.toaster.success('medical.appointment.feedback.statusUpdated');
       this._refresh.update((v) => v + 1);
     } catch {
