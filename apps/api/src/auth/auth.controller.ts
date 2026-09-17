@@ -50,6 +50,8 @@ import {
   verifySchema,
   resendSchema,
   loginSchema,
+  preloginSchema,
+  upgradeAuthSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
   updateProfileSchema,
@@ -63,6 +65,7 @@ import type {
   RegisterDto,
   VerifyDto,
   LoginDto,
+  UpgradeAuthDto,
   ResetPasswordDto,
   UpdatePasswordDto,
   SetPasswordDto,
@@ -157,6 +160,29 @@ export class AuthController {
   ) {
     await this.auth.resendCode(dto.email);
     return { message: 'Si le compte existe, un code a été envoyé' };
+  }
+
+  @UseGuards(EmailThrottlerGuard)
+  @Throttle(STRICT_THROTTLE)
+  @Post('prelogin')
+  @HttpCode(200)
+  prelogin(
+    @Body(new ZodValidationPipe(preloginSchema)) dto: { email: string },
+  ) {
+    return this.auth.prelogin(dto.email);
+  }
+
+  @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
+  @Throttle(STRICT_THROTTLE)
+  @Post('me/upgrade-auth')
+  @HttpCode(200)
+  async upgradeAuth(
+    @CurrentUser() u: AuthUser,
+    @Body(new ZodValidationPipe(upgradeAuthSchema)) dto: UpgradeAuthDto,
+  ) {
+    const r = await this.auth.upgradeAuth(u.id, dto);
+    if (!r.success) throw httpFrom(r);
+    return toPublicUser(r.data);
   }
 
   @UseGuards(EmailThrottlerGuard)

@@ -6,6 +6,7 @@ import request from 'supertest';
 import * as OTPAuth from 'otpauth';
 import { AppModule } from '../src/app.module';
 import { MAILER, type Mailer } from '../src/mail/mailer';
+import { authKey } from './auth-key';
 
 class CapturingMailer implements Mailer {
   lastCode = '';
@@ -41,7 +42,7 @@ describe('Auth e2e', () => {
   it('register → verify → cookie → GET /me', async () => {
     await request(app.getHttpServer())
       .post('/auth/register')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(201);
 
     const verify = await request(app.getHttpServer())
@@ -70,13 +71,13 @@ describe('Auth e2e', () => {
     // 1. L'attaquant « réserve » l'e-mail de la victime avec SON mot de passe, sans le vérifier.
     await request(server)
       .post('/auth/register')
-      .send({ email: victim, password: 'mot-de-passe-attaquant' })
+      .send({ email: victim, password: authKey('mot-de-passe-attaquant') })
       .expect(201);
 
     // 2. La vraie personne s'inscrit à son tour et vérifie l'e-mail.
     await request(server)
       .post('/auth/register')
-      .send({ email: victim, password: 'mot-de-passe-victime-12' })
+      .send({ email: victim, password: authKey('mot-de-passe-victime-12') })
       .expect(201);
     await request(server)
       .post('/auth/verify')
@@ -86,11 +87,11 @@ describe('Auth e2e', () => {
     // 3. Seul le mot de passe de la personne qui a prouvé l'e-mail fonctionne.
     await request(server)
       .post('/auth/login')
-      .send({ email: victim, password: 'mot-de-passe-attaquant' })
+      .send({ email: victim, password: authKey('mot-de-passe-attaquant') })
       .expect(401);
     await request(server)
       .post('/auth/login')
-      .send({ email: victim, password: 'mot-de-passe-victime-12' })
+      .send({ email: victim, password: authKey('mot-de-passe-victime-12') })
       .expect(200);
   });
 
@@ -98,7 +99,7 @@ describe('Auth e2e', () => {
     const server = app.getHttpServer();
     const login = await request(server)
       .post('/auth/login')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(200);
     const cookie = login.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
@@ -125,7 +126,7 @@ describe('Auth e2e', () => {
     const server = app.getHttpServer();
     const login = await request(server)
       .post('/auth/login')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(200);
     const cookie = login.headers['set-cookie'] as string | string[];
     const oldCookie = Array.isArray(cookie) ? cookie : [cookie];
@@ -143,8 +144,8 @@ describe('Auth e2e', () => {
       .set('Cookie', all)
       .set('X-CSRF-Token', csrf.body.csrfToken as string)
       .send({
-        currentPassword: 'motdepasse-long-12',
-        newPassword: 'motdepasse-long-13',
+        currentPassword: authKey('motdepasse-long-12'),
+        newPassword: authKey('motdepasse-long-13'),
       })
       .expect(200);
     const fresh = changed.headers['set-cookie'] as string | string[];
@@ -170,8 +171,8 @@ describe('Auth e2e', () => {
       )
       .set('X-CSRF-Token', csrf2.body.csrfToken as string)
       .send({
-        currentPassword: 'motdepasse-long-13',
-        newPassword: 'motdepasse-long-12',
+        currentPassword: authKey('motdepasse-long-13'),
+        newPassword: authKey('motdepasse-long-12'),
       })
       .expect(200);
   });
@@ -181,7 +182,7 @@ describe('Auth e2e', () => {
     const target = `e2e-otp+${Date.now()}@dashflow.test`;
     await request(server)
       .post('/auth/register')
-      .send({ email: target, password: 'motdepasse-long-12' })
+      .send({ email: target, password: authKey('motdepasse-long-12') })
       .expect(201);
     const good = mailer.lastCode;
     const wrong = good === '000000' ? '111111' : '000000';
@@ -200,14 +201,14 @@ describe('Auth e2e', () => {
   it('login mauvais mot de passe → 401', async () => {
     await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email, password: 'mauvais' })
+      .send({ email, password: authKey('mauvais') })
       .expect(401);
   });
 
   it('mutation authentifiée sans CSRF → 403', async () => {
     const login = await request(app.getHttpServer())
       .post('/auth/login')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(200);
 
     const loginCookie = login.headers['set-cookie'] as string | string[];
@@ -226,7 +227,7 @@ describe('Auth e2e', () => {
     const server = app.getHttpServer();
     await request(server)
       .post('/auth/register')
-      .send({ email: email2, password: 'motdepasse-long-12' })
+      .send({ email: email2, password: authKey('motdepasse-long-12') })
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
@@ -274,14 +275,14 @@ describe('Auth e2e', () => {
 
     const noCode = await request(server)
       .post('/auth/login')
-      .send({ email: email2, password: 'motdepasse-long-12' })
+      .send({ email: email2, password: authKey('motdepasse-long-12') })
       .expect(200);
     expect(noCode.body.mfaRequired).toBe(true);
     await request(server)
       .post('/auth/login')
       .send({
         email: email2,
-        password: 'motdepasse-long-12',
+        password: authKey('motdepasse-long-12'),
         // Anti-rejeu : le code utilisé pour l'enrôlement est consommé ; on présente celui du pas
         // suivant (fenêtre ±1 acceptée, pas strictement supérieur).
         totpCode: totp.generate({ timestamp: Date.now() + 30_000 }),
@@ -294,7 +295,7 @@ describe('Auth e2e', () => {
       .post('/auth/login')
       .send({
         email: email2,
-        password: 'motdepasse-long-12',
+        password: authKey('motdepasse-long-12'),
         totpCode: backupCodes[0].toUpperCase().replace('-', ' '),
       })
       .expect(200);
@@ -304,7 +305,7 @@ describe('Auth e2e', () => {
       .post('/auth/login')
       .send({
         email: email2,
-        password: 'motdepasse-long-12',
+        password: authKey('motdepasse-long-12'),
         totpCode: backupCodes[0],
       })
       .expect(401);
@@ -314,13 +315,13 @@ describe('Auth e2e', () => {
       .post('/auth/me/2fa/backup-codes')
       .set('Cookie', allCookies)
       .set('X-CSRF-Token', csrfToken)
-      .send({ password: 'mauvais' })
+      .send({ password: authKey('mauvais') })
       .expect(401);
     const regen = await request(server)
       .post('/auth/me/2fa/backup-codes')
       .set('Cookie', allCookies)
       .set('X-CSRF-Token', csrfToken)
-      .send({ password: 'motdepasse-long-12' })
+      .send({ password: authKey('motdepasse-long-12') })
       .expect(200);
     expect(regen.body.backupCodes).toHaveLength(10);
     expect(regen.body.backupCodes).not.toContain(backupCodes[1]);
@@ -336,7 +337,7 @@ describe('Auth e2e', () => {
     const server = app.getHttpServer();
     await request(server)
       .post('/auth/register')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
@@ -365,5 +366,16 @@ describe('Auth e2e', () => {
       'type',
       'userAgent',
     ]);
+  });
+
+  it('nouveau secret de connexion : un mot de passe brut est refusé (400), seule une clé d’authentification passe', async () => {
+    const server = app.getHttpServer();
+    const res = await request(server)
+      .post('/auth/register')
+      .send({
+        email: `e2eraw+${Date.now()}@dashflow.test`,
+        password: 'motdepasse-long-12',
+      });
+    expect(res.status).toBe(400);
   });
 });

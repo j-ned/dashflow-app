@@ -232,11 +232,12 @@ export class EncryptionService {
     const password = await argon2.hash(dto.newPassword);
     if (encrypted && dto.wipe) {
       await this.db.transaction(async (tx) => {
-        await this.wipeIn(tx, user.id, { password });
+        await this.wipeIn(tx, user.id, { password, authVersion: 1 });
       });
     } else {
       await this.repo.updateUser(user.id, {
         password,
+        authVersion: 1,
         ...(encrypted
           ? {
               encryptionSalt: dto.newSalt,

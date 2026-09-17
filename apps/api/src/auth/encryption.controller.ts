@@ -24,7 +24,6 @@ import {
 } from '../common/decorators/current-user.decorator';
 import {
   setupEncryptionKeysSchema,
-  encryptionPassphraseSchema,
   migrateEncryptionSchema,
   resetWithRecoverySchema,
 } from './dto/auth.dto';
@@ -56,11 +55,8 @@ export class EncryptionController {
   @UseGuards(JwtAuthGuard, CsrfGuard, DemoAccountGuard)
   @Post('me/encryption-passphrase')
   @HttpCode(200)
-  async setPassphrase(
-    @CurrentUser() u: AuthUser,
-    @Body(new ZodValidationPipe(encryptionPassphraseSchema))
-    _dto: { passphrase: string },
-  ) {
+  async setPassphrase(@CurrentUser() u: AuthUser) {
+    // Ne pose qu'un indicateur : la passphrase elle-même ne quitte jamais le client.
     await this.enc.setPassphrase(u.id);
     return { message: 'Passphrase de chiffrement définie' };
   }

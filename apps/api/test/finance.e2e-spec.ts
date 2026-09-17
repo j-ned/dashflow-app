@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import { AppModule } from '../src/app.module';
 import { MAILER, type Mailer } from '../src/mail/mailer';
+import { authKey } from './auth-key';
 
 class CapturingMailer implements Mailer {
   lastCode = '';
@@ -40,7 +41,7 @@ describe('Finance e2e', () => {
     const email = `fin+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`;
     await request(s)
       .post('/auth/register')
-      .send({ email, password: 'motdepasse-long-12' })
+      .send({ email, password: authKey('motdepasse-long-12') })
       .expect(201);
     const v = await request(s)
       .post('/auth/verify')

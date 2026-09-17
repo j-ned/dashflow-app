@@ -54,6 +54,7 @@ export class AuthRepository {
     email: string;
     password: string | null;
     displayName?: string | null;
+    authVersion?: number;
   }): Promise<User> {
     const [u] = await this.db
       .insert(users)
@@ -61,6 +62,7 @@ export class AuthRepository {
         email: data.email,
         password: data.password,
         displayName: data.displayName ?? null,
+        authVersion: data.authVersion ?? 0,
       })
       .returning();
     return u;
