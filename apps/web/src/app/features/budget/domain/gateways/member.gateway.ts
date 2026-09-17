@@ -10,5 +10,4 @@ export abstract class MemberGateway {
   /** Sans `force`, le serveur répond 409 `MEMBER_HAS_MEDICAL_DATA` (+ `details` compteurs) si la
    *  personne a un dossier médical : la suppression l'effacerait aussi. `force` confirme. */
   abstract delete(id: string, options?: { force?: boolean }): Observable<void>;
-  abstract updateColor(id: string, color: string | null): Observable<Member>;
 }

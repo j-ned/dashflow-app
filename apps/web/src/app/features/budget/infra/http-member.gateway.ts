@@ -47,14 +47,4 @@ export class HttpMemberGateway implements MemberGateway {
   delete(id: string, options?: { force?: boolean }): Observable<void> {
     return this.api.delete(`/members/${id}${options?.force ? '?force=true' : ''}`);
   }
-
-  updateColor(id: string, color: string | null): Observable<Member> {
-    return mutateEncrypted(
-      { color },
-      CLEARTEXT_KEYS,
-      this.crypto.getMasterKey(),
-      (body) => this.api.patch<ApiRow>(`/members/${id}/color`, body),
-      { rowId: id },
-    );
-  }
 }

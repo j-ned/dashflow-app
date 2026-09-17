@@ -54,7 +54,7 @@ const PRACTITIONER: Practitioner = {
 type Cmp = {
   createAppointment: (data: Omit<Appointment, 'id'>) => Promise<void>;
   updateAppointment: (data: Omit<Appointment, 'id'>) => Promise<void>;
-  updateStatus: (id: string, status: AppointmentStatus) => Promise<void>;
+  updateStatus: (appointment: Appointment, status: AppointmentStatus) => Promise<void>;
   deleteAppointment: (id: string) => Promise<void>;
   patientName: (id: string) => string;
   practitionerName: (id: string) => string;
@@ -130,26 +130,26 @@ function make(
 }
 
 describe('Appointments', () => {
-  it('updateStatus : scheduled→completed → updateStatus(id, "completed"), toast statusUpdated, refetch', async () => {
+  it('updateStatus : scheduled→completed → updateStatus(rdv, "completed"), toast statusUpdated, refetch', async () => {
     const { fixture, cmp, updateStatus, success, getAll } = make();
     const callsBefore = getAll.mock.calls.length;
 
-    await cmp.updateStatus('a1', 'completed');
+    await cmp.updateStatus(APPOINTMENT, 'completed');
     // _refresh.update relance le switchMap : flush la CD pour observer le refetch.
     fixture.detectChanges();
     await fixture.whenStable();
 
-    expect(updateStatus).toHaveBeenCalledWith('a1', 'completed');
+    expect(updateStatus).toHaveBeenCalledWith(APPOINTMENT, 'completed');
     expect(success).toHaveBeenCalledWith('medical.appointment.feedback.statusUpdated');
     expect(getAll.mock.calls.length).toBeGreaterThan(callsBefore);
   });
 
-  it('updateStatus : scheduled→cancelled → updateStatus(id, "cancelled"), toast statusUpdated', async () => {
+  it('updateStatus : scheduled→cancelled → updateStatus(rdv, "cancelled"), toast statusUpdated', async () => {
     const { cmp, updateStatus, success } = make();
 
-    await cmp.updateStatus('a1', 'cancelled');
+    await cmp.updateStatus(APPOINTMENT, 'cancelled');
 
-    expect(updateStatus).toHaveBeenCalledWith('a1', 'cancelled');
+    expect(updateStatus).toHaveBeenCalledWith(APPOINTMENT, 'cancelled');
     expect(success).toHaveBeenCalledWith('medical.appointment.feedback.statusUpdated');
   });
 
@@ -158,7 +158,7 @@ describe('Appointments', () => {
       updateStatus: vi.fn(() => throwError(() => new Error('boom'))),
     });
 
-    await expect(cmp.updateStatus('a1', 'completed')).resolves.toBeUndefined();
+    await expect(cmp.updateStatus(APPOINTMENT, 'completed')).resolves.toBeUndefined();
 
     expect(error).toHaveBeenCalledWith('medical.appointment.feedback.statusFailed');
     expect(success).not.toHaveBeenCalled();

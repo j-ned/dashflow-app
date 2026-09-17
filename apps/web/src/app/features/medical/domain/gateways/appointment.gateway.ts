@@ -6,6 +6,9 @@ export abstract class AppointmentGateway {
   abstract getById(id: string): Observable<Appointment>;
   abstract create(data: Omit<Appointment, 'id'>): Observable<Appointment>;
   abstract update(id: string, data: Partial<Omit<Appointment, 'id'>>): Observable<Appointment>;
-  abstract updateStatus(id: string, status: AppointmentStatus): Observable<Appointment>;
+  abstract updateStatus(
+    appointment: Appointment,
+    status: AppointmentStatus,
+  ): Observable<Appointment>;
   abstract delete(id: string): Observable<void>;
 }
