@@ -1331,6 +1331,12 @@
     },
     "transactions": {
       "title": "Statement",
+      "feedback": {
+        "deleted": "Transaction deleted",
+        "deleteFailed": "Could not delete the transaction",
+        "restored": "Transaction restored",
+        "restoreFailed": "Could not restore the transaction"
+      },
       "confirmedBalance": "confirmed balance",
       "amountPlaceholder": "Amount",
       "direction": {
@@ -1832,6 +1838,7 @@
       "close": "Close"
     },
     "toast": {
+      "undo": "Undo",
       "dismiss": "Dismiss"
     },
     "confirm": {

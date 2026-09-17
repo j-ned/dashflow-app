@@ -17,6 +17,7 @@ import { confirmedBalance } from '../../domain/account-balance';
 import { CATEGORY_GROUPS, categoryMeta } from '../../domain/categories';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
+import { Toaster } from '@shared/components/toast/toast';
 import { CsvImportWizard } from './csv-import-wizard/csv-import-wizard';
 
 type TransactionViewModel = AccountTransaction & {
@@ -24,6 +25,9 @@ type TransactionViewModel = AccountTransaction & {
   categoryColor: string;
   isCredit: boolean;
 };
+
+/** Temps laissé pour annuler une suppression. */
+const UNDO_WINDOW_MS = 6000;
 
 @Component({
   selector: 'app-transactions',
@@ -163,6 +167,7 @@ export class Transactions {
   private readonly _accountGateway = inject(BankAccountGateway);
   private readonly _txGateway = inject(AccountTransactionGateway);
   private readonly _destroyRef = inject(DestroyRef);
+  private readonly _toaster = inject(Toaster);
 
   protected readonly importModalRef = viewChild.required<ModalDialog>('importModal');
 
@@ -232,11 +237,40 @@ export class Transactions {
       });
   }
 
+  /** Supprime sans confirmation, mais laisse quelques secondes pour revenir en arrière. */
   protected removeTransaction(id: string): void {
+    const removed = this.allTx().find((t) => t.id === id);
     this._txGateway
       .delete(id)
       .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe(() => this._txResource.reload());
+      .subscribe({
+        next: () => {
+          this._txResource.reload();
+          this._toaster.success('budget.transactions.feedback.deleted', undefined, {
+            duration: UNDO_WINDOW_MS,
+            action: removed && {
+              labelKey: 'shared.toast.undo',
+              run: () => this.restoreTransaction(removed),
+            },
+          });
+        },
+        error: () => this._toaster.error('budget.transactions.feedback.deleteFailed'),
+      });
+  }
+
+  /** Annuler une suppression = recréer l'opération à l'identique (elle reçoit un nouvel id). */
+  private restoreTransaction(removed: AccountTransaction): void {
+    const { id: _id, accountId, ...data } = removed;
+    this._txGateway
+      .create(accountId, data)
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: () => {
+          this._txResource.reload();
+          this._toaster.success('budget.transactions.feedback.restored');
+        },
+        error: () => this._toaster.error('budget.transactions.feedback.restoreFailed'),
+      });
   }
 
   protected readonly existingForImport = computed(() =>
