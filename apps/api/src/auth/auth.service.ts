@@ -144,10 +144,7 @@ export class AuthService {
       }
       // Code de secours : à usage unique, consommé atomiquement.
       const backup = this.twoFactor.normalizeBackupCode(code);
-      if (
-        !backup ||
-        !(await this.repo.consumeBackupCode(user.id, this.cipher.hmac(backup)))
-      )
+      if (!backup || !(await this.consumeBackupCode(user.id, backup)))
         return fail(401, 'Code 2FA invalide');
       return ok({
         kind: 'authenticated',
@@ -318,18 +315,30 @@ export class AuthService {
   }
 
   /**
-   * Secret TOTP en clair pour vérification. Les secrets antérieurs au chiffrement au repos
-   * sont en clair en base : on les ré-écrit chiffrés au passage (migration opportuniste).
+   * Secret TOTP en clair pour vérification. Un secret encore en clair en base, ou chiffré avec
+   * l'ancienne clé dérivée de JWT_SECRET, est ré-écrit avec la clé courante au passage.
    */
   private async totpSecretOf(user: User): Promise<string> {
     const stored = user.totpSecret ?? '';
-    if (stored && !this.cipher.isEncrypted(stored)) {
+    if (!stored) return stored;
+    const { plaintext, stale } = this.cipher.open(stored);
+    if (stale) {
       await this.repo.updateUser(user.id, {
-        totpSecret: this.cipher.encrypt(stored),
+        totpSecret: this.cipher.encrypt(plaintext),
       });
-      return stored;
     }
-    return this.cipher.decrypt(stored);
+    return plaintext;
+  }
+
+  /** Consomme un code de secours, y compris émis avant la pose de TOTP_ENC_KEY (HMAC de l'ancienne clé). */
+  private async consumeBackupCode(
+    userId: string,
+    code: string,
+  ): Promise<boolean> {
+    if (await this.repo.consumeBackupCode(userId, this.cipher.hmac(code)))
+      return true;
+    const legacy = this.cipher.legacyHmac(code);
+    return legacy !== null && this.repo.consumeBackupCode(userId, legacy);
   }
 
   /** Renvoie l'utilisateur mis à jour (session_version incrémentée) : le controller ré-émet le cookie. */

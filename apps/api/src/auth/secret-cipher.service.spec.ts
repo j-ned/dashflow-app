@@ -3,8 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { SecretCipherService } from './secret-cipher.service';
 
 const HEX_KEY = 'a'.repeat(64);
+const JWT_SECRET = 'j'.repeat(40);
+// JWT_SECRET est obligatoire dans l'env réel (env.schema) : présent par défaut ici aussi.
 const config = (env: Record<string, string | undefined>) =>
-  ({ get: (k: string) => env[k] }) as unknown as ConfigService;
+  ({
+    get: (k: string) => ({ JWT_SECRET, ...env })[k],
+  }) as unknown as ConfigService;
 
 describe('SecretCipherService', () => {
   const svc = new SecretCipherService(config({ TOTP_ENC_KEY: HEX_KEY }));
@@ -58,5 +62,39 @@ describe('SecretCipherService', () => {
       config({ TOTP_ENC_KEY: 'b'.repeat(64) }),
     );
     expect(other.hmac('abcde-fghjk')).not.toBe(h);
+  });
+
+  describe('pose de TOTP_ENC_KEY sur une instance qui tournait avec la clé dérivée de JWT_SECRET', () => {
+    const before = new SecretCipherService(config({}));
+    const after = new SecretCipherService(config({ TOTP_ENC_KEY: HEX_KEY }));
+
+    it('un secret chiffré avant reste lisible, signalé à ré-écrire ; ré-écrit, il ne l’est plus', () => {
+      const old = before.encrypt('JBSWY3DPEHPK3PXP');
+
+      expect(after.open(old)).toEqual({
+        plaintext: 'JBSWY3DPEHPK3PXP',
+        stale: true,
+      });
+      expect(after.open(after.encrypt('JBSWY3DPEHPK3PXP')).stale).toBe(false);
+    });
+
+    it('un code de secours émis avant se retrouve par legacyHmac, pas par hmac', () => {
+      const stored = before.hmac('abcde-fghij');
+
+      expect(after.hmac('abcde-fghij')).not.toBe(stored);
+      expect(after.legacyHmac('abcde-fghij')).toBe(stored);
+    });
+
+    it('sans TOTP_ENC_KEY : pas de clé de repli', () => {
+      expect(before.legacyHmac('abcde-fghij')).toBeNull();
+    });
+
+    it('un chiffré qui n’appartient à aucune des deux clés lève toujours', () => {
+      const foreign = new SecretCipherService(
+        config({ TOTP_ENC_KEY: 'b'.repeat(64), JWT_SECRET: 'x'.repeat(40) }),
+      ).encrypt('JBSWY3DPEHPK3PXP');
+
+      expect(() => after.open(foreign)).toThrow();
+    });
   });
 });

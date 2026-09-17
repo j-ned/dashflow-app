@@ -27,7 +27,8 @@ const repo = () => ({
 });
 const cipher = () =>
   new SecretCipherService({
-    get: (k: string) => ({ TOTP_ENC_KEY: 'c'.repeat(64) })[k],
+    get: (k: string) =>
+      ({ TOTP_ENC_KEY: 'c'.repeat(64), JWT_SECRET: 'j'.repeat(40) })[k],
   } as unknown as ConfigService);
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
@@ -306,6 +307,83 @@ describe('AuthService', () => {
       'u1',
       expect.objectContaining({ totpEnabled: expect.any(Date) }),
     );
+  });
+
+  describe('2FA écrite avant la pose de TOTP_ENC_KEY (clé dérivée de JWT_SECRET)', () => {
+    const before = new SecretCipherService({
+      get: (k: string) => ({ JWT_SECRET: 'j'.repeat(40) })[k],
+    } as unknown as ConfigService);
+    const tf = new TwoFactorService();
+    const loginUser = async (extra: object) => ({
+      id: 'u1',
+      email: 'a@b.com',
+      password: await argon2.hash('secret-key'),
+      emailVerified: new Date(),
+      totpEnabled: new Date(),
+      totpLastUsedStep: null,
+      ...extra,
+    });
+
+    beforeEach(() => {
+      svc = new AuthService(
+        r as unknown as AuthRepository,
+        m,
+        tf,
+        {} as StorageService,
+        cipher(),
+      );
+    });
+
+    it('login TOTP : le secret chiffré avec l’ancienne clé est lu, puis ré-écrit avec la nouvelle', async () => {
+      const { secret } = tf.generateSecret('a@b.com');
+      r.findByEmail.mockResolvedValue(
+        await loginUser({ totpSecret: before.encrypt(secret) }),
+      );
+      const code = new OTPAuth.TOTP({
+        issuer: 'DashFlow',
+        secret: OTPAuth.Secret.fromBase32(secret),
+      }).generate();
+
+      const res = await svc.login({
+        email: 'a@b.com',
+        password: 'secret-key',
+        totpCode: code,
+      });
+
+      expect(res).toMatchObject({
+        success: true,
+        data: { kind: 'authenticated' },
+      });
+      const rewritten = r.updateUser.mock.calls.find(
+        ([, patch]: [string, { totpSecret?: string }]) => patch.totpSecret,
+      )?.[1].totpSecret as string;
+      expect(cipher().open(rewritten)).toEqual({
+        plaintext: secret,
+        stale: false,
+      });
+    });
+
+    it('login par code de secours émis avant : retrouvé par l’ancien HMAC', async () => {
+      const { secret } = tf.generateSecret('a@b.com');
+      r.findByEmail.mockResolvedValue(
+        await loginUser({ totpSecret: before.encrypt(secret) }),
+      );
+      const stored = before.hmac('abcde-fghjk');
+      r.consumeBackupCode.mockImplementation((_id: string, hash: string) =>
+        Promise.resolve(hash === stored),
+      );
+      const res = await svc.login({
+        email: 'a@b.com',
+        password: 'secret-key',
+        totpCode: 'ABCDE FGHJK',
+      });
+
+      expect(res).toMatchObject({
+        success: true,
+        data: { kind: 'authenticated' },
+      });
+      expect(r.consumeBackupCode).toHaveBeenCalledTimes(2);
+    });
   });
 
   it('enableTotp : code invalide → fail', async () => {
