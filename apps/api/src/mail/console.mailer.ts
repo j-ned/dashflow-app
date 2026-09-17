@@ -23,14 +23,4 @@ export class ConsoleMailer implements Mailer {
     this.logger.log(`[reset] ${to} → code ${code}`);
     return Promise.resolve();
   }
-
-  sendCalendarInvitation(
-    to: string,
-    senderName: string,
-    calendarToken: string,
-  ): Promise<void> {
-    const url = `${this.config.get('APP_URL', { infer: true })}/medical/calendar/${calendarToken}`;
-    this.logger.log(`[calendar-invite] ${to} (de ${senderName}) → ${url}`);
-    return Promise.resolve();
-  }
 }

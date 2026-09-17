@@ -8,7 +8,6 @@ import type { ConfigService } from '@nestjs/config';
 import type { StorageService } from '../storage/storage.service';
 import type { Result } from './auth.result';
 import type { AuthRepository } from './auth.repository';
-import type { Mailer } from '../mail/mailer';
 
 const repo = () => ({
   findByEmail: vi.fn(),
@@ -45,7 +44,7 @@ describe('AuthService', () => {
     m = mailer();
     svc = new AuthService(
       r as unknown as AuthRepository,
-      m as unknown as Mailer,
+      m,
       new TwoFactorService(),
       {} as StorageService,
       cipher(),
@@ -286,7 +285,7 @@ describe('AuthService', () => {
     const { secret } = tf.generateSecret('a@b.com');
     svc = new AuthService(
       r as unknown as AuthRepository,
-      m as unknown as Mailer,
+      m,
       tf,
       {} as StorageService,
       cipher(),
@@ -314,7 +313,7 @@ describe('AuthService', () => {
     const { secret } = tf.generateSecret('a@b.com');
     svc = new AuthService(
       r as unknown as AuthRepository,
-      m as unknown as Mailer,
+      m,
       tf,
       {} as StorageService,
       cipher(),
@@ -407,7 +406,7 @@ describe('AuthService.deleteAccount (RGPD)', () => {
         sendVerificationCode: vi.fn(),
         sendPasswordResetCode: vi.fn(),
         sendAccountExists: vi.fn(),
-      } as unknown as ConstructorParameters<typeof AuthService>[1],
+      },
       new TwoFactorService(),
       s as unknown as never,
       cipher(),
@@ -473,7 +472,7 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
     m = mailer();
     svc = new AuthService(
       r as unknown as AuthRepository,
-      m as unknown as Mailer,
+      m,
       tf,
       { deletePrefix: vi.fn() } as unknown as StorageService,
       cipher(),

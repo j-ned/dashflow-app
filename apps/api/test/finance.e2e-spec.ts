@@ -16,13 +16,6 @@ class CapturingMailer implements Mailer {
     this.lastCode = code;
     return Promise.resolve();
   }
-  async sendCalendarInvitation(
-    _to: string,
-    _senderName: string,
-    _calendarToken: string,
-  ) {
-    /* no-op */
-  }
 }
 
 describe('Finance e2e', () => {
