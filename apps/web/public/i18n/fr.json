@@ -469,11 +469,6 @@
       "feedback": {
         "deleteFailed": "Erreur lors de la suppression du compte."
       }
-    },
-    "familySharing": {
-      "title": "Partage familial",
-      "subtitle": "Invitez les membres de votre famille à partager votre budget.",
-      "invite": "Inviter un membre"
     }
   },
   "layout": {

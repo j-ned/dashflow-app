@@ -5,7 +5,6 @@ import { PasswordSection } from './password-section/password-section';
 import { TwoFactorSection } from './two-factor-section/two-factor-section';
 import { EncryptionSection } from './encryption-section/encryption-section';
 import { DangerZoneSection } from './danger-zone-section/danger-zone-section';
-import { FamilySharingSection } from './family-sharing-section/family-sharing-section';
 import { SecurityActivitySection } from './security-activity-section/security-activity-section';
 
 @Component({
@@ -18,7 +17,6 @@ import { SecurityActivitySection } from './security-activity-section/security-ac
     TwoFactorSection,
     EncryptionSection,
     DangerZoneSection,
-    FamilySharingSection,
     SecurityActivitySection,
   ],
   host: { class: 'block w-full h-full overflow-y-auto' },
@@ -41,8 +39,6 @@ import { SecurityActivitySection } from './security-activity-section/security-ac
       </div>
 
       <app-security-activity-section />
-
-      <app-family-sharing-section />
 
       <app-encryption-section />
 
