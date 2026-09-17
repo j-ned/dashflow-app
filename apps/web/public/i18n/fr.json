@@ -1331,6 +1331,12 @@
     },
     "transactions": {
       "title": "Relevé",
+      "feedback": {
+        "deleted": "Opération supprimée",
+        "deleteFailed": "La suppression a échoué",
+        "restored": "Opération rétablie",
+        "restoreFailed": "Impossible de rétablir l'opération"
+      },
       "confirmedBalance": "solde confirmé",
       "amountPlaceholder": "Montant",
       "direction": {
@@ -1827,6 +1833,7 @@
       "close": "Fermer"
     },
     "toast": {
+      "undo": "Annuler",
       "dismiss": "Fermer"
     },
     "confirm": {

@@ -15,10 +15,18 @@ type Toast = {
   readonly type: ToastType;
   readonly duration: number;
   readonly leaving: boolean;
+  readonly action?: ToastAction;
+};
+
+/** Bouton d'action dans le toast (ex. « Annuler » après une suppression) : l'exécuter ferme le toast. */
+export type ToastAction = {
+  readonly labelKey: string;
+  readonly run: () => void;
 };
 
 type ToastConfig = {
   duration?: number;
+  action?: ToastAction;
 };
 
 const TOAST_ICONS: Record<ToastType, IconName> = {
@@ -68,6 +76,13 @@ export class Toaster {
     this._add(key, 'info', params, config);
   }
 
+  runAction(id: number) {
+    const toast = this._toasts().find((t) => t.id === id);
+    if (!toast?.action || toast.leaving) return;
+    toast.action.run();
+    this.dismiss(id);
+  }
+
   dismiss(id: number) {
     this._toasts.update((list) => list.map((t) => (t.id === id ? { ...t, leaving: true } : t)));
     setTimeout(() => {
@@ -79,7 +94,10 @@ export class Toaster {
     const id = this._nextId++;
     const duration = config?.duration ?? DEFAULT_DURATION;
 
-    this._toasts.update((list) => [...list, { id, key, params, type, duration, leaving: false }]);
+    this._toasts.update((list) => [
+      ...list,
+      { id, key, params, type, duration, leaving: false, action: config?.action },
+    ]);
 
     if (duration > 0) {
       setTimeout(() => this.dismiss(id), duration);
@@ -118,6 +136,16 @@ export class Toaster {
             <p class="flex-1 text-sm text-text-primary leading-snug">
               {{ toast.key | transloco: toast.params }}
             </p>
+            @if (toast.action; as action) {
+              <button
+                type="button"
+                data-testid="toast-action"
+                class="shrink-0 rounded px-1.5 py-0.5 text-sm font-semibold text-ib-blue hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                (click)="runAction(toast.id)"
+              >
+                {{ action.labelKey | transloco }}
+              </button>
+            }
             <button
               type="button"
               class="shrink-0 rounded p-0.5 text-text-muted hover:text-text-primary transition-colors"
@@ -209,5 +237,9 @@ export class ToastContainer {
 
   protected dismiss(id: number) {
     this.toaster.dismiss(id);
+  }
+
+  protected runAction(id: number) {
+    this.toaster.runAction(id);
   }
 }
