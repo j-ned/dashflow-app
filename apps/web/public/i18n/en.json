@@ -468,11 +468,6 @@
       "feedback": {
         "deleteFailed": "Failed to delete account."
       }
-    },
-    "familySharing": {
-      "title": "Family sharing",
-      "subtitle": "Invite your family members to share your budget.",
-      "invite": "Invite a member"
     }
   },
   "layout": {

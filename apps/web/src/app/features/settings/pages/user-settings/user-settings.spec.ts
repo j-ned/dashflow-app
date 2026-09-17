@@ -42,12 +42,12 @@ function mount() {
 }
 
 describe('UserSettings (smoke)', () => {
-  it('monte les sections du compte, sans section billing', () => {
+  it('monte les sections du compte, sans section billing ni partage familial', () => {
     const { el } = mount();
     expect(el.querySelector('app-profile-section')).not.toBeNull();
     expect(el.querySelector('app-password-section')).not.toBeNull();
     expect(el.querySelector('app-two-factor-section')).not.toBeNull();
-    expect(el.querySelector('app-family-sharing-section')).not.toBeNull();
+    expect(el.querySelector('app-family-sharing-section')).toBeNull();
     expect(el.querySelector('app-encryption-section')).not.toBeNull();
     expect(el.querySelector('app-danger-zone-section')).not.toBeNull();
     expect(el.querySelector('app-billing-section')).toBeNull();
