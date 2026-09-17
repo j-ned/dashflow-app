@@ -33,22 +33,22 @@ describe('DemoService.reset (intégration DB locale)', () => {
 
     const seed = await client<
       { reg: string | null }[]
-    >`select to_regclass('public.demo_seed_shared_access') as reg`;
+    >`select to_regclass('public.demo_seed_patients') as reg`;
     const hasSeed = seed[0].reg != null;
 
     // Simule l'échec rapporté : le snapshot pointe un user inexistant (compte démo recréé).
     if (hasSeed) {
-      await client`update demo_seed_shared_access set user_id = gen_random_uuid()`;
+      await client`update demo_seed_patients set user_id = gen_random_uuid()`;
     }
 
-    // Avant le fix, ceci levait : insert into shared_access ... → violation FK user_id.
+    // Avant le fix, ceci levait : insert into patients ... → violation FK user_id.
     await expect(svc.reset()).resolves.toBeUndefined();
 
     // Après restauration, toutes les lignes sont rattachées au compte démo courant.
     if (hasSeed) {
       const rows = await client<
         { user_id: string }[]
-      >`select user_id from shared_access`;
+      >`select user_id from patients where user_id = ${demoId} or id in (select id from demo_seed_patients)`;
       for (const r of rows) expect(r.user_id).toBe(demoId);
     }
   });

@@ -24,8 +24,6 @@ import { MedicationsModule } from './modules/medications/medications.module';
 import { PrescriptionsModule } from './modules/prescriptions/prescriptions.module';
 import { DocumentsModule } from './modules/documents/documents.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
-import { SharedAccessModule } from './modules/shared-access/shared-access.module';
-import { MedicalCalendarModule } from './modules/medical-calendar/medical-calendar.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { StorageModule } from './storage/storage.module';
 
@@ -58,9 +56,7 @@ import { StorageModule } from './storage/storage.module';
     PrescriptionsModule,
     DocumentsModule,
     RemindersModule,
-    SharedAccessModule,
     AdminModule,
-    MedicalCalendarModule,
     StorageModule,
   ],
   providers: [
