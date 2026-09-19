@@ -392,7 +392,11 @@
         "encryption_wiped": "Encryption keys removed",
         "recovery_reset": "Password reset with the recovery key",
         "account_deleted": "Account deleted",
-        "unknown": "Security event"
+        "unknown": "Security event",
+        "admin_notice_reconnect": "Administrator reminder: sign in again (sessions closed)",
+        "admin_notice_enable_encryption": "Administrator reminder: enable encryption",
+        "admin_notice_recovery_key": "Administrator reminder: recovery key",
+        "admin_notice_enable_2fa": "Administrator reminder: two-factor authentication"
       }
     },
     "twoFactor": {
@@ -1911,7 +1915,9 @@
       "email": "Email",
       "role": "Role",
       "createdAt": "Joined",
-      "demo": "Demo"
+      "demo": "Demo",
+      "select": "Selection",
+      "security": "Security"
     },
     "role": {
       "user": "Member",
@@ -1932,6 +1938,53 @@
     },
     "toast": {
       "usersError": "Failed to load users"
+    },
+    "selectUser": "Select {{email}}",
+    "security": {
+      "status": {
+        "ok": "Up to date",
+        "recommended": "Advice",
+        "action": "Action required",
+        "exempt": "Out of scope"
+      },
+      "issue": {
+        "reconnect": "Must sign in again (legacy sign-in)",
+        "enable_encryption": "Encryption not enabled",
+        "recovery_key": "No recovery key",
+        "enable_2fa": "Two-factor authentication missing"
+      },
+      "lastNotice": "Reminded on {{date}}: {{reason}}"
+    },
+    "notices": {
+      "title": "Email reminders",
+      "help": "Pick a reason, then send to the checked accounts or to every account concerned. Texts are fixed, an account only receives a reason that really applies to it, and at most once every 7 days. Each reminder shows up in the account's recent activity.",
+      "reasonLabel": "Reason",
+      "reason": {
+        "reconnect": "Sign in again (security update)",
+        "enable_encryption": "Enable encryption",
+        "recovery_key": "Generate a recovery key",
+        "enable_2fa": "Enable two-factor authentication"
+      },
+      "effect": {
+        "reconnect": "Open sessions of these accounts will be closed: they will have to sign in again, which applies the update.",
+        "enable_encryption": "No session is closed: this is a plain reminder.",
+        "recovery_key": "No session is closed: this is a plain reminder.",
+        "enable_2fa": "No session is closed: this is plain advice."
+      },
+      "cooldown": "{{count}} account(s) already reminded less than 7 days ago will receive nothing.",
+      "sendSelected": "Send to selection ({{count}})",
+      "sendAll": "Send to every account concerned ({{count}})",
+      "confirm": {
+        "title": "Send the reminder?",
+        "message": "{{count}} account(s) will receive the '{{reason}}' email.",
+        "action": "Send"
+      },
+      "toast": {
+        "sent": "{{sent}} reminder(s) sent",
+        "sentWithSkipped": "{{sent}} reminder(s) sent, {{skipped}} account(s) skipped",
+        "noneSent": "No reminder sent ({{skipped}} account(s) skipped)",
+        "error": "Failed to send reminders"
+      }
     }
   }
 }

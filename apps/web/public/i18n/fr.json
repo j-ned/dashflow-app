@@ -392,7 +392,11 @@
         "encryption_wiped": "Clés de chiffrement supprimées",
         "recovery_reset": "Mot de passe réinitialisé avec la clé de récupération",
         "account_deleted": "Compte supprimé",
-        "unknown": "Événement de sécurité"
+        "unknown": "Événement de sécurité",
+        "admin_notice_reconnect": "Relance de l'administrateur : se reconnecter (sessions fermées)",
+        "admin_notice_enable_encryption": "Relance de l'administrateur : activer le chiffrement",
+        "admin_notice_recovery_key": "Relance de l'administrateur : clé de récupération",
+        "admin_notice_enable_2fa": "Relance de l'administrateur : double authentification"
       }
     },
     "twoFactor": {
@@ -1911,7 +1915,9 @@
       "email": "Email",
       "role": "Rôle",
       "createdAt": "Inscrit",
-      "demo": "Démo"
+      "demo": "Démo",
+      "select": "Sélection",
+      "security": "Sécurité"
     },
     "role": {
       "user": "Membre",
@@ -1932,6 +1938,53 @@
     },
     "toast": {
       "usersError": "Échec du chargement des utilisateurs"
+    },
+    "selectUser": "Sélectionner {{email}}",
+    "security": {
+      "status": {
+        "ok": "À jour",
+        "recommended": "Conseil",
+        "action": "Action requise",
+        "exempt": "Hors périmètre"
+      },
+      "issue": {
+        "reconnect": "Doit se reconnecter (ancienne connexion)",
+        "enable_encryption": "Chiffrement non activé",
+        "recovery_key": "Aucune clé de récupération",
+        "enable_2fa": "Double authentification absente"
+      },
+      "lastNotice": "Relancé le {{date}} : {{reason}}"
+    },
+    "notices": {
+      "title": "Relances par e-mail",
+      "help": "Choisissez un motif, puis envoyez aux comptes cochés ou à tous les comptes concernés. Les textes sont fixes, un compte ne reçoit un motif que s'il est réellement concerné, et pas plus d'une fois tous les 7 jours. Chaque relance apparaît dans l'activité récente du compte.",
+      "reasonLabel": "Motif",
+      "reason": {
+        "reconnect": "Se reconnecter (mise à jour de sécurité)",
+        "enable_encryption": "Activer le chiffrement",
+        "recovery_key": "Générer une clé de récupération",
+        "enable_2fa": "Activer la double authentification"
+      },
+      "effect": {
+        "reconnect": "Les sessions ouvertes de ces comptes seront fermées : ils devront se reconnecter, ce qui applique la mise à jour.",
+        "enable_encryption": "Aucune session n'est fermée : c'est un simple rappel.",
+        "recovery_key": "Aucune session n'est fermée : c'est un simple rappel.",
+        "enable_2fa": "Aucune session n'est fermée : c'est un simple conseil."
+      },
+      "cooldown": "{{count}} compte(s) déjà relancé(s) il y a moins de 7 jours ne recevront rien.",
+      "sendSelected": "Envoyer à la sélection ({{count}})",
+      "sendAll": "Envoyer à tous les comptes concernés ({{count}})",
+      "confirm": {
+        "title": "Envoyer la relance ?",
+        "message": "{{count}} compte(s) vont recevoir l'e-mail « {{reason}} ».",
+        "action": "Envoyer"
+      },
+      "toast": {
+        "sent": "{{sent}} relance(s) envoyée(s)",
+        "sentWithSkipped": "{{sent}} relance(s) envoyée(s), {{skipped}} compte(s) ignoré(s)",
+        "noneSent": "Aucune relance envoyée ({{skipped}} compte(s) ignoré(s))",
+        "error": "Échec de l'envoi des relances"
+      }
     }
   }
 }

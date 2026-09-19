@@ -91,4 +91,48 @@ describe('AdminStore', () => {
       expect(store.loading()).toBe(false);
     });
   });
+
+  describe('relances', () => {
+    const NOTICES_URL = `${BASE}/admin/notices`;
+
+    it('loadSummary : GET /admin/notices/summary et expose les compteurs', async () => {
+      const promise = store.loadSummary();
+      httpMock.expectOne(`${NOTICES_URL}/summary`).flush({
+        reconnect: { eligible: 4, onCooldown: 1 },
+        enable_encryption: { eligible: 0, onCooldown: 0 },
+        recovery_key: { eligible: 0, onCooldown: 0 },
+        enable_2fa: { eligible: 2, onCooldown: 0 },
+      });
+      await promise;
+      expect(store.summary()?.reconnect).toEqual({ eligible: 4, onCooldown: 1 });
+    });
+
+    it('sendNotices sélectif : POST avec le motif et les comptes cochés', async () => {
+      const promise = store.sendNotices('reconnect', ['u1', 'u2']);
+      const req = httpMock.expectOne((r) => r.method === 'POST' && r.url === NOTICES_URL);
+      expect(req.request.body).toEqual({ reason: 'reconnect', userIds: ['u1', 'u2'] });
+      expect(store.sending()).toBe(true);
+      req.flush({ reason: 'reconnect', sent: [{ id: 'u1', email: 'a@b.fr' }], skipped: [] });
+      expect((await promise)?.sent).toHaveLength(1);
+      expect(store.sending()).toBe(false);
+    });
+
+    it('sendNotices groupé : aucun userIds dans le corps', async () => {
+      const promise = store.sendNotices('enable_2fa');
+      const req = httpMock.expectOne((r) => r.method === 'POST' && r.url === NOTICES_URL);
+      expect(req.request.body).toEqual({ reason: 'enable_2fa' });
+      req.flush({ reason: 'enable_2fa', sent: [], skipped: [] });
+      await promise;
+    });
+
+    it("sendNotices en échec : toast d'erreur, rend null, sending retombe", async () => {
+      const promise = store.sendNotices('reconnect');
+      httpMock
+        .expectOne((r) => r.method === 'POST' && r.url === NOTICES_URL)
+        .flush('boom', { status: 500, statusText: 'KO' });
+      expect(await promise).toBeNull();
+      expect(toaster.error).toHaveBeenCalledWith('admin.notices.toast.error');
+      expect(store.sending()).toBe(false);
+    });
+  });
 });
