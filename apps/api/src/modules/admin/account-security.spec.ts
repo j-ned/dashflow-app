@@ -7,6 +7,7 @@ import {
 
 const secure: AccountSecurityInput = {
   isDemoAccount: false,
+  emailVerified: true,
   hasPassword: true,
   authVersion: 1,
   encryptionVersion: 1,
@@ -66,5 +67,18 @@ describe('assessAccountSecurity', () => {
       status: 'recommended',
       issues: [{ reason: 'enable_2fa', severity: 'recommended' }],
     });
+  });
+
+  it('e-mail jamais vérifié : ni relance ni manque, quel que soit le reste', () => {
+    const s = assessAccountSecurity({
+      ...secure,
+      emailVerified: false,
+      authVersion: 0,
+      encryptionVersion: 0,
+      totpEnabled: false,
+    });
+    expect(s).toEqual({ status: 'unverified', issues: [] });
+    expect(isEligibleFor(s, 'reconnect')).toBe(false);
+    expect(isEligibleFor(s, 'enable_encryption')).toBe(false);
   });
 });

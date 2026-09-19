@@ -19,7 +19,11 @@ import {
 import { parseBody } from '../../common/parse-body';
 import { STRICT_THROTTLE } from '../../auth/throttle';
 import { AdminService } from './admin.service';
-import { listQuerySchema, sendNoticesSchema } from './dto/admin.dto';
+import {
+  deleteUsersSchema,
+  listQuerySchema,
+  sendNoticesSchema,
+} from './dto/admin.dto';
 
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('admin')
@@ -51,5 +55,18 @@ export class AdminController {
   sendNotices(@CurrentUser() u: AuthUser, @Body() body: unknown) {
     const { reason, userIds } = parseBody(sendNoticesSchema, body);
     return this.admin.sendNotices(reason, userIds, u.id);
+  }
+
+  /**
+   * Supprime des faux comptes. Le serveur n'efface que des comptes dont l'e-mail n'a jamais été
+   * vérifié ; tout autre compte demandé revient dans `skipped` avec la raison du refus.
+   */
+  @Post('users/delete-unverified')
+  @HttpCode(200)
+  @UseGuards(CsrfGuard)
+  @Throttle(STRICT_THROTTLE)
+  deleteUnverified(@CurrentUser() u: AuthUser, @Body() body: unknown) {
+    const { userIds } = parseBody(deleteUsersSchema, body);
+    return this.admin.deleteUnverifiedUsers(userIds, u.id);
   }
 }

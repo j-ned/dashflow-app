@@ -20,13 +20,19 @@ export type SecurityIssue = {
 };
 
 export type AccountSecurity = {
-  /** `exempt` : compte de démonstration, hors périmètre. */
-  status: 'ok' | 'recommended' | 'action' | 'exempt';
+  /**
+   * `exempt` : compte de démonstration, hors périmètre.
+   * `unverified` : e-mail jamais vérifié — le compte n'appartient encore à personne (faute de
+   * frappe, adresse inventée, inscription abandonnée). Il ne reçoit aucune relance : l'adresse
+   * peut être celle d'un inconnu. C'est le seul état qu'un administrateur peut supprimer.
+   */
+  status: 'ok' | 'recommended' | 'action' | 'exempt' | 'unverified';
   issues: SecurityIssue[];
 };
 
 export type AccountSecurityInput = {
   isDemoAccount: boolean;
+  emailVerified: boolean;
   hasPassword: boolean;
   authVersion: number;
   encryptionVersion: number;
@@ -38,6 +44,7 @@ export function assessAccountSecurity(
   u: AccountSecurityInput,
 ): AccountSecurity {
   if (u.isDemoAccount) return { status: 'exempt', issues: [] };
+  if (!u.emailVerified) return { status: 'unverified', issues: [] };
 
   const issues: SecurityIssue[] = [];
   // Mot de passe encore envoyé tel quel au serveur : bascule vers la clé dérivée au prochain login.
@@ -74,6 +81,12 @@ export const NOTICE_COOLDOWN_DAYS = 7;
 
 /** Plafond par envoi : l'outil sert à relancer des comptes, pas à faire une campagne. */
 export const NOTICE_MAX_RECIPIENTS = 100;
+
+/** Âge à partir duquel un compte jamais vérifié est purgé automatiquement. */
+export const UNVERIFIED_PURGE_DAYS = 7;
+
+/** Plafond par suppression manuelle. */
+export const DELETE_MAX_ACCOUNTS = 100;
 
 export const noticeEventType = (reason: NoticeReason) =>
   `admin_notice_${reason}` as const;

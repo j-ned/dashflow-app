@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import request from 'supertest';
 import postgres from 'postgres';
 import { AppModule } from '../src/app.module';
+import { AdminService } from '../src/modules/admin/admin.service';
 import { MAILER, type Mailer } from '../src/mail/mailer';
 import type { NoticeReason } from '../src/modules/admin/account-security';
 import { authKey } from './auth-key';
@@ -177,5 +178,97 @@ describe('Admin notices e2e', () => {
       .set('X-CSRF-Token', admin.csrf)
       .send({ reason: 'promo', message: 'cliquez ici' })
       .expect(400);
+  });
+
+  it('faux comptes : jamais relancés, supprimables par l’admin — et seulement eux', async () => {
+    const admin = await client('adm2');
+    const real = await client('real');
+    await sql`update users set role = 'admin' where id = ${admin.id}`;
+    // Inscription jamais confirmée : la ligne existe, l'e-mail n'a pas été vérifié.
+    const fakeEmail = `jean+${Date.now()}@dashflow.test`;
+    await request(admin.s)
+      .post('/auth/register')
+      .send({ email: fakeEmail, password: authKey('motdepasse-long-12') })
+      .expect(201);
+    const [{ id: fakeId }] = await sql<
+      { id: string }[]
+    >`select id from users where email = ${fakeEmail}`;
+
+    const list = await request(admin.s)
+      .get('/admin/users')
+      .query({ search: fakeEmail })
+      .set('Cookie', admin.cookies)
+      .expect(200);
+    expect(list.body.items[0].security).toEqual({
+      status: 'unverified',
+      issues: [],
+    });
+
+    // Aucune relance ne part vers une adresse non vérifiée, même cochée.
+    mailer.notices = [];
+    const notice = await request(admin.s)
+      .post('/admin/notices')
+      .set('Cookie', admin.cookies)
+      .set('X-CSRF-Token', admin.csrf)
+      .send({ reason: 'enable_encryption', userIds: [fakeId] })
+      .expect(200);
+    expect(notice.body.sent).toEqual([]);
+    expect(mailer.notices).toEqual([]);
+
+    // Un utilisateur ordinaire ne supprime personne.
+    await request(real.s)
+      .post('/admin/users/delete-unverified')
+      .set('Cookie', real.cookies)
+      .set('X-CSRF-Token', real.csrf)
+      .send({ userIds: [fakeId] })
+      .expect(403);
+
+    // L'admin supprime le faux compte ; le vrai compte et le sien sont refusés.
+    const del = await request(admin.s)
+      .post('/admin/users/delete-unverified')
+      .set('Cookie', admin.cookies)
+      .set('X-CSRF-Token', admin.csrf)
+      .send({ userIds: [fakeId, real.id, admin.id] })
+      .expect(200);
+    expect(del.body.deleted).toEqual([{ id: fakeId, email: fakeEmail }]);
+    expect(del.body.skipped).toEqual([
+      { id: real.id, email: real.email, why: 'verified' },
+      { id: admin.id, email: admin.email, why: 'self' },
+    ]);
+    const left =
+      await sql`select id from users where id in ${sql([fakeId, real.id, admin.id])}`;
+    expect(left.map((r) => r.id).sort()).toEqual([real.id, admin.id].sort());
+    const codes =
+      await sql`select 1 from verification_codes where email = ${fakeEmail}`;
+    expect(codes).toHaveLength(0);
+    await request(real.s)
+      .get('/auth/me')
+      .set('Cookie', real.cookies)
+      .expect(200);
+  });
+
+  it('purge nocturne : plus de 7 jours et jamais vérifié, sauf code demandé dans les 24 h', async () => {
+    const tag = Date.now();
+    const old = `old+${tag}@dashflow.test`;
+    const recent = `recent+${tag}@dashflow.test`;
+    const retrying = `retry+${tag}@dashflow.test`;
+    const verified = `verified+${tag}@dashflow.test`;
+    await sql`insert into users (email, password, created_at) values
+      (${old}, 'x', now() - interval '8 days'),
+      (${recent}, 'x', now() - interval '2 days'),
+      (${retrying}, 'x', now() - interval '30 days')`;
+    await sql`insert into users (email, password, created_at, email_verified) values
+      (${verified}, 'x', now() - interval '30 days', now())`;
+    // Réinscription en cours sur une vieille ligne : un code vient d'être demandé.
+    await sql`insert into verification_codes (email, code, expires_at) values (${retrying}, 'h', now() + interval '10 minutes')`;
+
+    await app.get(AdminService).purgeStaleUnverified();
+
+    const left = await sql<
+      { email: string }[]
+    >`select email from users where email in ${sql([old, recent, retrying, verified])}`;
+    expect(left.map((r) => r.email).sort()).toEqual(
+      [recent, retrying, verified].sort(),
+    );
   });
 });

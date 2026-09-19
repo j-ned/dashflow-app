@@ -1,5 +1,9 @@
 import { z } from 'zod';
-import { NOTICE_MAX_RECIPIENTS, NOTICE_REASONS } from '../account-security';
+import {
+  DELETE_MAX_ACCOUNTS,
+  NOTICE_MAX_RECIPIENTS,
+  NOTICE_REASONS,
+} from '../account-security';
 
 export const listQuerySchema = z.object({
   search: z.string().trim().optional(),
@@ -15,4 +19,8 @@ export const sendNoticesSchema = z.object({
     .min(1)
     .max(NOTICE_MAX_RECIPIENTS)
     .optional(),
+});
+
+export const deleteUsersSchema = z.object({
+  userIds: z.array(z.string().uuid()).min(1).max(DELETE_MAX_ACCOUNTS),
 });
