@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
-import type { AccountSecurity, AdminUserView } from '@core/admin/admin.types';
+import { isDeletable, type AccountSecurity, type AdminUserView } from '@core/admin/admin.types';
 
 const BADGE_CLASS: Record<AccountSecurity['status'], string> = {
   ok: 'border-ib-green-20 bg-ib-green-10 text-ib-green',
   recommended: 'border-ib-yellow-20 bg-ib-yellow-10 text-ib-yellow',
   action: 'border-ib-red-20 bg-ib-red-10 text-ib-red',
   exempt: 'border-border text-text-muted',
+  unverified: 'border-border bg-hover text-text-muted',
 };
 
 const COLUMN_COUNT = 6;
@@ -70,8 +71,8 @@ const COLUMN_COUNT = 6;
               [class.bg-ib-blue-5]="selectedIds().has(u.id)"
             >
               <td class="px-3 py-2">
-                <!-- Un compte à jour ou de démo n'a rien à recevoir : pas de case à cocher. -->
-                @if (u.security.issues.length > 0) {
+                <!-- Case à cocher seulement si le compte peut recevoir une relance ou être supprimé. -->
+                @if (u.security.issues.length > 0 || deletable(u)) {
                   <input
                     type="checkbox"
                     class="h-4 w-4 cursor-pointer accent-ib-blue"
@@ -95,6 +96,11 @@ const COLUMN_COUNT = 6;
                   <span class="h-1.5 w-1.5 rounded-full bg-current" aria-hidden="true"></span>
                   {{ 'admin.security.status.' + u.security.status | transloco }}
                 </span>
+                @if (u.security.status === 'unverified') {
+                  <p class="mt-1 text-xs text-text-muted">
+                    {{ 'admin.security.unverifiedHint' | transloco }}
+                  </p>
+                }
                 @if (u.security.issues.length > 0) {
                   <ul class="mt-1 flex flex-col gap-0.5 text-xs text-text-muted">
                     @for (issue of u.security.issues; track issue.reason) {
@@ -186,6 +192,8 @@ export class AdminUsersTable {
   readonly pageChange = output<number>();
 
   protected readonly columnCount = COLUMN_COUNT;
+
+  protected readonly deletable = isDeletable;
 
   protected badgeClass(status: AccountSecurity['status']): string {
     return BADGE_CLASS[status];

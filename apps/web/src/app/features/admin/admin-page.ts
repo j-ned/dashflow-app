@@ -3,7 +3,12 @@ import { toObservable, takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { debounceTime, distinctUntilChanged, skip } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { AdminStore } from '@core/admin/admin.store';
-import { NOTICE_REASONS, isEligibleFor, type NoticeReason } from '@core/admin/admin.types';
+import {
+  NOTICE_REASONS,
+  isDeletable,
+  isEligibleFor,
+  type NoticeReason,
+} from '@core/admin/admin.types';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
 import { AdminUsersTable } from './admin-users-table';
@@ -103,6 +108,28 @@ const SEARCH_DEBOUNCE_MS = 250;
         </p>
       </section>
 
+      <section
+        aria-labelledby="admin-cleanup-title"
+        class="mb-8 rounded-lg border border-border bg-surface p-4"
+        data-testid="admin-cleanup"
+      >
+        <h2 id="admin-cleanup-title" class="text-sm font-semibold text-text-primary">
+          {{ 'admin.cleanup.title' | transloco }}
+        </h2>
+        <p class="mt-1 max-w-3xl text-xs text-text-muted">
+          {{ 'admin.cleanup.help' | transloco }}
+        </p>
+        <button
+          type="button"
+          class="btn-submit mt-4 min-h-11 bg-ib-red"
+          data-testid="admin-delete-selected"
+          [disabled]="selectedDeletable().length === 0 || store.sending()"
+          (click)="deleteSelected()"
+        >
+          {{ 'admin.cleanup.deleteSelected' | transloco: { count: selectedDeletable().length } }}
+        </button>
+      </section>
+
       <div class="mb-4">
         <label class="sr-only" for="admin-search">{{ 'admin.search.label' | transloco }}</label>
         <input
@@ -145,6 +172,10 @@ export class AdminPage {
       .users()
       .filter((u) => this.selected().has(u.id) && isEligibleFor(u, this.reason()))
       .map((u) => u.id),
+  );
+  /** Parmi les comptes cochés, ceux qu'on a le droit de supprimer : e-mail jamais vérifié. */
+  protected readonly selectedDeletable = computed(() =>
+    this.store.users().filter((u) => this.selected().has(u.id) && isDeletable(u)),
   );
   protected readonly onCooldown = computed(
     () => this.store.summary()?.[this.reason()]?.onCooldown ?? 0,
@@ -226,6 +257,37 @@ export class AdminPage {
       });
     } else {
       this.toaster.success('admin.notices.toast.sent', { sent: result.sent.length });
+    }
+    this.selected.set(new Set());
+    void this.store.loadSummary();
+    this.goToPage(this.page());
+  }
+
+  protected async deleteSelected(): Promise<void> {
+    const targets = this.selectedDeletable();
+    if (targets.length === 0) return;
+
+    const confirmed = await this.confirm.confirm({
+      title: this.i18n.translate('admin.cleanup.confirm.title'),
+      message: this.i18n.translate('admin.cleanup.confirm.message', {
+        count: targets.length,
+        emails: targets.map((u) => u.email).join(', '),
+      }),
+      confirmLabel: this.i18n.translate('admin.cleanup.confirm.action'),
+      variant: 'danger',
+    });
+    if (!confirmed) return;
+
+    const result = await this.store.deleteUnverified(targets.map((u) => u.id));
+    if (!result) return;
+
+    if (result.skipped.length > 0) {
+      this.toaster.info('admin.cleanup.toast.deletedWithSkipped', {
+        deleted: result.deleted.length,
+        skipped: result.skipped.length,
+      });
+    } else {
+      this.toaster.success('admin.cleanup.toast.deleted', { deleted: result.deleted.length });
     }
     this.selected.set(new Set());
     void this.store.loadSummary();

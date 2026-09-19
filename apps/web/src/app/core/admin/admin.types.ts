@@ -12,8 +12,12 @@ export type SecurityIssue = {
 };
 
 export type AccountSecurity = {
-  /** `exempt` : compte de démonstration, jamais relancé. */
-  readonly status: 'ok' | 'recommended' | 'action' | 'exempt';
+  /**
+   * `exempt` : compte de démonstration, jamais relancé.
+   * `unverified` : e-mail jamais vérifié (faux compte, faute de frappe, inscription abandonnée) —
+   * jamais relancé, et seul état qu'un administrateur peut supprimer.
+   */
+  readonly status: 'ok' | 'recommended' | 'action' | 'exempt' | 'unverified';
   readonly issues: readonly SecurityIssue[];
 };
 
@@ -48,6 +52,21 @@ export type SendNoticesResult = {
     readonly why: NoticeSkipReason;
   }[];
 };
+
+export type DeleteSkipReason = 'not_found' | 'self' | 'admin' | 'demo' | 'verified';
+
+export type DeleteUsersResult = {
+  readonly deleted: readonly { readonly id: string; readonly email: string }[];
+  readonly skipped: readonly {
+    readonly id: string;
+    readonly email: string | null;
+    readonly why: DeleteSkipReason;
+  }[];
+};
+
+/** Un administrateur ne peut supprimer que ces comptes-là ; le serveur le revérifie. */
+export const isDeletable = (user: AdminUserView): boolean =>
+  user.security.status === 'unverified' && user.role !== 'admin' && !user.isDemoAccount;
 
 export const isEligibleFor = (user: AdminUserView, reason: NoticeReason): boolean =>
   user.security.issues.some((issue) => issue.reason === reason);
