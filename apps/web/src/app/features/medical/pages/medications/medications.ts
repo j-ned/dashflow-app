@@ -189,13 +189,13 @@ const DAY_LABELS = [
               </div>
             </dl>
 
-            <div class="mt-4 flex gap-2 pt-3 border-t border-border/50">
+            <div class="mt-4 flex flex-wrap gap-2 pt-3 border-t border-border/50">
               <button
                 type="button"
                 class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-purple hover:border-ib-purple/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
                 (click)="openRefillModal(med)"
               >
-                {{ 'medical.medication.refill' | transloco }}
+                {{ 'medical.medication.refill.submit' | transloco }}
               </button>
               <button
                 type="button"
