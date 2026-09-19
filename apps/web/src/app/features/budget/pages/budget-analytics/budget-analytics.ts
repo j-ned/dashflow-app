@@ -23,6 +23,9 @@ import {
   AnalyticsForecastList,
   type ForecastView,
 } from './analytics-forecast-list/analytics-forecast-list';
+import { AccountTransactionGateway } from '@features/budget/domain/gateways/account-transaction.gateway';
+import { computeMonthRecords, mergeHistory } from '@features/budget/domain/monthly-history';
+import { todayIso } from '@shared/utils/local-date';
 
 @Component({
   selector: 'app-budget-analytics',
@@ -151,6 +154,7 @@ export class BudgetAnalytics {
   private readonly getEntries = inject(RecurringEntryGateway);
   private readonly getEnvelopes = inject(EnvelopeGateway);
   private readonly getLoans = inject(LoanGateway);
+  private readonly getTransactions = inject(AccountTransactionGateway);
   private readonly _i18n = inject(TranslocoService);
 
   private formatMonth(m: string): string {
@@ -165,13 +169,20 @@ export class BudgetAnalytics {
       entries: this.getEntries.getAll(),
       envelopes: this.getEnvelopes.getAll(),
       loans: this.getLoans.getAll(),
+      transactions: this.getTransactions.getAll(),
     }),
-    { initialValue: { archives: [], entries: [], envelopes: [], loans: [] } },
+    { initialValue: { archives: [], entries: [], envelopes: [], loans: [], transactions: [] } },
   );
 
-  private readonly archives = computed(() =>
-    [...this.allData().archives].sort((a, b) => a.month.localeCompare(b.month)),
-  );
+  // Historique des mois clos : calculé depuis les opérations réelles, complété par les archives
+  // manuelles pour les mois d'avant. Les courbes se remplissent sans qu'on ait rien à archiver.
+  private readonly archives = computed(() => {
+    const { archives, transactions, entries } = this.allData();
+    return mergeHistory(
+      archives,
+      computeMonthRecords(transactions, entries, todayIso().slice(0, 7)),
+    );
+  });
 
   private readonly entries = computed(() => this.allData().entries);
   private readonly envelopes = computed(() => this.allData().envelopes);

@@ -10,6 +10,7 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { SalaryArchive } from '../../domain/models/salary-archive.model';
 import { RecurringEntry } from '../../domain/models/recurring-entry.model';
 import { SalaryArchives } from './salary-archives';
+import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 
 const arch = (p: Partial<SalaryArchive>): SalaryArchive => ({
   id: 'a',
@@ -59,6 +60,7 @@ function make(
   opts: {
     archives?: SalaryArchive[];
     entries?: RecurringEntry[];
+    transactions?: unknown[];
     create?: ReturnType<typeof vi.fn>;
     confirm?: boolean;
   } = {},
@@ -79,6 +81,10 @@ function make(
       },
       { provide: RecurringEntryGateway, useValue: { getAll: () => of(opts.entries ?? []) } },
       { provide: BankAccountGateway, useValue: { getAll: () => of([]) } },
+      {
+        provide: AccountTransactionGateway,
+        useValue: { getAll: () => of(opts.transactions ?? []) },
+      },
       { provide: Toaster, useValue: { success, error } },
       {
         provide: ConfirmService,
@@ -162,5 +168,56 @@ describe('SalaryArchives : caractérisation', () => {
     await cmp.deleteArchive(arch({ id: 'a' }));
     expect(del).toHaveBeenCalledWith('a');
     expect(success).toHaveBeenCalledWith('budget.salaryArchive.messages.deleted');
+  });
+});
+
+describe('SalaryArchives : historique calculé depuis les opérations', () => {
+  type Page = {
+    history: () => { month: string; origin: string; salary: number; archiveId: string | null }[];
+    editRecord: (r: unknown) => void;
+    deleteRecord: (r: unknown) => void;
+  };
+  const income = (date: string, amount: number) => ({
+    id: `tx-${date}`,
+    accountId: 'a',
+    amount,
+    direction: 'income',
+    toAccountId: null,
+    date,
+    category: null,
+    note: null,
+    memberId: null,
+    recurringEntryId: null,
+  });
+
+  it('sans aucune archive : un mois clos avec un salaire saisi apparaît tout seul', () => {
+    const { cmp } = make({ archives: [], transactions: [income('2020-03-01', 2050.4)] });
+    const history = (cmp as unknown as Page).history();
+    expect(history).toHaveLength(1);
+    expect(history[0]).toMatchObject({ month: '2020-03', origin: 'computed', salary: 2050.4 });
+  });
+
+  it('mêle calculé et archives manuelles, le plus récent en premier', () => {
+    const { cmp } = make({
+      archives: [arch({ id: 'old', month: '2019-11' })],
+      transactions: [income('2020-03-01', 2050.4)],
+    });
+    expect((cmp as unknown as Page).history().map((h) => [h.month, h.origin])).toEqual([
+      ['2020-03', 'computed'],
+      ['2019-11', 'archive'],
+    ]);
+  });
+
+  it('un mois calculé ne se supprime ni ne s’édite, même s’il recouvre une archive', () => {
+    const { cmp, del } = make({
+      archives: [arch({ id: 'mar', month: '2020-03' })],
+      transactions: [income('2020-03-01', 2050.4)],
+    });
+    const page = cmp as unknown as Page;
+    const [record] = page.history();
+    expect(record).toMatchObject({ origin: 'computed', archiveId: 'mar' });
+    page.deleteRecord(record);
+    page.editRecord(record);
+    expect(del).not.toHaveBeenCalled();
   });
 });

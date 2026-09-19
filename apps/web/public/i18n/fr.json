@@ -1182,8 +1182,8 @@
     },
     "salaryArchive": {
       "title": "Archives salaires",
-      "subtitle": "Historique mensuel de vos salaires et dépenses",
-      "archiveMonth": "Archiver un mois",
+      "subtitle": "Tes mois passés, reconstitués tout seuls à partir de tes opérations réelles",
+      "archiveMonth": "Ajouter un mois à la main",
       "filterYear": "Filtrer par année",
       "allYears": "Toutes",
       "expensesLabel": "Dépenses : {{value}}€",
@@ -1200,7 +1200,7 @@
       "deleteAria": "Supprimer archive {{month}}",
       "editAria": "Modifier archive {{month}}",
       "empty": "Aucune archive pour le moment",
-      "emptyHint": "Archivez vos mois passés pour garder un historique",
+      "emptyHint": "Dès qu'un mois est terminé et que ton salaire y a été saisi, il apparaît ici tout seul. Tu peux aussi ajouter à la main un mois d'avant DashFlow.",
       "modal": {
         "title": "Archiver un mois",
         "editTitle": "Modifier l'archive",
@@ -1238,7 +1238,10 @@
           "11": "Novembre",
           "12": "Décembre"
         }
-      }
+      },
+      "computedBadge": "Calculé",
+      "computedHint": "Reconstitué à partir des opérations réelles du mois : rien à archiver.",
+      "computedSource": "Corriger les opérations de ce mois"
     },
     "analytics": {
       "title": "Statistiques & Prévisions",

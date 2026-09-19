@@ -6,10 +6,11 @@ export function availableYears(archives: readonly SalaryArchive[]): string[] {
   return [...years].sort((a, b) => b.localeCompare(a));
 }
 
-export function filterArchivesByYear(
-  archives: readonly SalaryArchive[],
+// Générique : l'historique fusionné (MonthRecord) doit ressortir avec sa provenance.
+export function filterArchivesByYear<T extends SalaryArchive>(
+  archives: readonly T[],
   year: string | null,
-): SalaryArchive[] {
+): T[] {
   return year ? archives.filter((a) => a.month.startsWith(year)) : [...archives];
 }
 
