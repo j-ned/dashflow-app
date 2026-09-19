@@ -12,6 +12,7 @@ export type BankTimelineEvent = {
   sign: string;
   type: RecurringEntryType;
   passed: boolean;
+  estimated?: boolean;
 };
 
 @Component({
@@ -91,7 +92,8 @@ export type BankTimelineEvent = {
                     [class.text-ib-yellow]="event.type === 'spending'"
                     [class.opacity-50]="event.passed"
                   >
-                    {{ event.sign }}{{ event.amount | number: '1.2-2' }}&euro;
+                    {{ event.estimated ? '≈ ' : event.sign
+                    }}{{ event.amount | number: '1.2-2' }}&euro;
                   </span>
                 </div>
               }

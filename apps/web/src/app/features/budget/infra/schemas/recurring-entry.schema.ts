@@ -17,6 +17,7 @@ export const RecurringEntrySchema = z.object({
   payslipKey: z.nullable(z.string()),
   autoPost: z.boolean(),
   autoPostSince: z.nullable(z.string()),
+  variableAmount: z.boolean(),
 });
 
 // Garde-fou anti-dérive : si RecurringEntry évolue sans ce schéma, le build casse.

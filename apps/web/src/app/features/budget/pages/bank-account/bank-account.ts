@@ -26,7 +26,8 @@ import { immediatePostingFor } from '../../domain/immediate-posting';
 import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
 import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
-import { computeForecastDelta } from '../../domain/forecast-delta';
+import { computeForecast } from '../../domain/forecast-delta';
+import { monthIncome } from '../../domain/month-income';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
@@ -40,7 +41,7 @@ import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
 import { BankExpenseColumns } from './bank-expense-columns/bank-expense-columns';
 import { BankTransfersPanel } from './bank-transfers-panel/bank-transfers-panel';
 import { BankTimeline } from './bank-timeline/bank-timeline';
-import { PendingCharge } from '../../domain/pending-charge';
+import { PendingCharge, isIncomeCharge } from '../../domain/pending-charge';
 import { PendingChargesPanel } from './pending-charges-panel/pending-charges-panel';
 import { OrphanEntriesPanel } from './orphan-entries-panel/orphan-entries-panel';
 import { AccountManager } from './account-manager/account-manager';
@@ -155,12 +156,17 @@ const PALETTE = [
     <app-bank-balance-band
       [confirmedBalance]="confirmedBalance()"
       [projectedBalance]="projectedBalance()"
+      [upcomingDebits]="forecast().upcomingDebits"
+      [unknownIncomes]="unknownIncomeLabels()"
+      [needsStartingBalance]="needsStartingBalance()"
       [today]="today"
+      (setStartingBalance)="accountManager().open()"
     />
 
     <!-- ═══ Ce qui compose le mois (décomposition + barre) ═══ -->
     <app-budget-usage-bar
       [totalIncome]="totalIncome()"
+      [incomeIncomplete]="incomeIncomplete()"
       [totalAllExpenses]="totalAllExpenses()"
       [usagePercent]="usagePercent()"
       [totalMonthlyExpenses]="totalMonthlyExpenses()"
@@ -451,8 +457,8 @@ export class BankAccount {
 
   // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
   // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).
-  protected readonly forecastDelta = computed(() =>
-    computeForecastDelta({
+  protected readonly forecast = computed(() =>
+    computeForecast({
       incomes: this.incomes(),
       monthlyExpenses: this.monthlyExpenses(),
       annualExpenses: this.annualExpenses(),
@@ -467,7 +473,21 @@ export class BankAccount {
   );
 
   protected readonly projectedBalance = computed(
-    () => this.confirmedBalance() + this.forecastDelta(),
+    () => this.confirmedBalance() + this.forecast().delta,
+  );
+
+  /** Revenus à montant variable pas encore saisis : tant qu'il y en a, la projection est incomplète. */
+  protected readonly unknownIncomeLabels = computed(() =>
+    this.forecast().unknownIncomes.map((e) => e.label),
+  );
+
+  // Aucun point de départ : solde initial à 0 et aucune opération réelle → « confirmé 0,00 € » ne
+  // veut rien dire, on invite à renseigner le solde réel plutôt que d'afficher un zéro trompeur.
+  protected readonly needsStartingBalance = computed(
+    () =>
+      this.selectedAccount() != null &&
+      this.selectedInitialBalance() === 0 &&
+      this.accountRealTxs().length === 0,
   );
 
   private readonly _ignoredCharges = signal<ReadonlySet<string>>(new Set());
@@ -556,7 +576,11 @@ export class BankAccount {
   }
 
   protected confirmAllCharges(): void {
-    const charges = this.pendingCharges();
+    // Jamais un revenu en lot : un salaire se saisit, il ne se confirme pas à l'aveugle.
+    const charges = this.pendingCharges().filter(
+      (c): c is PendingCharge & { suggestedAmount: number } =>
+        !isIncomeCharge(c) && c.suggestedAmount !== null,
+    );
     if (charges.length === 0) return;
     let settled = 0;
     let failed = 0;
@@ -645,7 +669,13 @@ export class BankAccount {
     }
   }
 
-  protected readonly totalIncome = computed(() => sumAmount(this.incomes()));
+  // Revenus du mois : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
+  // compte pas (voir monthIncome). Le modèle brut ne sert plus qu'à l'archivage du cycle.
+  private readonly _monthIncome = computed(() =>
+    monthIncome(this.incomes(), this.accountRealTxs(), this.currentMonth),
+  );
+  protected readonly totalIncome = computed(() => this._monthIncome().total);
+  protected readonly incomeIncomplete = computed(() => this._monthIncome().incomplete);
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
   protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
@@ -867,7 +897,7 @@ export class BankAccount {
   }
 
   private async archiveCurrentCycle() {
-    const salary = this.totalIncome();
+    const salary = sumAmount(this.incomes());
     if (salary <= 0) return;
 
     const month = previousMonth(new Date());

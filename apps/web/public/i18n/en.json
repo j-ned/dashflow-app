@@ -725,12 +725,18 @@
       "accountNavAria": "Account selection",
       "pending": {
         "title": "Charges to confirm",
-        "help": "These recurring charges were scheduled and their date has passed. Confirm the amount actually debited on your statement, or dismiss the ones that did not go through.",
+        "help": "These recurring debits were planned and their date has passed. Confirm the amount actually debited on your statement, or dismiss those that did not go through. 'Confirm all' only covers debits, never income.",
         "confirm": "Debited",
         "confirmAll": "Confirm all",
         "ignore": "Not debited",
         "dueOn": "scheduled for {{date}}",
-        "amountAria": "Debited amount for {{label}}"
+        "amountAria": "Debited amount for {{label}}",
+        "incomesTitle": "Income to enter",
+        "incomesHelp": "This income was expected and its date has passed. Enter what you actually received: a variable income is never prefilled nor counted until you enter it.",
+        "received": "Received",
+        "notReceived": "Not received yet",
+        "amountPlaceholder": "Amount",
+        "amountReceivedAria": "Amount received for {{label}}"
       },
       "balance": {
         "confirmedLabel": "Confirmed today",
@@ -738,7 +744,14 @@
         "projectedLabel": "Projected end of month",
         "projectedHint": "estimate: confirmed + upcoming charges",
         "deltaHint": "still to come before month end",
-        "seeStatement": "See full statement"
+        "seeStatement": "See full statement",
+        "incompleteTitle": "Projection incomplete",
+        "incompleteHint": "This month's income has not been entered: {{incomes}}. Its amount changes every month, so we do not guess it.",
+        "incompleteAction": "Enter the income received",
+        "upcomingDebitsHint": "of debits still to come before the end of the month (known amount)",
+        "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter the balance shown by your bank so everything else is right.",
+        "startingAction": "Enter the real balance",
+        "noUpcomingDebits": "No more debits to come before the end of the month."
       },
       "kpi": {
         "balance": "Confirmed balance",
@@ -765,7 +778,8 @@
         "spendings": "Spending",
         "stateOk": "Healthy",
         "stateTight": "Tight",
-        "stateOver": "Over budget"
+        "stateOver": "Over budget",
+        "incomeUnknown": "This month's income has not been entered yet: the share of your income already committed will be computed once you do."
       },
       "incomes": {
         "title": "Income",
@@ -1344,7 +1358,11 @@
       "payslipBrowseHint": "or click to browse (PDF, JPG, PNG)",
       "fileSizeKb": "{{size}} KB",
       "submitAdd": "Add",
-      "submitEdit": "Edit"
+      "submitEdit": "Edit",
+      "variableAmount": "Variable amount",
+      "variableAmountHint": "Check if this income changes every month (bonuses, hours, temp work). You will enter the amount received each month; nothing is assumed or projected before that.",
+      "variableBadge": "Variable",
+      "variableBadgeTitle": "Indicative amount: the real amount is entered every month"
     },
     "transactions": {
       "title": "Statement",

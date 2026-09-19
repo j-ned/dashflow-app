@@ -464,6 +464,7 @@ export class Onboarding {
             payslipKey: null,
             autoPost: false,
             autoPostSince: null,
+            variableAmount: false,
           }),
         );
       }

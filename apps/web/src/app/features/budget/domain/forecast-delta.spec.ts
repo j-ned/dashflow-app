@@ -19,6 +19,7 @@ function re(id: string, amount: number): RecurringEntry {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 }
 
@@ -94,6 +95,7 @@ describe('computeForecastDelta', () => {
       payslipKey: null,
       autoPost: false,
       autoPostSince: null,
+      variableAmount: false,
     };
     const tx: AccountTransaction = {
       id: 't',

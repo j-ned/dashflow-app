@@ -1,33 +1,66 @@
-import { ChangeDetectionStrategy, Component, input, linkedSignal, output } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { PendingCharge } from '../../../domain/pending-charge';
+import { PendingCharge, isIncomeCharge } from '../../../domain/pending-charge';
+import { PendingChargeRow } from './pending-charge-row/pending-charge-row';
 
 /**
- * Prélèvements récurrents dont la date prévue est passée : à rapprocher du
- * relevé réel. "Débité" matérialise la transaction (passe au solde confirmé),
- * "Pas débité" l'écarte. L'explication est rendue explicite dans l'UI.
+ * Récurrences dont la date prévue est passée, à rapprocher du relevé réel. Deux listes, parce que
+ * ce sont deux gestes :
+ * - « Revenus à saisir » : un revenu se reçoit. S'il est à montant variable, rien n'est prérempli ;
+ * - « Échéances à confirmer » : un prélèvement ou un virement se débite, montant prérempli.
+ * « Tout confirmer » ne porte que sur la seconde liste : un salaire ne se confirme pas à l'aveugle.
  */
 @Component({
   selector: 'app-pending-charges-panel',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, TranslocoPipe],
+  imports: [TranslocoPipe, PendingChargeRow],
   host: { class: 'block' },
   template: `
-    @if (charges().length > 0) {
+    @if (incomes().length > 0) {
+      <section
+        id="pending-incomes"
+        data-testid="pending-incomes"
+        aria-labelledby="pending-incomes-title"
+        class="mb-4 rounded-lg border border-ib-green/40 bg-surface p-4"
+      >
+        <h2 id="pending-incomes-title" class="text-sm font-semibold text-text-primary">
+          {{ 'budget.bankAccount.pending.incomesTitle' | transloco }}
+        </h2>
+        <p class="mt-1.5 max-w-prose text-xs leading-relaxed text-text-muted">
+          {{ 'budget.bankAccount.pending.incomesHelp' | transloco }}
+        </p>
+        <ul class="mt-2 divide-y divide-border/40">
+          @for (c of incomes(); track c.entry.id) {
+            <li>
+              <app-pending-charge-row
+                [charge]="c"
+                (confirm)="confirm.emit($event)"
+                (ignore)="ignore.emit($event)"
+              />
+            </li>
+          }
+        </ul>
+      </section>
+    }
+
+    @if (debits().length > 0) {
       <section
         data-testid="pending-panel"
+        aria-labelledby="pending-debits-title"
         class="mb-4 rounded-lg border border-ib-orange/40 bg-surface p-4"
       >
         <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
           <div class="min-w-0">
-            <p class="flex items-center gap-2 text-sm font-semibold text-text-primary">
+            <h2
+              id="pending-debits-title"
+              class="flex items-center gap-2 text-sm font-semibold text-text-primary"
+            >
               <span
                 class="inline-flex h-5 min-w-5 items-center justify-center rounded-md bg-ib-orange/15 px-1 font-mono text-xs text-ib-orange"
-                >{{ charges().length }}</span
+                >{{ debits().length }}</span
               >
               {{ 'budget.bankAccount.pending.title' | transloco }}
-            </p>
+            </h2>
             <p class="mt-1.5 max-w-prose text-xs leading-relaxed text-text-muted">
               {{ 'budget.bankAccount.pending.help' | transloco }}
             </p>
@@ -43,52 +76,13 @@ import { PendingCharge } from '../../../domain/pending-charge';
         </div>
 
         <ul class="divide-y divide-border/40">
-          @for (c of charges(); track c.entry.id) {
-            <li class="flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5">
-              <span class="min-w-0 text-sm text-text-primary">
-                {{ c.entry.label }}
-                <span class="text-xs text-text-muted"
-                  >&middot;
-                  {{
-                    'budget.bankAccount.pending.dueOn' | transloco: { date: c.suggestedDate }
-                  }}</span
-                >
-              </span>
-              <span class="flex items-center gap-2">
-                <span class="relative">
-                  <input
-                    type="number"
-                    step="0.01"
-                    class="w-28 rounded-md border border-border bg-canvas py-1 pl-2 pr-6 text-right font-mono text-sm text-text-primary"
-                    [attr.aria-label]="
-                      'budget.bankAccount.pending.amountAria' | transloco: { label: c.entry.label }
-                    "
-                    [ngModel]="amounts()[c.entry.id]"
-                    (ngModelChange)="setAmount(c.entry.id, $event)"
-                  />
-                  <span
-                    class="pointer-events-none absolute right-2 top-1/2 -translate-y-1/2 text-xs text-text-muted"
-                    aria-hidden="true"
-                    >&euro;</span
-                  >
-                </span>
-                <button
-                  type="button"
-                  [attr.data-testid]="'confirm-' + c.entry.id"
-                  class="rounded-md bg-ib-green/15 px-2.5 py-1 text-xs font-medium text-ib-green transition-colors hover:bg-ib-green/25"
-                  (click)="confirm.emit({ id: c.entry.id, amount: amounts()[c.entry.id] })"
-                >
-                  {{ 'budget.bankAccount.pending.confirm' | transloco }}
-                </button>
-                <button
-                  type="button"
-                  [attr.data-testid]="'ignore-' + c.entry.id"
-                  class="rounded-md px-2.5 py-1 text-xs text-text-muted transition-colors hover:text-text-primary"
-                  (click)="ignore.emit(c.entry.id)"
-                >
-                  {{ 'budget.bankAccount.pending.ignore' | transloco }}
-                </button>
-              </span>
+          @for (c of debits(); track c.entry.id) {
+            <li>
+              <app-pending-charge-row
+                [charge]="c"
+                (confirm)="confirm.emit($event)"
+                (ignore)="ignore.emit($event)"
+              />
             </li>
           }
         </ul>
@@ -100,14 +94,10 @@ export class PendingChargesPanel {
   readonly charges = input.required<PendingCharge[]>();
   readonly accountNameById = input.required<(id: string | null) => string | null>();
   readonly confirm = output<{ id: string; amount: number }>();
+  /** Ne concerne que les prélèvements et virements : un revenu ne se confirme jamais en lot. */
   readonly confirmAll = output<void>();
   readonly ignore = output<string>();
 
-  protected readonly amounts = linkedSignal<Record<string, number>>(() =>
-    Object.fromEntries(this.charges().map((c) => [c.entry.id, c.suggestedAmount])),
-  );
-
-  protected setAmount(id: string, value: number): void {
-    this.amounts.update((m) => ({ ...m, [id]: value }));
-  }
+  protected readonly incomes = computed(() => this.charges().filter(isIncomeCharge));
+  protected readonly debits = computed(() => this.charges().filter((c) => !isIncomeCharge(c)));
 }

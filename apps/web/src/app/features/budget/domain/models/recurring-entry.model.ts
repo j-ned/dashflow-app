@@ -15,4 +15,10 @@ export type RecurringEntry = {
   payslipKey: string | null;
   autoPost: boolean;
   autoPostSince: string | null; // 'YYYY-MM' figé à l'activation de autoPost ; null si autoPost=false
+  /**
+   * Revenu dont le montant change chaque mois (salaire avec primes, heures, intérim…). `amount`
+   * n'est alors qu'un ordre de grandeur : il n'est ni prérempli à la confirmation, ni compté dans
+   * le projeté tant que le montant réel du mois n'a pas été saisi. N'a de sens que pour `income`.
+   */
+  variableAmount: boolean;
 };

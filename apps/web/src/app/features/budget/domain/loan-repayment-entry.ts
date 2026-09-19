@@ -28,5 +28,6 @@ export function buildLoanRepaymentEntry(
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 }

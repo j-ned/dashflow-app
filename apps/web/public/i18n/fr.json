@@ -725,12 +725,18 @@
       "accountNavAria": "Sélection du compte",
       "pending": {
         "title": "Échéances à confirmer",
-        "help": "Ces prélèvements récurrents étaient prévus et leur date est passée. Confirme le montant réellement débité sur ton relevé, ou écarte ceux qui ne sont pas passés.",
+        "help": "Ces prélèvements récurrents étaient prévus et leur date est passée. Confirme le montant réellement débité sur ton relevé, ou écarte ceux qui ne sont pas passés. « Tout confirmer » ne concerne que les prélèvements, jamais un revenu.",
         "confirm": "Débité",
         "confirmAll": "Tout confirmer",
         "ignore": "Pas débité",
         "dueOn": "prévu le {{date}}",
-        "amountAria": "Montant débité pour {{label}}"
+        "amountAria": "Montant débité pour {{label}}",
+        "incomesTitle": "Revenus à saisir",
+        "incomesHelp": "Ces revenus étaient attendus et leur date est passée. Indique ce que tu as réellement reçu : un revenu à montant variable n'est jamais prérempli ni compté tant que tu ne l'as pas saisi.",
+        "received": "Reçu",
+        "notReceived": "Pas encore reçu",
+        "amountPlaceholder": "Montant",
+        "amountReceivedAria": "Montant reçu pour {{label}}"
       },
       "balance": {
         "confirmedLabel": "Confirmé aujourd'hui",
@@ -738,7 +744,14 @@
         "projectedLabel": "Projeté fin de mois",
         "projectedHint": "estimation : confirmé + prélèvements à venir",
         "deltaHint": "encore à venir d'ici la fin du mois",
-        "seeStatement": "Voir le relevé complet"
+        "seeStatement": "Voir le relevé complet",
+        "incompleteTitle": "Projection incomplète",
+        "incompleteHint": "Revenu du mois non saisi : {{incomes}}. Son montant change chaque mois, on ne le devine pas.",
+        "incompleteAction": "Saisir le revenu reçu",
+        "upcomingDebitsHint": "de prélèvements encore à venir d'ici la fin du mois (montant certain)",
+        "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas ton vrai solde. Indique le solde réel affiché par ta banque pour que tout le reste soit juste.",
+        "startingAction": "Renseigner le solde réel",
+        "noUpcomingDebits": "Plus aucun prélèvement à venir d'ici la fin du mois."
       },
       "kpi": {
         "balance": "Solde confirmé",
@@ -765,7 +778,8 @@
         "spendings": "Dépenses",
         "stateOk": "Sain",
         "stateTight": "Tendu",
-        "stateOver": "Dépassé"
+        "stateOver": "Dépassé",
+        "incomeUnknown": "Le revenu de ce mois n'est pas encore saisi : la part de tes revenus déjà engagée sera calculée dès que tu l'auras indiqué."
       },
       "incomes": {
         "title": "Revenus",
@@ -1344,7 +1358,11 @@
       "payslipBrowseHint": "ou cliquez pour parcourir (PDF, JPG, PNG)",
       "fileSizeKb": "{{size}} Ko",
       "submitAdd": "Ajouter",
-      "submitEdit": "Modifier"
+      "submitEdit": "Modifier",
+      "variableAmount": "Montant variable",
+      "variableAmountHint": "Coche si ce revenu change chaque mois (primes, heures, intérim). Tu saisiras le montant reçu chaque mois ; rien n'est supposé ni projeté avant.",
+      "variableBadge": "Variable",
+      "variableBadgeTitle": "Montant indicatif : le montant réel se saisit chaque mois"
     },
     "transactions": {
       "title": "Relevé",

@@ -35,6 +35,7 @@ const e = (p: Partial<RecurringEntry>): RecurringEntry => ({
   payslipKey: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
   ...p,
 });
 const env = (p: Partial<Envelope>): Envelope => ({

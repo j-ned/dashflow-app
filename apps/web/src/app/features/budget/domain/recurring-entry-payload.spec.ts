@@ -12,6 +12,7 @@ const VALUE: RecurringEntryFormValue = {
   category: '',
   memberId: '',
   autoPost: false,
+  variableAmount: false,
 };
 
 function initial(over: Partial<RecurringEntry> = {}): RecurringEntry {
@@ -30,6 +31,7 @@ function initial(over: Partial<RecurringEntry> = {}): RecurringEntry {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
     ...over,
   };
 }
@@ -153,5 +155,30 @@ describe('buildRecurringEntryPayload', () => {
     );
     expect(p.autoPost).toBe(false);
     expect(p.autoPostSince).toBeNull();
+  });
+
+  describe('montant variable', () => {
+    const ctx = { initial: null, forcedAccountId: 'acc', currentMonth: '2026-09' } as const;
+
+    it('est conservé pour un revenu, et coupe le pointage automatique', () => {
+      const payload = buildRecurringEntryPayload(
+        { ...VALUE, autoPost: true, variableAmount: true },
+        { ...ctx, type: 'income' },
+      );
+      expect(payload.variableAmount).toBe(true);
+      expect(payload.autoPost).toBe(false);
+      expect(payload.autoPostSince).toBeNull();
+    });
+
+    it.each(['expense', 'annual_expense', 'spending', 'transfer'] as const)(
+      "n'a pas de sens pour %s : toujours faux",
+      (type) => {
+        const payload = buildRecurringEntryPayload(
+          { ...VALUE, variableAmount: true },
+          { ...ctx, type },
+        );
+        expect(payload.variableAmount).toBe(false);
+      },
+    );
   });
 });

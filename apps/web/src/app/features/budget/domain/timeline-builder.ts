@@ -9,6 +9,8 @@ export type TimelineEvent = {
   sign: '+' | '-';
   type: RecurringEntryType;
   passed: boolean;
+  /** Revenu à montant variable : `amount` n'est qu'un ordre de grandeur, à afficher comme tel. */
+  estimated?: boolean;
 };
 
 export type TimelineInput = {
@@ -36,6 +38,7 @@ export function buildTimelineEvents(p: TimelineInput): TimelineEvent[] {
         sign: '+',
         type: 'income',
         passed: passed(e),
+        estimated: e.variableAmount,
       });
   }
   for (const e of p.monthlyExpenses) {

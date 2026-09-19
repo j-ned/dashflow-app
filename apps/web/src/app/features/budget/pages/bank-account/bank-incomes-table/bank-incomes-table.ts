@@ -58,6 +58,15 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
                         {{ 'budget.recurringForm.autoBadge' | transloco }}
                       </span>
                     }
+                    @if (entry.variableAmount) {
+                      <span
+                        data-testid="variable-badge"
+                        class="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ib-orange bg-ib-orange/10"
+                        [title]="'budget.recurringForm.variableBadgeTitle' | transloco"
+                      >
+                        {{ 'budget.recurringForm.variableBadge' | transloco }}
+                      </span>
+                    }
                   </p>
                   <div class="flex items-center gap-2 mt-0.5 flex-wrap">
                     @if (entry.category) {
@@ -97,7 +106,8 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               </div>
               <div class="flex items-center gap-3">
                 <span class="text-lg font-mono font-bold text-ib-green"
-                  >+{{ entry.amount | number: '1.2-2' }}<span class="text-sm">&euro;</span></span
+                  >{{ entry.variableAmount ? '≈ ' : '+' }}{{ entry.amount | number: '1.2-2'
+                  }}<span class="text-sm">&euro;</span></span
                 >
                 <app-entry-row-actions
                   [label]="entry.label"

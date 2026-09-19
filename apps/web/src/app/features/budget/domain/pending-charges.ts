@@ -33,7 +33,7 @@ export function buildPendingCharges(p: PendingChargesInput): PendingCharge[] {
         entry: e,
         direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
         suggestedDate: `${p.currentMonth}-${String(e.dayOfMonth).padStart(2, '0')}`,
-        suggestedAmount: Number(e.amount),
+        suggestedAmount: e.type === 'income' && e.variableAmount ? null : Number(e.amount),
       }),
     );
 }
