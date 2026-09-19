@@ -22,6 +22,7 @@ export type FeatureSidebarItem = {
         class="flex items-center px-2 py-3"
         [class.justify-center]="sidebar.collapsed()"
         [class.justify-end]="!sidebar.collapsed()"
+        [class.hidden]="sidebar.narrow()"
       >
         <button
           type="button"

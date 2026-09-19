@@ -23,6 +23,8 @@
   --color-ib-red: #e5787f;
   --color-ib-purple: #a78bba;
   --color-ib-yellow: #e8c882;
+  /* Alias d'avertissement : utilisé par les écrans de clé de récupération (text/bg/border-ib-amber) */
+  --color-ib-amber: #e8c882;
   --color-ib-pink: #cf8ac5;
 
   /* Fonts */
@@ -182,6 +184,7 @@
   --color-ib-red: #b53d48;
   --color-ib-purple: #6f4d8e;
   --color-ib-yellow: #7d6400;
+  --color-ib-amber: #7d6400;
   --color-ib-pink: #8e4683;
 
   /* Solid accent backgrounds (white text on top ≥ 4.5:1) */
