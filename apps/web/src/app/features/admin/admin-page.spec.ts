@@ -37,6 +37,7 @@ describe('AdminPage — relances', () => {
     loadUsers: vi.fn().mockResolvedValue(undefined),
     loadSummary: vi.fn().mockResolvedValue(undefined),
     sendNotices: vi.fn(),
+    deleteUnverified: vi.fn(),
   };
   const button = (id: string) => el.querySelector<HTMLButtonElement>(`[data-testid="${id}"]`)!;
 
@@ -117,6 +118,60 @@ describe('AdminPage — relances', () => {
     expect(toaster.success).toHaveBeenCalledWith('admin.notices.toast.sentWithSkipped', {
       sent: 1,
       skipped: 1,
+    });
+  });
+
+  describe('faux comptes', () => {
+    const fake = anAdminUser({
+      id: 'fake',
+      email: 'jean@gmail.com',
+      security: { status: 'unverified', issues: [] },
+    });
+    const check = (id: string) => {
+      el.querySelector<HTMLInputElement>(
+        `tr[data-user-id="${id}"] [data-testid="admin-select-user"]`,
+      )!.dispatchEvent(new Event('change'));
+      fixture.detectChanges();
+    };
+
+    beforeEach(() => {
+      store.users.set([fake, needsReconnect('a')]);
+      fixture.detectChanges();
+    });
+
+    it('le bouton ne compte que les comptes jamais vérifiés parmi les cochés', () => {
+      expect(button('admin-delete-selected').disabled).toBe(true);
+      check('a');
+      expect(button('admin-delete-selected').disabled).toBe(true);
+      check('fake');
+      expect(button('admin-delete-selected').disabled).toBe(false);
+      // Et un faux compte coché n'entre jamais dans un envoi de relance.
+      expect(button('admin-send-selected').textContent).toContain('admin.notices.sendSelected');
+    });
+
+    it('suppression confirmée : envoie seulement les faux comptes, en variante danger', async () => {
+      confirm.confirm.mockResolvedValue(true);
+      store.deleteUnverified.mockResolvedValue({
+        deleted: [{ id: 'fake', email: 'jean@gmail.com' }],
+        skipped: [],
+      });
+      check('a');
+      check('fake');
+      button('admin-delete-selected').click();
+      await fixture.whenStable();
+
+      expect(confirm.confirm).toHaveBeenCalledWith(expect.objectContaining({ variant: 'danger' }));
+      expect(store.deleteUnverified).toHaveBeenCalledWith(['fake']);
+      expect(toaster.success).toHaveBeenCalledWith('admin.cleanup.toast.deleted', { deleted: 1 });
+      expect(store.sendNotices).not.toHaveBeenCalled();
+    });
+
+    it('confirmation refusée : rien n’est supprimé', async () => {
+      confirm.confirm.mockResolvedValue(false);
+      check('fake');
+      button('admin-delete-selected').click();
+      await fixture.whenStable();
+      expect(store.deleteUnverified).not.toHaveBeenCalled();
     });
   });
 });

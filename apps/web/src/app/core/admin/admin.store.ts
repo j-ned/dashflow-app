@@ -5,6 +5,7 @@ import { Toaster } from '@shared/components/toast/toast';
 import type {
   AdminUsersPage,
   AdminUserView,
+  DeleteUsersResult,
   NoticeReason,
   NoticeSummary,
   SendNoticesResult,
@@ -76,6 +77,21 @@ export class AdminStore {
       );
     } catch {
       this.toaster.error('admin.notices.toast.error');
+      return null;
+    } finally {
+      this._sending.set(false);
+    }
+  }
+
+  /** Supprime des comptes jamais vérifiés. Rend `null` si la requête a échoué. */
+  async deleteUnverified(userIds: readonly string[]): Promise<DeleteUsersResult | null> {
+    this._sending.set(true);
+    try {
+      return await firstValueFrom(
+        this.api.post<DeleteUsersResult>('/admin/users/delete-unverified', { userIds }),
+      );
+    } catch {
+      this.toaster.error('admin.cleanup.toast.error');
       return null;
     } finally {
       this._sending.set(false);

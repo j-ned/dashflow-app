@@ -135,4 +135,26 @@ describe('AdminStore', () => {
       expect(store.sending()).toBe(false);
     });
   });
+
+  describe('faux comptes', () => {
+    const DELETE_URL = `${BASE}/admin/users/delete-unverified`;
+
+    it('deleteUnverified : POST la liste des comptes et rend le résultat', async () => {
+      const promise = store.deleteUnverified(['f1', 'f2']);
+      const req = httpMock.expectOne((r) => r.method === 'POST' && r.url === DELETE_URL);
+      expect(req.request.body).toEqual({ userIds: ['f1', 'f2'] });
+      req.flush({ deleted: [{ id: 'f1', email: 'jean@gmail.com' }], skipped: [] });
+      expect((await promise)?.deleted).toHaveLength(1);
+      expect(store.sending()).toBe(false);
+    });
+
+    it('deleteUnverified en échec : toast et null', async () => {
+      const promise = store.deleteUnverified(['f1']);
+      httpMock
+        .expectOne((r) => r.method === 'POST' && r.url === DELETE_URL)
+        .flush('boom', { status: 500, statusText: 'KO' });
+      expect(await promise).toBeNull();
+      expect(toaster.error).toHaveBeenCalledWith('admin.cleanup.toast.error');
+    });
+  });
 });

@@ -82,4 +82,22 @@ describe('AdminUsersTable', () => {
     ]);
     expect(el.querySelector('[data-testid="admin-last-notice"]')).not.toBeNull();
   });
+
+  it('compte jamais vérifié : pastille dédiée, explication, et case à cocher pour le supprimer', () => {
+    const el = render([
+      anAdminUser({
+        id: 'fake',
+        email: 'jean@gmail.com',
+        security: { status: 'unverified', issues: [] },
+      }),
+      anAdminUser({ id: 'ok' }),
+    ]);
+    const row = el.querySelector('tr[data-user-id="fake"]')!;
+    expect(
+      row.querySelector('[data-testid="admin-security-badge"]')?.getAttribute('data-status'),
+    ).toBe('unverified');
+    expect(row.textContent).toContain('admin.security.unverifiedHint');
+    expect(row.querySelector('[data-testid="admin-select-user"]')).not.toBeNull();
+    expect(el.querySelector('tr[data-user-id="ok"] [data-testid="admin-select-user"]')).toBeNull();
+  });
 });

@@ -1945,7 +1945,8 @@
         "ok": "À jour",
         "recommended": "Conseil",
         "action": "Action requise",
-        "exempt": "Hors périmètre"
+        "exempt": "Hors périmètre",
+        "unverified": "E-mail non vérifié"
       },
       "issue": {
         "reconnect": "Doit se reconnecter (ancienne connexion)",
@@ -1953,7 +1954,8 @@
         "recovery_key": "Aucune clé de récupération",
         "enable_2fa": "Double authentification absente"
       },
-      "lastNotice": "Relancé le {{date}} : {{reason}}"
+      "lastNotice": "Relancé le {{date}} : {{reason}}",
+      "unverifiedHint": "Inscription jamais confirmée : ne reçoit aucun e-mail, supprimée automatiquement après 7 jours."
     },
     "notices": {
       "title": "Relances par e-mail",
@@ -1984,6 +1986,21 @@
         "sentWithSkipped": "{{sent}} relance(s) envoyée(s), {{skipped}} compte(s) ignoré(s)",
         "noneSent": "Aucune relance envoyée ({{skipped}} compte(s) ignoré(s))",
         "error": "Échec de l'envoi des relances"
+      }
+    },
+    "cleanup": {
+      "title": "Faux comptes",
+      "help": "Un compte dont l'e-mail n'a jamais été vérifié n'appartient à personne : adresse inventée, faute de frappe ou inscription abandonnée (c'est ce qui provoque les messages « non remis »). Cochez-les pour les supprimer tout de suite ; sinon ils disparaissent seuls au bout de 7 jours. Un compte vérifié ne peut pas être supprimé d'ici.",
+      "deleteSelected": "Supprimer les faux comptes cochés ({{count}})",
+      "confirm": {
+        "title": "Supprimer ces comptes ?",
+        "message": "{{count}} compte(s) jamais vérifié(s) vont être supprimés définitivement : {{emails}}.",
+        "action": "Supprimer"
+      },
+      "toast": {
+        "deleted": "{{deleted}} compte(s) supprimé(s)",
+        "deletedWithSkipped": "{{deleted}} compte(s) supprimé(s), {{skipped}} refusé(s) (vérifiés entre-temps ou protégés)",
+        "error": "Échec de la suppression"
       }
     }
   }

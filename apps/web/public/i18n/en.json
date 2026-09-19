@@ -1945,7 +1945,8 @@
         "ok": "Up to date",
         "recommended": "Advice",
         "action": "Action required",
-        "exempt": "Out of scope"
+        "exempt": "Out of scope",
+        "unverified": "Email not verified"
       },
       "issue": {
         "reconnect": "Must sign in again (legacy sign-in)",
@@ -1953,7 +1954,8 @@
         "recovery_key": "No recovery key",
         "enable_2fa": "Two-factor authentication missing"
       },
-      "lastNotice": "Reminded on {{date}}: {{reason}}"
+      "lastNotice": "Reminded on {{date}}: {{reason}}",
+      "unverifiedHint": "Sign-up never confirmed: receives no email, deleted automatically after 7 days."
     },
     "notices": {
       "title": "Email reminders",
@@ -1984,6 +1986,21 @@
         "sentWithSkipped": "{{sent}} reminder(s) sent, {{skipped}} account(s) skipped",
         "noneSent": "No reminder sent ({{skipped}} account(s) skipped)",
         "error": "Failed to send reminders"
+      }
+    },
+    "cleanup": {
+      "title": "Fake accounts",
+      "help": "An account whose email was never verified belongs to nobody: made-up address, typo or abandoned sign-up (this is what triggers 'could not be delivered' messages). Check them to delete them right away; otherwise they disappear on their own after 7 days. A verified account cannot be deleted from here.",
+      "deleteSelected": "Delete checked fake accounts ({{count}})",
+      "confirm": {
+        "title": "Delete these accounts?",
+        "message": "{{count}} never-verified account(s) will be permanently deleted: {{emails}}.",
+        "action": "Delete"
+      },
+      "toast": {
+        "deleted": "{{deleted}} account(s) deleted",
+        "deletedWithSkipped": "{{deleted}} account(s) deleted, {{skipped}} refused (verified meanwhile or protected)",
+        "error": "Deletion failed"
       }
     }
   }
