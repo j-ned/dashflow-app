@@ -9,8 +9,9 @@ export const createBankAccountSchema = z.object({
   name: z.string().min(1).max(255),
   type: z.enum(BANK_ACCOUNT_TYPES).optional(),
   initialBalance: moneyNumber.optional(),
-  color: hexColor.optional(),
-  dotColor: hexColor.optional(),
+  // null accepté comme à la mise à jour : le front envoie `color: null` tant qu'aucune couleur n'est choisie
+  color: hexColor.nullable().optional(),
+  dotColor: hexColor.nullable().optional(),
 });
 
 export const createEncryptedBankAccountSchema = z.object({

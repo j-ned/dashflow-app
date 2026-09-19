@@ -228,6 +228,31 @@ describe('Finance e2e', () => {
       .expect(403);
   });
 
+  it('crée un compte bancaire quand le client envoie color/dotColor à null (onboarding)', async () => {
+    const a = await shared();
+    const created = await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({
+        name: 'Onboarding',
+        type: 'courant',
+        initialBalance: 1000,
+        color: null,
+        dotColor: null,
+      })
+      .expect(201);
+    expect(created.body.color).toBeNull();
+    expect(created.body.dotColor).toBeNull();
+
+    await request(a.s)
+      .post('/bank-accounts')
+      .set('Cookie', a.cookies)
+      .set('X-CSRF-Token', a.csrf)
+      .send({ name: 'Couleur invalide', color: 'rouge' })
+      .expect(400);
+  });
+
   // Les tests ci-dessous partagent une session : /auth/register est throttlé par IP et la suite
   // en consomme déjà plusieurs.
   let sharedClient: Awaited<ReturnType<typeof authedClient>> | undefined;
