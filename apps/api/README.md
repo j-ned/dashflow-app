@@ -66,39 +66,39 @@ Le serveur écoute par défaut sur le port défini par `PORT` (3001 en développ
 
 Variables d'environnement principales (voir `.env.example` pour la liste complète) :
 
-| Variable | Rôle |
-|---|---|
-| `NODE_ENV` | Environnement d'exécution (`development`, `production`) |
-| `PORT` | Port HTTP du serveur |
-| `DATABASE_URL` | Chaîne de connexion PostgreSQL |
-| `CORS_ORIGIN` | Origine(s) autorisée(s) pour le frontend, séparées par des virgules |
-| `JWT_SECRET` | Secret de signature des tokens JWT (minimum 32 caractères) |
-| `APP_URL` | URL publique de l'API, utilisée notamment dans les liens transmis par email |
-| `MAILER` | Fournisseur d'envoi d'email (`console` ou `smtp`) |
-| `DEMO_ENABLED` | Active le compte de démonstration en accès public |
-| `S3_*` | Configuration du stockage de fichiers compatible S3 |
-| `SMTP_*` | Configuration SMTP, utilisée quand `MAILER=smtp` |
+| Variable       | Rôle                                                                        |
+| -------------- | --------------------------------------------------------------------------- |
+| `NODE_ENV`     | Environnement d'exécution (`development`, `production`)                     |
+| `PORT`         | Port HTTP du serveur                                                        |
+| `DATABASE_URL` | Chaîne de connexion PostgreSQL                                              |
+| `CORS_ORIGIN`  | Origine(s) autorisée(s) pour le frontend, séparées par des virgules         |
+| `JWT_SECRET`   | Secret de signature des tokens JWT (minimum 32 caractères)                  |
+| `APP_URL`      | URL publique de l'API, utilisée notamment dans les liens transmis par email |
+| `MAILER`       | Fournisseur d'envoi d'email (`console` ou `smtp`)                           |
+| `DEMO_ENABLED` | Active le compte de démonstration en accès public                           |
+| `S3_*`         | Configuration du stockage de fichiers compatible S3                         |
+| `SMTP_*`       | Configuration SMTP, utilisée quand `MAILER=smtp`                            |
 
 La configuration est validée au démarrage (schéma Zod) : une variable manquante ou invalide empêche le serveur de démarrer.
 
 ## Scripts disponibles
 
-| Commande | Description |
-|---|---|
-| `pnpm start:dev` | Démarrage en mode développement avec rechargement à chaud |
-| `pnpm build` | Compilation du projet |
-| `pnpm start:prod` | Démarrage depuis le build de production |
-| `pnpm lint` | Lint avec correction automatique |
-| `pnpm lint:check` | Lint sans correction, pour la CI |
-| `pnpm format` | Formatage du code avec Prettier |
-| `pnpm test` | Tests unitaires |
-| `pnpm test:integration` | Tests d'intégration |
-| `pnpm test:e2e` | Tests end-to-end |
-| `pnpm test:cov` | Tests unitaires avec couverture |
-| `pnpm db:generate` | Génération d'une migration Drizzle à partir du schéma |
-| `pnpm db:migrate` | Application des migrations en attente |
-| `pnpm db:check` | Vérification de cohérence du schéma Drizzle |
-| `pnpm db:baseline` | Adoption d'une base existante sans rejouer l'historique des migrations |
+| Commande                | Description                                                            |
+| ----------------------- | ---------------------------------------------------------------------- |
+| `pnpm start:dev`        | Démarrage en mode développement avec rechargement à chaud              |
+| `pnpm build`            | Compilation du projet                                                  |
+| `pnpm start:prod`       | Démarrage depuis le build de production                                |
+| `pnpm lint`             | Lint avec correction automatique                                       |
+| `pnpm lint:check`       | Lint sans correction, pour la CI                                       |
+| `pnpm format`           | Formatage du code avec Prettier                                        |
+| `pnpm test`             | Tests unitaires                                                        |
+| `pnpm test:integration` | Tests d'intégration                                                    |
+| `pnpm test:e2e`         | Tests end-to-end                                                       |
+| `pnpm test:cov`         | Tests unitaires avec couverture                                        |
+| `pnpm db:generate`      | Génération d'une migration Drizzle à partir du schéma                  |
+| `pnpm db:migrate`       | Application des migrations en attente                                  |
+| `pnpm db:check`         | Vérification de cohérence du schéma Drizzle                            |
+| `pnpm db:baseline`      | Adoption d'une base existante sans rejouer l'historique des migrations |
 
 ## Architecture
 
@@ -137,6 +137,27 @@ Les tests sont écrits avec Vitest et colocalisés avec le code qu'ils couvrent.
 - Application derrière un reverse proxy : `trust proxy` est activé pour que la limitation de débit s'applique par IP réelle, pas par IP du proxy
 
 Toute variable sensible (secrets, identifiants) doit être fournie via variables d'environnement, jamais commitée dans le dépôt.
+
+### Chiffrement de bout en bout : ce qu'une copie de la base révèle
+
+Pour un compte chiffré (tous les comptes hors démo), le contenu métier est chiffré dans le navigateur (AES-GCM, clé maîtresse jamais envoyée au serveur) et stocké dans la colonne `encrypted_data` de chaque ligne ; les colonnes métier correspondantes restent vides ou à leur valeur par défaut. Le serveur, un administrateur ou une sauvegarde volée ne peuvent donc pas lire les montants, les libellés, les noms des patients et praticiens, les motifs et comptes rendus, les posologies ni le contenu des fichiers.
+
+Le chiffrement ne couvre pas tout. Voici ce qui reste lisible dans un dump, pour ne rien promettre de plus que ce qui est fait :
+
+| Donnée en clair                                                                                                                                                                                                  | Où                                                                   | Ce que ça révèle                                                                                                                                                      |
+| ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| E-mail, nom affiché, rôle, date de création, 2FA active ou non                                                                                                                                                   | `users`                                                              | L'identité du titulaire du compte                                                                                                                                     |
+| Identifiants et liens entre lignes (`user_id`, `member_id`, `patient_id`, `practitioner_id`, `appointment_id`, `prescription_id`, `account_id`, `to_account_id`, `envelope_id`, `loan_id`, `recurring_entry_id`) | toutes les tables métier                                             | La **forme** des données : combien de patients, de rendez-vous par patient, d'ordonnances par praticien, de mouvements par compte — sans les noms ni les montants     |
+| `created_at`                                                                                                                                                                                                     | toutes les tables métier                                             | Le rythme de saisie (quand une ligne a été créée, pas la date du rendez-vous ou de l'opération)                                                                       |
+| `direction`                                                                                                                                                                                                      | `loans`, `account_transactions`                                      | Le sens d'un prêt ou d'un mouvement (prêté/emprunté, dépense/revenu/virement), pas son montant                                                                        |
+| Clé de l'objet stocké (`file_url`, `document_url`, `payslip_key`)                                                                                                                                                | `documents`, `prescriptions`, `salary_archives`, `recurring_entries` | Qu'un fichier existe et à quelle ligne il est rattaché ; le fichier lui-même est chiffré côté client avant l'envoi                                                    |
+| Type, cible, destinataire, état                                                                                                                                                                                  | `reminders`                                                          | **Table non chiffrée** : l'adresse e-mail destinataire et le rendez-vous ou le médicament visé (par identifiant)                                                      |
+| Type d'événement, adresse IP, user-agent, date                                                                                                                                                                   | `security_events`                                                    | Le journal de connexion des 180 derniers jours                                                                                                                        |
+| Sel, clé maîtresse emballée, clé de récupération emballée                                                                                                                                                        | `users`                                                              | Rien d'exploitable sans le mot de passe ou la clé de récupération, mais ils permettent une attaque hors ligne sur un mot de passe faible (PBKDF2, 600 000 itérations) |
+
+Les blobs sont liés à leur ligne : depuis le format `v2.`, l'identifiant de la ligne est authentifié avec le chiffré (AAD `dashflow:row:<id>`), un blob ne peut pas être recopié d'une ligne à une autre. Les clés étrangères, elles, ne sont pas encore authentifiées : quelqu'un qui écrit dans la base peut rattacher un rendez-vous à un autre patient du même compte sans que le client le détecte.
+
+Le compte de démonstration n'est pas chiffré : ses données sont fictives et réinitialisées toutes les 6 heures.
 
 ## Licence
 
