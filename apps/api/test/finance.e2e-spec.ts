@@ -8,6 +8,12 @@ import { MAILER, type Mailer } from '../src/mail/mailer';
 import { authKey } from './auth-key';
 
 class CapturingMailer implements Mailer {
+  sendSecurityNotice(): Promise<void> {
+    return Promise.resolve();
+  }
+  sendAccountExists(): Promise<void> {
+    return Promise.resolve();
+  }
   lastCode = '';
   sendVerificationCode(_to: string, code: string): Promise<void> {
     this.lastCode = code;
