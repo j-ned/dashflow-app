@@ -736,7 +736,13 @@
         "received": "Received",
         "notReceived": "Not received yet",
         "amountPlaceholder": "Amount",
-        "amountReceivedAria": "Amount received for {{label}}"
+        "amountReceivedAria": "Amount received for {{label}}",
+        "automateAll": "Stop asking me",
+        "automateTitle": "Post these debits automatically?",
+        "automateMessage": "{{count}} fixed-amount debit(s) will be recorded on their own at their due date, without confirmation: {{labels}}. Those already due this month are recorded right away. You can untick 'Post automatically' on any of them, and fix or delete a transaction from the Statement.",
+        "automateConfirm": "Automate",
+        "automated": "{{count}} debit(s) now posted automatically",
+        "automateError": "{{failed}} debit(s) could not be automated"
       },
       "balance": {
         "confirmedLabel": "Confirmed today",
@@ -749,8 +755,7 @@
         "incompleteHint": "This month's income has not been entered: {{incomes}}. Its amount changes every month, so we do not guess it.",
         "incompleteAction": "Enter the income received",
         "upcomingDebitsHint": "of debits still to come before the end of the month (known amount)",
-        "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter the balance shown by your bank so everything else is right.",
-        "startingAction": "Enter the real balance",
+        "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter below the balance shown by your bank: it will be the starting point.",
         "noUpcomingDebits": "No more debits to come before the end of the month."
       },
       "kpi": {
@@ -919,7 +924,23 @@
         "deleteEntries": "Delete the recurring entries",
         "onlyDeleteMessage": "This account has {{count}} recurring entrie(s). Delete them with the account?"
       },
-      "timelineFallback": "Other"
+      "timelineFallback": "Other",
+      "check": {
+        "open": "Check against my bank",
+        "lastChecked": "Last checked on {{date}}",
+        "neverChecked": "Never compared with your bank balance",
+        "label": "Balance shown by your bank today",
+        "help": "Enter the balance from your banking app: we show the gap with what DashFlow computed.",
+        "match": "All good: both balances match.",
+        "confirmMatch": "Checked",
+        "adjust": "Make up the gap",
+        "gapMore": "more at the bank than in DashFlow: an income was not entered, or a counted debit did not go through.",
+        "gapLess": "less at the bank than in DashFlow: a debit went up, or an expense was not entered.",
+        "adjustmentNote": "Adjustment: gap with the bank",
+        "toastMatch": "Balance checked: everything matches",
+        "toastAdjusted": "Balance aligned with your bank",
+        "toastError": "Could not record the adjustment"
+      }
     },
     "dashboard": {
       "title": "Overview",
@@ -1161,8 +1182,8 @@
     },
     "salaryArchive": {
       "title": "Salary archives",
-      "subtitle": "Monthly history of your salaries and spending",
-      "archiveMonth": "Archive a month",
+      "subtitle": "Your past months, rebuilt on their own from your real transactions",
+      "archiveMonth": "Add a month by hand",
       "filterYear": "Filter by year",
       "allYears": "All",
       "expensesLabel": "Expenses: {{value}}€",
@@ -1179,7 +1200,7 @@
       "deleteAria": "Delete archive {{month}}",
       "editAria": "Edit archive {{month}}",
       "empty": "No archive yet",
-      "emptyHint": "Archive your past months to keep a history",
+      "emptyHint": "As soon as a month is over and your salary was entered for it, it shows up here on its own. You can also add by hand a month from before DashFlow.",
       "modal": {
         "title": "Archive a month",
         "editTitle": "Edit archive",
@@ -1217,7 +1238,10 @@
           "11": "November",
           "12": "December"
         }
-      }
+      },
+      "computedBadge": "Computed",
+      "computedHint": "Rebuilt from the month's real transactions: nothing to archive.",
+      "computedSource": "Fix this month's transactions"
     },
     "analytics": {
       "title": "Stats & Forecasts",
@@ -1309,7 +1333,7 @@
       "category": "Category",
       "categoryPlaceholder": "e.g. Housing, Subscription...",
       "autoPost": "Post automatically",
-      "autoPostHint": "Creates the transaction automatically on the due date",
+      "autoPostHint": "Records the transaction on its own at each due date, without asking you to confirm. Ticked by default for a fixed-amount debit; untick it if the amount changes from month to month.",
       "autoBadge": "Auto",
       "autoBadgeTitle": "Posted automatically on open",
       "member": "Member",

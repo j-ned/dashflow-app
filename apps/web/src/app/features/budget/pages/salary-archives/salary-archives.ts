@@ -30,6 +30,9 @@ import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { SalaryYearFilter } from './salary-year-filter/salary-year-filter';
 import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
+import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
+import { MonthRecord, computeMonthRecords, mergeHistory } from '../../domain/monthly-history';
+import { todayIso } from '@shared/utils/local-date';
 
 @Component({
   selector: 'app-salary-archives',
@@ -71,7 +74,7 @@ import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
       />
     }
 
-    @if (archives().length > 0) {
+    @if (history().length > 0) {
       <div class="space-y-4">
         @for (archive of filteredArchives(); track archive.id) {
           <app-salary-archive-card
@@ -81,9 +84,10 @@ import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
             [monthLabel]="monthLabel(archive.month)"
             [accountName]="accountName(archive.accountId)"
             (toggled)="toggleExpand(archive.id)"
-            (openPayslip)="openPayslip(archive.id)"
-            (edit)="openEditModal(archive)"
-            (delete)="deleteArchive(archive)"
+            [computed]="archive.origin === 'computed'"
+            (openPayslip)="openPayslip(archive.archiveId)"
+            (edit)="editRecord(archive)"
+            (delete)="deleteRecord(archive)"
           />
         }
       </div>
@@ -267,6 +271,7 @@ import { SalaryArchiveCard } from './salary-archive-card/salary-archive-card';
 export class SalaryArchives {
   private readonly gateway = inject(SalaryArchiveGateway);
   private readonly recurringEntryGateway = inject(RecurringEntryGateway);
+  private readonly transactionGateway = inject(AccountTransactionGateway);
   private readonly bankAccountGateway = inject(BankAccountGateway);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
@@ -289,9 +294,19 @@ export class SalaryArchives {
 
   // Year filter. Defaults to "Toutes" (null) so nothing is hidden.
   protected readonly filterYear = signal<string | null>(null);
-  protected readonly availableYears = computed(() => availableYearsOf(this.archives()));
+  private readonly transactions = toSignal(this.transactionGateway.getAll(), { initialValue: [] });
+
+  // Historique affiché : les mois clos reconstitués depuis les opérations réelles, complétés par
+  // les archives saisies à la main pour les mois d'avant. Plus récent en premier.
+  protected readonly history = computed(() =>
+    mergeHistory(
+      this.archives(),
+      computeMonthRecords(this.transactions(), this.allEntries(), todayIso().slice(0, 7)),
+    ).reverse(),
+  );
+  protected readonly availableYears = computed(() => availableYearsOf(this.history()));
   protected readonly filteredArchives = computed(() =>
-    filterArchivesByYear(this.archives(), this.filterYear()),
+    filterArchivesByYear(this.history(), this.filterYear()),
   );
 
   protected readonly formMonth = signal(this.previousMonth());
@@ -337,7 +352,19 @@ export class SalaryArchives {
     return this.accountMap().get(id) ?? null;
   }
 
-  protected async openPayslip(id: string) {
+  // Édition et suppression ne concernent que les archives saisies à la main.
+  protected editRecord(record: MonthRecord): void {
+    const archive = this.archives().find((a) => a.id === record.archiveId);
+    if (record.origin === 'archive' && archive) this.openEditModal(archive);
+  }
+
+  protected deleteRecord(record: MonthRecord): void {
+    const archive = this.archives().find((a) => a.id === record.archiveId);
+    if (record.origin === 'archive' && archive) void this.deleteArchive(archive);
+  }
+
+  protected async openPayslip(id: string | null) {
+    if (!id) return;
     const blob = await lastValueFrom(this.gateway.downloadPayslip(id));
     openBlobInNewTab(blob);
   }

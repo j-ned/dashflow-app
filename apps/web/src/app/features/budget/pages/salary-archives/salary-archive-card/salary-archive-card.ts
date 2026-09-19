@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { DecimalPipe, DatePipe } from '@angular/common';
 import { TranslocoPipe } from '@jsverse/transloco';
+import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
 import { SalaryArchive } from '../../../domain/models/salary-archive.model';
 import { SalaryArchiveKpiGrid } from '../salary-archive-kpi-grid/salary-archive-kpi-grid';
@@ -8,7 +9,7 @@ import { SalaryArchiveKpiGrid } from '../salary-archive-kpi-grid/salary-archive-
 @Component({
   selector: 'app-salary-archive-card',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, DatePipe, TranslocoPipe, Icon, SalaryArchiveKpiGrid],
+  imports: [DecimalPipe, DatePipe, RouterLink, TranslocoPipe, Icon, SalaryArchiveKpiGrid],
   host: { class: 'contents' },
   template: `
     <article
@@ -28,6 +29,14 @@ import { SalaryArchiveKpiGrid } from '../salary-archive-kpi-grid/salary-archive-
           <div class="text-left">
             <p class="text-base font-semibold text-text-primary">
               {{ monthLabel() }}
+              @if (computed()) {
+                <span
+                  data-testid="computed-badge"
+                  class="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 align-middle text-[10px] font-medium uppercase tracking-wide text-ib-green bg-ib-green/10"
+                  [title]="'budget.salaryArchive.computedHint' | transloco"
+                  >{{ 'budget.salaryArchive.computedBadge' | transloco }}</span
+                >
+              }
             </p>
             @if (accountName(); as aName) {
               <span class="text-[11px] text-ib-cyan/60">{{ aName }}</span>
@@ -116,26 +125,38 @@ import { SalaryArchiveKpiGrid } from '../salary-archive-kpi-grid/salary-archive-
                 'budget.salaryArchive.noPayslip' | transloco
               }}</span>
             }
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary hover:border-ib-cyan/30 transition-colors"
-              [attr.aria-label]="
-                'budget.salaryArchive.editAria' | transloco: { month: monthLabel() }
-              "
-              (click)="edit.emit()"
-            >
-              <app-icon name="pencil" size="14" /> {{ 'budget.actions.edit' | transloco }}
-            </button>
-            <button
-              type="button"
-              class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
-              [attr.aria-label]="
-                'budget.salaryArchive.deleteAria' | transloco: { month: monthLabel() }
-              "
-              (click)="delete.emit()"
-            >
-              <app-icon name="trash" size="14" /> {{ 'budget.actions.delete' | transloco }}
-            </button>
+            @if (computed()) {
+              <!-- Un mois calculé ne se modifie pas ici : ses chiffres viennent des opérations. -->
+              <a
+                routerLink="/budget/transactions"
+                data-testid="computed-source-link"
+                class="inline-flex min-h-8 items-center gap-1.5 text-xs font-medium text-ib-blue transition-colors hover:underline"
+              >
+                {{ 'budget.salaryArchive.computedSource' | transloco }}
+                <app-icon name="arrow-right" size="13" />
+              </a>
+            } @else {
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-text-primary hover:border-ib-cyan/30 transition-colors"
+                [attr.aria-label]="
+                  'budget.salaryArchive.editAria' | transloco: { month: monthLabel() }
+                "
+                (click)="edit.emit()"
+              >
+                <app-icon name="pencil" size="14" /> {{ 'budget.actions.edit' | transloco }}
+              </button>
+              <button
+                type="button"
+                class="inline-flex items-center gap-1.5 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors"
+                [attr.aria-label]="
+                  'budget.salaryArchive.deleteAria' | transloco: { month: monthLabel() }
+                "
+                (click)="delete.emit()"
+              >
+                <app-icon name="trash" size="14" /> {{ 'budget.actions.delete' | transloco }}
+              </button>
+            }
           </div>
         </div>
       }
@@ -148,6 +169,8 @@ export class SalaryArchiveCard {
   readonly remaining = input.required<number>();
   readonly monthLabel = input.required<string>();
   readonly accountName = input<string | null>(null);
+  /** Mois reconstitué depuis les opérations réelles : lecture seule, pas d'édition ni de suppression. */
+  readonly computed = input(false);
   readonly toggled = output<void>();
   readonly openPayslip = output<void>();
   readonly edit = output<void>();

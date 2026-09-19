@@ -13,13 +13,24 @@ import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { lastValueFrom } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
-import { BankAccountType } from '../../domain/models/bank-account.model';
+import {
+  BankAccount as BankAccountModel,
+  BankAccountType,
+} from '../../domain/models/bank-account.model';
+import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
+import { isBalanceCheckDue, reconcileBalance } from '../../domain/balance-check';
+import { BalanceCheckStore } from '../../infra/balance-check.store';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { buildPendingCharges } from '../../domain/pending-charges';
-import { duePostings } from '../../domain/auto-post';
+import {
+  AUTO_POST_NOTE,
+  autoPostCandidates,
+  duePostings,
+  withAutoPost,
+} from '../../domain/auto-post';
 import { toLocalIsoDate } from '../../domain/local-date';
 import { previousMonth } from '../../domain/salary-archive-list';
 import { immediatePostingFor } from '../../domain/immediate-posting';
@@ -36,6 +47,7 @@ import { Toaster } from '@shared/components/toast/toast';
 import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { BankBalanceBand } from './bank-balance-band/bank-balance-band';
+import { BalanceCheck } from './balance-check/balance-check';
 import { BudgetUsageBar } from './budget-usage-bar/budget-usage-bar';
 import { BankIncomesTable } from './bank-incomes-table/bank-incomes-table';
 import { BankExpenseColumns } from './bank-expense-columns/bank-expense-columns';
@@ -66,6 +78,7 @@ const PALETTE = [
     RecurringEntryForm,
     Icon,
     BankBalanceBand,
+    BalanceCheck,
     BudgetUsageBar,
     BankIncomesTable,
     BankExpenseColumns,
@@ -141,7 +154,9 @@ const PALETTE = [
       [charges]="pendingCharges()"
       [accountNameById]="accountNameByIdFn"
       (confirm)="confirmCharge($event.id, $event.amount)"
+      [automatableCount]="automatable().length"
       (confirmAll)="confirmAllCharges()"
+      (automateAll)="automateAllCharges()"
       (ignore)="ignoreCharge($event)"
     />
 
@@ -160,8 +175,17 @@ const PALETTE = [
       [unknownIncomes]="unknownIncomeLabels()"
       [needsStartingBalance]="needsStartingBalance()"
       [today]="today"
-      (setStartingBalance)="accountManager().open()"
-    />
+    >
+      @if (selectedAccount(); as account) {
+        <app-balance-check
+          [confirmedBalance]="confirmedBalance()"
+          [checkedAt]="balanceCheckedAt()"
+          [due]="balanceCheckDue()"
+          [busy]="reconciling()"
+          (checked)="reconcileWithBank(account, $event)"
+        />
+      }
+    </app-bank-balance-band>
 
     <!-- ═══ Ce qui compose le mois (décomposition + barre) ═══ -->
     <app-budget-usage-bar
@@ -276,6 +300,8 @@ export class BankAccount {
   private readonly entryGateway = inject(RecurringEntryGateway);
   private readonly archiveGateway = inject(SalaryArchiveGateway);
   private readonly txGateway = inject(AccountTransactionGateway);
+  private readonly accountGateway = inject(BankAccountGateway);
+  private readonly balanceChecks = inject(BalanceCheckStore);
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
@@ -617,6 +643,110 @@ export class BankAccount {
     }
   }
 
+  // Prélèvements fixes encore confirmés à la main sur le compte affiché.
+  protected readonly automatable = computed(() => autoPostCandidates(this.monthlyExpenses()));
+
+  /**
+   * Bascule tous les prélèvements fixes en pointage automatique. Ceux déjà échus ce mois-ci sont
+   * matérialisés dans la foulée par l'effet d'auto-pointage (équivaut à « Tout confirmer »), les
+   * suivants le seront à leur date, sans intervention.
+   */
+  protected async automateAllCharges(): Promise<void> {
+    const targets = this.automatable();
+    if (targets.length === 0) return;
+    const confirmed = await this.confirm.confirm({
+      title: this._i18n.translate('budget.bankAccount.pending.automateTitle'),
+      message: this._i18n.translate('budget.bankAccount.pending.automateMessage', {
+        count: targets.length,
+        labels: targets.map((e) => e.label).join(', '),
+      }),
+      confirmLabel: this._i18n.translate('budget.bankAccount.pending.automateConfirm'),
+      variant: 'info',
+    });
+    if (!confirmed) return;
+
+    let failed = 0;
+    const automated: RecurringEntry[] = [];
+    for (const entry of targets) {
+      const payload = withAutoPost(entry, this.currentMonth);
+      try {
+        await lastValueFrom(this.entryGateway.update(entry.id, payload));
+        automated.push({ id: entry.id, ...payload });
+      } catch {
+        failed++;
+      }
+    }
+    this.store.refreshEntries();
+    // L'auto-pointage ne tourne qu'à l'ouverture de la page : on le relance ici sur ce qu'on vient
+    // d'automatiser, sinon les échéances déjà passées ce mois-ci attendraient la prochaine visite.
+    this._runAutoPost(automated, this.store.transactions());
+    if (failed > 0) this.toaster.error('budget.bankAccount.pending.automateError', { failed });
+    else this.toaster.success('budget.bankAccount.pending.automated', { count: targets.length });
+  }
+
+  // ── Vérification du solde avec la banque ──
+  protected readonly reconciling = signal(false);
+  protected readonly balanceCheckedAt = computed(() => {
+    const account = this.selectedAccount();
+    return account ? this.balanceChecks.checkedAt(account.id) : null;
+  });
+  protected readonly balanceCheckDue = computed(() =>
+    isBalanceCheckDue(this.balanceCheckedAt(), Date.now()),
+  );
+
+  /**
+   * L'utilisateur a saisi le solde affiché par sa banque. Écart nul : on note simplement la
+   * vérification. Compte sans opération : l'écart devient le solde de départ. Sinon : une opération
+   * d'ajustement datée d'aujourd'hui, visible dans le relevé.
+   */
+  protected async reconcileWithBank(account: BankAccountModel, realBalance: number): Promise<void> {
+    const outcome = reconcileBalance({
+      confirmedBalance: this.confirmedBalance(),
+      realBalance,
+      initialBalance: account.initialBalance,
+      hasTransactions: this.accountRealTxs().length > 0,
+      today: this.todayIso,
+    });
+    this.reconciling.set(true);
+    try {
+      if (outcome.kind === 'starting-balance') {
+        // En E2EE, l'update remplace tout le blob chiffré → on renvoie le compte complet.
+        await lastValueFrom(
+          this.accountGateway.update(account.id, {
+            name: account.name,
+            type: account.type,
+            color: account.color,
+            dotColor: account.dotColor,
+            initialBalance: outcome.initialBalance,
+          }),
+        );
+        this.store.refreshAccounts();
+      } else if (outcome.kind === 'adjustment') {
+        await lastValueFrom(
+          this.txGateway.create(account.id, {
+            ...outcome.transaction,
+            toAccountId: null,
+            category: null,
+            memberId: null,
+            recurringEntryId: null,
+            note: this._i18n.translate('budget.bankAccount.check.adjustmentNote'),
+          }),
+        );
+        this.store.refreshTransactions();
+      }
+      this.balanceChecks.markChecked(account.id);
+      this.toaster.success(
+        outcome.kind === 'none'
+          ? 'budget.bankAccount.check.toastMatch'
+          : 'budget.bankAccount.check.toastAdjusted',
+      );
+    } catch {
+      this.toaster.error('budget.bankAccount.check.toastError');
+    } finally {
+      this.reconciling.set(false);
+    }
+  }
+
   protected ignoreCharge(id: string): void {
     this._ignoredCharges.update((s) => new Set(s).add(id));
   }
@@ -655,7 +785,7 @@ export class BankAccount {
             amount: d.amount,
             direction: d.direction,
             date: d.date,
-            note: 'auto',
+            note: AUTO_POST_NOTE,
           }),
         )
         .pipe(takeUntilDestroyed(this._destroyRef))

@@ -8,6 +8,7 @@ import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gatew
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
 import { RecurringEntry } from '@features/budget/domain/models/recurring-entry.model';
 import { BudgetAnalytics } from './budget-analytics';
+import { AccountTransactionGateway } from '@features/budget/domain/gateways/account-transaction.gateway';
 
 const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   id: 'x',
@@ -35,6 +36,7 @@ function make(entries: RecurringEntry[]) {
       { provide: RecurringEntryGateway, useValue: { getAll: () => of(entries) } },
       { provide: EnvelopeGateway, useValue: { getAll: () => of([]) } },
       { provide: LoanGateway, useValue: { getAll: () => of([]) } },
+      { provide: AccountTransactionGateway, useValue: { getAll: () => of([]) } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
     ],
   });

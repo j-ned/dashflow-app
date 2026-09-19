@@ -78,4 +78,18 @@ describe('PendingChargesPanel — revenus', () => {
     const { q } = render([charge('salaire', 'income', null)]);
     expect(q('confirm-all')).toBeNull();
   });
+
+  it('propose « Ne plus me demander » seulement s’il reste des prélèvements fixes à automatiser', () => {
+    const none = render([charge('loyer', 'expense', 600)]);
+    expect(none.q('automate-all')).toBeNull();
+    TestBed.resetTestingModule();
+
+    const some = render([charge('loyer', 'expense', 600)]);
+    some.fixture.componentRef.setInput('automatableCount', 1);
+    some.fixture.detectChanges();
+    let asked = false;
+    some.fixture.componentInstance.automateAll.subscribe(() => (asked = true));
+    some.q('automate-all')?.click();
+    expect(asked).toBe(true);
+  });
 });

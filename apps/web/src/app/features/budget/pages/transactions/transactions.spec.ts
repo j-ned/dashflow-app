@@ -7,6 +7,10 @@ import { Toaster } from '@shared/components/toast/toast';
 import { Transactions } from './transactions';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
+import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
+
+// Récurrences connues du relevé : sert à nommer les opérations qu'elles ont générées.
+const ENTRIES = [{ id: 'rent', label: 'Loyer' }];
 
 describe('Transactions page', () => {
   it('expose le solde confirmé du compte sélectionné', () => {
@@ -57,6 +61,7 @@ describe('Transactions page', () => {
         provideHttpClient(),
         provideRouter([]),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
+        { provide: RecurringEntryGateway, useValue: { getAll: () => of(ENTRIES) } },
         { provide: AccountTransactionGateway, useValue: { getAll: () => of(txs) } },
       ],
     });
@@ -96,6 +101,7 @@ describe('Transactions page', () => {
         provideHttpClient(),
         provideRouter([]),
         { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
+        { provide: RecurringEntryGateway, useValue: { getAll: () => of(ENTRIES) } },
         {
           provide: AccountTransactionGateway,
           useValue: { getAll, getForAccount: () => of([]), create, delete: () => of(void 0) },
@@ -170,6 +176,7 @@ describe('Transactions page', () => {
           provideRouter([]),
           { provide: Toaster, useValue: toaster },
           { provide: BankAccountGateway, useValue: { getAll: () => of([ACCOUNT]) } },
+          { provide: RecurringEntryGateway, useValue: { getAll: () => of(ENTRIES) } },
           {
             provide: AccountTransactionGateway,
             useValue: { getAll: () => of([TX]), delete: gateway.delete, create },
@@ -232,5 +239,76 @@ describe('Transactions page', () => {
 
       expect(toaster.error).toHaveBeenCalledWith('budget.transactions.feedback.restoreFailed');
     });
+  });
+});
+
+describe('Transactions : nom des opérations', () => {
+  const ACC = {
+    id: 'a',
+    name: 'Courant',
+    type: 'courant',
+    initialBalance: 0,
+    color: null,
+    dotColor: null,
+  };
+  const tx = (id: string, over: Record<string, unknown>) => ({
+    id,
+    accountId: 'a',
+    amount: 10,
+    direction: 'expense',
+    toAccountId: null,
+    date: '2026-09-01',
+    category: null,
+    note: null,
+    memberId: null,
+    recurringEntryId: null,
+    ...over,
+  });
+
+  function titles(txs: unknown[]) {
+    TestBed.configureTestingModule({
+      imports: [
+        TranslocoTestingModule.forRoot({
+          langs: {},
+          translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        }),
+      ],
+      providers: [
+        provideHttpClient(),
+        provideRouter([]),
+        { provide: BankAccountGateway, useValue: { getAll: () => of([ACC]) } },
+        { provide: RecurringEntryGateway, useValue: { getAll: () => of(ENTRIES) } },
+        { provide: AccountTransactionGateway, useValue: { getAll: () => of(txs) } },
+      ],
+    });
+    const fixture = TestBed.createComponent(Transactions);
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as {
+      transactions: () => { id: string; title: string; auto: boolean }[];
+    };
+    return Object.fromEntries(cmp.transactions().map((t) => [t.id, t]));
+  }
+
+  it('une opération pointée automatiquement porte le nom de son prélèvement, pas « auto »', () => {
+    const byId = titles([tx('t1', { recurringEntryId: 'rent', note: 'auto' })]);
+    expect(byId['t1']).toMatchObject({ title: 'Loyer', auto: true });
+  });
+
+  it('une confirmation manuelle aussi, au lieu de retomber sur la catégorie', () => {
+    const byId = titles([tx('t1', { recurringEntryId: 'rent' })]);
+    expect(byId['t1']).toMatchObject({ title: 'Loyer', auto: false });
+  });
+
+  it('sinon : la note saisie, et la catégorie en dernier recours', () => {
+    const byId = titles([
+      tx('noted', { note: 'Ajustement : écart avec la banque' }),
+      tx('bare', {}),
+      tx('orphan', { recurringEntryId: 'supprimee', note: 'auto' }),
+    ]);
+    expect(byId['noted'].title).toBe('Ajustement : écart avec la banque');
+    expect(byId['bare'].title).not.toBe('');
+    // Récurrence supprimée depuis : on n'affiche pas le mot technique « auto » comme un libellé.
+    expect(byId['orphan'].title).toBe(byId['bare'].title);
+    expect(byId['orphan'].auto).toBe(true);
   });
 });

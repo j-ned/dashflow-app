@@ -736,7 +736,13 @@
         "received": "Reçu",
         "notReceived": "Pas encore reçu",
         "amountPlaceholder": "Montant",
-        "amountReceivedAria": "Montant reçu pour {{label}}"
+        "amountReceivedAria": "Montant reçu pour {{label}}",
+        "automateAll": "Ne plus me demander",
+        "automateTitle": "Pointer ces prélèvements automatiquement ?",
+        "automateMessage": "{{count}} prélèvement(s) à montant fixe seront enregistrés tout seuls à leur date, sans confirmation : {{labels}}. Ceux déjà passés ce mois-ci sont enregistrés tout de suite. Tu peux décocher « Pointer automatiquement » sur n'importe lequel, et corriger ou supprimer une opération depuis le Relevé.",
+        "automateConfirm": "Automatiser",
+        "automated": "{{count}} prélèvement(s) désormais pointé(s) automatiquement",
+        "automateError": "{{failed}} prélèvement(s) n'ont pas pu être automatisés"
       },
       "balance": {
         "confirmedLabel": "Confirmé aujourd'hui",
@@ -749,8 +755,7 @@
         "incompleteHint": "Revenu du mois non saisi : {{incomes}}. Son montant change chaque mois, on ne le devine pas.",
         "incompleteAction": "Saisir le revenu reçu",
         "upcomingDebitsHint": "de prélèvements encore à venir d'ici la fin du mois (montant certain)",
-        "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas ton vrai solde. Indique le solde réel affiché par ta banque pour que tout le reste soit juste.",
-        "startingAction": "Renseigner le solde réel",
+        "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas ton vrai solde. Indique ci-dessous le solde affiché par ta banque : il servira de point de départ.",
         "noUpcomingDebits": "Plus aucun prélèvement à venir d'ici la fin du mois."
       },
       "kpi": {
@@ -919,7 +924,23 @@
         "deleteEntries": "Supprimer les récurrences",
         "onlyDeleteMessage": "Ce compte porte {{count}} récurrence(s). Les supprimer avec le compte ?"
       },
-      "timelineFallback": "Autre"
+      "timelineFallback": "Autre",
+      "check": {
+        "open": "Vérifier avec ma banque",
+        "lastChecked": "Dernière vérification le {{date}}",
+        "neverChecked": "Jamais comparé au solde de ta banque",
+        "label": "Solde affiché par ta banque aujourd'hui",
+        "help": "Saisis le solde de ton appli bancaire : on te montre l'écart avec ce que DashFlow a calculé.",
+        "match": "Tout est juste : les deux soldes concordent.",
+        "confirmMatch": "C'est vérifié",
+        "adjust": "Rattraper l'écart",
+        "gapMore": "de plus à la banque que dans DashFlow : une rentrée n'a pas été saisie, ou un prélèvement compté n'est pas passé.",
+        "gapLess": "de moins à la banque que dans DashFlow : un prélèvement a augmenté, ou une dépense n'a pas été saisie.",
+        "adjustmentNote": "Ajustement : écart avec la banque",
+        "toastMatch": "Solde vérifié : tout concorde",
+        "toastAdjusted": "Solde aligné sur celui de ta banque",
+        "toastError": "Impossible d'enregistrer l'ajustement"
+      }
     },
     "dashboard": {
       "title": "Vue globale",
@@ -1161,8 +1182,8 @@
     },
     "salaryArchive": {
       "title": "Archives salaires",
-      "subtitle": "Historique mensuel de vos salaires et dépenses",
-      "archiveMonth": "Archiver un mois",
+      "subtitle": "Tes mois passés, reconstitués tout seuls à partir de tes opérations réelles",
+      "archiveMonth": "Ajouter un mois à la main",
       "filterYear": "Filtrer par année",
       "allYears": "Toutes",
       "expensesLabel": "Dépenses : {{value}}€",
@@ -1179,7 +1200,7 @@
       "deleteAria": "Supprimer archive {{month}}",
       "editAria": "Modifier archive {{month}}",
       "empty": "Aucune archive pour le moment",
-      "emptyHint": "Archivez vos mois passés pour garder un historique",
+      "emptyHint": "Dès qu'un mois est terminé et que ton salaire y a été saisi, il apparaît ici tout seul. Tu peux aussi ajouter à la main un mois d'avant DashFlow.",
       "modal": {
         "title": "Archiver un mois",
         "editTitle": "Modifier l'archive",
@@ -1217,7 +1238,10 @@
           "11": "Novembre",
           "12": "Décembre"
         }
-      }
+      },
+      "computedBadge": "Calculé",
+      "computedHint": "Reconstitué à partir des opérations réelles du mois : rien à archiver.",
+      "computedSource": "Corriger les opérations de ce mois"
     },
     "analytics": {
       "title": "Statistiques & Prévisions",
@@ -1309,7 +1333,7 @@
       "category": "Catégorie",
       "categoryPlaceholder": "Ex: Logement, Abonnement...",
       "autoPost": "Pointer automatiquement",
-      "autoPostHint": "Crée la transaction automatiquement à l'échéance",
+      "autoPostHint": "Enregistre l'opération tout seul à chaque échéance, sans te demander de confirmer. Coché par défaut pour un prélèvement à montant fixe ; décoche-le si le montant change d'un mois à l'autre.",
       "autoBadge": "Auto",
       "autoBadgeTitle": "Pointée automatiquement à l'ouverture",
       "member": "Membre",
