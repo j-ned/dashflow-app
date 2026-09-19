@@ -8,7 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { DecimalPipe } from '@angular/common';
+import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
@@ -32,7 +32,7 @@ const UNDO_WINDOW_MS = 6000;
 @Component({
   selector: 'app-transactions',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [DecimalPipe, FormsModule, TranslocoPipe, ModalDialog, CsvImportWizard],
+  imports: [DatePipe, DecimalPipe, FormsModule, TranslocoPipe, ModalDialog, CsvImportWizard],
   host: { class: 'block p-6' },
   template: `
     <div class="flex items-center justify-between mb-4">
@@ -50,8 +50,10 @@ const UNDO_WINDOW_MS = 6000;
       @for (acc of accounts(); track acc.id) {
         <button
           type="button"
-          class="px-3 py-1.5 rounded-lg text-sm"
-          [class.bg-raised]="selectedId() === acc.id"
+          class="px-3 py-1.5 rounded-lg text-sm text-text-muted hover:bg-hover hover:text-text-primary transition-colors"
+          [class.bg-ib-blue-10]="currentAccount()?.id === acc.id"
+          [class.!text-ib-blue]="currentAccount()?.id === acc.id"
+          [attr.aria-pressed]="currentAccount()?.id === acc.id"
           (click)="selectedId.set(acc.id)"
         >
           {{ acc.name }}
@@ -74,12 +76,14 @@ const UNDO_WINDOW_MS = 6000;
         step="0.01"
         class="w-28 rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
         [placeholder]="'budget.transactions.amountPlaceholder' | transloco"
+        [attr.aria-label]="'budget.transactions.amountPlaceholder' | transloco"
         [ngModel]="draftAmount()"
         (ngModelChange)="draftAmount.set($event)"
       />
 
       <select
         class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
+        [attr.aria-label]="'budget.transactions.directionLabel' | transloco"
         [ngModel]="draftDirection()"
         (ngModelChange)="draftDirection.set($event)"
       >
@@ -91,12 +95,14 @@ const UNDO_WINDOW_MS = 6000;
       <input
         type="date"
         class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
+        [attr.aria-label]="'budget.transactions.dateLabel' | transloco"
         [ngModel]="draftDate()"
         (ngModelChange)="draftDate.set($event)"
       />
 
       <select
         class="rounded-lg border border-border/40 bg-canvas px-3 py-1.5 text-sm"
+        [attr.aria-label]="'budget.transactions.categoryLabel' | transloco"
         [ngModel]="draftCategory()"
         (ngModelChange)="draftCategory.set($event)"
       >
@@ -129,7 +135,7 @@ const UNDO_WINDOW_MS = 6000;
                 class="inline-block w-2 h-2 rounded-full mr-2"
                 [style.background]="t.categoryColor"
               ></span>
-              {{ t.date }} : {{ t.note || t.categoryLabel }}
+              {{ t.date | date: 'd MMM y' }} · {{ t.note || t.categoryLabel }}
             </span>
             <span class="flex items-center gap-3">
               <span [class.text-ib-green]="t.isCredit">

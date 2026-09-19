@@ -1377,7 +1377,10 @@
         "selected": "sélectionnées",
         "readError": "Lecture du fichier impossible",
         "confirm": "Importer {{count}} transactions"
-      }
+      },
+      "directionLabel": "Type de mouvement",
+      "dateLabel": "Date",
+      "categoryLabel": "Catégorie"
     }
   },
   "demo": {
