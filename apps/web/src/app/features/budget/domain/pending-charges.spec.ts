@@ -19,6 +19,7 @@ function re(over: Partial<RecurringEntry>): RecurringEntry {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
     ...over,
   };
 }

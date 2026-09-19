@@ -18,6 +18,7 @@ const e = (p: Partial<RecurringEntry>): RecurringEntry => ({
   payslipKey: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
   ...p,
 });
 

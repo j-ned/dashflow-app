@@ -12,7 +12,20 @@ import { TranslocoPipe } from '@jsverse/transloco';
   imports: [DecimalPipe, TranslocoPipe],
   host: { class: 'block' },
   template: `
-    @if (totalIncome() > 0 && totalAllExpenses() > 0) {
+    @if (incomeIncomplete()) {
+      <!-- Pas de pourcentage « de tes revenus » tant que le revenu du mois n'est pas connu. -->
+      <section
+        class="rounded-lg border border-border bg-surface p-4"
+        data-testid="usage-income-unknown"
+      >
+        <span class="text-sm font-semibold text-text-primary">{{
+          'budget.bankAccount.usage.compose' | transloco
+        }}</span>
+        <p class="mt-2 text-xs text-text-muted">
+          {{ 'budget.bankAccount.usage.incomeUnknown' | transloco }}
+        </p>
+      </section>
+    } @else if (totalIncome() > 0 && totalAllExpenses() > 0) {
       <section class="rounded-lg border border-border bg-surface p-4">
         <div class="mb-3 flex items-center justify-between">
           <span class="text-sm font-semibold text-text-primary">{{
@@ -119,6 +132,8 @@ import { TranslocoPipe } from '@jsverse/transloco';
 })
 export class BudgetUsageBar {
   readonly totalIncome = input.required<number>();
+  /** Un revenu à montant variable n'a pas été saisi : les revenus du mois ne sont pas connus. */
+  readonly incomeIncomplete = input(false);
   readonly totalAllExpenses = input.required<number>();
   readonly usagePercent = input.required<number>();
   readonly totalMonthlyExpenses = input.required<number>();

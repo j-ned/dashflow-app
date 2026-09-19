@@ -18,6 +18,7 @@ function e(amount: number): RecurringEntry {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 }
 

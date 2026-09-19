@@ -160,6 +160,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     memberId: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
   const SAVING = {
     id: 't1',
@@ -176,6 +177,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     memberId: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
   const OUT_COURANT = {
     id: 't2',
@@ -192,6 +194,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     memberId: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 
   it('inclut les virements récurrents sortants dans les lignes de la colonne', () => {
@@ -465,6 +468,7 @@ describe('BankAccount : échéances manuelles', () => {
       payslipKey: null,
       autoPost: true,
       autoPostSince: '2026-01',
+      variableAmount: false,
     };
     const cmp = makeComponent({
       entries: [auto],
@@ -491,6 +495,7 @@ describe('BankAccount : virement récurrent = toujours auto (jamais en échéanc
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
   const ACCS = [
     { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 },
@@ -538,6 +543,7 @@ describe("BankAccount : auto-pointage à l'ouverture", () => {
       payslipKey: null,
       autoPost: true,
       autoPostSince: new Date().toISOString().slice(0, 7),
+      variableAmount: false,
     };
     makeComponent({
       entries: [auto],
@@ -575,6 +581,7 @@ describe("BankAccount : auto-pointage à l'ouverture", () => {
       payslipKey: null,
       autoPost: true,
       autoPostSince: month,
+      variableAmount: false,
     };
     makeComponent({
       entries: [auto],
@@ -635,6 +642,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 
   type PostCmp = {
@@ -727,6 +735,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
       payslipKey: null,
       autoPost: false,
       autoPostSince: null,
+      variableAmount: false,
     };
     const tx = {
       id: 'txot',
@@ -767,6 +776,7 @@ describe('BankAccount : nouveau cycle (revenu existant + « Nouveau cycle »)', 
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
   const NEW_INCOME = {
     accountId: 'a',
@@ -782,6 +792,7 @@ describe('BankAccount : nouveau cycle (revenu existant + « Nouveau cycle »)', 
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 
   type CycleCmp = {

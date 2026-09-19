@@ -27,6 +27,7 @@ describe('normalizeRecurringEntry', () => {
       ...base,
       autoPost: true,
       autoPostSince: '2026-05',
+      variableAmount: false,
     } as never);
     expect(result.autoPost).toBe(true);
     expect(result.autoPostSince).toBe('2026-05');

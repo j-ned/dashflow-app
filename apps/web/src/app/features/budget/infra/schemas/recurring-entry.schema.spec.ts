@@ -17,6 +17,7 @@ const VALID = {
   payslipKey: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
 };
 
 describe('RecurringEntrySchema', () => {

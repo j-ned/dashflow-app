@@ -6,6 +6,7 @@ import { RecurringEntry } from '../domain/models/recurring-entry.model';
  *   (ex. compte démo, encryptionVersion=0) ; on coerce en nombre, le schéma Zod et le domaine
  *   attendent un `number`. Pour un compte chiffré, `amount` vient déjà du blob comme nombre.
  * - `autoPost` / `autoPostSince` : absents des entrées créées avant la feature auto-pointage.
+ * - `variableAmount` : absent des entrées créées avant les revenus à montant variable.
  */
 export function normalizeRecurringEntry(raw: RecurringEntry): RecurringEntry {
   return {
@@ -13,5 +14,6 @@ export function normalizeRecurringEntry(raw: RecurringEntry): RecurringEntry {
     amount: Number(raw.amount),
     autoPost: raw.autoPost ?? false,
     autoPostSince: raw.autoPostSince ?? null,
+    variableAmount: raw.variableAmount ?? false,
   };
 }

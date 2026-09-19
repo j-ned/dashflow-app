@@ -18,6 +18,7 @@ const AUTO_ENTRY = {
   payslipKey: null,
   autoPost: true,
   autoPostSince: '2026-01',
+  variableAmount: false,
 } as RecurringEntry;
 
 const NORMAL_ENTRY = {
@@ -35,6 +36,7 @@ const NORMAL_ENTRY = {
   payslipKey: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
 } as RecurringEntry;
 
 describe('BankIncomesTable', () => {

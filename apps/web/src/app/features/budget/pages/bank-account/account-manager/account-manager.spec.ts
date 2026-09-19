@@ -171,6 +171,7 @@ describe('AccountManager', () => {
         toAccountId: null,
         autoPost: false,
         autoPostSince: null,
+        variableAmount: false,
       },
     ];
     const { fixture, cmp, del, entryUpdate } = make({
@@ -205,6 +206,7 @@ describe('AccountManager', () => {
         toAccountId: null,
         autoPost: false,
         autoPostSince: null,
+        variableAmount: false,
       },
     ];
     const { fixture, cmp, del, entryDelete } = make({
@@ -236,6 +238,7 @@ describe('AccountManager', () => {
         toAccountId: null,
         autoPost: false,
         autoPostSince: null,
+        variableAmount: false,
       },
     ];
     const { cmp, del } = make({
@@ -270,6 +273,7 @@ describe('AccountManager', () => {
         toAccountId: null,
         autoPost: false,
         autoPostSince: null,
+        variableAmount: false,
       },
     ];
     const { cmp, del, entryUpdate, entryDelete } = make({

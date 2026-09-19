@@ -172,6 +172,7 @@ const EXPENSE_ENTRY = {
   memberId: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
 };
 
 function mountEdit(entry: typeof EXPENSE_ENTRY) {

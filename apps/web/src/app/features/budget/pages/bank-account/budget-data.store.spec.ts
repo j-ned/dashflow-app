@@ -26,6 +26,7 @@ const ENTRY = {
   memberId: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
 };
 
 function makeStore(entryGetAll = vi.fn(() => of([ENTRY])), txGetAll = vi.fn(() => of([]))) {

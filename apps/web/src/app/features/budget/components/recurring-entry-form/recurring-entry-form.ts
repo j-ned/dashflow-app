@@ -37,6 +37,7 @@ type RecurringEntryModel = {
   category: string;
   memberId: string;
   autoPost: boolean;
+  variableAmount: boolean;
 };
 
 const EMPTY_MODEL: RecurringEntryModel = {
@@ -49,6 +50,7 @@ const EMPTY_MODEL: RecurringEntryModel = {
   category: '',
   memberId: '',
   autoPost: false,
+  variableAmount: false,
 };
 
 @Component({
@@ -379,7 +381,28 @@ const EMPTY_MODEL: RecurringEntryModel = {
           }
         }
 
-        @if (activeType() === 'income' || activeType() === 'expense') {
+        @if (activeType() === 'income') {
+          <label
+            class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
+          >
+            <input
+              type="checkbox"
+              data-testid="variable-amount"
+              [formField]="entryForm.variableAmount"
+              class="mt-0.5 h-4 w-4 accent-ib-green"
+            />
+            <span class="text-sm">
+              <span class="font-medium text-text-primary">{{
+                'budget.recurringForm.variableAmount' | transloco
+              }}</span>
+              <span class="block text-xs text-text-muted">{{
+                'budget.recurringForm.variableAmountHint' | transloco
+              }}</span>
+            </span>
+          </label>
+        }
+
+        @if ((activeType() === 'income' && !model().variableAmount) || activeType() === 'expense') {
           <label
             class="flex items-start gap-3 rounded-lg border border-border bg-raised px-3 py-2.5 cursor-pointer"
           >
@@ -564,6 +587,7 @@ export class RecurringEntryForm {
           category: data.category ?? '',
           memberId: data.memberId ?? '',
           autoPost: data.autoPost ?? false,
+          variableAmount: data.variableAmount ?? false,
         }
       : { ...EMPTY_MODEL };
   });

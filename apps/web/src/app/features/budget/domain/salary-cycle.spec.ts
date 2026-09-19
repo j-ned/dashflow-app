@@ -18,6 +18,7 @@ function entry(dayOfMonth: number | null): RecurringEntry {
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 }
 

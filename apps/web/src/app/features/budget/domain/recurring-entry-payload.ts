@@ -10,6 +10,7 @@ export type RecurringEntryFormValue = {
   category: string;
   memberId: string;
   autoPost: boolean;
+  variableAmount: boolean;
 };
 
 export function buildRecurringEntryPayload(
@@ -22,7 +23,10 @@ export function buildRecurringEntryPayload(
   },
 ): Omit<RecurringEntry, 'id'> {
   // Un virement est toujours auto : on force le flag pour la cohérence des données et le badge.
-  const autoPost = ctx.type === 'transfer' ? true : value.autoPost;
+  // Montant variable : réservé aux revenus, et incompatible avec le pointage automatique (qui
+  // enregistrerait chaque mois le montant du modèle, justement celui qu'on sait faux).
+  const variableAmount = ctx.type === 'income' && value.variableAmount;
+  const autoPost = ctx.type === 'transfer' ? true : value.autoPost && !variableAmount;
   const autoPostSince = autoPost ? (ctx.initial?.autoPostSince ?? ctx.currentMonth) : null;
   return {
     label: value.label,
@@ -38,5 +42,6 @@ export function buildRecurringEntryPayload(
     payslipKey: ctx.initial?.payslipKey ?? null,
     autoPost,
     autoPostSince,
+    variableAmount,
   };
 }

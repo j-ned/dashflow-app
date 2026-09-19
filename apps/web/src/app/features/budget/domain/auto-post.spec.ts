@@ -17,6 +17,7 @@ const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   payslipKey: null,
   autoPost: true,
   autoPostSince: '2026-06',
+  variableAmount: false,
   ...p,
 });
 
@@ -132,6 +133,7 @@ describe('duePostings : virements toujours auto', () => {
           dayOfMonth: 5,
           autoPost: false,
           autoPostSince: null,
+          variableAmount: false,
         }),
       ],
       [],

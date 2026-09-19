@@ -21,6 +21,7 @@ const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   payslipKey: null,
   autoPost: false,
   autoPostSince: null,
+  variableAmount: false,
   ...p,
 });
 const summary = (p: Partial<MemberSummary>): MemberSummary => ({

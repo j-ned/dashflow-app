@@ -27,5 +27,6 @@ export function buildEnvelopeCreditEntry(
     payslipKey: null,
     autoPost: false,
     autoPostSince: null,
+    variableAmount: false,
   };
 }

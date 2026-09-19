@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
@@ -8,6 +8,10 @@ import { TranslocoPipe } from '@jsverse/transloco';
  * Bandeau "héros" du compte : raconte la trajectoire du solde,
  * du réel (confirmé, issu du relevé) vers l'estimé (projeté fin de mois).
  * Remplace l'ancienne grille de 6 cartes KPI sans hiérarchie.
+ *
+ * Le projeté n'est affiché que s'il repose sur des montants connus. Tant qu'un revenu à montant
+ * variable (un salaire) n'a pas été saisi pour le mois, il est « incomplet » : pas de chiffre
+ * inventé, seulement ce qui est sûr — le total des prélèvements encore à venir.
  */
 @Component({
   selector: 'app-bank-balance-band',
@@ -33,6 +37,23 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <p class="mt-1.5 text-xs text-text-muted">
             {{ 'budget.bankAccount.balance.confirmedHint' | transloco: { date: today() } }}
           </p>
+          @if (needsStartingBalance()) {
+            <div
+              class="mt-3 rounded-md border border-ib-blue-20 bg-ib-blue-5 p-3"
+              data-testid="starting-balance-hint"
+            >
+              <p class="text-xs leading-relaxed text-text-primary">
+                {{ 'budget.bankAccount.balance.startingHint' | transloco }}
+              </p>
+              <button
+                type="button"
+                class="mt-2 inline-flex min-h-8 items-center rounded-md bg-ib-blue px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
+                (click)="setStartingBalance.emit()"
+              >
+                {{ 'budget.bankAccount.balance.startingAction' | transloco }}
+              </button>
+            </div>
+          }
         </div>
 
         <!-- Flèche : la trajectoire -->
@@ -48,17 +69,40 @@ import { TranslocoPipe } from '@jsverse/transloco';
           <p class="font-mono text-[11px] uppercase tracking-[0.16em] text-text-muted">
             {{ 'budget.bankAccount.balance.projectedLabel' | transloco }}
           </p>
-          <p
-            class="mt-2 font-mono text-3xl font-bold tracking-tight"
-            [class.text-ib-green]="projectedBalance() >= 0"
-            [class.text-ib-red]="projectedBalance() < 0"
-          >
-            {{ projectedBalance() | number: '1.2-2'
-            }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
-          </p>
-          <p class="mt-1.5 text-xs text-text-muted">
-            {{ 'budget.bankAccount.balance.projectedHint' | transloco }}
-          </p>
+          @if (incomplete()) {
+            <p
+              class="mt-2 text-lg font-semibold tracking-tight text-ib-orange"
+              data-testid="projection-incomplete"
+            >
+              {{ 'budget.bankAccount.balance.incompleteTitle' | transloco }}
+            </p>
+            <p class="mt-1.5 text-xs leading-relaxed text-text-muted">
+              {{
+                'budget.bankAccount.balance.incompleteHint'
+                  | transloco: { incomes: unknownIncomes().join(', ') }
+              }}
+            </p>
+            <a
+              href="#pending-incomes"
+              class="mt-2 inline-flex min-h-8 items-center gap-1.5 text-xs font-medium text-ib-blue transition-colors hover:underline"
+            >
+              {{ 'budget.bankAccount.balance.incompleteAction' | transloco }}
+              <app-icon name="arrow-right" size="13" />
+            </a>
+          } @else {
+            <p
+              class="mt-2 font-mono text-3xl font-bold tracking-tight"
+              data-testid="projected-balance"
+              [class.text-ib-green]="projectedBalance() >= 0"
+              [class.text-ib-red]="projectedBalance() < 0"
+            >
+              {{ projectedBalance() | number: '1.2-2'
+              }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
+            </p>
+            <p class="mt-1.5 text-xs text-text-muted">
+              {{ 'budget.bankAccount.balance.projectedHint' | transloco }}
+            </p>
+          }
         </div>
       </div>
 
@@ -66,16 +110,29 @@ import { TranslocoPipe } from '@jsverse/transloco';
       <div
         class="flex flex-col gap-2 border-t border-border px-5 py-3 sm:flex-row sm:items-center sm:justify-between"
       >
-        <p class="text-xs text-text-muted">
-          <span
-            class="font-mono font-semibold"
-            [class.text-ib-red]="delta() < 0"
-            [class.text-ib-green]="delta() >= 0"
-          >
-            {{ delta() >= 0 ? '+' : '' }}{{ delta() | number: '1.2-2' }}&euro;
-          </span>
-          {{ 'budget.bankAccount.balance.deltaHint' | transloco }}
-        </p>
+        @if (incomplete()) {
+          <p class="text-xs text-text-muted" data-testid="upcoming-debits">
+            @if (upcomingDebits() > 0) {
+              <span class="font-mono font-semibold text-ib-red">
+                &minus;{{ upcomingDebits() | number: '1.2-2' }}&euro;
+              </span>
+              {{ 'budget.bankAccount.balance.upcomingDebitsHint' | transloco }}
+            } @else {
+              {{ 'budget.bankAccount.balance.noUpcomingDebits' | transloco }}
+            }
+          </p>
+        } @else {
+          <p class="text-xs text-text-muted">
+            <span
+              class="font-mono font-semibold"
+              [class.text-ib-red]="delta() < 0"
+              [class.text-ib-green]="delta() >= 0"
+            >
+              {{ delta() >= 0 ? '+' : '' }}{{ delta() | number: '1.2-2' }}&euro;
+            </span>
+            {{ 'budget.bankAccount.balance.deltaHint' | transloco }}
+          </p>
+        }
         <a
           routerLink="/budget/transactions"
           class="inline-flex min-h-8 items-center gap-1.5 self-start text-xs font-medium text-ib-blue transition-colors hover:underline"
@@ -91,6 +148,16 @@ export class BankBalanceBand {
   readonly confirmedBalance = input.required<number>();
   readonly projectedBalance = input.required<number>();
   readonly today = input.required<string>();
+  /** Total, certain, de ce qui reste à débiter d'ici la fin du mois. */
+  readonly upcomingDebits = input(0);
+  /** Libellés des revenus à montant variable pas encore saisis ce mois-ci. */
+  readonly unknownIncomes = input<readonly string[]>([]);
+  /** Le compte n'a ni solde de départ ni opération : le « confirmé » n'a pas de sens. */
+  readonly needsStartingBalance = input(false);
+
+  readonly setStartingBalance = output<void>();
+
+  protected readonly incomplete = computed(() => this.unknownIncomes().length > 0);
 
   protected readonly delta = computed(() => this.projectedBalance() - this.confirmedBalance());
 }
