@@ -1,4 +1,5 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { MAILER, type Mailer } from '../../mail/mailer';
 import {
   AdminRepository,
@@ -9,6 +10,7 @@ import {
   NOTICE_COOLDOWN_DAYS,
   NOTICE_MAX_RECIPIENTS,
   NOTICE_REASONS,
+  UNVERIFIED_PURGE_DAYS,
   assessAccountSecurity,
   isEligibleFor,
   noticeEventType,
@@ -39,6 +41,18 @@ export type SendNoticesResult = {
   reason: NoticeReason;
   sent: { id: string; email: string }[];
   skipped: { id: string; email: string | null; why: NoticeSkipReason }[];
+};
+
+export type DeleteSkipReason =
+  | 'not_found'
+  | 'self'
+  | 'admin'
+  | 'demo'
+  | 'verified';
+
+export type DeleteUsersResult = {
+  deleted: { id: string; email: string }[];
+  skipped: { id: string; email: string | null; why: DeleteSkipReason }[];
 };
 
 export type NoticeSummary = Record<
@@ -171,6 +185,77 @@ export class AdminService {
     );
     return result;
   }
+
+  /**
+   * Suppression manuelle de faux comptes. Réservée aux comptes dont l'e-mail n'a JAMAIS été
+   * vérifié : un compte vérifié porte des données chiffrées irrécupérables, il ne se supprime que
+   * par son titulaire (DELETE /auth/me). Un compte admin compromis ne peut donc rien détruire.
+   */
+  async deleteUnverifiedUsers(
+    userIds: string[],
+    adminId: string,
+  ): Promise<DeleteUsersResult> {
+    const rows = await this.admin.findForDeletion(userIds);
+    const byId = new Map(rows.map((r) => [r.id, r]));
+    const result: DeleteUsersResult = { deleted: [], skipped: [] };
+    const deletable: string[] = [];
+
+    for (const id of userIds) {
+      const row = byId.get(id);
+      const why = deleteRefusal(row, id === adminId);
+      if (why) result.skipped.push({ id, email: row?.email ?? null, why });
+      else deletable.push(id);
+    }
+
+    result.deleted = await this.admin.deleteUnverified(deletable);
+    // Validé entre la lecture et la suppression : le DELETE l'a épargné, on le dit.
+    const gone = new Set(result.deleted.map((d) => d.id));
+    for (const id of deletable) {
+      if (!gone.has(id))
+        result.skipped.push({
+          id,
+          email: byId.get(id)?.email ?? null,
+          why: 'verified',
+        });
+    }
+
+    this.logger.log(
+      `Suppression de comptes non vérifiés par ${adminId} : ${result.deleted.length} supprimé(s), ${result.skipped.length} refusé(s)`,
+    );
+    return result;
+  }
+
+  /** Chaque nuit : les inscriptions jamais confirmées depuis plus de 7 jours disparaissent. */
+  @Cron(CronExpression.EVERY_DAY_AT_5AM)
+  async purgeStaleUnverified(): Promise<void> {
+    try {
+      const now = Date.now();
+      const purged = await this.admin.purgeUnverified(
+        new Date(now - UNVERIFIED_PURGE_DAYS * 86_400_000),
+        new Date(now - 86_400_000),
+      );
+      if (purged > 0)
+        this.logger.log(
+          `Purge : ${purged} compte(s) jamais vérifié(s) supprimé(s)`,
+        );
+    } catch (err) {
+      this.logger.warn(
+        `Purge des comptes non vérifiés échouée : ${err instanceof Error ? err.message : String(err)}`,
+      );
+    }
+  }
+}
+
+function deleteRefusal(
+  row: AdminUserRow | undefined,
+  isSelf: boolean,
+): DeleteSkipReason | null {
+  if (!row) return 'not_found';
+  if (isSelf) return 'self';
+  if (row.role === 'admin') return 'admin';
+  if (row.isDemoAccount) return 'demo';
+  if (row.emailVerified) return 'verified';
+  return null;
 }
 
 function latestNotice(

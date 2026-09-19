@@ -1,7 +1,20 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { and, count, eq, gte, ilike, inArray, like, sql } from 'drizzle-orm';
+import {
+  and,
+  count,
+  eq,
+  gt,
+  gte,
+  ilike,
+  inArray,
+  isNull,
+  like,
+  lt,
+  ne,
+  sql,
+} from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { securityEvents, users } from '../../db/schema';
+import { securityEvents, users, verificationCodes } from '../../db/schema';
 
 /** Échappe les jokers ILIKE pour qu'une recherche « 50% » cherche bien « 50% ». */
 const escapeLike = (s: string): string => s.replace(/[\\%_]/g, '\\$&');
@@ -12,6 +25,7 @@ export type AdminUserRow = {
   role: string;
   isDemoAccount: boolean;
   createdAt: Date;
+  emailVerified: boolean;
   hasPassword: boolean;
   authVersion: number;
   encryptionVersion: number;
@@ -28,12 +42,20 @@ const USER_COLUMNS = {
   role: users.role,
   isDemoAccount: users.isDemoAccount,
   createdAt: users.createdAt,
+  emailVerified: sql<boolean>`${users.emailVerified} is not null`,
   hasPassword: sql<boolean>`${users.password} is not null`,
   authVersion: users.authVersion,
   encryptionVersion: users.encryptionVersion,
   hasRecoveryKey: sql<boolean>`${users.recoveryWrappedKey} is not null`,
   totpEnabled: sql<boolean>`${users.totpEnabled} is not null`,
 };
+
+/** Un compte supprimable : e-mail jamais vérifié, ni admin ni démo. */
+const NEVER_VERIFIED = [
+  isNull(users.emailVerified),
+  ne(users.role, 'admin'),
+  eq(users.isDemoAccount, false),
+];
 
 @Injectable()
 export class AdminRepository {
@@ -109,5 +131,61 @@ export class AdminRepository {
       .update(users)
       .set({ sessionVersion: sql`${users.sessionVersion} + 1` })
       .where(eq(users.id, userId));
+  }
+
+  /** Pour décider du sort de chaque compte demandé (introuvable, vérifié, admin, démo…). */
+  async findForDeletion(userIds: string[]): Promise<AdminUserRow[]> {
+    if (userIds.length === 0) return [];
+    return this.db
+      .select(USER_COLUMNS)
+      .from(users)
+      .where(inArray(users.id, userIds));
+  }
+
+  /**
+   * Supprime des comptes JAMAIS VÉRIFIÉS. Les conditions sont répétées dans le DELETE lui-même :
+   * si la personne valide son e-mail entre la lecture et la suppression, son compte survit.
+   * Les tables liées partent en cascade ; un compte jamais vérifié n'a ni session ni fichier.
+   */
+  async deleteUnverified(
+    userIds: string[],
+  ): Promise<{ id: string; email: string }[]> {
+    if (userIds.length === 0) return [];
+    const deleted = await this.db
+      .delete(users)
+      .where(and(inArray(users.id, userIds), ...NEVER_VERIFIED))
+      .returning({ id: users.id, email: users.email });
+    await this.deleteCodesFor(deleted.map((d) => d.email));
+    return deleted;
+  }
+
+  /**
+   * Purge des comptes jamais vérifiés créés avant `olderThan`. Épargne ceux qui ont demandé un code
+   * depuis `recentCodeSince` : une réinscription réutilise la ligne existante (created_at ancien),
+   * il ne faut pas la supprimer pendant que la personne saisit son code.
+   */
+  async purgeUnverified(
+    olderThan: Date,
+    recentCodeSince: Date,
+  ): Promise<number> {
+    const deleted = await this.db
+      .delete(users)
+      .where(
+        and(
+          ...NEVER_VERIFIED,
+          lt(users.createdAt, olderThan),
+          sql`not exists (select 1 from ${verificationCodes} where ${verificationCodes.email} = ${users.email} and ${gt(verificationCodes.createdAt, recentCodeSince)})`,
+        ),
+      )
+      .returning({ email: users.email });
+    await this.deleteCodesFor(deleted.map((d) => d.email));
+    return deleted.length;
+  }
+
+  private async deleteCodesFor(emails: string[]): Promise<void> {
+    if (emails.length === 0) return;
+    await this.db
+      .delete(verificationCodes)
+      .where(inArray(verificationCodes.email, emails));
   }
 }

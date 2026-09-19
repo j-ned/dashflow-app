@@ -14,6 +14,7 @@ function row(over: Partial<AdminUserRow> = {}): AdminUserRow {
     role: 'user',
     isDemoAccount: false,
     createdAt: new Date('2026-01-01'),
+    emailVerified: true,
     hasPassword: true,
     authVersion: 1,
     encryptionVersion: 1,
@@ -25,7 +26,12 @@ function row(over: Partial<AdminUserRow> = {}): AdminUserRow {
 
 const repo = (
   rows: AdminUserRow[],
-  opts: { total?: number; notices?: AdminNoticeRow[] } = {},
+  opts: {
+    total?: number;
+    notices?: AdminNoticeRow[];
+    verifiedMeanwhile?: string[];
+    purged?: number;
+  } = {},
 ) =>
   ({
     listUsers: vi.fn().mockResolvedValue(rows),
@@ -38,6 +44,24 @@ const repo = (
     noticesSince: vi.fn().mockResolvedValue(opts.notices ?? []),
     recordNotice: vi.fn().mockResolvedValue(undefined),
     bumpSessionVersion: vi.fn().mockResolvedValue(undefined),
+    findForDeletion: vi
+      .fn()
+      .mockImplementation((ids: string[]) =>
+        Promise.resolve(rows.filter((r) => ids.includes(r.id))),
+      ),
+    deleteUnverified: vi
+      .fn()
+      .mockImplementation((ids: string[]) =>
+        Promise.resolve(
+          rows
+            .filter(
+              (r) =>
+                ids.includes(r.id) && !opts.verifiedMeanwhile?.includes(r.id),
+            )
+            .map((r) => ({ id: r.id, email: r.email })),
+        ),
+      ),
+    purgeUnverified: vi.fn().mockResolvedValue(opts.purged ?? 0),
   }) as unknown as AdminRepository & Record<string, ReturnType<typeof vi.fn>>;
 
 const mailer = (send = vi.fn().mockResolvedValue(undefined)) =>
@@ -223,5 +247,101 @@ describe('AdminService.noticeSummary', () => {
     expect(summary.reconnect).toEqual({ eligible: 2, onCooldown: 1 });
     expect(summary.enable_2fa).toEqual({ eligible: 1, onCooldown: 0 });
     expect(summary.enable_encryption).toEqual({ eligible: 0, onCooldown: 0 });
+  });
+});
+
+describe('AdminService.sendNotices — comptes non vérifiés', () => {
+  it("n'écrit jamais à une adresse non vérifiée, même cochée, même en envoi groupé", async () => {
+    const r = repo([
+      row({
+        id: 'fake',
+        email: 'jean@gmail.com',
+        emailVerified: false,
+        encryptionVersion: 0,
+      }),
+    ]);
+    const m = mailer();
+    const svc = new AdminService(r, m);
+    const grouped = await svc.sendNotices('enable_encryption', undefined, 'a');
+    const selective = await svc.sendNotices('enable_encryption', ['fake'], 'a');
+    expect(m.sendSecurityNotice).not.toHaveBeenCalled();
+    expect(grouped.sent).toEqual([]);
+    expect(selective.skipped).toEqual([
+      { id: 'fake', email: 'jean@gmail.com', why: 'not_eligible' },
+    ]);
+  });
+});
+
+describe('AdminService.deleteUnverifiedUsers', () => {
+  it('supprime les comptes jamais vérifiés et refuse tous les autres, avec la raison', async () => {
+    const r = repo([
+      row({ id: 'fake', email: 'test@gmail.com', emailVerified: false }),
+      row({ id: 'real', email: 'maman@x.fr' }),
+      row({
+        id: 'boss',
+        email: 'boss@x.fr',
+        role: 'admin',
+        emailVerified: false,
+      }),
+      row({
+        id: 'demo',
+        email: 'demo@x.fr',
+        isDemoAccount: true,
+        emailVerified: false,
+      }),
+      row({ id: 'me', email: 'me@x.fr', emailVerified: false }),
+    ]);
+    const res = await new AdminService(r, mailer()).deleteUnverifiedUsers(
+      ['fake', 'real', 'boss', 'demo', 'me', 'ghost'],
+      'me',
+    );
+    expect(r.deleteUnverified).toHaveBeenCalledWith(['fake']);
+    expect(res.deleted).toEqual([{ id: 'fake', email: 'test@gmail.com' }]);
+    expect(res.skipped).toEqual([
+      { id: 'real', email: 'maman@x.fr', why: 'verified' },
+      { id: 'boss', email: 'boss@x.fr', why: 'admin' },
+      { id: 'demo', email: 'demo@x.fr', why: 'demo' },
+      { id: 'me', email: 'me@x.fr', why: 'self' },
+      { id: 'ghost', email: null, why: 'not_found' },
+    ]);
+  });
+
+  it('compte validé entre la lecture et la suppression : épargné et signalé', async () => {
+    const r = repo(
+      [row({ id: 'late', email: 'late@x.fr', emailVerified: false })],
+      {
+        verifiedMeanwhile: ['late'],
+      },
+    );
+    const res = await new AdminService(r, mailer()).deleteUnverifiedUsers(
+      ['late'],
+      'a',
+    );
+    expect(res.deleted).toEqual([]);
+    expect(res.skipped).toEqual([
+      { id: 'late', email: 'late@x.fr', why: 'verified' },
+    ]);
+  });
+});
+
+describe('AdminService.purgeStaleUnverified', () => {
+  it('purge au-delà de 7 jours en épargnant les codes demandés depuis 24 h, et ne lève jamais', async () => {
+    const r = repo([], { purged: 3 });
+    await new AdminService(r, mailer()).purgeStaleUnverified();
+    const [olderThan, recentCodeSince] = r.purgeUnverified.mock.calls[0] as [
+      Date,
+      Date,
+    ];
+    expect(Date.now() - olderThan.getTime()).toBeGreaterThanOrEqual(
+      7 * 86_400_000 - 1000,
+    );
+    expect(Date.now() - recentCodeSince.getTime()).toBeLessThan(
+      86_400_000 + 1000,
+    );
+
+    r.purgeUnverified.mockRejectedValueOnce(new Error('db down'));
+    await expect(
+      new AdminService(r, mailer()).purgeStaleUnverified(),
+    ).resolves.toBeUndefined();
   });
 });
