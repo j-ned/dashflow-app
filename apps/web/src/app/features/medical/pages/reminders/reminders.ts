@@ -3,9 +3,11 @@ import {
   Component,
   computed,
   inject,
+  LOCALE_ID,
   signal,
   viewChild,
 } from '@angular/core';
+import { NgTemplateOutlet, formatDate } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -38,7 +40,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 @Component({
   selector: 'app-reminders',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModalDialog, ReminderForm, Icon, TranslocoPipe],
+  imports: [ModalDialog, ReminderForm, Icon, TranslocoPipe, NgTemplateOutlet],
   host: { class: 'block space-y-6' },
   template: `
     <!-- Section 1: Alertes -->
@@ -77,7 +79,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
           reminders().length
         }}</span>
       </div>
-      <div class="overflow-x-auto">
+      <div class="hidden md:block overflow-x-auto">
         <table class="w-full text-left">
           <thead>
             <tr class="border-b border-border/50 bg-hover/30">
@@ -114,92 +116,23 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
             @for (reminder of reminderRows(); track reminder.id) {
               <tr class="border-b border-border/50 hover:bg-hover/50 transition-colors">
                 <td class="px-5 py-3">
-                  <span
-                    class="rounded-full px-2 py-0.5 text-xs font-medium"
-                    [class.bg-ib-purple-10]="reminder.type === 'email'"
-                    [class.text-ib-purple]="reminder.type === 'email'"
-                    [class.bg-ib-cyan-10]="reminder.type === 'ical'"
-                    [class.text-ib-cyan]="reminder.type === 'ical'"
-                  >
-                    {{
-                      (reminder.type === 'email'
-                        ? 'medical.reminder.typeEmail'
-                        : 'medical.reminder.typeIcal'
-                      ) | transloco
-                    }}
-                  </span>
+                  <ng-container *ngTemplateOutlet="typeTpl; context: { $implicit: reminder }" />
                 </td>
                 <td class="px-5 py-3">
-                  <span
-                    class="rounded-full px-2 py-0.5 text-xs font-medium"
-                    [class.bg-ib-orange-10]="reminder.target === 'medication'"
-                    [class.text-ib-orange]="reminder.target === 'medication'"
-                    [class.bg-ib-blue-10]="reminder.target === 'appointment'"
-                    [class.text-ib-blue]="reminder.target === 'appointment'"
-                  >
-                    {{
-                      (reminder.target === 'medication'
-                        ? 'medical.reminder.targetMedication'
-                        : 'medical.reminder.targetAppointment'
-                      ) | transloco
-                    }}
-                  </span>
+                  <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
                   {{ reminder.detail }}
                 </td>
                 <td class="px-5 py-3 text-sm text-text-primary">{{ reminder.recipientEmail }}</td>
                 <td class="px-5 py-3 text-center">
-                  <button
-                    type="button"
-                    class="relative inline-flex h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
-                    [class.bg-ib-purple]="reminder.enabled"
-                    [class.bg-hover]="!reminder.enabled"
-                    [attr.aria-checked]="reminder.enabled"
-                    role="switch"
-                    (click)="toggleReminder(reminder.id)"
-                  >
-                    <span
-                      class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5"
-                      [class.translate-x-4]="reminder.enabled"
-                      [class.translate-x-0.5]="!reminder.enabled"
-                    ></span>
-                  </button>
+                  <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
                 </td>
                 <td class="px-5 py-3">
-                  <div class="flex items-center justify-center gap-1">
-                    <!-- Google Calendar -->
-                    @if (googleCalendarUrl(reminder); as gUrl) {
-                      <a
-                        [href]="gUrl"
-                        target="_blank"
-                        rel="noopener"
-                        class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
-                        [title]="'medical.reminder.googleTitle' | transloco"
-                      >
-                        <app-icon name="calendar" size="12" />
-                        {{ 'medical.reminder.google' | transloco }}
-                      </a>
-                    }
-                    <!-- .ics download (Apple/Thunderbird/Outlook) -->
-                    <button
-                      type="button"
-                      class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-                      [title]="'medical.reminder.icsTitle' | transloco"
-                      (click)="downloadIcs(reminder)"
-                    >
-                      <app-icon name="download" size="12" /> .ics
-                    </button>
-                  </div>
+                  <ng-container *ngTemplateOutlet="calendarTpl; context: { $implicit: reminder }" />
                 </td>
                 <td class="px-5 py-3 text-right">
-                  <button
-                    type="button"
-                    class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
-                    (click)="deleteReminder(reminder.id)"
-                  >
-                    {{ 'medical.reminder.delete' | transloco }}
-                  </button>
+                  <ng-container *ngTemplateOutlet="removeTpl; context: { $implicit: reminder }" />
                 </td>
               </tr>
             } @empty {
@@ -216,7 +149,125 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
           </tbody>
         </table>
       </div>
+
+      <!-- Sous md : une carte par alerte, le tableau à 7 colonnes ne tient pas sur un téléphone -->
+      <ul class="md:hidden divide-y divide-border/50">
+        @for (reminder of reminderRows(); track reminder.id) {
+          <li class="flex flex-col gap-3 px-4 py-4">
+            <div class="flex items-center justify-between gap-2">
+              <div class="flex flex-wrap items-center gap-1.5">
+                <ng-container *ngTemplateOutlet="typeTpl; context: { $implicit: reminder }" />
+                <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
+              </div>
+              <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
+            </div>
+            <div class="min-w-0">
+              <p class="text-sm text-text-primary break-words">{{ reminder.detail }}</p>
+              <p class="text-xs text-text-muted truncate">{{ reminder.recipientEmail }}</p>
+            </div>
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <ng-container *ngTemplateOutlet="calendarTpl; context: { $implicit: reminder }" />
+              <ng-container *ngTemplateOutlet="removeTpl; context: { $implicit: reminder }" />
+            </div>
+          </li>
+        } @empty {
+          <li class="px-5 py-16 text-center">
+            <app-icon name="bell" size="48" class="text-text-muted/20 mx-auto mb-3" />
+            <p class="text-sm text-text-muted">{{ 'medical.reminder.empty' | transloco }}</p>
+            <p class="text-xs text-text-muted mt-1">
+              {{ 'medical.reminder.emptyHint' | transloco }}
+            </p>
+          </li>
+        }
+      </ul>
     </section>
+
+    <ng-template #typeTpl let-reminder>
+      <span
+        class="rounded-full px-2 py-0.5 text-xs font-medium"
+        [class.bg-ib-purple-10]="reminder.type === 'email'"
+        [class.text-ib-purple]="reminder.type === 'email'"
+        [class.bg-ib-cyan-10]="reminder.type === 'ical'"
+        [class.text-ib-cyan]="reminder.type === 'ical'"
+      >
+        {{
+          (reminder.type === 'email' ? 'medical.reminder.typeEmail' : 'medical.reminder.typeIcal')
+            | transloco
+        }}
+      </span>
+    </ng-template>
+
+    <ng-template #targetTpl let-reminder>
+      <span
+        class="rounded-full px-2 py-0.5 text-xs font-medium"
+        [class.bg-ib-orange-10]="reminder.target === 'medication'"
+        [class.text-ib-orange]="reminder.target === 'medication'"
+        [class.bg-ib-blue-10]="reminder.target === 'appointment'"
+        [class.text-ib-blue]="reminder.target === 'appointment'"
+      >
+        {{
+          (reminder.target === 'medication'
+            ? 'medical.reminder.targetMedication'
+            : 'medical.reminder.targetAppointment'
+          ) | transloco
+        }}
+      </span>
+    </ng-template>
+
+    <ng-template #toggleTpl let-reminder>
+      <button
+        type="button"
+        class="relative inline-flex h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
+        [class.bg-ib-purple]="reminder.enabled"
+        [class.bg-hover]="!reminder.enabled"
+        [attr.aria-checked]="reminder.enabled"
+        role="switch"
+        (click)="toggleReminder(reminder.id)"
+      >
+        <span
+          class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5"
+          [class.translate-x-4]="reminder.enabled"
+          [class.translate-x-0.5]="!reminder.enabled"
+        ></span>
+      </button>
+    </ng-template>
+
+    <ng-template #calendarTpl let-reminder>
+      <div class="flex items-center justify-center gap-1">
+        <!-- Google Calendar -->
+        @if (googleCalendarUrl(reminder); as gUrl) {
+          <a
+            [href]="gUrl"
+            target="_blank"
+            rel="noopener"
+            class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
+            [title]="'medical.reminder.googleTitle' | transloco"
+          >
+            <app-icon name="calendar" size="12" />
+            {{ 'medical.reminder.google' | transloco }}
+          </a>
+        }
+        <!-- .ics download (Apple/Thunderbird/Outlook) -->
+        <button
+          type="button"
+          class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
+          [title]="'medical.reminder.icsTitle' | transloco"
+          (click)="downloadIcs(reminder)"
+        >
+          <app-icon name="download" size="12" /> .ics
+        </button>
+      </div>
+    </ng-template>
+
+    <ng-template #removeTpl let-reminder>
+      <button
+        type="button"
+        class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
+        (click)="deleteReminder(reminder.id)"
+      >
+        {{ 'medical.reminder.delete' | transloco }}
+      </button>
+    </ng-template>
 
     <app-modal-dialog
       #createReminderModal
@@ -243,6 +294,7 @@ export class Reminders {
   private readonly toaster = inject(Toaster);
   private readonly confirm = inject(ConfirmService);
   private readonly _i18n = inject(TranslocoService);
+  private readonly _locale = inject(LOCALE_ID);
 
   private readonly createReminderModalRef = viewChild.required<ModalDialog>('createReminderModal');
   private readonly _refreshReminders = signal(0);
@@ -292,7 +344,8 @@ export class Reminders {
       if (appt) {
         const patient = this.patientMap().get(appt.patientId) ?? '';
         const practitioner = this.practitionerMap().get(appt.practitionerId) ?? '';
-        return `${appt.date} ${appt.time} : ${patient} / ${practitioner}`;
+        const day = formatDate(appt.date, 'd MMM y', this._locale);
+        return `${day} · ${appt.time} : ${patient} / ${practitioner}`;
       }
     }
     if (reminder.target === 'medication' && reminder.medicationId) {

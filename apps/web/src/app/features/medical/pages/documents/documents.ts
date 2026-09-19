@@ -83,9 +83,11 @@ import { Icon } from '@shared/components/icon/icon';
           class="group relative overflow-hidden rounded-xl border border-border bg-surface transition hover:border-ib-yellow/30 hover:shadow-lg hover:shadow-ib-yellow/5"
         >
           <div class="p-5">
-            <div class="flex items-center justify-between mb-3">
-              <div class="flex items-center gap-2">
-                <div class="flex h-8 w-8 items-center justify-center rounded-lg bg-ib-yellow/10">
+            <div class="flex items-center justify-between gap-2 mb-3">
+              <div class="flex min-w-0 items-center gap-2">
+                <div
+                  class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-ib-yellow/10"
+                >
                   <app-icon name="folder" size="16" class="text-ib-yellow" />
                 </div>
                 <h3 class="font-semibold text-text-primary truncate" [title]="doc.title">
