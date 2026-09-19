@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, input, output, signal } from '@angu
 import { form, FormField, maxLength, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
+import { todayIso } from '@shared/utils/local-date';
 
 type RecordPaymentModel = {
   amount: number;
@@ -11,7 +12,7 @@ type RecordPaymentModel = {
 };
 
 function emptyModel(): RecordPaymentModel {
-  return { amount: 0, date: new Date().toISOString().slice(0, 10), accountId: '', note: '' };
+  return { amount: 0, date: todayIso(), accountId: '', note: '' };
 }
 
 @Component({

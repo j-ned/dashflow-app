@@ -30,6 +30,7 @@ import { Icon } from '@shared/components/icon/icon';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
 import { Celebration } from '@shared/components/celebration/celebration';
+import { toLocalIsoDate, todayIso } from '@shared/utils/local-date';
 
 @Component({
   selector: 'app-loans',
@@ -313,11 +314,11 @@ export class Loans {
   private readonly paymentModalRef = viewChild.required<ModalDialog>('paymentModal');
   private readonly historyModalRef = viewChild.required<ModalDialog>('historyModal');
 
-  private readonly _today = new Date().toISOString().slice(0, 10);
+  private readonly _today = todayIso();
   private readonly _dueSoonLimit = (() => {
     const d = new Date();
     d.setDate(d.getDate() + 7);
-    return d.toISOString().slice(0, 10);
+    return toLocalIsoDate(d);
   })();
 
   private readonly _refresh = signal(0);

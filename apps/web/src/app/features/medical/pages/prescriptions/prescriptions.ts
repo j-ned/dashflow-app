@@ -25,6 +25,7 @@ import { Toaster } from '@shared/components/toast/toast';
 import { uploadErrorKey } from '@shared/forms/upload-file-policy';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
+import { todayIso } from '@shared/utils/local-date';
 
 @Component({
   selector: 'app-prescriptions',
@@ -314,7 +315,7 @@ export class Prescriptions {
 
   protected isExpired(presc: Prescription): boolean {
     if (!presc.validUntil) return false;
-    return presc.validUntil < new Date().toISOString().slice(0, 10);
+    return presc.validUntil < todayIso();
   }
 
   protected async openDocument(id: string) {
