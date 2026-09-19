@@ -7,6 +7,8 @@ export function anAdminUser(over: Partial<AdminUserView> = {}): AdminUserView {
     role: 'user',
     isDemoAccount: false,
     createdAt: '2026-01-15T10:00:00.000Z',
+    security: { status: 'ok', issues: [] },
+    lastNotice: null,
     ...over,
   };
 }
