@@ -17,6 +17,9 @@ export type DuePostingsContext = {
   readonly currentDay: number; // 1..31
 };
 
+/** Note technique portée par une opération que le pointage automatique a enregistrée. */
+export const AUTO_POST_NOTE = 'auto';
+
 export const AUTO_POST_TYPES: ReadonlySet<RecurringEntry['type']> = new Set([
   'income',
   'expense',

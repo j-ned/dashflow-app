@@ -53,6 +53,7 @@ function makeComponent(
     updateImpl?: (id: string, data: { accountId: string }) => Observable<unknown>;
     entryDeleteImpl?: (id: string) => Observable<unknown>;
     accountDeleteImpl?: () => Observable<unknown>;
+    accountUpdateImpl?: (id: string, data: Record<string, unknown>) => Observable<unknown>;
     archiveCreateImpl?: (data: FormData) => Observable<unknown>;
     archiveGetAllImpl?: () => Observable<unknown[]>;
     archiveUpdateImpl?: (id: string, archive: Record<string, unknown>) => Observable<unknown>;
@@ -77,6 +78,7 @@ function makeComponent(
         useValue: {
           getAll: () => of(opts.accounts ?? ACCOUNTS),
           delete: opts.accountDeleteImpl ?? (() => of(undefined)),
+          update: opts.accountUpdateImpl ?? (() => of({})),
         },
       },
       { provide: MemberGateway, useValue: { getAll: () => of([]) } },
@@ -977,5 +979,125 @@ describe('BankAccount : « Ne plus me demander » (bascule en pointage automatiq
       expect(created.some((b) => b['recurringEntryId'] === 'late')).toBe(false);
     }
     expect(created.some((b) => b['recurringEntryId'] === 'sal')).toBe(false);
+  });
+});
+
+describe('BankAccount : vérification du solde avec la banque', () => {
+  const ACCOUNT = {
+    id: 'a',
+    name: 'Courant',
+    type: 'courant',
+    initialBalance: 0,
+    color: null,
+    dotColor: null,
+  };
+  const TX = {
+    id: 't1',
+    accountId: 'a',
+    amount: 100,
+    direction: 'income',
+    toAccountId: null,
+    date: '2026-01-05',
+    category: null,
+    note: null,
+    memberId: null,
+    recurringEntryId: null,
+  };
+  type Page = {
+    store: {
+      selectAccount?: (id: string) => void;
+      selectedAccountId: { set?: (id: string) => void };
+    };
+    confirmedBalance: () => number;
+    reconcileWithBank: (account: typeof ACCOUNT, real: number) => Promise<void>;
+    balanceCheckedAt: () => number | null;
+  };
+
+  beforeEach(() => localStorage.clear());
+
+  it('écart sur un compte qui vit déjà : une opération d’ajustement, et la vérification est notée', async () => {
+    const created: Record<string, unknown>[] = [];
+    const cmp = makeComponent({
+      accounts: [ACCOUNT],
+      txs: [TX],
+      createImpl: (_id, body) => {
+        created.push(body);
+        return of({});
+      },
+    }) as unknown as Page;
+
+    await cmp.reconcileWithBank(ACCOUNT, cmp.confirmedBalance() - 3.1);
+
+    expect(created).toHaveLength(1);
+    expect(created[0]).toMatchObject({
+      amount: 3.1,
+      direction: 'expense',
+      recurringEntryId: null,
+      note: 'budget.bankAccount.check.adjustmentNote',
+    });
+    expect(localStorage.getItem('dashflow.balanceCheckedAt.a')).not.toBeNull();
+  });
+
+  it('soldes identiques : aucune écriture, mais la vérification est notée', async () => {
+    const created: unknown[] = [];
+    const cmp = makeComponent({
+      accounts: [ACCOUNT],
+      txs: [TX],
+      createImpl: (_id, body) => {
+        created.push(body);
+        return of({});
+      },
+    }) as unknown as Page;
+
+    await cmp.reconcileWithBank(ACCOUNT, cmp.confirmedBalance());
+
+    expect(created).toEqual([]);
+    expect(localStorage.getItem('dashflow.balanceCheckedAt.a')).not.toBeNull();
+  });
+
+  it('échec de l’enregistrement : rien n’est noté comme vérifié', async () => {
+    const cmp = makeComponent({
+      accounts: [ACCOUNT],
+      txs: [TX],
+      createImpl: () => throwError(() => new Error('réseau')),
+    }) as unknown as Page;
+
+    await cmp.reconcileWithBank(ACCOUNT, 5000);
+
+    expect(localStorage.getItem('dashflow.balanceCheckedAt.a')).toBeNull();
+  });
+
+  it('compte sans aucune opération : le solde réel devient le solde de départ, sans opération', async () => {
+    const created: unknown[] = [];
+    const updates: { id: string; data: Record<string, unknown> }[] = [];
+    const cmp = makeComponent({
+      accounts: [ACCOUNT],
+      txs: [],
+      createImpl: (_id, body) => {
+        created.push(body);
+        return of({});
+      },
+      accountUpdateImpl: (id, data) => {
+        updates.push({ id, data });
+        return of({});
+      },
+    }) as unknown as Page;
+
+    await cmp.reconcileWithBank(ACCOUNT, 2310.55);
+
+    expect(created).toEqual([]);
+    // Compte complet renvoyé : en E2EE l'update remplace tout le blob.
+    expect(updates).toEqual([
+      {
+        id: 'a',
+        data: {
+          name: 'Courant',
+          type: 'courant',
+          color: null,
+          dotColor: null,
+          initialBalance: 2310.55,
+        },
+      },
+    ]);
   });
 });

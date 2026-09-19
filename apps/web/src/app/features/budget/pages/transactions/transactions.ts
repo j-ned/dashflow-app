@@ -8,11 +8,14 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { map } from 'rxjs';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
+import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
+import { AUTO_POST_NOTE } from '../../domain/auto-post';
 import { confirmedBalance } from '../../domain/account-balance';
 import { CATEGORY_GROUPS, categoryMeta } from '../../domain/categories';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -23,6 +26,10 @@ import { todayIso } from '@shared/utils/local-date';
 
 type TransactionViewModel = AccountTransaction & {
   categoryLabel: string;
+  /** Ce qu'on lit dans la liste : libellé de la récurrence d'origine, sinon la note, sinon la catégorie. */
+  title: string;
+  /** Opération enregistrée toute seule par le pointage automatique. */
+  auto: boolean;
   categoryColor: string;
   isCredit: boolean;
 };
@@ -136,7 +143,14 @@ const UNDO_WINDOW_MS = 6000;
                 class="inline-block w-2 h-2 rounded-full mr-2"
                 [style.background]="t.categoryColor"
               ></span>
-              {{ t.date | date: 'd MMM y' }} · {{ t.note || t.categoryLabel }}
+              {{ t.date | date: 'd MMM y' }} · {{ t.title }}
+              @if (t.auto) {
+                <span
+                  data-testid="tx-auto-badge"
+                  class="ml-1.5 inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-medium uppercase tracking-wide text-ib-green bg-ib-green/10"
+                  >{{ 'budget.recurringForm.autoBadge' | transloco }}</span
+                >
+              }
             </span>
             <span class="flex shrink-0 items-center gap-3">
               <span class="whitespace-nowrap" [class.text-ib-green]="t.isCredit">
@@ -173,6 +187,7 @@ const UNDO_WINDOW_MS = 6000;
 export class Transactions {
   private readonly _accountGateway = inject(BankAccountGateway);
   private readonly _txGateway = inject(AccountTransactionGateway);
+  private readonly _entryGateway = inject(RecurringEntryGateway);
   private readonly _destroyRef = inject(DestroyRef);
   private readonly _toaster = inject(Toaster);
 
@@ -196,6 +211,15 @@ export class Transactions {
     return this.accounts().find((a) => a.id === id) ?? null;
   });
 
+  // Libellé des récurrences, pour nommer les opérations qu'elles ont générées : une opération
+  // pointée automatiquement porte la note technique « auto », pas « Loyer ».
+  private readonly _entryLabels = toSignal(
+    this._entryGateway
+      .getAll()
+      .pipe(map((entries) => new Map(entries.map((e) => [e.id, e.label] as const)))),
+    { initialValue: new Map<string, string>() },
+  );
+
   protected readonly transactions = computed<TransactionViewModel[]>(() => {
     const acc = this.currentAccount();
     if (!acc) return [];
@@ -206,7 +230,17 @@ export class Transactions {
         const meta = categoryMeta(t.category);
         const isCredit =
           t.direction === 'income' || (t.direction === 'transfer' && t.toAccountId === acc.id);
-        return { ...t, categoryLabel: meta.label, categoryColor: meta.color, isCredit };
+        const auto = t.note === AUTO_POST_NOTE;
+        const entryLabel = t.recurringEntryId ? this._entryLabels().get(t.recurringEntryId) : null;
+        const title = entryLabel ?? (auto ? null : t.note) ?? meta.label;
+        return {
+          ...t,
+          categoryLabel: meta.label,
+          categoryColor: meta.color,
+          isCredit,
+          title,
+          auto,
+        };
       });
   });
 

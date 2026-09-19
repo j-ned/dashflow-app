@@ -755,8 +755,7 @@
         "incompleteHint": "This month's income has not been entered: {{incomes}}. Its amount changes every month, so we do not guess it.",
         "incompleteAction": "Enter the income received",
         "upcomingDebitsHint": "of debits still to come before the end of the month (known amount)",
-        "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter the balance shown by your bank so everything else is right.",
-        "startingAction": "Enter the real balance",
+        "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter below the balance shown by your bank: it will be the starting point.",
         "noUpcomingDebits": "No more debits to come before the end of the month."
       },
       "kpi": {
@@ -925,7 +924,23 @@
         "deleteEntries": "Delete the recurring entries",
         "onlyDeleteMessage": "This account has {{count}} recurring entrie(s). Delete them with the account?"
       },
-      "timelineFallback": "Other"
+      "timelineFallback": "Other",
+      "check": {
+        "open": "Check against my bank",
+        "lastChecked": "Last checked on {{date}}",
+        "neverChecked": "Never compared with your bank balance",
+        "label": "Balance shown by your bank today",
+        "help": "Enter the balance from your banking app: we show the gap with what DashFlow computed.",
+        "match": "All good: both balances match.",
+        "confirmMatch": "Checked",
+        "adjust": "Make up the gap",
+        "gapMore": "more at the bank than in DashFlow: an income was not entered, or a counted debit did not go through.",
+        "gapLess": "less at the bank than in DashFlow: a debit went up, or an expense was not entered.",
+        "adjustmentNote": "Adjustment: gap with the bank",
+        "toastMatch": "Balance checked: everything matches",
+        "toastAdjusted": "Balance aligned with your bank",
+        "toastError": "Could not record the adjustment"
+      }
     },
     "dashboard": {
       "title": "Overview",

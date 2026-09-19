@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
@@ -38,22 +38,16 @@ import { TranslocoPipe } from '@jsverse/transloco';
             {{ 'budget.bankAccount.balance.confirmedHint' | transloco: { date: today() } }}
           </p>
           @if (needsStartingBalance()) {
-            <div
-              class="mt-3 rounded-md border border-ib-blue-20 bg-ib-blue-5 p-3"
+            <p
+              class="mt-3 rounded-md border border-ib-blue-20 bg-ib-blue-5 p-3 text-xs leading-relaxed text-text-primary"
               data-testid="starting-balance-hint"
             >
-              <p class="text-xs leading-relaxed text-text-primary">
-                {{ 'budget.bankAccount.balance.startingHint' | transloco }}
-              </p>
-              <button
-                type="button"
-                class="mt-2 inline-flex min-h-8 items-center rounded-md bg-ib-blue px-3 text-xs font-medium text-white transition-opacity hover:opacity-90"
-                (click)="setStartingBalance.emit()"
-              >
-                {{ 'budget.bankAccount.balance.startingAction' | transloco }}
-              </button>
-            </div>
+              {{ 'budget.bankAccount.balance.startingHint' | transloco }}
+            </p>
           }
+          <!-- Vérification avec la banque. Un seul geste, que le compte soit vierge (le solde saisi
+               devient le point de départ) ou qu'il vive déjà (l'écart devient un ajustement). -->
+          <ng-content />
         </div>
 
         <!-- Flèche : la trajectoire -->
@@ -154,8 +148,6 @@ export class BankBalanceBand {
   readonly unknownIncomes = input<readonly string[]>([]);
   /** Le compte n'a ni solde de départ ni opération : le « confirmé » n'a pas de sens. */
   readonly needsStartingBalance = input(false);
-
-  readonly setStartingBalance = output<void>();
 
   protected readonly incomplete = computed(() => this.unknownIncomes().length > 0);
 

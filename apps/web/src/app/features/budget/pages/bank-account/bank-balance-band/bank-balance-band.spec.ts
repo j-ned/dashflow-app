@@ -35,12 +35,8 @@ describe('BankBalanceBand', () => {
     expect(q('upcoming-debits')?.textContent).toContain('753');
   });
 
-  it('compte sans point de départ : propose de renseigner le solde réel', () => {
-    const { fixture, q } = render({ needsStartingBalance: true });
-    let asked = false;
-    fixture.componentInstance.setStartingBalance.subscribe(() => (asked = true));
-    q('starting-balance-hint')?.querySelector('button')?.click();
-    expect(asked).toBe(true);
+  it('compte sans point de départ : explique que 0,00 € n’est pas le vrai solde', () => {
+    expect(render({ needsStartingBalance: true }).q('starting-balance-hint')).not.toBeNull();
   });
 
   it('compte déjà alimenté : pas d’invite', () => {
