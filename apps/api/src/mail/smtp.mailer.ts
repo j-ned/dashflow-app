@@ -23,11 +23,16 @@ const codeCard = (label: string, code: string): string => `
     <p style="font-family: monospace; font-size: 32px; letter-spacing: 8px; font-weight: bold; color: #1a1a2e; margin: 0;">${code}</p>
   </div>`;
 
+/** `CORS_ORIGIN` peut lister plusieurs origines séparées par des virgules : le site est la première. */
+export const webUrlFrom = (corsOrigin: string): string =>
+  corsOrigin.split(',')[0].trim().replace(/\/+$/, '');
+
 @Injectable()
 export class SmtpMailer implements Mailer {
   private readonly transporter: Transporter;
   private readonly from: string;
-  private readonly appUrl: string;
+  /** Adresse du site (pas de l'API) : c'est là que mènent les liens des mails. */
+  private readonly webUrl: string;
 
   constructor(config: ConfigService<Env, true>) {
     this.transporter = createTransport({
@@ -43,7 +48,8 @@ export class SmtpMailer implements Mailer {
       socketTimeout: 45_000,
     });
     this.from = config.get('SMTP_FROM', { infer: true });
-    this.appUrl = config.get('APP_URL', { infer: true });
+    // APP_URL est l'adresse de l'API (callback OAuth). Le site est la première origine CORS.
+    this.webUrl = webUrlFrom(config.get('CORS_ORIGIN', { infer: true }));
   }
 
   async sendVerificationCode(to: string, code: string): Promise<void> {
@@ -65,13 +71,13 @@ export class SmtpMailer implements Mailer {
       from: this.from,
       to,
       subject: 'Vous avez déjà un compte DashFlow',
-      text: `Un compte DashFlow existe déjà pour cette adresse.\n\nConnectez-vous : ${this.appUrl}/login\nMot de passe oublié : ${this.appUrl}/forgot-password`,
+      text: `Un compte DashFlow existe déjà pour cette adresse.\n\nConnectez-vous : ${this.webUrl}/auth/login\nMot de passe oublié : ${this.webUrl}/auth/forgot-password`,
       html: shell(
         'Vous avez déjà un compte DashFlow',
         `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; text-align: center; margin-bottom: 24px;">
           <p style="color: #374151; font-size: 14px; margin: 0 0 16px 0;">Un compte existe déjà pour cette adresse. Si vous avez oublié votre mot de passe, vous pouvez le réinitialiser.</p>
-          <a href="${this.appUrl}/login" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Se connecter</a><br/>
-          <a href="${this.appUrl}/forgot-password" style="display: inline-block; color: #6b7280; text-decoration: underline; font-size: 13px; margin-top: 8px;">Mot de passe oublié ?</a>
+          <a href="${this.webUrl}/auth/login" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Se connecter</a><br/>
+          <a href="${this.webUrl}/auth/forgot-password" style="display: inline-block; color: #6b7280; text-decoration: underline; font-size: 13px; margin-top: 8px;">Mot de passe oublié ?</a>
         </div>`,
       ),
     });
@@ -89,13 +95,13 @@ export class SmtpMailer implements Mailer {
       from: this.from,
       to,
       subject: content.subject,
-      text: securityNoticeText(content, this.appUrl),
+      text: securityNoticeText(content, this.webUrl),
       html: shell(
         'Sécurité de votre compte',
         `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
           <p style="color: #374151; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">${content.intro}</p>
           <ol style="padding-left: 20px; margin: 0 0 20px 0;">${steps}</ol>
-          <p style="text-align: center; margin: 0;"><a href="${this.appUrl}${content.cta.path}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">${content.cta.label}</a></p>
+          <p style="text-align: center; margin: 0;"><a href="${this.webUrl}${content.cta.path}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">${content.cta.label}</a></p>
         </div>
         <p style="color: #6b7280; font-size: 12px; line-height: 1.5; text-align: center;">${SECURITY_NOTICE_FOOTER}</p>`,
       ),

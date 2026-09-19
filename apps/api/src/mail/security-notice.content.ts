@@ -6,7 +6,7 @@ export type SecurityNoticeContent = {
   intro: string;
   /** Étapes à suivre, dans l'ordre. */
   steps: string[];
-  /** Libellé et chemin (relatif à l'application) du bouton. */
+  /** Libellé et chemin du bouton, relatif au site (pas à l'API). */
   cta: { label: string; path: string };
 };
 
@@ -28,7 +28,7 @@ export const SECURITY_NOTICE_CONTENT: Record<
       'Allez dans Paramètres → Chiffrement, puis « Vérifier ma clé » pour contrôler votre clé de récupération.',
       'Si vous utilisez la double authentification, régénérez vos codes de secours dans Paramètres → Authentification à deux facteurs.',
     ],
-    cta: { label: 'Me connecter', path: '/login' },
+    cta: { label: 'Me connecter', path: '/auth/login' },
   },
   enable_encryption: {
     subject: 'Protégez vos données DashFlow : il reste une étape',
@@ -39,7 +39,7 @@ export const SECURITY_NOTICE_CONTENT: Record<
       "Suivez l'écran « Protégez vos données » : cela prend moins d'une minute.",
       'Notez la clé de récupération affichée à la fin et rangez-la en lieu sûr : elle ne sera plus montrée.',
     ],
-    cta: { label: 'Activer la protection', path: '/login' },
+    cta: { label: 'Activer la protection', path: '/auth/login' },
   },
   recovery_key: {
     subject: "Votre compte DashFlow n'a pas de clé de récupération",
@@ -50,7 +50,7 @@ export const SECURITY_NOTICE_CONTENT: Record<
       'Allez dans Paramètres → Chiffrement → « Régénérer la clé de récupération ».',
       'Notez la clé affichée et rangez-la en lieu sûr, hors de DashFlow.',
     ],
-    cta: { label: 'Générer ma clé', path: '/login' },
+    cta: { label: 'Générer ma clé', path: '/auth/login' },
   },
   enable_2fa: {
     subject: 'Ajoutez une seconde protection à votre compte DashFlow',
@@ -61,7 +61,7 @@ export const SECURITY_NOTICE_CONTENT: Record<
       'Dans DashFlow, allez dans Paramètres → Authentification à deux facteurs → « Configurer la 2FA ».',
       'Conservez les codes de secours affichés à la fin.',
     ],
-    cta: { label: 'Configurer la 2FA', path: '/login' },
+    cta: { label: 'Configurer la 2FA', path: '/auth/login' },
   },
 };
 
@@ -70,8 +70,8 @@ export const SECURITY_NOTICE_FOOTER =
 
 export function securityNoticeText(
   content: SecurityNoticeContent,
-  appUrl: string,
+  webUrl: string,
 ): string {
   const steps = content.steps.map((s, i) => `${i + 1}. ${s}`).join('\n');
-  return `${content.intro}\n\n${steps}\n\n${content.cta.label} : ${appUrl}${content.cta.path}\n\n${SECURITY_NOTICE_FOOTER}`;
+  return `${content.intro}\n\n${steps}\n\n${content.cta.label} : ${webUrl}${content.cta.path}\n\n${SECURITY_NOTICE_FOOTER}`;
 }
