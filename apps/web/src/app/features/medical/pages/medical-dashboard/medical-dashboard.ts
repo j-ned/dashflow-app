@@ -21,6 +21,7 @@ import { PatientSummary, buildPatientSummary } from '../../domain/patient-summar
 import { MedicationStockBar } from '../../components/medication-stock-bar/medication-stock-bar';
 import { Icon } from '@shared/components/icon/icon';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
+import { todayIso } from '@shared/utils/local-date';
 
 const DAY_SHORT = ['D', 'L', 'M', 'Me', 'J', 'V', 'S'];
 
@@ -456,7 +457,7 @@ export class MedicalDashboard {
   }
 
   private currentDay(): string {
-    return new Date().toISOString().slice(0, 10);
+    return todayIso();
   }
 
   private scheduleDayRollover(): void {

@@ -12,6 +12,7 @@ import { formatFileSize } from '@shared/forms/format-file-size';
 import { MedicalDocument, DocumentType } from '../../domain/models/document.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
+import { todayIso } from '@shared/utils/local-date';
 
 type DocumentModel = {
   patientId: string;
@@ -262,7 +263,7 @@ export class DocumentForm {
           date: data.date,
           notes: data.notes ?? '',
         }
-      : { ...EMPTY_MODEL, date: new Date().toISOString().slice(0, 10) };
+      : { ...EMPTY_MODEL, date: todayIso() };
   });
 
   protected readonly documentForm = form(this.model, (path) => {

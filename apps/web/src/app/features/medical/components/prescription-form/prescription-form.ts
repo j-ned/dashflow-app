@@ -13,6 +13,7 @@ import { Prescription } from '../../domain/models/prescription.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Appointment } from '../../domain/models/appointment.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
+import { todayIso } from '@shared/utils/local-date';
 
 type PrescriptionFormModel = {
   patientId: string;
@@ -28,7 +29,7 @@ function emptyModel(): PrescriptionFormModel {
     patientId: '',
     practitionerId: '',
     appointmentId: '',
-    issuedDate: new Date().toISOString().slice(0, 10),
+    issuedDate: todayIso(),
     validUntil: '',
     notes: '',
   };

@@ -4,6 +4,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { Medication, MedicationType } from '../../domain/models/medication.model';
 import { Patient } from '../../domain/models/patient.model';
 import { Prescription } from '../../domain/models/prescription.model';
+import { todayIso } from '@shared/utils/local-date';
 
 type MedicationFormModel = {
   patientId: string;
@@ -26,7 +27,7 @@ function emptyMedicationModel(): MedicationFormModel {
     dosage: '',
     quantity: 0,
     dailyRate: 1,
-    startDate: new Date().toISOString().slice(0, 10),
+    startDate: todayIso(),
     alertDaysBefore: 7,
   };
 }

@@ -19,6 +19,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { Toaster } from '@shared/components/toast/toast';
 import { CsvImportWizard } from './csv-import-wizard/csv-import-wizard';
+import { todayIso } from '@shared/utils/local-date';
 
 type TransactionViewModel = AccountTransaction & {
   categoryLabel: string;
@@ -206,14 +207,14 @@ export class Transactions {
   protected readonly confirmedBalanceValue = computed(() => {
     const acc = this.currentAccount();
     if (!acc) return 0;
-    const today = new Date().toISOString().slice(0, 10);
+    const today = todayIso();
     return confirmedBalance(acc, this.transactions(), today);
   });
 
   // Draft signals
   protected readonly draftAmount = signal<number>(0);
   protected readonly draftDirection = signal<'income' | 'expense' | 'transfer'>('expense');
-  protected readonly draftDate = signal<string>(new Date().toISOString().slice(0, 10));
+  protected readonly draftDate = signal<string>(todayIso());
   protected readonly draftCategory = signal<string>('other');
 
   protected addTransaction(): void {

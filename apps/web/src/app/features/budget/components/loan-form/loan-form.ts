@@ -3,6 +3,7 @@ import { form, FormField, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Loan, LoanDirection } from '../../domain/models/loan.model';
 import { Member } from '../../domain/models/member.model';
+import { todayIso } from '@shared/utils/local-date';
 
 type LoanFormModel = {
   memberId: string;
@@ -197,7 +198,7 @@ export class LoanForm {
           dueDate: data.dueDate ?? '',
           dueDay: data.dueDay,
         }
-      : { ...EMPTY_MODEL, date: new Date().toISOString().slice(0, 10) };
+      : { ...EMPTY_MODEL, date: todayIso() };
   });
 
   protected readonly loanForm = form(this.model, (path) => {
