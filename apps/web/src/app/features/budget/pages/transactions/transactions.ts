@@ -129,16 +129,16 @@ const UNDO_WINDOW_MS = 6000;
     } @else {
       <ul class="divide-y divide-border/40">
         @for (t of transactions(); track t.id) {
-          <li class="flex items-center justify-between py-2">
-            <span>
+          <li class="flex items-center justify-between gap-3 py-2">
+            <span class="min-w-0">
               <span
                 class="inline-block w-2 h-2 rounded-full mr-2"
                 [style.background]="t.categoryColor"
               ></span>
               {{ t.date | date: 'd MMM y' }} · {{ t.note || t.categoryLabel }}
             </span>
-            <span class="flex items-center gap-3">
-              <span [class.text-ib-green]="t.isCredit">
+            <span class="flex shrink-0 items-center gap-3">
+              <span class="whitespace-nowrap" [class.text-ib-green]="t.isCredit">
                 {{ t.isCredit ? '+' : '−' }}{{ t.amount | number: '1.2-2' }} €
               </span>
               <button
