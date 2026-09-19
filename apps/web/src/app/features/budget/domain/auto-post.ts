@@ -86,3 +86,26 @@ export function duePostings(
   }
   return result;
 }
+
+/**
+ * Prélèvements mensuels qu'on peut basculer en pointage automatique : montant fixe, rattachés à un
+ * compte, avec un jour d'échéance, et pas déjà automatiques. Les revenus n'en font pas partie
+ * (un revenu se constate, et s'il est à montant variable il ne se devine pas).
+ */
+export function autoPostCandidates(entries: readonly RecurringEntry[]): RecurringEntry[] {
+  return entries.filter(
+    (e) => e.type === 'expense' && !e.autoPost && e.accountId != null && e.dayOfMonth != null,
+  );
+}
+
+/**
+ * Active le pointage automatique à partir de `currentMonth` : les échéances de ce mois déjà échues
+ * seront matérialisées au prochain passage de `duePostings`, jamais celles des mois précédents.
+ */
+export function withAutoPost(
+  entry: RecurringEntry,
+  currentMonth: string,
+): Omit<RecurringEntry, 'id'> {
+  const { id: _id, ...rest } = entry;
+  return { ...rest, autoPost: true, autoPostSince: entry.autoPostSince ?? currentMonth };
+}

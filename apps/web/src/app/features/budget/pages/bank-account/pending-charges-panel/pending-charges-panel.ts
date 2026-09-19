@@ -65,14 +65,26 @@ import { PendingChargeRow } from './pending-charge-row/pending-charge-row';
               {{ 'budget.bankAccount.pending.help' | transloco }}
             </p>
           </div>
-          <button
-            type="button"
-            data-testid="confirm-all"
-            class="shrink-0 self-start rounded-md bg-ib-green/15 px-2.5 py-1 text-xs font-medium text-ib-green transition-colors hover:bg-ib-green/25"
-            (click)="confirmAll.emit()"
-          >
-            {{ 'budget.bankAccount.pending.confirmAll' | transloco }}
-          </button>
+          <div class="flex shrink-0 flex-wrap items-center gap-2 self-start">
+            @if (automatableCount() > 0) {
+              <button
+                type="button"
+                data-testid="automate-all"
+                class="rounded-md border border-border px-2.5 py-1 text-xs font-medium text-text-muted transition-colors hover:border-ib-green/40 hover:text-ib-green"
+                (click)="automateAll.emit()"
+              >
+                {{ 'budget.bankAccount.pending.automateAll' | transloco }}
+              </button>
+            }
+            <button
+              type="button"
+              data-testid="confirm-all"
+              class="rounded-md bg-ib-green/15 px-2.5 py-1 text-xs font-medium text-ib-green transition-colors hover:bg-ib-green/25"
+              (click)="confirmAll.emit()"
+            >
+              {{ 'budget.bankAccount.pending.confirmAll' | transloco }}
+            </button>
+          </div>
         </div>
 
         <ul class="divide-y divide-border/40">
@@ -97,6 +109,9 @@ export class PendingChargesPanel {
   /** Ne concerne que les prélèvements et virements : un revenu ne se confirme jamais en lot. */
   readonly confirmAll = output<void>();
   readonly ignore = output<string>();
+  /** Nombre de prélèvements fixes encore confirmés à la main : propose de les automatiser. */
+  readonly automatableCount = input(0);
+  readonly automateAll = output<void>();
 
   protected readonly incomes = computed(() => this.charges().filter(isIncomeCharge));
   protected readonly debits = computed(() => this.charges().filter((c) => !isIncomeCharge(c)));

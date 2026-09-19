@@ -736,7 +736,13 @@
         "received": "Reçu",
         "notReceived": "Pas encore reçu",
         "amountPlaceholder": "Montant",
-        "amountReceivedAria": "Montant reçu pour {{label}}"
+        "amountReceivedAria": "Montant reçu pour {{label}}",
+        "automateAll": "Ne plus me demander",
+        "automateTitle": "Pointer ces prélèvements automatiquement ?",
+        "automateMessage": "{{count}} prélèvement(s) à montant fixe seront enregistrés tout seuls à leur date, sans confirmation : {{labels}}. Ceux déjà passés ce mois-ci sont enregistrés tout de suite. Tu peux décocher « Pointer automatiquement » sur n'importe lequel, et corriger ou supprimer une opération depuis le Relevé.",
+        "automateConfirm": "Automatiser",
+        "automated": "{{count}} prélèvement(s) désormais pointé(s) automatiquement",
+        "automateError": "{{failed}} prélèvement(s) n'ont pas pu être automatisés"
       },
       "balance": {
         "confirmedLabel": "Confirmé aujourd'hui",
@@ -1309,7 +1315,7 @@
       "category": "Catégorie",
       "categoryPlaceholder": "Ex: Logement, Abonnement...",
       "autoPost": "Pointer automatiquement",
-      "autoPostHint": "Crée la transaction automatiquement à l'échéance",
+      "autoPostHint": "Enregistre l'opération tout seul à chaque échéance, sans te demander de confirmer. Coché par défaut pour un prélèvement à montant fixe ; décoche-le si le montant change d'un mois à l'autre.",
       "autoBadge": "Auto",
       "autoBadgeTitle": "Pointée automatiquement à l'ouverture",
       "member": "Membre",

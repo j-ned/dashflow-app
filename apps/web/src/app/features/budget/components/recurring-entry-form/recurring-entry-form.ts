@@ -589,7 +589,9 @@ export class RecurringEntryForm {
           autoPost: data.autoPost ?? false,
           variableAmount: data.variableAmount ?? false,
         }
-      : { ...EMPTY_MODEL };
+      : // Un nouveau prélèvement mensuel à montant fixe est pointé automatiquement par défaut :
+        // confirmer chaque mois ce qui passe 99 fois sur 100 est de la cérémonie. Décochable.
+        { ...EMPTY_MODEL, autoPost: (this.forcedType() ?? 'income') === 'expense' };
   });
 
   // toAccountId requis uniquement en mode virement (remplace l'effect addValidators dynamique).

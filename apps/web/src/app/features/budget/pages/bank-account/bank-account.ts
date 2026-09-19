@@ -19,7 +19,7 @@ import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gatew
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { buildPendingCharges } from '../../domain/pending-charges';
-import { duePostings } from '../../domain/auto-post';
+import { autoPostCandidates, duePostings, withAutoPost } from '../../domain/auto-post';
 import { toLocalIsoDate } from '../../domain/local-date';
 import { previousMonth } from '../../domain/salary-archive-list';
 import { immediatePostingFor } from '../../domain/immediate-posting';
@@ -141,7 +141,9 @@ const PALETTE = [
       [charges]="pendingCharges()"
       [accountNameById]="accountNameByIdFn"
       (confirm)="confirmCharge($event.id, $event.amount)"
+      [automatableCount]="automatable().length"
       (confirmAll)="confirmAllCharges()"
+      (automateAll)="automateAllCharges()"
       (ignore)="ignoreCharge($event)"
     />
 
@@ -615,6 +617,47 @@ export class BankAccount {
           },
         });
     }
+  }
+
+  // Prélèvements fixes encore confirmés à la main sur le compte affiché.
+  protected readonly automatable = computed(() => autoPostCandidates(this.monthlyExpenses()));
+
+  /**
+   * Bascule tous les prélèvements fixes en pointage automatique. Ceux déjà échus ce mois-ci sont
+   * matérialisés dans la foulée par l'effet d'auto-pointage (équivaut à « Tout confirmer »), les
+   * suivants le seront à leur date, sans intervention.
+   */
+  protected async automateAllCharges(): Promise<void> {
+    const targets = this.automatable();
+    if (targets.length === 0) return;
+    const confirmed = await this.confirm.confirm({
+      title: this._i18n.translate('budget.bankAccount.pending.automateTitle'),
+      message: this._i18n.translate('budget.bankAccount.pending.automateMessage', {
+        count: targets.length,
+        labels: targets.map((e) => e.label).join(', '),
+      }),
+      confirmLabel: this._i18n.translate('budget.bankAccount.pending.automateConfirm'),
+      variant: 'info',
+    });
+    if (!confirmed) return;
+
+    let failed = 0;
+    const automated: RecurringEntry[] = [];
+    for (const entry of targets) {
+      const payload = withAutoPost(entry, this.currentMonth);
+      try {
+        await lastValueFrom(this.entryGateway.update(entry.id, payload));
+        automated.push({ id: entry.id, ...payload });
+      } catch {
+        failed++;
+      }
+    }
+    this.store.refreshEntries();
+    // L'auto-pointage ne tourne qu'à l'ouverture de la page : on le relance ici sur ce qu'on vient
+    // d'automatiser, sinon les échéances déjà passées ce mois-ci attendraient la prochaine visite.
+    this._runAutoPost(automated, this.store.transactions());
+    if (failed > 0) this.toaster.error('budget.bankAccount.pending.automateError', { failed });
+    else this.toaster.success('budget.bankAccount.pending.automated', { count: targets.length });
   }
 
   protected ignoreCharge(id: string): void {

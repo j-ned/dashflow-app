@@ -69,12 +69,41 @@ describe('RecurringEntryForm : autoPost', () => {
     let emitted: { autoPost: boolean; autoPostSince: string | null } | null = null;
     fixture.componentInstance.submitted.subscribe((v) => (emitted = v as never));
 
-    patch(cmp, { label: 'Loyer', amount: 800, dayOfMonth: 5 });
+    patch(cmp, { label: 'Loyer', amount: 800, dayOfMonth: 5, autoPost: false });
     await cmp.submitForm();
     await fixture.whenStable();
 
     expect(emitted!.autoPost).toBe(false);
     expect(emitted!.autoPostSince).toBeNull();
+  });
+
+  it('un nouveau prélèvement est pointé automatiquement par défaut', async () => {
+    const fixture = mount();
+    const cmp = fixture.componentInstance as unknown as Cmp;
+    let emitted: { autoPost: boolean; autoPostSince: string | null } | null = null;
+    fixture.componentInstance.submitted.subscribe((v) => (emitted = v as never));
+
+    patch(cmp, { label: 'Loyer', amount: 800, dayOfMonth: 5 });
+    await cmp.submitForm();
+    await fixture.whenStable();
+
+    expect(emitted!.autoPost).toBe(true);
+    expect(emitted!.autoPostSince).not.toBeNull();
+  });
+
+  it("un nouveau revenu ne l'est pas : un revenu se constate", async () => {
+    const fixture = mount();
+    fixture.componentRef.setInput('forcedType', 'income');
+    fixture.detectChanges();
+    const cmp = fixture.componentInstance as unknown as Cmp;
+    let emitted: { autoPost: boolean } | null = null;
+    fixture.componentInstance.submitted.subscribe((v) => (emitted = v as never));
+
+    patch(cmp, { label: 'Salaire', amount: 1900, dayOfMonth: 1 });
+    await cmp.submitForm();
+    await fixture.whenStable();
+
+    expect(emitted!.autoPost).toBe(false);
   });
 });
 

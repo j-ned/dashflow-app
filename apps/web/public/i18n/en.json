@@ -736,7 +736,13 @@
         "received": "Received",
         "notReceived": "Not received yet",
         "amountPlaceholder": "Amount",
-        "amountReceivedAria": "Amount received for {{label}}"
+        "amountReceivedAria": "Amount received for {{label}}",
+        "automateAll": "Stop asking me",
+        "automateTitle": "Post these debits automatically?",
+        "automateMessage": "{{count}} fixed-amount debit(s) will be recorded on their own at their due date, without confirmation: {{labels}}. Those already due this month are recorded right away. You can untick 'Post automatically' on any of them, and fix or delete a transaction from the Statement.",
+        "automateConfirm": "Automate",
+        "automated": "{{count}} debit(s) now posted automatically",
+        "automateError": "{{failed}} debit(s) could not be automated"
       },
       "balance": {
         "confirmedLabel": "Confirmed today",
@@ -1309,7 +1315,7 @@
       "category": "Category",
       "categoryPlaceholder": "e.g. Housing, Subscription...",
       "autoPost": "Post automatically",
-      "autoPostHint": "Creates the transaction automatically on the due date",
+      "autoPostHint": "Records the transaction on its own at each due date, without asking you to confirm. Ticked by default for a fixed-amount debit; untick it if the amount changes from month to month.",
       "autoBadge": "Auto",
       "autoBadgeTitle": "Posted automatically on open",
       "member": "Member",

@@ -1,4 +1,4 @@
-import { duePostings, isAutoEntry } from './auto-post';
+import { autoPostCandidates, duePostings, isAutoEntry, withAutoPost } from './auto-post';
 import { RecurringEntry } from './models/recurring-entry.model';
 import { AccountTransaction } from './models/account-transaction.model';
 
@@ -145,5 +145,52 @@ describe('duePostings : virements toujours auto', () => {
 
   it('une dépense non auto-pointée reste ignorée (non-régression)', () => {
     expect(duePostings([entry({ type: 'expense', autoPost: false })], [], CTX)).toEqual([]);
+  });
+});
+
+describe('autoPostCandidates', () => {
+  it('retient les prélèvements mensuels fixes encore confirmés à la main, et eux seuls', () => {
+    const manual = { autoPost: false, autoPostSince: null } as const;
+    const entries = [
+      entry({ ...manual, id: 'loyer', type: 'expense', accountId: 'a', dayOfMonth: 1 }),
+      entry({ id: 'deja-auto', type: 'expense', accountId: 'a', dayOfMonth: 5, autoPost: true }),
+      entry({ ...manual, id: 'orphelin', type: 'expense', accountId: null, dayOfMonth: 5 }),
+      entry({ ...manual, id: 'sans-jour', type: 'expense', accountId: 'a', dayOfMonth: null }),
+      entry({ ...manual, id: 'salaire', type: 'income', accountId: 'a', dayOfMonth: 1 }),
+      entry({ ...manual, id: 'taxe', type: 'annual_expense', accountId: 'a', dayOfMonth: 1 }),
+    ];
+    expect(autoPostCandidates(entries).map((e) => e.id)).toEqual(['loyer']);
+  });
+});
+
+describe('withAutoPost', () => {
+  it("active le pointage à partir du mois courant, sans l'identifiant dans le payload", () => {
+    const payload = withAutoPost(
+      entry({ id: 'loyer', type: 'expense', dayOfMonth: 1, autoPost: false, autoPostSince: null }),
+      '2026-09',
+    );
+    expect(payload).toMatchObject({ autoPost: true, autoPostSince: '2026-09' });
+    expect('id' in payload).toBe(false);
+  });
+
+  it("ne rattrape jamais les mois d'avant l'activation", () => {
+    const loyer = entry({
+      id: 'loyer',
+      type: 'expense',
+      dayOfMonth: 1,
+      autoPost: false,
+      autoPostSince: null,
+    });
+    const automated = { id: 'loyer', ...withAutoPost(loyer, '2026-09') };
+    const due = duePostings([automated], [], { currentMonth: '2026-09', currentDay: 19 });
+    expect(due.map((d) => d.month)).toEqual(['2026-09']);
+  });
+
+  it("conserve une date d'activation déjà figée", () => {
+    const payload = withAutoPost(
+      entry({ id: 'x', type: 'expense', accountId: 'a', dayOfMonth: 1, autoPostSince: '2026-06' }),
+      '2026-09',
+    );
+    expect(payload.autoPostSince).toBe('2026-06');
   });
 });

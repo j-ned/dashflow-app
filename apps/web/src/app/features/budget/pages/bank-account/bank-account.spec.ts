@@ -909,3 +909,73 @@ describe('BankAccount : nouveau cycle (revenu existant + « Nouveau cycle »)', 
     expect(success).toHaveBeenCalledWith('budget.bankAccount.messages.cycleArchived');
   });
 });
+
+describe('BankAccount : « Ne plus me demander » (bascule en pointage automatique)', () => {
+  const SALARY = {
+    id: 'sal',
+    accountId: 'a',
+    label: 'Salaire',
+    amount: 1900,
+    type: 'income',
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    toAccountId: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    variableAmount: true,
+  };
+  const RENT = {
+    ...SALARY,
+    id: 'rent',
+    label: 'Loyer',
+    amount: 800,
+    type: 'expense',
+    variableAmount: false,
+  };
+  // Échéance au 31 : pas encore due, quel que soit le jour où la suite tourne (sauf un 31).
+  const LATE = { ...RENT, id: 'late', label: 'Bouygues', amount: 9, dayOfMonth: 31 };
+
+  type Page = {
+    automatable: () => { id: string }[];
+    automateAllCharges: () => Promise<void>;
+  };
+
+  it('ne propose que les prélèvements fixes, jamais un revenu', () => {
+    const cmp = makeComponent({ entries: [SALARY, RENT] }) as unknown as Page;
+    expect(cmp.automatable().map((e) => e.id)).toEqual(['rent']);
+  });
+
+  it('active le pointage sur chacun, puis enregistre tout de suite ceux déjà échus ce mois-ci', async () => {
+    const updates: { id: string; autoPost: unknown; autoPostSince: unknown }[] = [];
+    const created: Record<string, unknown>[] = [];
+    const cmp = makeComponent({
+      entries: [SALARY, RENT, LATE],
+      updateImpl: (id, data) => {
+        const d = data as unknown as { autoPost: boolean; autoPostSince: string };
+        updates.push({ id, autoPost: d.autoPost, autoPostSince: d.autoPostSince });
+        return of({});
+      },
+      createImpl: (_accountId, body) => {
+        created.push(body);
+        return of({});
+      },
+    }) as unknown as Page;
+
+    await cmp.automateAllCharges();
+
+    const month = new Date().toISOString().slice(0, 7);
+    expect(updates.map((u) => u.id).sort()).toEqual(['late', 'rent']);
+    expect(updates.every((u) => u.autoPost === true && u.autoPostSince === month)).toBe(true);
+    // Sans relance explicite de l'auto-pointage (qui ne tourne qu'à l'ouverture de la page), le
+    // loyer déjà échu n'aurait été enregistré qu'à la prochaine visite.
+    const posted = created.filter((b) => b['recurringEntryId'] === 'rent');
+    expect(posted).toHaveLength(1);
+    expect(posted[0]).toMatchObject({ amount: 800, direction: 'expense', note: 'auto' });
+    if (new Date().getDate() < 31) {
+      expect(created.some((b) => b['recurringEntryId'] === 'late')).toBe(false);
+    }
+    expect(created.some((b) => b['recurringEntryId'] === 'sal')).toBe(false);
+  });
+});
