@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
+import type { NoticeReason } from '../modules/admin/account-security';
 
 @Injectable()
 export class ConsoleMailer implements Mailer {
@@ -16,6 +17,11 @@ export class ConsoleMailer implements Mailer {
 
   sendAccountExists(to: string): Promise<void> {
     this.logger.log(`[account-exists] ${to}`);
+    return Promise.resolve();
+  }
+
+  sendSecurityNotice(to: string, reason: NoticeReason): Promise<void> {
+    this.logger.log(`[security-notice] ${to} → ${reason}`);
     return Promise.resolve();
   }
 

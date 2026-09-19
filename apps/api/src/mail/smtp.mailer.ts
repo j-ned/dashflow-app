@@ -3,6 +3,12 @@ import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
+import type { NoticeReason } from '../modules/admin/account-security';
+import {
+  SECURITY_NOTICE_CONTENT,
+  SECURITY_NOTICE_FOOTER,
+  securityNoticeText,
+} from './security-notice.content';
 
 const shell = (subtitle: string, inner: string): string => `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -67,6 +73,31 @@ export class SmtpMailer implements Mailer {
           <a href="${this.appUrl}/login" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600; margin-bottom: 12px;">Se connecter</a><br/>
           <a href="${this.appUrl}/forgot-password" style="display: inline-block; color: #6b7280; text-decoration: underline; font-size: 13px; margin-top: 8px;">Mot de passe oublié ?</a>
         </div>`,
+      ),
+    });
+  }
+
+  async sendSecurityNotice(to: string, reason: NoticeReason): Promise<void> {
+    const content = SECURITY_NOTICE_CONTENT[reason];
+    const steps = content.steps
+      .map(
+        (step) =>
+          `<li style="color: #374151; font-size: 14px; line-height: 1.5; margin-bottom: 8px;">${step}</li>`,
+      )
+      .join('');
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: content.subject,
+      text: securityNoticeText(content, this.appUrl),
+      html: shell(
+        'Sécurité de votre compte',
+        `<div style="background: #f0f4ff; border: 1px solid #dbeafe; border-radius: 12px; padding: 24px; margin-bottom: 24px;">
+          <p style="color: #374151; font-size: 14px; line-height: 1.5; margin: 0 0 16px 0;">${content.intro}</p>
+          <ol style="padding-left: 20px; margin: 0 0 20px 0;">${steps}</ol>
+          <p style="text-align: center; margin: 0;"><a href="${this.appUrl}${content.cta.path}" style="display: inline-block; background: #1a1a2e; color: #fff; text-decoration: none; padding: 10px 24px; border-radius: 8px; font-size: 14px; font-weight: 600;">${content.cta.label}</a></p>
+        </div>
+        <p style="color: #6b7280; font-size: 12px; line-height: 1.5; text-align: center;">${SECURITY_NOTICE_FOOTER}</p>`,
       ),
     });
   }

@@ -111,6 +111,11 @@ export const SECURITY_EVENT_TYPES = [
   'encryption_wiped',
   'recovery_reset',
   'account_deleted',
+  // Relances envoyées depuis l'administration (voir modules/admin/account-security.ts)
+  'admin_notice_reconnect',
+  'admin_notice_enable_encryption',
+  'admin_notice_recovery_key',
+  'admin_notice_enable_2fa',
 ] as const;
 export type SecurityEventType = (typeof SECURITY_EVENT_TYPES)[number];
 
