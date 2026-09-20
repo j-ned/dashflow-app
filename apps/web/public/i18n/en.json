@@ -1835,6 +1835,7 @@
       "target": "Target",
       "detail": "Detail",
       "enabled": "Enabled",
+      "toggleAria": "Turn the alert on or off: {{detail}}",
       "calendar": "Calendar",
       "actions": "Actions",
       "delete": "Delete",
