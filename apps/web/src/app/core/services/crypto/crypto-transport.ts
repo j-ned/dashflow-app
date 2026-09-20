@@ -10,16 +10,21 @@ import { decryptFile } from './file-crypto';
 
 const identity = <T>(row: ApiRow): T => row as T;
 
+/**
+ * `coerce` normalise une ligne (montants `numeric` que Postgres renvoie en chaîne, valeurs par
+ * défaut). Il s'applique aux lignes en clair ET aux lignes déchiffrées : un compte passé du clair au
+ * chiffré a des blobs qui contiennent ces chaînes telles quelles. Il doit donc être idempotent.
+ */
 export function decryptList<T>(
   rows$: Observable<ApiRow[]>,
   key: CryptoKey | null,
-  mapPlain: (row: ApiRow) => T = identity,
+  coerce: (row: ApiRow) => T = identity,
 ): Observable<T[]> {
   return rows$.pipe(
     switchMap((rows) =>
       !key || !rows.some((r) => r.encryptedData)
-        ? from([rows.map(mapPlain)])
-        : from(decryptEntities<T>(rows, key)),
+        ? from([rows.map(coerce)])
+        : from(decryptEntities<ApiRow>(rows, key).then((list) => list.map(coerce))),
     ),
   );
 }
@@ -27,11 +32,13 @@ export function decryptList<T>(
 export function decryptOne<T>(
   row$: Observable<ApiRow>,
   key: CryptoKey | null,
-  mapPlain: (row: ApiRow) => T = identity,
+  coerce: (row: ApiRow) => T = identity,
 ): Observable<T> {
   return row$.pipe(
     switchMap((row) =>
-      !key || !row.encryptedData ? from([mapPlain(row)]) : from(decryptEntity<T>(row, key)),
+      !key || !row.encryptedData
+        ? from([coerce(row)])
+        : from(decryptEntity<ApiRow>(row, key).then(coerce)),
     ),
   );
 }
