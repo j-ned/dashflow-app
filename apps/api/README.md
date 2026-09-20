@@ -66,18 +66,19 @@ Le serveur écoute par défaut sur le port défini par `PORT` (3001 en développ
 
 Variables d'environnement principales (voir `.env.example` pour la liste complète) :
 
-| Variable       | Rôle                                                                        |
-| -------------- | --------------------------------------------------------------------------- |
-| `NODE_ENV`     | Environnement d'exécution (`development`, `production`)                     |
-| `PORT`         | Port HTTP du serveur                                                        |
-| `DATABASE_URL` | Chaîne de connexion PostgreSQL                                              |
-| `CORS_ORIGIN`  | Origine(s) autorisée(s) pour le frontend, séparées par des virgules         |
-| `JWT_SECRET`   | Secret de signature des tokens JWT (minimum 32 caractères)                  |
-| `APP_URL`      | URL publique de l'API, utilisée notamment dans les liens transmis par email |
-| `MAILER`       | Fournisseur d'envoi d'email (`console` ou `smtp`)                           |
-| `DEMO_ENABLED` | Active le compte de démonstration en accès public                           |
-| `S3_*`         | Configuration du stockage de fichiers compatible S3                         |
-| `SMTP_*`       | Configuration SMTP, utilisée quand `MAILER=smtp`                            |
+| Variable       | Rôle                                                                         |
+| -------------- | ---------------------------------------------------------------------------- |
+| `NODE_ENV`     | Environnement d'exécution (`development`, `production`)                      |
+| `PORT`         | Port HTTP du serveur                                                         |
+| `DATABASE_URL` | Chaîne de connexion PostgreSQL                                               |
+| `CORS_ORIGIN`  | Origine(s) autorisée(s) pour le frontend, séparées par des virgules          |
+| `JWT_SECRET`   | Secret de signature des tokens JWT (minimum 32 caractères)                   |
+| `APP_URL`      | URL publique de l'API, utilisée notamment dans les liens transmis par email  |
+| `MAILER`       | Fournisseur d'envoi d'email (`console` ou `smtp`)                            |
+| `DEMO_ENABLED` | Active le compte de démonstration en accès public                            |
+| `HEALTH_TOKEN` | Jeton de `GET /health/ready` (état de la base) ; absent, la route répond 404 |
+| `S3_*`         | Configuration du stockage de fichiers compatible S3                          |
+| `SMTP_*`       | Configuration SMTP, utilisée quand `MAILER=smtp`                             |
 
 La configuration est validée au démarrage (schéma Zod) : une variable manquante ou invalide empêche le serveur de démarrer.
 
@@ -155,9 +156,25 @@ Le chiffrement ne couvre pas tout. Voici ce qui reste lisible dans un dump, pour
 | Type d'événement, adresse IP, user-agent, date                                                                                                                                                                   | `security_events`                                                    | Le journal de connexion des 180 derniers jours                                                                                                                                           |
 | Sel, clé maîtresse emballée, clé de récupération emballée                                                                                                                                                        | `users`                                                              | Rien d'exploitable sans le mot de passe ou la clé de récupération, mais ils permettent une attaque hors ligne sur un mot de passe faible (PBKDF2, 600 000 itérations)                    |
 
-Les blobs sont liés à leur ligne : depuis le format `v2.`, l'identifiant de la ligne est authentifié avec le chiffré (AAD `dashflow:row:<id>`), un blob ne peut pas être recopié d'une ligne à une autre. Les clés étrangères, elles, ne sont pas encore authentifiées : quelqu'un qui écrit dans la base peut rattacher un rendez-vous à un autre patient du même compte sans que le client le détecte.
+Les blobs sont liés à leur ligne : depuis le format `v2.`, l'identifiant de la ligne est authentifié avec le chiffré (AAD `dashflow:row:<id>`), un blob ne peut pas être recopié d'une ligne à une autre. Les clés étrangères le sont aussi : le client les recopie dans le blob (`__refs`) et refuse à la lecture une ligne qui pointe ailleurs que ce qui a été scellé. Quelqu'un qui écrit dans la base ne peut donc plus rattacher un rendez-vous à un autre patient du même compte ; il peut seulement détacher une ligne (référence mise à `null`, ce que fait aussi le serveur quand la cible est supprimée). Les blobs écrits avant cette protection sont scellés à leur prochaine écriture.
 
-Le compte de démonstration n'est pas chiffré : ses données sont fictives et réinitialisées toutes les 6 heures.
+Le compte de démonstration n'est pas chiffré : ses données sont fictives, réinitialisées toutes les 6 heures et recalées sur la date du jour.
+
+### Sondes de santé
+
+- `GET /health` : sonde de vie publique (`{ "ok": true }`), utilisée par le `HEALTHCHECK` Docker. Elle ne touche pas la base : une base en panne ne doit pas faire redémarrer l'API en boucle.
+- `GET /health/ready` : état de la base (200, ou 503 si elle est injoignable), réservé à qui présente l'en-tête `x-health-token: $HEALTH_TOKEN`. Sans jeton configuré ou avec un mauvais jeton, la route répond 404.
+
+L'API s'arrête proprement sur `SIGTERM` / `SIGINT` (requêtes en cours terminées, connexions Postgres rendues, code de sortie 0).
+
+### Règles métier assumées
+
+Décidées avec le propriétaire du produit le 20 septembre 2026 ; ce ne sont pas des oublis.
+
+- **Se déconnecter ferme la session sur tous les appareils.** Les jetons durent 7 jours : c'est le seul moyen de rendre inutilisable un cookie volé.
+- **Un remboursement supérieur au restant dû est refusé** (400) : c'est presque toujours une faute de frappe, et l'opération enregistrée doit correspondre à ce qui a été saisi.
+- **La double authentification ne se reconfigure pas tant qu'elle est active** (409) : pour changer d'appareil on la désactive (mot de passe exigé) puis on la réactive. Une session ouverte ne suffit donc pas à remplacer le secret.
+- **Pas d'unicité serveur sur le mois d'une archive de paie.** Pour un compte chiffré le mois est dans le blob : une contrainte ne protégerait que les comptes en clair. Le client met à jour l'archive du mois au lieu d'en créer une seconde.
 
 ## Licence
 
