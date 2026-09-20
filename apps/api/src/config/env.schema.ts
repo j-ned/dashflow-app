@@ -26,6 +26,15 @@ const envBaseSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.string().url().optional(),
   ),
+  // Jeton de GET /health/ready (état de la base, pour un monitoring externe). Absent → la route
+  // répond 404. Chaîne vide tolérée.
+  HEALTH_TOKEN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .min(24, 'HEALTH_TOKEN doit faire au moins 24 caractères')
+      .optional(),
+  ),
   // Active le compte démo public (login sans mot de passe + reset). À couper en prod si non souhaité.
   DEMO_ENABLED: z
     .string()

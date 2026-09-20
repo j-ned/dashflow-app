@@ -1,4 +1,9 @@
-import { Global, Module } from '@nestjs/common';
+import {
+  Global,
+  Inject,
+  Module,
+  type OnApplicationShutdown,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
@@ -26,4 +31,14 @@ const POSTGRES_CLIENT = Symbol('POSTGRES_CLIENT');
   ],
   exports: [DRIZZLE],
 })
-export class DrizzleModule {}
+export class DrizzleModule implements OnApplicationShutdown {
+  constructor(
+    @Inject(POSTGRES_CLIENT)
+    private readonly client: ReturnType<typeof postgres>,
+  ) {}
+
+  // Rend les connexions à Postgres au lieu de les laisser tomber à la mort du processus.
+  async onApplicationShutdown(): Promise<void> {
+    await this.client.end({ timeout: 5 });
+  }
+}

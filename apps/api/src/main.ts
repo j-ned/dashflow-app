@@ -38,7 +38,15 @@ async function bootstrap(): Promise<void> {
     // Pagination par curseur : le front doit pouvoir lire l'en-tête de page suivante.
     exposedHeaders: [NEXT_CURSOR_HEADER],
   });
-  app.enableShutdownHooks();
+  // Arrêt propre. `enableShutdownHooks()` ne suffit pas dans un conteneur : une fois ses hooks
+  // passés, Nest se renvoie le signal pour mourir, or le noyau ignore un signal à disposition par
+  // défaut adressé au processus n° 1. L'API restait donc en vie jusqu'au SIGKILL de Docker (10 s,
+  // code 137) à chaque déploiement. `app.close()` exécute les mêmes hooks ; on sort ensuite nous-mêmes.
+  for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+    process.once(signal, () => {
+      void app.close().finally(() => process.exit(0));
+    });
+  }
 
   await app.listen(config.get('PORT', { infer: true }));
 }
