@@ -99,4 +99,71 @@ describe('buildPendingCharges', () => {
       buildPendingCharges({ ...BASE, monthlyExpenses: [re({ id: 'e' })], txs: [tx] }),
     ).toHaveLength(0);
   });
+
+  describe('mois de l’échéance', () => {
+    const SALARY = re({ id: 'sal', type: 'income', dayOfMonth: 28, amount: 2100 });
+    const RENT = re({ id: 'rent', dayOfMonth: 5 });
+    const tx = (recurringEntryId: string, date: string): AccountTransaction => ({
+      id: 't',
+      accountId: 'a',
+      amount: 1,
+      direction: 'income',
+      toAccountId: null,
+      date,
+      category: null,
+      note: null,
+      memberId: null,
+      recurringEntryId,
+    });
+    const at = (currentDay: number, txs: AccountTransaction[] = []) =>
+      buildPendingCharges({
+        ...BASE,
+        incomes: [SALARY],
+        monthlyExpenses: [RENT],
+        salaryDay: 28,
+        currentDay,
+        currentMonth: '2026-09',
+        txs,
+      });
+
+    it('le 20 : le salaire du 28 août non saisi est proposé à SA date, jamais au 28 septembre', () => {
+      const salary = at(20).find((c) => c.entry.id === 'sal');
+
+      expect(salary?.suggestedDate).toBe('2026-08-28');
+    });
+
+    it('le 20 : salaire d’août déjà saisi → plus rien à saisir avant le 28', () => {
+      const charges = at(20, [tx('sal', '2026-08-28')]);
+
+      expect(charges.map((c) => c.entry.id)).toEqual(['rent']);
+    });
+
+    it('le 29 : le salaire de septembre est dû, et le loyer du 5 non confirmé le reste', () => {
+      const charges = at(29, [tx('sal', '2026-08-28')]);
+
+      expect(charges.map((c) => [c.entry.id, c.suggestedDate])).toEqual([
+        ['sal', '2026-09-28'],
+        ['rent', '2026-09-05'],
+      ]);
+    });
+
+    it('aucune date proposée n’est dans le futur', () => {
+      for (const day of [1, 4, 5, 20, 27, 28, 30]) {
+        for (const c of at(day))
+          expect(c.suggestedDate <= `2026-09-${String(day).padStart(2, '0')}`).toBe(true);
+      }
+    });
+
+    it('échéance le 31 rattachée à un mois de 30 jours : ramenée au dernier jour', () => {
+      const charges = buildPendingCharges({
+        ...BASE,
+        monthlyExpenses: [re({ id: 'eom', dayOfMonth: 31 })],
+        salaryDay: 31,
+        currentDay: 3,
+        currentMonth: '2026-10',
+      });
+
+      expect(charges[0].suggestedDate).toBe('2026-09-30');
+    });
+  });
 });
