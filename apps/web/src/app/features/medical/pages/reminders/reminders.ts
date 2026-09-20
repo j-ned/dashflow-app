@@ -7,7 +7,7 @@ import {
   signal,
   viewChild,
 } from '@angular/core';
-import { NgTemplateOutlet, formatDate } from '@angular/common';
+import { formatDate } from '@angular/common';
 import { toSignal, toObservable } from '@angular/core/rxjs-interop';
 import { lastValueFrom, switchMap } from 'rxjs';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -26,6 +26,10 @@ import { ReminderForm } from '../../components/reminder-form/reminder-form';
 import { Toaster } from '@shared/components/toast/toast';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Icon } from '@shared/components/icon/icon';
+import { ToggleSwitch } from '@shared/components/toggle-switch/toggle-switch';
+import { ReminderTargetBadge } from '../../components/reminder-target-badge/reminder-target-badge';
+import { ReminderCalendarLinks } from '../../components/reminder-calendar-links/reminder-calendar-links';
+import { ReminderDeleteButton } from '../../components/reminder-delete-button/reminder-delete-button';
 import {
   allDaysExcept,
   escapeIcs,
@@ -40,7 +44,16 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
 @Component({
   selector: 'app-reminders',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [ModalDialog, ReminderForm, Icon, TranslocoPipe, NgTemplateOutlet],
+  imports: [
+    ModalDialog,
+    ReminderForm,
+    Icon,
+    TranslocoPipe,
+    ToggleSwitch,
+    ReminderTargetBadge,
+    ReminderCalendarLinks,
+    ReminderDeleteButton,
+  ],
   host: { class: 'block space-y-6' },
   template: `
     <!-- Section 1: Alertes -->
@@ -110,19 +123,26 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
             @for (reminder of reminderRows(); track reminder.id) {
               <tr class="border-b border-border/50 hover:bg-hover/50 transition-colors">
                 <td class="px-5 py-3">
-                  <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
+                  <app-reminder-target-badge [target]="reminder.target" />
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
                   {{ reminder.detail }}
                 </td>
                 <td class="px-5 py-3 text-center">
-                  <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
+                  <app-toggle-switch
+                    [checked]="reminder.enabled"
+                    [label]="'medical.reminder.toggleAria' | transloco: { detail: reminder.detail }"
+                    (toggled)="toggleReminder(reminder.id)"
+                  />
                 </td>
                 <td class="px-5 py-3">
-                  <ng-container *ngTemplateOutlet="calendarTpl; context: { $implicit: reminder }" />
+                  <app-reminder-calendar-links
+                    [googleUrl]="reminder.googleUrl"
+                    (icsRequested)="downloadIcs(reminder)"
+                  />
                 </td>
                 <td class="px-5 py-3 text-right">
-                  <ng-container *ngTemplateOutlet="removeTpl; context: { $implicit: reminder }" />
+                  <app-reminder-delete-button (deleteRequested)="deleteReminder(reminder.id)" />
                 </td>
               </tr>
             } @empty {
@@ -146,16 +166,23 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
           <li class="flex flex-col gap-3 px-4 py-4">
             <div class="flex items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-1.5">
-                <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
+                <app-reminder-target-badge [target]="reminder.target" />
               </div>
-              <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
+              <app-toggle-switch
+                [checked]="reminder.enabled"
+                [label]="'medical.reminder.toggleAria' | transloco: { detail: reminder.detail }"
+                (toggled)="toggleReminder(reminder.id)"
+              />
             </div>
             <div class="min-w-0">
               <p class="text-sm text-text-primary break-words">{{ reminder.detail }}</p>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-2">
-              <ng-container *ngTemplateOutlet="calendarTpl; context: { $implicit: reminder }" />
-              <ng-container *ngTemplateOutlet="removeTpl; context: { $implicit: reminder }" />
+              <app-reminder-calendar-links
+                [googleUrl]="reminder.googleUrl"
+                (icsRequested)="downloadIcs(reminder)"
+              />
+              <app-reminder-delete-button (deleteRequested)="deleteReminder(reminder.id)" />
             </div>
           </li>
         } @empty {
@@ -169,78 +196,6 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
         }
       </ul>
     </section>
-
-    <ng-template #targetTpl let-reminder>
-      <span
-        class="rounded-full px-2 py-0.5 text-xs font-medium"
-        [class.bg-ib-orange-10]="reminder.target === 'medication'"
-        [class.text-ib-orange]="reminder.target === 'medication'"
-        [class.bg-ib-blue-10]="reminder.target === 'appointment'"
-        [class.text-ib-blue]="reminder.target === 'appointment'"
-      >
-        {{
-          (reminder.target === 'medication'
-            ? 'medical.reminder.targetMedication'
-            : 'medical.reminder.targetAppointment'
-          ) | transloco
-        }}
-      </span>
-    </ng-template>
-
-    <ng-template #toggleTpl let-reminder>
-      <button
-        type="button"
-        class="relative inline-flex h-5 w-9 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-purple"
-        [class.bg-ib-purple]="reminder.enabled"
-        [class.bg-hover]="!reminder.enabled"
-        [attr.aria-checked]="reminder.enabled"
-        role="switch"
-        (click)="toggleReminder(reminder.id)"
-      >
-        <span
-          class="pointer-events-none inline-block h-4 w-4 rounded-full bg-white shadow-sm transform transition-transform mt-0.5"
-          [class.translate-x-4]="reminder.enabled"
-          [class.translate-x-0.5]="!reminder.enabled"
-        ></span>
-      </button>
-    </ng-template>
-
-    <ng-template #calendarTpl let-reminder>
-      <div class="flex items-center justify-center gap-1">
-        <!-- Google Calendar -->
-        @if (googleCalendarUrl(reminder); as gUrl) {
-          <a
-            [href]="gUrl"
-            target="_blank"
-            rel="noopener"
-            class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-blue hover:border-ib-blue/30 transition-colors"
-            [title]="'medical.reminder.googleTitle' | transloco"
-          >
-            <app-icon name="calendar" size="12" />
-            {{ 'medical.reminder.google' | transloco }}
-          </a>
-        }
-        <!-- .ics download (Apple/Thunderbird/Outlook) -->
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded-lg border border-border min-h-8 px-3 py-1.5 text-xs font-medium text-text-muted hover:text-ib-cyan hover:border-ib-cyan/30 transition-colors"
-          [title]="'medical.reminder.icsTitle' | transloco"
-          (click)="downloadIcs(reminder)"
-        >
-          <app-icon name="download" size="12" /> .ics
-        </button>
-      </div>
-    </ng-template>
-
-    <ng-template #removeTpl let-reminder>
-      <button
-        type="button"
-        class="rounded-lg border border-border px-3 py-1.5 text-xs min-h-8 font-medium text-text-muted hover:text-ib-red hover:border-ib-red/30 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-red"
-        (click)="deleteReminder(reminder.id)"
-      >
-        {{ 'medical.reminder.delete' | transloco }}
-      </button>
-    </ng-template>
 
     <app-modal-dialog
       #createReminderModal
@@ -306,7 +261,11 @@ export class Reminders {
   });
 
   protected readonly reminderRows = computed(() =>
-    this.reminders().map((reminder) => ({ ...reminder, detail: this.reminderDetail(reminder) })),
+    this.reminders().map((reminder) => ({
+      ...reminder,
+      detail: this.reminderDetail(reminder),
+      googleUrl: this.googleCalendarUrl(reminder),
+    })),
   );
 
   // ── Calendar helpers ──
@@ -331,7 +290,7 @@ export class Reminders {
     return '-';
   }
 
-  protected googleCalendarUrl(reminder: Reminder): string | null {
+  private googleCalendarUrl(reminder: Reminder): string | null {
     if (reminder.target === 'appointment' && reminder.appointmentId) {
       const appt = this.appointmentMap().get(reminder.appointmentId);
       if (!appt) return null;

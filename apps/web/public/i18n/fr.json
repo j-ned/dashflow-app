@@ -1835,6 +1835,7 @@
       "target": "Cible",
       "detail": "Détail",
       "enabled": "Activé",
+      "toggleAria": "Activer ou désactiver l'alerte : {{detail}}",
       "calendar": "Calendrier",
       "actions": "Actions",
       "delete": "Supprimer",
