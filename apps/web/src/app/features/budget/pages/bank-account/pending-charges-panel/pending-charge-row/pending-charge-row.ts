@@ -6,6 +6,7 @@ import {
   linkedSignal,
   output,
 } from '@angular/core';
+import { DatePipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { PendingCharge, isIncomeCharge } from '../../../../domain/pending-charge';
@@ -18,14 +19,17 @@ import { PendingCharge, isIncomeCharge } from '../../../../domain/pending-charge
 @Component({
   selector: 'app-pending-charge-row',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormsModule, TranslocoPipe],
+  imports: [DatePipe, FormsModule, TranslocoPipe],
   host: { class: 'flex flex-wrap items-center justify-between gap-x-3 gap-y-2 py-2.5' },
   template: `
     <span class="min-w-0 text-sm text-text-primary">
       {{ charge().entry.label }}
       <span class="text-xs text-text-muted"
         >&middot;
-        {{ 'budget.bankAccount.pending.dueOn' | transloco: { date: charge().suggestedDate } }}</span
+        {{
+          'budget.bankAccount.pending.dueOn'
+            | transloco: { date: charge().suggestedDate | date: 'd MMM' }
+        }}</span
       >
     </span>
     <span class="flex items-center gap-2">
