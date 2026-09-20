@@ -1,7 +1,7 @@
 import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
-import * as Sentry from '@sentry/angular';
+import { reportError } from '@core/monitoring/error-reporter';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import type { ApiError } from '@core/services/api/api-client';
 import { AuthStore } from '../../auth.store';
@@ -467,7 +467,7 @@ export class ForgotPassword {
       if (isApiError(e)) {
         this.error.set(this._i18n.translate('auth.forgot.errors.codeInvalid'));
       } else {
-        Sentry.captureException(e, { tags: { flow: 'e2ee-recovery' } });
+        reportError(e, { flow: 'e2ee-recovery' });
         this.error.set(this._i18n.translate('auth.forgot.errors.invalidRecoveryKey'));
       }
     } finally {

@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import * as Sentry from '@sentry/angular';
+import { reportError } from '@core/monitoring/error-reporter';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { firstValueFrom } from 'rxjs';
 import { AuthStore } from '@features/auth/auth.store';
@@ -91,7 +91,7 @@ export class DemoBanner {
       window.location.reload();
     } catch (err) {
       console.error('Demo reset failed', err);
-      Sentry.captureException(err, { tags: { flow: 'demo-reset' } });
+      reportError(err, { flow: 'demo-reset' });
       this.resetting.set(false);
     }
   }

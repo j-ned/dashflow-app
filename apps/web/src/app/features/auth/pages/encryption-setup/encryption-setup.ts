@@ -1,6 +1,6 @@
 import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
 import { Router } from '@angular/router';
-import * as Sentry from '@sentry/angular';
+import { reportError } from '@core/monitoring/error-reporter';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { ApiClient } from '@core/services/api/api-client';
 import { CryptoStore } from '@core/services/crypto/crypto.store';
@@ -231,7 +231,7 @@ export class EncryptionSetup {
       this.loading.set(false);
       this.recoveryModal().open();
     } catch (e) {
-      Sentry.captureException(e, { tags: { flow: 'e2ee-setup' } });
+      reportError(e, { flow: 'e2ee-setup' });
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.prepareFailed'));
       this.loading.set(false);
     }
@@ -254,7 +254,7 @@ export class EncryptionSetup {
       this.loading.set(false);
       this.recoveryModal().open();
     } catch (e) {
-      Sentry.captureException(e, { tags: { flow: 'e2ee-setup-passphrase' } });
+      reportError(e, { flow: 'e2ee-setup-passphrase' });
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.passphraseFailed'));
       this.loading.set(false);
     }
@@ -312,7 +312,7 @@ export class EncryptionSetup {
             encryptedData[tableName] = encrypted;
           }
         } catch (e) {
-          Sentry.captureException(e, { tags: { flow: 'e2ee-migration', table: tableName } });
+          reportError(e, { flow: 'e2ee-migration', table: tableName });
           failedTables.push(tableName);
         }
 
@@ -337,7 +337,7 @@ export class EncryptionSetup {
       this.progress.set(100);
       this.step.set('done');
     } catch (e) {
-      Sentry.captureException(e, { tags: { flow: 'e2ee-migration' } });
+      reportError(e, { flow: 'e2ee-migration' });
       this.step.set('init');
       this.error.set(this._i18n.translate('auth.encryptionSetup.errors.migrationFailed'));
     } finally {
