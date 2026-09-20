@@ -1,4 +1,9 @@
 User-agent: *
 Allow: /
+Disallow: /auth/
+Disallow: /budget/
+Disallow: /medical/
+Disallow: /settings/
+Disallow: /admin/
 
-Sitemap: https://dashflow.j-ned.dev/sitemap.xml
+Sitemap: https://dashflow.nedellec-julien.fr/sitemap.xml

@@ -8,16 +8,16 @@
 
 **Self-hosted · Chiffré de bout en bout · Zéro cloud tiers**
 
-[![Angular](https://img.shields.io/badge/Angular-21-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
+[![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 [![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
-[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-17-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
 
-[**🔗 Démo live**](https://dashflow.j-ned.dev) · [**📸 Captures**](#-captures-décran) · [**🛡️ Sécurité**](#️-sécurité-end-to-end-encryption) · [**🏗️ Architecture**](#️-architecture)
+[**🔗 Démo live**](https://dashflow.nedellec-julien.fr) · [**📸 Captures**](#-captures-décran) · [**🛡️ Sécurité**](#️-sécurité-end-to-end-encryption) · [**🏗️ Architecture**](#️-architecture)
 
-<img src="public/screen/img.webp" alt="DashFlow — Compte bancaire" width="100%" />
+<img src="public/screen/compte.webp" alt="DashFlow — Compte bancaire" width="100%" />
 
 </div>
 
@@ -171,7 +171,7 @@ Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expo
 
 ### Frontend
 
-- **Framework** : Angular 21 (zoneless, Signals, standalone components)
+- **Framework** : Angular 22 (zoneless, Signals, standalone components)
 - **Styling** : TailwindCSS v4 (dark-first)
 - **Fonts** : Inter Variable + JetBrains Mono Variable (auto-hébergées)
 - **i18n** : `@jsverse/transloco` (bascule runtime FR/EN)
@@ -182,7 +182,7 @@ Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expo
 
 - **Runtime** : Node.js + NestJS
 - **ORM** : Drizzle ORM + drizzle-kit migrations
-- **Database** : PostgreSQL 17
+- **Database** : PostgreSQL 18
 - **Auth** : JWT (cookies httpOnly), Argon2id, Arctic (OAuth)
 - **2FA** : TOTP
 - **Storage** : Cloudflare R2
@@ -203,42 +203,42 @@ Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expo
 <table>
   <tr>
     <td width="50%">
-      <p align="center"><b>Budget — Vue globale</b></p>
-      <img src="public/screen/img.webp" alt="Compte bancaire" width="100%" />
+      <p align="center"><b>Budget — Compte : du réel au projeté</b></p>
+      <img src="public/screen/compte.webp" alt="Compte bancaire : solde confirmé, projeté fin de mois, revenus et charges" width="100%" />
     </td>
     <td width="50%">
       <p align="center"><b>Budget — Enveloppes virtuelles</b></p>
-      <img src="public/screen/img_1.webp" alt="Enveloppes" width="100%" />
+      <img src="public/screen/enveloppes.webp" alt="Enveloppes" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%">
       <p align="center"><b>Budget — Prêts & dettes</b></p>
-      <img src="public/screen/img_2.webp" alt="Prêts" width="100%" />
+      <img src="public/screen/prets.webp" alt="Prêts" width="100%" />
     </td>
     <td width="50%">
-      <p align="center"><b>Budget — Récurrences</b></p>
-      <img src="public/screen/img_3.webp" alt="Récurrences" width="100%" />
+      <p align="center"><b>Budget — Échéances à confirmer</b></p>
+      <img src="public/screen/echeances.webp" alt="Échéances à confirmer sur la page Compte" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%">
-      <p align="center"><b>Budget — Archives salaires</b></p>
-      <img src="public/screen/img_4.webp" alt="Archives" width="100%" />
+      <p align="center"><b>Budget — Mois passés, calculés tout seuls</b></p>
+      <img src="public/screen/archives.webp" alt="Archives : mois passés reconstitués depuis les opérations" width="100%" />
     </td>
     <td width="50%">
-      <p align="center"><b>Médical — Patients</b></p>
-      <img src="public/screen/img_6.webp" alt="Patients" width="100%" />
+      <p align="center"><b>Médical — Rendez-vous</b></p>
+      <img src="public/screen/rendez-vous.webp" alt="Rendez-vous médicaux groupés par échéance" width="100%" />
     </td>
   </tr>
   <tr>
     <td width="50%">
       <p align="center"><b>Médical — Ordonnances</b></p>
-      <img src="public/screen/img_7.webp" alt="Ordonnances" width="100%" />
+      <img src="public/screen/ordonnances.webp" alt="Ordonnances" width="100%" />
     </td>
     <td width="50%">
-      <p align="center"><b>Stats — Vue globale membre</b></p>
-      <img src="public/screen/img_9.webp" alt="Statistiques" width="100%" />
+      <p align="center"><b>Budget — Vue globale par membre</b></p>
+      <img src="public/screen/vue-globale.webp" alt="Vue globale : enveloppes, dettes et charges par membre" width="100%" />
     </td>
   </tr>
 </table>
@@ -298,9 +298,9 @@ docker run -p 80:80 dashflow-front
 
 <div align="center">
 
-**Développé par [Julien Nedellec](https://j-ned.dev)**
+**Développé par [Julien Nedellec](https://nedellec-julien.fr)**
 
-[![Portfolio](https://img.shields.io/badge/Portfolio-j--ned.dev-4f46e5?style=for-the-badge)](https://j-ned.dev)
+[![Portfolio](https://img.shields.io/badge/Portfolio-nedellec--julien.fr-4f46e5?style=for-the-badge)](https://nedellec-julien.fr)
 [![GitHub](https://img.shields.io/badge/GitHub-j--ned-181717?style=for-the-badge&logo=github)](https://github.com/j-ned)
 
 </div>

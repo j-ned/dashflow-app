@@ -65,7 +65,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           class="mt-12 overflow-hidden rounded-lg border border-border bg-canvas p-2 shadow-2xl shadow-black/40 lg:mt-16"
         >
           <img
-            ngSrc="/screen/img.webp"
+            ngSrc="/screen/compte.webp"
             [alt]="'landing.budget.screenshotAlt' | transloco"
             class="block h-auto w-full rounded-md"
             loading="lazy"
