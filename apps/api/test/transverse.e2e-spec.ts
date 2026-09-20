@@ -97,6 +97,7 @@ describe('Transverse e2e', () => {
       .post('/reminders')
       .set('Cookie', a.cookies)
       .set('X-CSRF-Token', a.csrf)
+      // `type` / `recipientEmail` : encore envoyés par un front antérieur, ignorés et jamais stockés.
       .send({
         type: 'email',
         target: 'appointment',
@@ -107,6 +108,8 @@ describe('Transverse e2e', () => {
     const id = created.body.id;
     expect(id).toBeTruthy();
     expect(created.body.enabled).toBe(true);
+    expect(created.body).not.toHaveProperty('recipientEmail');
+    expect(created.body).not.toHaveProperty('type');
 
     // Toggle disables the reminder
     const toggled = await request(a.s)

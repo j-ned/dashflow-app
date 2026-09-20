@@ -243,11 +243,7 @@ describe('Medical e2e', () => {
       .post('/reminders')
       .set('Cookie', a.cookies)
       .set('X-CSRF-Token', a.csrf)
-      .send({
-        type: 'ical',
-        target: 'medication',
-        recipientEmail: 'x@dashflow.test',
-      })
+      .send({ target: 'medication' })
       .expect(400);
   });
 
