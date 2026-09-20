@@ -49,9 +49,11 @@ export class BudgetDataStore {
   readonly entriesLoaded = this._entriesLoaded.asReadonly();
   readonly transactionsLoaded = this._txLoaded.asReadonly();
 
+  // Par défaut le premier compte courant : c'est là que vivent revenus et prélèvements. Ouvrir sur
+  // un livret (souvent créé en premier) montrait une page vide.
   readonly selectedAccountId = linkedSignal<string | null>(() => {
     const accs = this.accounts();
-    return accs.length > 0 ? accs[0].id : null;
+    return (accs.find((a) => a.type === 'courant') ?? accs[0])?.id ?? null;
   });
 
   private readonly todayIso = toLocalIsoDate(new Date());

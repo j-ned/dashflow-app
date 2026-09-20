@@ -29,7 +29,9 @@ import { AchievementRibbon } from '@shared/components/achievement-ribbon/achieve
               <app-icon name="wallet" size="18" [style.color]="envelope().color" />
             </span>
             <div class="min-w-0">
-              <h3 class="truncate font-semibold text-text-primary">{{ envelope().name }}</h3>
+              <h3 class="line-clamp-2 break-words font-semibold leading-snug text-text-primary">
+                {{ envelope().name }}
+              </h3>
               <p
                 class="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-text-muted"
               >
@@ -52,6 +54,7 @@ import { AchievementRibbon } from '@shared/components/achievement-ribbon/achieve
           </div>
           <span
             class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide"
+            [class.mr-10]="reached()"
             [style.background-color]="envelope().color + '1a'"
             [style.color]="envelope().color"
             >{{ envelope().type }}</span

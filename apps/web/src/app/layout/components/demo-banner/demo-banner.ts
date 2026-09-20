@@ -51,6 +51,13 @@ import { ApiClient } from '@core/services/api/api-client';
       opacity: 0.5;
       color: var(--color-text-muted);
     }
+    /* Téléphone : le libellé et le bouton suffisent, la précision « toutes les 6 heures » s'écrasait en colonnes. */
+    @media (max-width: 640px) {
+      .demo-banner__hint,
+      .demo-banner__sep {
+        display: none;
+      }
+    }
     .demo-banner__action {
       margin-left: auto;
       min-height: 44px;
