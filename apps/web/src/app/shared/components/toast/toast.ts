@@ -114,7 +114,7 @@ export class Toaster {
   host: { class: 'contents' },
   template: `
     <div
-      class="fixed top-4 right-4 z-[9999] flex flex-col gap-2 pointer-events-none"
+      class="fixed bottom-20 sm:bottom-4 right-4 left-4 sm:left-auto z-[9999] flex flex-col-reverse items-end gap-2 pointer-events-none"
       aria-live="polite"
       aria-relevant="additions"
     >

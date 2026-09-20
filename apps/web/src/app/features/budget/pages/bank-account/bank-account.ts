@@ -1,9 +1,11 @@
 import {
+  afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
   effect,
+  ElementRef,
   inject,
   signal,
   untracked,
@@ -98,18 +100,20 @@ const PALETTE = [
         <p class="mt-1 text-sm text-text-muted">{{ 'budget.bankAccount.subtitle' | transloco }}</p>
       </div>
       <nav
-        class="flex items-center gap-2 flex-wrap"
+        class="flex items-center gap-2 overflow-x-auto pb-1 sm:flex-wrap sm:overflow-visible sm:pb-0"
+        #accountNav
         [attr.aria-label]="'budget.bankAccount.accountNavAria' | transloco"
       >
         @if (store.accounts().length > 1) {
           <button
             type="button"
-            class="inline-flex items-center rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition-colors"
+            class="inline-flex shrink-0 items-center whitespace-nowrap rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition-colors"
             [class.border-ib-blue]="store.selectedAccountId() === null"
             [class.bg-ib-blue]="store.selectedAccountId() === null"
             [class.text-canvas]="store.selectedAccountId() === null"
             [class.border-border]="store.selectedAccountId() !== null"
             [class.text-text-muted]="store.selectedAccountId() !== null"
+            [attr.aria-pressed]="store.selectedAccountId() === null"
             (click)="store.selectAccount(null)"
           >
             {{ 'budget.bankAccount.allAccounts' | transloco }}
@@ -118,7 +122,7 @@ const PALETTE = [
         @for (da of decoratedAccounts(); track da.account.id) {
           <button
             type="button"
-            class="inline-flex items-center gap-2 rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"
+            class="inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-lg border min-h-8 px-3 py-1.5 text-xs font-medium transition"
             [style.border-color]="
               store.selectedAccountId() === da.account.id ? da.color : 'var(--border)'
             "
@@ -127,6 +131,7 @@ const PALETTE = [
             "
             [class.text-canvas]="store.selectedAccountId() === da.account.id"
             [class.text-text-muted]="store.selectedAccountId() !== da.account.id"
+            [attr.aria-pressed]="store.selectedAccountId() === da.account.id"
             (click)="store.selectAccount(da.account.id)"
           >
             <span
@@ -138,7 +143,7 @@ const PALETTE = [
         }
         <button
           type="button"
-          class="rounded-lg border border-dashed border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
+          class="shrink-0 whitespace-nowrap rounded-lg border border-dashed border-border min-h-8 px-3 py-1.5 text-xs text-text-muted hover:border-ib-cyan/50 hover:text-ib-cyan transition-colors"
           (click)="accountManager().open()"
         >
           <app-icon name="settings" size="12" class="inline -mt-0.5" />
@@ -308,12 +313,23 @@ export class BankAccount {
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
   protected readonly accountManager = viewChild.required(AccountManager);
+  private readonly accountNav = viewChild<ElementRef<HTMLElement>>('accountNav');
 
   private readonly todayIso = toLocalIsoDate(new Date());
 
   private readonly _autoPostAttempted = signal(false);
 
   constructor() {
+    // Téléphone : les pastilles défilent sur une ligne ; le compte sélectionné doit rester visible.
+    afterRenderEffect({
+      write: () => {
+        this.store.selectedAccountId();
+        this.decoratedAccounts();
+        this.accountNav()
+          ?.nativeElement.querySelector('[aria-pressed="true"]')
+          ?.scrollIntoView?.({ block: 'nearest', inline: 'center' });
+      },
+    });
     effect(() => {
       if (
         !this.store.entriesLoaded() ||

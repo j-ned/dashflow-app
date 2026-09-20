@@ -44,7 +44,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
   host: { class: 'block space-y-6' },
   template: `
     <!-- Section 1: Alertes -->
-    <header class="flex items-center justify-between">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">
           {{ 'medical.reminder.title' | transloco }}

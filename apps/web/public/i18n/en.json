@@ -974,7 +974,7 @@
     },
     "envelope": {
       "title": "Envelopes",
-      "subtitle": "Manage your virtual envelopes",
+      "subtitle": "Money set aside for a project, without opening an account: credit the envelope and it fills up to its goal.",
       "newEnvelope": "New envelope",
       "filterLabel": "Filter by member",
       "filterAll": "All",

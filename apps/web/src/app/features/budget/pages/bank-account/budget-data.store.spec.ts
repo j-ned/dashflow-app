@@ -29,12 +29,16 @@ const ENTRY = {
   variableAmount: false,
 };
 
-function makeStore(entryGetAll = vi.fn(() => of([ENTRY])), txGetAll = vi.fn(() => of([]))) {
+function makeStore(
+  entryGetAll = vi.fn(() => of([ENTRY])),
+  txGetAll = vi.fn(() => of([])),
+  accounts: unknown[] = ACCS,
+) {
   TestBed.configureTestingModule({
     providers: [
       BudgetDataStore,
       { provide: RecurringEntryGateway, useValue: { getAll: entryGetAll } },
-      { provide: BankAccountGateway, useValue: { getAll: () => of(ACCS) } },
+      { provide: BankAccountGateway, useValue: { getAll: () => of(accounts) } },
       {
         provide: MemberGateway,
         useValue: { getAll: () => of([{ id: 'm', firstName: 'A', lastName: 'B', color: null }]) },
@@ -60,6 +64,19 @@ describe('BudgetDataStore', () => {
   it('selectedAccountId vaut le 1er compte par défaut', () => {
     const { store } = makeStore();
     expect(store.selectedAccountId()).toBe('a');
+  });
+
+  it('un livret créé avant le compte courant : la page s’ouvre quand même sur le compte courant', () => {
+    const livret = { ...ACCS[0], id: 'livret', type: 'épargne' };
+    const courant = { ...ACCS[0], id: 'courant', type: 'courant' };
+    const { store } = makeStore(undefined, undefined, [livret, courant]);
+    expect(store.selectedAccountId()).toBe('courant');
+  });
+
+  it('aucun compte courant : repli sur le premier compte', () => {
+    const livret = { ...ACCS[0], id: 'livret', type: 'épargne' };
+    const { store } = makeStore(undefined, undefined, [livret]);
+    expect(store.selectedAccountId()).toBe('livret');
   });
 
   it('selectAccount fixe la sélection', () => {

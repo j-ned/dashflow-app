@@ -719,34 +719,34 @@
     },
     "bankAccount": {
       "title": "Compte bancaire",
-      "subtitle": "Ton solde, du réel au projeté",
+      "subtitle": "Votre solde, du réel au projeté",
       "manage": "Gérer",
       "allAccounts": "Tous les comptes",
       "accountNavAria": "Sélection du compte",
       "pending": {
         "title": "Échéances à confirmer",
-        "help": "Ces prélèvements récurrents étaient prévus et leur date est passée. Confirme le montant réellement débité sur ton relevé, ou écarte ceux qui ne sont pas passés. « Tout confirmer » ne concerne que les prélèvements, jamais un revenu.",
+        "help": "Ces prélèvements récurrents étaient prévus et leur date est passée. Confirmez le montant réellement débité sur votre relevé, ou écartez ceux qui ne sont pas passés. « Tout confirmer » ne concerne que les prélèvements, jamais un revenu.",
         "confirm": "Débité",
         "confirmAll": "Tout confirmer",
         "ignore": "Pas débité",
         "dueOn": "prévu le {{date}}",
         "amountAria": "Montant débité pour {{label}}",
         "incomesTitle": "Revenus à saisir",
-        "incomesHelp": "Ces revenus étaient attendus et leur date est passée. Indique ce que tu as réellement reçu : un revenu à montant variable n'est jamais prérempli ni compté tant que tu ne l'as pas saisi.",
+        "incomesHelp": "Ces revenus étaient attendus et leur date est passée. Indiquez ce que vous avez réellement reçu : un revenu à montant variable n'est jamais prérempli ni compté tant que vous ne l'avez pas saisi.",
         "received": "Reçu",
         "notReceived": "Pas encore reçu",
         "amountPlaceholder": "Montant",
         "amountReceivedAria": "Montant reçu pour {{label}}",
         "automateAll": "Ne plus me demander",
         "automateTitle": "Pointer ces prélèvements automatiquement ?",
-        "automateMessage": "{{count}} prélèvement(s) à montant fixe seront enregistrés tout seuls à leur date, sans confirmation : {{labels}}. Ceux déjà passés ce mois-ci sont enregistrés tout de suite. Tu peux décocher « Pointer automatiquement » sur n'importe lequel, et corriger ou supprimer une opération depuis le Relevé.",
+        "automateMessage": "{{count}} prélèvement(s) à montant fixe seront enregistrés tout seuls à leur date, sans confirmation : {{labels}}. Ceux déjà passés ce mois-ci sont enregistrés tout de suite. Vous pouvez décocher « Pointer automatiquement » sur n'importe lequel, et corriger ou supprimer une opération depuis le Relevé.",
         "automateConfirm": "Automatiser",
         "automated": "{{count}} prélèvement(s) désormais pointé(s) automatiquement",
         "automateError": "{{failed}} prélèvement(s) n'ont pas pu être automatisés"
       },
       "balance": {
         "confirmedLabel": "Confirmé aujourd'hui",
-        "confirmedHint": "réel, d'après ton relevé au {{date}}",
+        "confirmedHint": "réel, d'après votre relevé au {{date}}",
         "projectedLabel": "Projeté fin de mois",
         "projectedHint": "estimation : confirmé + prélèvements à venir",
         "deltaHint": "encore à venir d'ici la fin du mois",
@@ -755,7 +755,7 @@
         "incompleteHint": "Revenu du mois non saisi : {{incomes}}. Son montant change chaque mois, on ne le devine pas.",
         "incompleteAction": "Saisir le revenu reçu",
         "upcomingDebitsHint": "de prélèvements encore à venir d'ici la fin du mois (montant certain)",
-        "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas ton vrai solde. Indique ci-dessous le solde affiché par ta banque : il servira de point de départ.",
+        "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas votre vrai solde. Indiquez ci-dessous le solde affiché par votre banque : il servira de point de départ.",
         "noUpcomingDebits": "Plus aucun prélèvement à venir d'ici la fin du mois."
       },
       "kpi": {
@@ -776,7 +776,7 @@
       "usage": {
         "label": "Budget utilisé",
         "compose": "Ce qui compose le mois",
-        "hint": "{{percent}}% de tes revenus sont engagés ce mois-ci",
+        "hint": "{{percent}}% de vos revenus sont engagés ce mois-ci",
         "passed": "Passés",
         "upcoming": "A venir",
         "annual": "Annuels",
@@ -784,7 +784,7 @@
         "stateOk": "Sain",
         "stateTight": "Tendu",
         "stateOver": "Dépassé",
-        "incomeUnknown": "Le revenu de ce mois n'est pas encore saisi : la part de tes revenus déjà engagée sera calculée dès que tu l'auras indiqué."
+        "incomeUnknown": "Le revenu de ce mois n'est pas encore saisi : la part de vos revenus déjà engagée sera calculée dès que vous l'aurez indiqué."
       },
       "incomes": {
         "title": "Revenus",
@@ -923,9 +923,9 @@
       "check": {
         "open": "Vérifier avec ma banque",
         "lastChecked": "Dernière vérification le {{date}}",
-        "neverChecked": "Jamais comparé au solde de ta banque",
-        "label": "Solde affiché par ta banque aujourd'hui",
-        "help": "Saisis le solde de ton appli bancaire : on te montre l'écart avec ce que DashFlow a calculé.",
+        "neverChecked": "Jamais comparé au solde de votre banque",
+        "label": "Solde affiché par votre banque aujourd'hui",
+        "help": "Saisissez le solde de votre appli bancaire : l'écart avec ce que DashFlow a calculé s'affiche.",
         "match": "Tout est juste : les deux soldes concordent.",
         "confirmMatch": "C'est vérifié",
         "adjust": "Rattraper l'écart",
@@ -933,7 +933,7 @@
         "gapLess": "de moins à la banque que dans DashFlow : un prélèvement a augmenté, ou une dépense n'a pas été saisie.",
         "adjustmentNote": "Ajustement : écart avec la banque",
         "toastMatch": "Solde vérifié : tout concorde",
-        "toastAdjusted": "Solde aligné sur celui de ta banque",
+        "toastAdjusted": "Solde aligné sur celui de votre banque",
         "toastError": "Impossible d'enregistrer l'ajustement"
       }
     },
@@ -974,7 +974,7 @@
     },
     "envelope": {
       "title": "Enveloppes",
-      "subtitle": "Gérez vos enveloppes virtuelles",
+      "subtitle": "De l'argent mis de côté pour un projet, sans ouvrir de compte : créditez l'enveloppe, elle se remplit jusqu'à son objectif.",
       "newEnvelope": "Nouvelle enveloppe",
       "filterLabel": "Filtrer par membre",
       "filterAll": "Tous",
@@ -1177,7 +1177,7 @@
     },
     "salaryArchive": {
       "title": "Archives salaires",
-      "subtitle": "Tes mois passés, reconstitués tout seuls à partir de tes opérations réelles",
+      "subtitle": "Vos mois passés, reconstitués tout seuls à partir de vos opérations réelles",
       "archiveMonth": "Ajouter un mois à la main",
       "filterYear": "Filtrer par année",
       "allYears": "Toutes",
@@ -1195,7 +1195,7 @@
       "deleteAria": "Supprimer archive {{month}}",
       "editAria": "Modifier archive {{month}}",
       "empty": "Aucune archive pour le moment",
-      "emptyHint": "Dès qu'un mois est terminé et que ton salaire y a été saisi, il apparaît ici tout seul. Tu peux aussi ajouter à la main un mois d'avant DashFlow.",
+      "emptyHint": "Dès qu'un mois est terminé et que votre salaire y a été saisi, il apparaît ici tout seul. Vous pouvez aussi ajouter à la main un mois d'avant DashFlow.",
       "modal": {
         "title": "Archiver un mois",
         "editTitle": "Modifier l'archive",
@@ -1380,7 +1380,7 @@
       "submitAdd": "Ajouter",
       "submitEdit": "Modifier",
       "variableAmount": "Montant variable",
-      "variableAmountHint": "Coche si ce revenu change chaque mois (primes, heures, intérim). Tu saisiras le montant reçu chaque mois ; rien n'est supposé ni projeté avant.",
+      "variableAmountHint": "Cochez si ce revenu change chaque mois (primes, heures, intérim). Vous saisirez le montant reçu chaque mois ; rien n'est supposé ni projeté avant.",
       "variableBadge": "Variable",
       "variableBadgeTitle": "Montant indicatif : le montant réel se saisit chaque mois"
     },

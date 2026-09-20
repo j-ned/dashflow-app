@@ -47,12 +47,14 @@ import { Celebration } from '@shared/components/celebration/celebration';
   ],
   host: { class: 'block space-y-6' },
   template: `
-    <header class="flex items-center justify-between gap-4">
+    <header class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
       <div>
         <h2 class="text-2xl font-bold text-text-primary">
           {{ 'budget.envelope.title' | transloco }}
         </h2>
-        <p class="mt-1 text-sm text-text-muted">{{ 'budget.envelope.subtitle' | transloco }}</p>
+        <p class="mt-1 max-w-prose text-sm text-text-muted">
+          {{ 'budget.envelope.subtitle' | transloco }}
+        </p>
       </div>
       <button
         type="button"
