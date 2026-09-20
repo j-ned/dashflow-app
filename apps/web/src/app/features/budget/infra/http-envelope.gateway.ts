@@ -120,6 +120,7 @@ export class HttpEnvelopeGateway implements EnvelopeGateway {
       TX_CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.post<ApiRow>(`/envelopes/${envelopeId}/transactions`, body),
+      { refs: { envelopeId } },
     );
   }
 

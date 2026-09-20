@@ -59,6 +59,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
       CLEARTEXT_KEYS,
       this.crypto.getMasterKey(),
       (body) => this.api.post<ApiRow>(`/bank-accounts/${accountId}/transactions`, body),
+      { refs: { accountId } },
     );
   }
 
@@ -93,6 +94,7 @@ export class HttpAccountTransactionGateway implements AccountTransactionGateway 
           const id = crypto.randomUUID();
           const enc = await encryptEntity(it as Record<string, unknown>, CLEARTEXT_KEYS, key, {
             rowId: id,
+            refs: { accountId },
           });
           return { ...enc, id };
         }),
