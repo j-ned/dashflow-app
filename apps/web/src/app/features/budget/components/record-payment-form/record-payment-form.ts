@@ -1,5 +1,6 @@
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, output, signal } from '@angular/core';
-import { form, FormField, maxLength, min, required, submit } from '@angular/forms/signals';
+import { form, FormField, max, maxLength, min, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { BankAccount } from '../../domain/models/bank-account.model';
 import { todayIso } from '@shared/utils/local-date';
@@ -18,7 +19,7 @@ function emptyModel(): RecordPaymentModel {
 @Component({
   selector: 'app-record-payment-form',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [FormField, TranslocoPipe],
+  imports: [FormField, TranslocoPipe, DecimalPipe],
   host: { class: 'block' },
   template: `
     <form (submit)="submitForm($event)">
@@ -38,6 +39,22 @@ function emptyModel(): RecordPaymentModel {
             aria-required="true"
             class="form-input mono"
           />
+          @if (remaining(); as due) {
+            <p class="mt-1 flex flex-wrap items-center gap-x-2 text-xs text-text-muted">
+              <span data-testid="payment-remaining">{{
+                'budget.loan.paymentForm.remainingHint'
+                  | transloco: { amount: (due | number: '1.2-2') }
+              }}</span>
+              <button
+                type="button"
+                class="font-medium text-ib-blue hover:underline"
+                data-testid="payment-pay-all"
+                (click)="payAll(due)"
+              >
+                {{ 'budget.loan.paymentForm.payAll' | transloco }}
+              </button>
+            </p>
+          }
           @if (recordPaymentForm.amount().touched() && recordPaymentForm.amount().invalid()) {
             @for (err of recordPaymentForm.amount().errors(); track err.message) {
               <small class="error" role="alert">{{ err.message | transloco }}</small>
@@ -109,6 +126,8 @@ function emptyModel(): RecordPaymentModel {
 })
 export class RecordPaymentForm {
   readonly accounts = input<BankAccount[]>([]);
+  /** Restant dû du prêt : un remboursement supérieur est refusé par l'API, autant le dire avant. */
+  readonly remaining = input<number | null>(null);
   readonly submitted = output<{
     amount: number;
     date: string;
@@ -122,8 +141,15 @@ export class RecordPaymentForm {
   protected readonly recordPaymentForm = form(this.model, (path) => {
     required(path.amount, { message: 'budget.errors.amountRequired' });
     min(path.amount, 0.01, { message: 'budget.errors.amountMin' });
+    max(path.amount, () => this.remaining() ?? undefined, {
+      message: 'budget.errors.amountAboveRemaining',
+    });
     maxLength(path.note, 255);
   });
+
+  protected payAll(due: number): void {
+    this.model.update((m) => ({ ...m, amount: due }));
+  }
 
   protected async submitForm(event: Event): Promise<void> {
     event.preventDefault();
