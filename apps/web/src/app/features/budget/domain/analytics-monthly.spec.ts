@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isEntryActive, isSpendingInMonth, monthlyBreakdown } from './analytics-monthly';
+import { AccountTransaction } from './models/account-transaction.model';
 import { RecurringEntry } from './models/recurring-entry.model';
 
 const M = '2026-06';
@@ -74,5 +75,59 @@ describe('monthlyBreakdown (calibré)', () => {
     expect(b.envelopeCredits).toBe(200);
     expect(b.loanPayments).toBe(150);
     expect(b.spendings).toBe(380);
+  });
+});
+
+describe('monthlyBreakdown : revenu réel du mois', () => {
+  const received = (p: Partial<AccountTransaction>): AccountTransaction => ({
+    id: 't',
+    accountId: 'a',
+    amount: 0,
+    direction: 'income',
+    toAccountId: null,
+    date: `${M}-02`,
+    category: null,
+    note: null,
+    memberId: null,
+    recurringEntryId: null,
+    ...p,
+  });
+  const SALARY = e({ id: 'sal', type: 'income', amount: 2000, variableAmount: true });
+  const RENT = e({ id: 'rent', type: 'expense', amount: 800 });
+
+  it('revenu variable non saisi → income 0, incomplet, expectedNet sur le modèle', () => {
+    const b = monthlyBreakdown([SALARY, RENT], M, []);
+
+    expect(b.income).toBe(0);
+    expect(b.incomeIncomplete).toBe(true);
+    expect(b.expectedNet).toBe(1200);
+  });
+
+  it('revenu reçu ce mois → montant réel, complet, net réel', () => {
+    const b = monthlyBreakdown([SALARY, RENT], M, [
+      received({ recurringEntryId: 'sal', amount: 2150.5 }),
+    ]);
+
+    expect(b.income).toBe(2150.5);
+    expect(b.incomeIncomplete).toBe(false);
+    expect(b.net).toBe(1350.5);
+    expect(b.expectedNet).toBe(1200);
+  });
+
+  it.each([
+    ['reçu un autre mois', received({ recurringEntryId: 'sal', amount: 2150, date: '2026-05-02' })],
+    ['reçu pour un autre revenu', received({ recurringEntryId: 'autre', amount: 2150 })],
+  ])('%s → ignoré, reste incomplet', (_label, tx) => {
+    const b = monthlyBreakdown([SALARY], M, [tx]);
+
+    expect(b.income).toBe(0);
+    expect(b.incomeIncomplete).toBe(true);
+  });
+
+  it('revenu fixe non saisi → montant prévu, complet', () => {
+    const b = monthlyBreakdown([e({ id: 'caf', type: 'income', amount: 300 })], M, []);
+
+    expect(b.income).toBe(300);
+    expect(b.incomeIncomplete).toBe(false);
   });
 });
