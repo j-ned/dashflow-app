@@ -2010,10 +2010,16 @@
         "message": "{{count}} compte(s) vont recevoir l'e-mail « {{reason}} ».",
         "action": "Envoyer"
       },
+      "skip": {
+        "cooldown": "{{count}} déjà relancé(s) il y a moins de 7 jours",
+        "not_eligible": "{{count}} plus concerné(s) par ce motif",
+        "send_failed": "{{count}} échec(s) d'envoi du mail",
+        "not_found": "{{count}} introuvable(s)"
+      },
       "toast": {
         "sent": "{{sent}} relance(s) envoyée(s)",
-        "sentWithSkipped": "{{sent}} relance(s) envoyée(s), {{skipped}} compte(s) ignoré(s)",
-        "noneSent": "Aucune relance envoyée ({{skipped}} compte(s) ignoré(s))",
+        "sentWithSkipped": "{{sent}} relance(s) envoyée(s). Ignorés : {{detail}}",
+        "noneSent": "Aucune relance envoyée : {{detail}}",
         "error": "Échec de l'envoi des relances"
       }
     },

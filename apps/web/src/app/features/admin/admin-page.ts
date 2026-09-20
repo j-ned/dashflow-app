@@ -8,6 +8,7 @@ import {
   isDeletable,
   isEligibleFor,
   type NoticeReason,
+  type NoticeSkipReason,
 } from '@core/admin/admin.types';
 import { ConfirmService } from '@shared/components/confirm-dialog/confirm-dialog';
 import { Toaster } from '@shared/components/toast/toast';
@@ -227,6 +228,15 @@ export class AdminPage {
     });
   }
 
+  // Dit POURQUOI des comptes ont été ignorés (délai de 7 jours, échec d'envoi…) : l'API le renvoie par compte.
+  private skipDetail(skipped: readonly { readonly why: NoticeSkipReason }[]): string {
+    const counts = new Map<NoticeSkipReason, number>();
+    for (const s of skipped) counts.set(s.why, (counts.get(s.why) ?? 0) + 1);
+    return [...counts]
+      .map(([why, count]) => this.i18n.translate('admin.notices.skip.' + why, { count }))
+      .join(', ');
+  }
+
   protected async send(scope: 'selected' | 'all'): Promise<void> {
     const reason = this.reason();
     const userIds = scope === 'selected' ? this.selectedForReason() : undefined;
@@ -247,13 +257,13 @@ export class AdminPage {
     const result = await this.store.sendNotices(reason, userIds);
     if (!result) return;
 
-    const skipped = result.skipped.length;
+    const detail = this.skipDetail(result.skipped);
     if (result.sent.length === 0) {
-      this.toaster.info('admin.notices.toast.noneSent', { skipped });
-    } else if (skipped > 0) {
+      this.toaster.info('admin.notices.toast.noneSent', { detail });
+    } else if (result.skipped.length > 0) {
       this.toaster.success('admin.notices.toast.sentWithSkipped', {
         sent: result.sent.length,
-        skipped,
+        detail,
       });
     } else {
       this.toaster.success('admin.notices.toast.sent', { sent: result.sent.length });

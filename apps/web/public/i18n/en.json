@@ -2010,10 +2010,16 @@
         "message": "{{count}} account(s) will receive the '{{reason}}' email.",
         "action": "Send"
       },
+      "skip": {
+        "cooldown": "{{count}} already reminded less than 7 days ago",
+        "not_eligible": "{{count}} no longer concerned",
+        "send_failed": "{{count}} e-mail(s) failed to send",
+        "not_found": "{{count}} not found"
+      },
       "toast": {
         "sent": "{{sent}} reminder(s) sent",
-        "sentWithSkipped": "{{sent}} reminder(s) sent, {{skipped}} account(s) skipped",
-        "noneSent": "No reminder sent ({{skipped}} account(s) skipped)",
+        "sentWithSkipped": "{{sent}} reminder(s) sent. Skipped: {{detail}}",
+        "noneSent": "No reminder sent: {{detail}}",
         "error": "Failed to send reminders"
       }
     },

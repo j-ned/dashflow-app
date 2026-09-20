@@ -117,7 +117,25 @@ describe('AdminPage — relances', () => {
     expect(store.sendNotices).toHaveBeenCalledWith('reconnect', undefined);
     expect(toaster.success).toHaveBeenCalledWith('admin.notices.toast.sentWithSkipped', {
       sent: 1,
-      skipped: 1,
+      detail: 'fr.admin.notices.skip.cooldown',
+    });
+  });
+
+  it('aucun envoi : le message dit pourquoi, un motif par raison', async () => {
+    confirm.confirm.mockResolvedValue(true);
+    store.sendNotices.mockResolvedValue({
+      reason: 'reconnect',
+      sent: [],
+      skipped: [
+        { id: 'a', email: 'a@x.fr', why: 'cooldown' },
+        { id: 'b', email: 'b@x.fr', why: 'cooldown' },
+        { id: 'c', email: 'c@x.fr', why: 'send_failed' },
+      ],
+    });
+    button('admin-send-all').click();
+    await fixture.whenStable();
+    expect(toaster.info).toHaveBeenCalledWith('admin.notices.toast.noneSent', {
+      detail: 'fr.admin.notices.skip.cooldown, fr.admin.notices.skip.send_failed',
     });
   });
 
