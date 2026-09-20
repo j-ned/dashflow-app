@@ -1,5 +1,4 @@
 import { Routes } from '@angular/router';
-import { AppShell } from './layout/app-shell/app-shell';
 import { authGuard } from '@core/guards/auth';
 import { guestGuard } from '@core/guards/guest';
 import { adminGuard } from '@core/guards/admin';
@@ -21,7 +20,8 @@ export const routes: Routes = [
   },
   {
     path: '',
-    component: AppShell,
+    // Chargé à la demande : le shell ne sert qu'à l'espace connecté, pas à la page d'accueil.
+    loadComponent: () => import('./layout/app-shell/app-shell').then((m) => m.AppShell),
     canMatch: [authGuard],
     children: [
       { path: '', redirectTo: 'budget', pathMatch: 'full' },
