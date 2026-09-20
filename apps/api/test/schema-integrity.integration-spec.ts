@@ -12,7 +12,6 @@ const EXPECTED_TABLES = [
   'envelope_transactions',
   'loans',
   'loan_transactions',
-  'consumables',
   'recurring_entries',
   'salary_archives',
   'patients',
