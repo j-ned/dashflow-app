@@ -11,6 +11,13 @@ import { MedicationSchema } from './schemas/medication.schema';
 
 const CLEARTEXT_KEYS = ['id', 'userId', 'prescriptionId', 'patientId', 'createdAt'] as const;
 
+// `daily_rate` est un `numeric` : Postgres le renvoie en chaîne, y compris dans le blob d'un compte
+// passé du clair au chiffré. Idempotent.
+function coerceMedication(row: ApiRow): Medication {
+  const m = row as unknown as Medication;
+  return { ...m, dailyRate: Number(m.dailyRate) };
+}
+
 @Injectable()
 export class HttpMedicationGateway implements MedicationGateway {
   private readonly api = inject(ApiClient);
@@ -20,9 +27,11 @@ export class HttpMedicationGateway implements MedicationGateway {
     return this.api.getList<ApiRow>('/medications').pipe(
       switchMap((rows) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !rows[0]?.encryptedData) return from([rows as Medication[]]);
-        return from(decryptEntities<Medication>(rows, key)).pipe(
-          map((list) => validateList(MedicationSchema, list, { entity: 'Medication' })),
+        if (!key || !rows[0]?.encryptedData) return from([rows.map(coerceMedication)]);
+        return from(decryptEntities<ApiRow>(rows, key)).pipe(
+          map((list) =>
+            validateList(MedicationSchema, list.map(coerceMedication), { entity: 'Medication' }),
+          ),
         );
       }),
     );
@@ -32,9 +41,9 @@ export class HttpMedicationGateway implements MedicationGateway {
     return this.api.get<ApiRow>(`/medications/${id}`).pipe(
       switchMap((row) => {
         const key = this.crypto.getMasterKey();
-        if (!key || !row.encryptedData) return from([row as Medication]);
-        return from(decryptEntity<Medication>(row, key)).pipe(
-          map((m) => validateOne(MedicationSchema, m, { entity: 'Medication' })),
+        if (!key || !row.encryptedData) return from([coerceMedication(row)]);
+        return from(decryptEntity<ApiRow>(row, key)).pipe(
+          map((m) => validateOne(MedicationSchema, coerceMedication(m), { entity: 'Medication' })),
         );
       }),
     );
