@@ -10,7 +10,6 @@ import { HealthModule } from './health/health.module';
 import { MailModule } from './mail/mail.module';
 import { AuthModule } from './auth/auth.module';
 import { BankAccountsModule } from './modules/bank-accounts/bank-accounts.module';
-import { ConsumablesModule } from './modules/consumables/consumables.module';
 import { EnvelopesModule } from './modules/envelopes/envelopes.module';
 import { AccountTransactionsModule } from './modules/account-transactions/account-transactions.module';
 import { LoansModule } from './modules/loans/loans.module';
@@ -42,7 +41,6 @@ import { StorageModule } from './storage/storage.module';
     AuthModule,
     HealthModule,
     BankAccountsModule,
-    ConsumablesModule,
     EnvelopesModule,
     AccountTransactionsModule,
     LoansModule,

@@ -114,7 +114,7 @@ Le code applicatif est organisé par domaine sous `src/` :
 - `modules/` : modules métier, un dossier par domaine fonctionnel :
   - Budget : `bank-accounts`, `envelopes`, `account-transactions`, `loans`, `recurring-entries`, `salary-archives`
   - Santé et famille : `patients`, `members`, `practitioners`, `appointments`, `medications`, `prescriptions`, `documents`, `reminders`
-  - Administration : `admin`, `demo`, `consumables`
+  - Administration : `admin`, `demo`
 
 Chaque module suit la structure standard NestJS : contrôleur, service, DTO/schéma de validation, tests colocalisés (`*.spec.ts`).
 

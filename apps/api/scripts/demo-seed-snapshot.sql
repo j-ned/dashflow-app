@@ -37,8 +37,6 @@ DROP TABLE IF EXISTS demo_seed_medications;
 CREATE TABLE demo_seed_medications        AS SELECT * FROM medications        WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
 DROP TABLE IF EXISTS demo_seed_documents;
 CREATE TABLE demo_seed_documents          AS SELECT * FROM documents          WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
-DROP TABLE IF EXISTS demo_seed_consumables;
-CREATE TABLE demo_seed_consumables        AS SELECT * FROM consumables        WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
 DROP TABLE IF EXISTS demo_seed_recurring_entries;
 CREATE TABLE demo_seed_recurring_entries  AS SELECT * FROM recurring_entries  WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1);
 DROP TABLE IF EXISTS demo_seed_account_transactions;

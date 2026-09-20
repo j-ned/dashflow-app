@@ -47,13 +47,6 @@ export const recurringEntryTypeEnum = pgEnum('recurring_entry_type', [
   'transfer',
 ]);
 
-export const consumableCategoryEnum = pgEnum('consumable_category', [
-  'ink',
-  'toner',
-  'paper',
-  'other',
-]);
-
 export const bankAccounts = pgTable(
   'bank_accounts',
   {
@@ -247,33 +240,6 @@ export const loanTransactions = pgTable(
   (t) => [
     check('loan_transactions_amount_nonneg', sql`${t.amount} >= 0`),
     index('loan_transactions_loan_created_idx').on(t.loanId, t.createdAt, t.id),
-  ],
-);
-
-export const consumables = pgTable(
-  'consumables',
-  {
-    id: uuid('id').primaryKey().defaultRandom(),
-    userId: uuid('user_id')
-      .notNull()
-      .references(() => users.id, { onDelete: 'cascade' }),
-    memberId: uuid('member_id').references(() => patients.id, {
-      onDelete: 'set null',
-    }),
-    name: varchar('name', { length: 255 }).notNull(),
-    category: consumableCategoryEnum('category').notNull(),
-    quantity: integer('quantity').notNull().default(0),
-    minThreshold: integer('min_threshold').notNull().default(0),
-    unitPrice: numeric('unit_price', { precision: 10, scale: 2 })
-      .notNull()
-      .default('0'),
-    lastRestocked: timestamp('last_restocked', { withTimezone: true }),
-    installedAt: timestamp('installed_at', { withTimezone: true }),
-    estimatedLifetimeDays: integer('estimated_lifetime_days'),
-  },
-  (t) => [
-    index('consumables_user_idx').on(t.userId),
-    index('consumables_member_idx').on(t.memberId),
   ],
 );
 
