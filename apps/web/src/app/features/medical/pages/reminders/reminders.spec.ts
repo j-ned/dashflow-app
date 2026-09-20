@@ -14,20 +14,16 @@ import { Reminders } from './reminders';
 
 const REMINDER: Reminder = {
   id: 'r1',
-  type: 'email',
   target: 'medication',
   medicationId: 'm1',
   appointmentId: null,
-  recipientEmail: 'a@b.c',
   enabled: true,
 };
 
 const NEW_DATA: Omit<Reminder, 'id'> = {
-  type: 'email',
   target: 'medication',
   medicationId: 'm1',
   appointmentId: null,
-  recipientEmail: 'a@b.c',
   enabled: true,
 };
 
