@@ -39,6 +39,8 @@ export function decryptOne<T>(
 export type MutateOptions = {
   /** Ligne existante (PUT/PATCH) : le blob est lié à cet id. Absent = création. */
   rowId?: string;
+  /** Références portées par l'URL (parent de la ligne) : scellées dans le blob, pas envoyées. */
+  refs?: Readonly<Record<string, string>>;
 };
 
 /**
@@ -56,7 +58,7 @@ export function mutateEncrypted<T>(
   if (!key) return call(data) as Observable<T>;
   const rowId = options.rowId ?? crypto.randomUUID();
   const creating = options.rowId === undefined;
-  return from(encryptEntity(data, cleartextKeys, key, { rowId })).pipe(
+  return from(encryptEntity(data, cleartextKeys, key, { rowId, refs: options.refs })).pipe(
     switchMap((enc) => call(creating ? { ...enc, id: rowId } : enc)),
     switchMap((row) => {
       if (creating && row['id'] !== rowId) {
