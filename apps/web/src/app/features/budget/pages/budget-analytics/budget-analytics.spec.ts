@@ -6,7 +6,9 @@ import { SalaryArchiveGateway } from '@features/budget/domain/gateways/salary-ar
 import { RecurringEntryGateway } from '@features/budget/domain/gateways/recurring-entry.gateway';
 import { EnvelopeGateway } from '@features/budget/domain/gateways/envelope.gateway';
 import { LoanGateway } from '@features/budget/domain/gateways/loan.gateway';
+import { AccountTransaction } from '@features/budget/domain/models/account-transaction.model';
 import { RecurringEntry } from '@features/budget/domain/models/recurring-entry.model';
+import { todayIso } from '@shared/utils/local-date';
 import { BudgetAnalytics } from './budget-analytics';
 import { AccountTransactionGateway } from '@features/budget/domain/gateways/account-transaction.gateway';
 
@@ -29,21 +31,23 @@ const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   ...p,
 });
 
-function make(entries: RecurringEntry[]) {
+function make(entries: RecurringEntry[], transactions: AccountTransaction[] = []) {
   TestBed.configureTestingModule({
     providers: [
       { provide: SalaryArchiveGateway, useValue: { getAll: () => of([]) } },
       { provide: RecurringEntryGateway, useValue: { getAll: () => of(entries) } },
       { provide: EnvelopeGateway, useValue: { getAll: () => of([]) } },
       { provide: LoanGateway, useValue: { getAll: () => of([]) } },
-      { provide: AccountTransactionGateway, useValue: { getAll: () => of([]) } },
+      { provide: AccountTransactionGateway, useValue: { getAll: () => of(transactions) } },
       { provide: TranslocoService, useValue: { translate: (k: string) => k } },
     ],
   });
   TestBed.overrideComponent(BudgetAnalytics, { set: { template: '', imports: [] } });
   const fixture = TestBed.createComponent(BudgetAnalytics);
   fixture.detectChanges();
-  return fixture.componentInstance as unknown as { kpis: () => { label: string; value: number }[] };
+  return fixture.componentInstance as unknown as {
+    kpis: () => { label: string; value: number; sub: string | null }[];
+  };
 }
 
 describe('BudgetAnalytics : calibration', () => {
@@ -68,5 +72,38 @@ describe('BudgetAnalytics : calibration', () => {
     ]);
     const charges = cmp.kpis().find((k) => k.label === 'budget.analytics.kpi.totalCharges');
     expect(charges?.value).toBe(50);
+  });
+
+  it('revenu variable : tuile partielle tant qu’il n’est pas saisi, montant reçu ensuite', () => {
+    const salary = entry({ id: 'sal', type: 'income', amount: 2000, variableAmount: true });
+    const incomeTile = (cmp: ReturnType<typeof make>) =>
+      cmp.kpis().find((k) => k.label === 'budget.analytics.kpi.monthlyIncome');
+
+    const pending = incomeTile(make([salary]));
+    expect(pending?.value).toBe(0);
+    expect(pending?.sub).toBe('budget.analytics.kpi.incomeIncomplete');
+
+    TestBed.resetTestingModule();
+    const received = incomeTile(
+      make(
+        [salary],
+        [
+          {
+            id: 't1',
+            accountId: 'a',
+            amount: 2150,
+            direction: 'income',
+            toAccountId: null,
+            date: `${todayIso().slice(0, 7)}-02`,
+            category: null,
+            note: null,
+            memberId: null,
+            recurringEntryId: 'sal',
+          },
+        ],
+      ),
+    );
+    expect(received?.value).toBe(2150);
+    expect(received?.sub).toBeNull();
   });
 });

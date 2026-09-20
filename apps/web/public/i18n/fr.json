@@ -1263,6 +1263,7 @@
       "forecastsEmptyHint": "Ajoutez des enveloppes avec objectif ou des prêts pour voir les projections",
       "kpi": {
         "monthlyIncome": "Revenu mensuel",
+        "incomeIncomplete": "Partiel : un revenu variable reste à saisir",
         "totalCharges": "Charges totales",
         "chargesDetail": "dont {{detail}}",
         "annualizedShare": "{{value}}€ annualisé",

@@ -188,9 +188,9 @@ export class BudgetAnalytics {
   private readonly envelopes = computed(() => this.allData().envelopes);
   private readonly loans = computed(() => this.allData().loans);
 
-  protected readonly currentMonth = computed(() => new Date().toISOString().slice(0, 7));
+  protected readonly currentMonth = computed(() => todayIso().slice(0, 7));
   private readonly breakdown = computed(() =>
-    monthlyBreakdown(this.entries(), this.currentMonth()),
+    monthlyBreakdown(this.entries(), this.currentMonth(), this.allData().transactions),
   );
   private readonly totalEnvelopeBalance = computed(() =>
     this.envelopes().reduce((s, e) => s + Number(e.balance), 0),
@@ -198,6 +198,9 @@ export class BudgetAnalytics {
 
   protected readonly kpis = computed<KpiCard[]>(() => {
     const income = this.breakdown().income;
+    const incompleteSub = this.breakdown().incomeIncomplete
+      ? this._i18n.translate('budget.analytics.kpi.incomeIncomplete')
+      : null;
     const annual = this.breakdown().annualMonthly;
     const spendings = this.breakdown().spendings;
     const totalCharges = this.breakdown().totalCharges;
@@ -237,7 +240,7 @@ export class BudgetAnalytics {
         iconColor: 'text-ib-green',
         value: income,
         valueColor: 'text-ib-green',
-        sub: null,
+        sub: incompleteSub,
       },
       {
         label: this._i18n.translate('budget.analytics.kpi.totalCharges'),
@@ -261,9 +264,10 @@ export class BudgetAnalytics {
         value: net,
         valueColor: net >= 0 ? 'text-ib-green' : 'text-ib-red',
         sub:
-          net > 0
+          incompleteSub ??
+          (net > 0
             ? this._i18n.translate('budget.analytics.kpi.savingsCapacity')
-            : this._i18n.translate('budget.analytics.kpi.monthlyDeficit'),
+            : this._i18n.translate('budget.analytics.kpi.monthlyDeficit')),
       },
       {
         label: this._i18n.translate('budget.analytics.kpi.totalSavings'),
@@ -326,7 +330,7 @@ export class BudgetAnalytics {
 
   private readonly forecastResults = computed<ForecastResult[]>(() =>
     buildForecasts({
-      net: this.breakdown().net,
+      net: this.breakdown().expectedNet,
       envelopes: this.envelopes(),
       loans: this.loans(),
       envelopeCredits: this.breakdown().envelopeCredits,

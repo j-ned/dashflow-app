@@ -1263,6 +1263,7 @@
       "forecastsEmptyHint": "Add envelopes with a goal or loans to see projections",
       "kpi": {
         "monthlyIncome": "Monthly income",
+        "incomeIncomplete": "Partial: a variable income is still to be entered",
         "totalCharges": "Total charges",
         "chargesDetail": "including {{detail}}",
         "annualizedShare": "{{value}}€ annualized",
