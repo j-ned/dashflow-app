@@ -54,4 +54,12 @@ CREATE TABLE demo_seed_loan_transactions AS
   SELECT * FROM loan_transactions
    WHERE loan_id IN (SELECT id FROM loans WHERE user_id = (SELECT id FROM users WHERE is_demo_account LIMIT 1));
 
+-- ── Date de capture ──────────────────────────────────────────────────────────
+-- DemoService.reset recale toutes les dates du démo pour que CETTE date devienne « aujourd'hui »
+-- (voir src/modules/demo/demo-rebase.ts). Les données capturées doivent donc être cohérentes
+-- avec le jour où ce script est joué.
+DROP TABLE IF EXISTS demo_seed_meta;
+CREATE TABLE demo_seed_meta AS
+  SELECT (now() AT TIME ZONE 'Europe/Paris')::date AS reference_date;
+
 COMMIT;

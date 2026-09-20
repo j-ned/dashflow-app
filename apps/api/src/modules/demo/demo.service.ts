@@ -11,6 +11,14 @@ import { eq, sql } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
 import { users } from '../../db/schema';
 import type { Env } from '../../config/env.schema';
+import { APP_TIMEZONE, today } from '../../common/today';
+import {
+  DAY_SHIFTED,
+  MONTH_SHIFTED,
+  demoShift,
+  previousMonth,
+  type DateColumns,
+} from './demo-rebase';
 
 // Ordre de suppression : enfants avant parents (FK). Tables scopées par user_id.
 const DELETE_USER_ORDER = [
@@ -56,6 +64,8 @@ const USER_SCOPED: ReadonlySet<string> = new Set(DELETE_USER_ORDER);
 
 // Clé arbitraire mais fixe du verrou consultatif Postgres de la réinitialisation démo.
 const DEMO_RESET_LOCK_KEY = 8_213_047;
+
+type DemoTx = Parameters<Parameters<DrizzleDB['transaction']>[0]>[0];
 
 @Injectable()
 export class DemoService {
@@ -157,7 +167,140 @@ export class DemoService {
           sql`insert into ${sql.identifier(table)} (${cols}) select ${cols} from ${sql.identifier(seed)}`,
         );
       }
+      // 3. Recalage temporel : la date de capture du snapshot devient « aujourd'hui ».
+      await this.rebaseDates(tx, id);
     });
+  }
+
+  // Date de capture du snapshot : `demo_seed_meta.reference_date` (écrite par
+  // scripts/demo-seed-snapshot.sql), sinon la création la plus récente parmi les snapshots
+  // (snapshots antérieurs à cette table).
+  private async seedReference(tx: DemoTx): Promise<string | null> {
+    const meta = await tx.execute(
+      sql`select to_regclass('public.demo_seed_meta') as reg`,
+    );
+    if (meta[0]?.reg) {
+      const rows = await tx.execute<{ ref: string | null }>(
+        sql`select to_char(max(reference_date), 'YYYY-MM-DD') as ref from demo_seed_meta`,
+      );
+      if (rows[0]?.ref) return rows[0].ref;
+    }
+    let reference: string | null = null;
+    for (const table of INSERT_ORDER) {
+      const seed = `demo_seed_${table}`;
+      const has = await tx.execute(
+        sql`select 1 from information_schema.columns where table_schema = 'public' and table_name = ${seed} and column_name = 'created_at'`,
+      );
+      if (has.length === 0) continue;
+      const rows = await tx.execute<{ ref: string | null }>(
+        sql`select to_char(max(created_at) at time zone ${APP_TIMEZONE}, 'YYYY-MM-DD') as ref from ${sql.identifier(seed)}`,
+      );
+      const ref = rows[0]?.ref;
+      if (ref && (reference === null || ref > reference)) reference = ref;
+    }
+    return reference;
+  }
+
+  private async rebaseDates(tx: DemoTx, userId: string): Promise<void> {
+    const reference = await this.seedReference(tx);
+    if (!reference) return;
+    const now = today();
+    const shift = demoShift(reference, now);
+
+    const scope = (t: DateColumns) =>
+      t.parent
+        ? sql`${sql.identifier(t.parent.key)} in (select id from ${sql.identifier(t.parent.table)} where user_id = ${userId})`
+        : sql`user_id = ${userId}`;
+    const shiftAll = async (
+      tables: readonly DateColumns[],
+      interval: ReturnType<typeof sql>,
+    ) => {
+      for (const t of tables) {
+        const sets = sql.join(
+          t.columns.map(
+            (c) =>
+              sql`${sql.identifier(c)} = (${sql.identifier(c)} + ${interval})::date`,
+          ),
+          sql`, `,
+        );
+        await tx.execute(
+          sql`update ${sql.identifier(t.table)} set ${sets} where ${scope(t)}`,
+        );
+      }
+    };
+    if (shift.days > 0) {
+      await shiftAll(DAY_SHIFTED, sql`make_interval(days => ${shift.days})`);
+    }
+    if (shift.months > 0) {
+      await shiftAll(
+        MONTH_SHIFTED,
+        sql`make_interval(months => ${shift.months})`,
+      );
+      await tx.execute(
+        sql`update salary_archives
+            set month = to_char(to_date(month || '-01', 'YYYY-MM-DD') + make_interval(months => ${shift.months}), 'YYYY-MM')
+            where user_id = ${userId} and month ~ '^[0-9]{4}-(0[1-9]|1[0-2])$'`,
+      );
+    }
+    // Pas de consultation le dimanche, quel que soit le jeu capturé : report au lundi.
+    await tx.execute(
+      sql`update appointments set date = date + 1
+          where user_id = ${userId} and extract(dow from date) = 0`,
+    );
+    // Libellés millésimés (« Vacances été 2026 ») : l'année suit le recalage.
+    const years = Number(now.slice(0, 4)) - Number(reference.slice(0, 4));
+    if (years > 0) {
+      const from = reference.slice(0, 4);
+      const to = now.slice(0, 4);
+      await tx.execute(
+        sql`update envelopes set name = replace(name, ${from}, ${to}) where user_id = ${userId}`,
+      );
+      await tx.execute(
+        sql`update recurring_entries set label = replace(label, ${from}, ${to})
+            where user_id = ${userId} and encrypted_data is null`,
+      );
+    }
+    // Le recalage par semaines entières peut laisser un rendez-vous « planifié » quelques jours
+    // dans le passé : il a eu lieu.
+    await tx.execute(
+      sql`update appointments set status = 'completed'
+          where user_id = ${userId} and status = 'scheduled' and date < ${now}::date`,
+    );
+    await this.postPreviousMonth(tx, userId, now);
+  }
+
+  // Le dernier mois clos n'a pas d'archive de paie (elle se saisit le mois suivant) : on y pose
+  // les opérations réelles des échéances mensuelles, comme l'aurait fait le pointage. Le Relevé,
+  // le solde confirmé et l'historique calculé ont ainsi de quoi s'afficher. Idempotent.
+  private async postPreviousMonth(
+    tx: DemoTx,
+    userId: string,
+    now: string,
+  ): Promise<void> {
+    const first = `${previousMonth(now)}-01`;
+    await tx.execute(
+      sql`insert into account_transactions
+            (user_id, account_id, amount, direction, to_account_id, date, category, member_id, recurring_entry_id, created_at)
+          select r.user_id, r.account_id, r.amount,
+                 (case r.type when 'income' then 'income' when 'transfer' then 'transfer' else 'expense' end)::transaction_direction,
+                 r.to_account_id, d.day, r.category, r.member_id, r.id, d.day + time '12:00'
+          from recurring_entries r
+          cross join lateral (
+            select (${first}::date + (least(r.day_of_month, extract(day from (${first}::date + interval '1 month - 1 day'))::int) - 1))::date as day
+          ) d
+          where r.user_id = ${userId}
+            and r.encrypted_data is null
+            and r.account_id is not null
+            and r.day_of_month is not null
+            and r.type in ('income', 'expense', 'spending', 'transfer')
+            and (r.end_date is null or r.end_date >= ${first}::date)
+            and not exists (
+              select 1 from account_transactions t
+              where t.recurring_entry_id = r.id
+                and t.date >= ${first}::date
+                and t.date < ${first}::date + interval '1 month'
+            )`,
+    );
   }
 
   // Réinitialisation automatique toutes les 6h (no-op si DEMO_ENABLED=false).
