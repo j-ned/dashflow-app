@@ -84,16 +84,10 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
           <thead>
             <tr class="border-b border-border/50 bg-hover/30">
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                {{ 'medical.reminder.type' | transloco }}
-              </th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
                 {{ 'medical.reminder.target' | transloco }}
               </th>
               <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
                 {{ 'medical.reminder.detail' | transloco }}
-              </th>
-              <th class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider">
-                {{ 'medical.reminder.email' | transloco }}
               </th>
               <th
                 class="px-5 py-3 text-xs font-medium text-text-muted uppercase tracking-wider text-center"
@@ -116,15 +110,11 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
             @for (reminder of reminderRows(); track reminder.id) {
               <tr class="border-b border-border/50 hover:bg-hover/50 transition-colors">
                 <td class="px-5 py-3">
-                  <ng-container *ngTemplateOutlet="typeTpl; context: { $implicit: reminder }" />
-                </td>
-                <td class="px-5 py-3">
                   <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
                 </td>
                 <td class="px-5 py-3 text-xs text-text-muted max-w-48 truncate">
                   {{ reminder.detail }}
                 </td>
-                <td class="px-5 py-3 text-sm text-text-primary">{{ reminder.recipientEmail }}</td>
                 <td class="px-5 py-3 text-center">
                   <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
                 </td>
@@ -137,7 +127,7 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
               </tr>
             } @empty {
               <tr>
-                <td colspan="7" class="px-5 py-16 text-center">
+                <td colspan="5" class="px-5 py-16 text-center">
                   <app-icon name="bell" size="48" class="text-text-muted/20 mx-auto mb-3" />
                   <p class="text-sm text-text-muted">{{ 'medical.reminder.empty' | transloco }}</p>
                   <p class="text-xs text-text-muted mt-1">
@@ -150,20 +140,18 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
         </table>
       </div>
 
-      <!-- Sous md : une carte par alerte, le tableau à 7 colonnes ne tient pas sur un téléphone -->
+      <!-- Sous md : une carte par alerte, le tableau à 5 colonnes ne tient pas sur un téléphone -->
       <ul class="md:hidden divide-y divide-border/50">
         @for (reminder of reminderRows(); track reminder.id) {
           <li class="flex flex-col gap-3 px-4 py-4">
             <div class="flex items-center justify-between gap-2">
               <div class="flex flex-wrap items-center gap-1.5">
-                <ng-container *ngTemplateOutlet="typeTpl; context: { $implicit: reminder }" />
                 <ng-container *ngTemplateOutlet="targetTpl; context: { $implicit: reminder }" />
               </div>
               <ng-container *ngTemplateOutlet="toggleTpl; context: { $implicit: reminder }" />
             </div>
             <div class="min-w-0">
               <p class="text-sm text-text-primary break-words">{{ reminder.detail }}</p>
-              <p class="text-xs text-text-muted truncate">{{ reminder.recipientEmail }}</p>
             </div>
             <div class="flex flex-wrap items-center justify-between gap-2">
               <ng-container *ngTemplateOutlet="calendarTpl; context: { $implicit: reminder }" />
@@ -181,21 +169,6 @@ const ICS_WEEKDAYS = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'] as const;
         }
       </ul>
     </section>
-
-    <ng-template #typeTpl let-reminder>
-      <span
-        class="rounded-full px-2 py-0.5 text-xs font-medium"
-        [class.bg-ib-purple-10]="reminder.type === 'email'"
-        [class.text-ib-purple]="reminder.type === 'email'"
-        [class.bg-ib-cyan-10]="reminder.type === 'ical'"
-        [class.text-ib-cyan]="reminder.type === 'ical'"
-      >
-        {{
-          (reminder.type === 'email' ? 'medical.reminder.typeEmail' : 'medical.reminder.typeIcal')
-            | transloco
-        }}
-      </span>
-    </ng-template>
 
     <ng-template #targetTpl let-reminder>
       <span

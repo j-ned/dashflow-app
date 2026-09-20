@@ -1,24 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
-import { email, form, FormField, required, submit } from '@angular/forms/signals';
+import { form, FormField, required, submit } from '@angular/forms/signals';
 import { TranslocoPipe } from '@jsverse/transloco';
-import { Reminder, ReminderTarget, ReminderType } from '../../domain/models/reminder.model';
+import { Reminder, ReminderTarget } from '../../domain/models/reminder.model';
 import { Medication } from '../../domain/models/medication.model';
 import { Appointment } from '../../domain/models/appointment.model';
 
 type ReminderModel = {
-  type: ReminderType;
   target: ReminderTarget;
   medicationId: string;
   appointmentId: string;
-  recipientEmail: string;
 };
 
 const EMPTY_MODEL: ReminderModel = {
-  type: 'ical',
   target: 'medication',
   medicationId: '',
   appointmentId: '',
-  recipientEmail: '',
 };
 
 @Component({
@@ -31,44 +27,25 @@ const EMPTY_MODEL: ReminderModel = {
       <fieldset class="space-y-3">
         <legend class="sr-only">{{ 'medical.reminder.form.legend' | transloco }}</legend>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label for="rem-type" class="form-label">
-              {{ 'medical.reminder.form.type' | transloco }}
-              <span aria-hidden="true" class="text-ib-red">*</span>
-            </label>
-            <select
-              id="rem-type"
-              [formField]="reminderForm.type"
-              aria-required="true"
-              class="form-select"
-            >
-              <option value="ical">{{ 'medical.reminder.typeIcal' | transloco }}</option>
-            </select>
-            <p class="mt-1 text-xs text-text-muted">
-              {{ 'medical.reminder.form.icalOnlyHint' | transloco }}
-            </p>
-          </div>
-          <div>
-            <label for="rem-target" class="form-label">
-              {{ 'medical.reminder.form.target' | transloco }}
-              <span aria-hidden="true" class="text-ib-red">*</span>
-            </label>
-            <select
-              id="rem-target"
-              [formField]="reminderForm.target"
-              aria-required="true"
-              class="form-select"
-              (change)="onTargetChange()"
-            >
-              <option value="medication">
-                {{ 'medical.reminder.targetMedication' | transloco }}
-              </option>
-              <option value="appointment">
-                {{ 'medical.reminder.targetAppointment' | transloco }}
-              </option>
-            </select>
-          </div>
+        <div>
+          <label for="rem-target" class="form-label">
+            {{ 'medical.reminder.form.target' | transloco }}
+            <span aria-hidden="true" class="text-ib-red">*</span>
+          </label>
+          <select
+            id="rem-target"
+            [formField]="reminderForm.target"
+            aria-required="true"
+            class="form-select"
+            (change)="onTargetChange()"
+          >
+            <option value="medication">
+              {{ 'medical.reminder.targetMedication' | transloco }}
+            </option>
+            <option value="appointment">
+              {{ 'medical.reminder.targetAppointment' | transloco }}
+            </option>
+          </select>
         </div>
 
         @if (selectedTarget() === 'medication') {
@@ -110,25 +87,6 @@ const EMPTY_MODEL: ReminderModel = {
             </select>
           </div>
         }
-
-        <div>
-          <label for="rem-email" class="form-label">
-            {{ 'medical.reminder.form.recipientEmail' | transloco }}
-            <span aria-hidden="true" class="text-ib-red">*</span>
-          </label>
-          <input
-            id="rem-email"
-            type="email"
-            [formField]="reminderForm.recipientEmail"
-            aria-required="true"
-            class="form-input"
-          />
-          @if (reminderForm.recipientEmail().touched() && reminderForm.recipientEmail().invalid()) {
-            @for (err of reminderForm.recipientEmail().errors(); track err.message) {
-              <small class="error" role="alert">{{ err.message | transloco }}</small>
-            }
-          }
-        </div>
       </fieldset>
 
       <footer class="form-footer">
@@ -153,7 +111,6 @@ export class ReminderForm {
   protected readonly selectedTarget = computed(() => this.model().target);
 
   protected readonly reminderForm = form(this.model, (path) => {
-    required(path.type, { message: 'medical.reminder.form.type' });
     required(path.target, { message: 'medical.reminder.form.target' });
     required(path.medicationId, {
       when: ({ valueOf }) => valueOf(path.target) === 'medication',
@@ -163,8 +120,6 @@ export class ReminderForm {
       when: ({ valueOf }) => valueOf(path.target) === 'appointment',
       message: 'medical.reminder.form.appointment',
     });
-    required(path.recipientEmail, { message: 'medical.reminder.form.emailRequired' });
-    email(path.recipientEmail, { message: 'medical.reminder.form.emailInvalid' });
   });
 
   protected onTargetChange(): void {
@@ -176,11 +131,9 @@ export class ReminderForm {
     await submit(this.reminderForm, async () => {
       const v = this.model();
       this.submitted.emit({
-        type: v.type,
         target: v.target,
         medicationId: v.target === 'medication' && v.medicationId ? v.medicationId : null,
         appointmentId: v.target === 'appointment' && v.appointmentId ? v.appointmentId : null,
-        recipientEmail: v.recipientEmail,
         enabled: true,
       });
       this.model.set({ ...EMPTY_MODEL });

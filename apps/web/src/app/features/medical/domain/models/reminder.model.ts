@@ -1,14 +1,11 @@
-export type ReminderType = 'email' | 'ical';
 export type ReminderTarget = 'medication' | 'appointment';
 
-// Données en clair (non-E2EE, cf. http-reminder.gateway) : routage opérationnel seulement,
-// `recipientEmail` lu par le serveur pour l'envoi, FK vers medication/appointment. Pas de contenu médical.
+// Un rappel est un raccourci d'export calendrier (.ics / Google) fabriqué dans le navigateur :
+// l'API n'envoie rien et ne stocke que la cible (FK) et l'état, aucune donnée personnelle.
 export type Reminder = {
   readonly id: string;
-  readonly type: ReminderType;
   readonly target: ReminderTarget;
   readonly medicationId: string | null;
   readonly appointmentId: string | null;
-  readonly recipientEmail: string;
   readonly enabled: boolean;
 };

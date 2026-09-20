@@ -2,14 +2,12 @@ import { describe, expect, it, beforeEach, vi } from 'vitest';
 import { TestBed } from '@angular/core/testing';
 import { TranslocoService } from '@jsverse/transloco';
 import { ReminderForm } from './reminder-form';
-import { Reminder, ReminderTarget, ReminderType } from '../../domain/models/reminder.model';
+import { Reminder, ReminderTarget } from '../../domain/models/reminder.model';
 
 type ReminderModel = {
-  type: ReminderType;
   target: ReminderTarget;
   medicationId: string;
   appointmentId: string;
-  recipientEmail: string;
 };
 
 type Cmp = {
@@ -31,7 +29,7 @@ function make() {
 describe('ReminderForm (Signal Forms)', () => {
   beforeEach(() => TestBed.resetTestingModule());
 
-  it('given un form vide (email cible requise manquante), when submit, then n’émet pas (gate de validité)', async () => {
+  it('given un form vide (aucune cible sélectionnée), when submit, then n’émet pas (gate de validité)', async () => {
     const { fixture, cmp } = make();
     const onSubmit = vi.fn();
     cmp.submitted.subscribe(onSubmit);
@@ -47,11 +45,9 @@ describe('ReminderForm (Signal Forms)', () => {
     const onSubmit = vi.fn();
     cmp.submitted.subscribe(onSubmit);
     cmp.model.set({
-      type: 'email',
       target: 'medication',
       medicationId: '',
       appointmentId: '',
-      recipientEmail: 'contact@dashflow.app',
     });
     fixture.detectChanges();
 
@@ -66,11 +62,9 @@ describe('ReminderForm (Signal Forms)', () => {
     let emitted: Omit<Reminder, 'id'> | undefined;
     cmp.submitted.subscribe((v) => (emitted = v));
     cmp.model.set({
-      type: 'email',
       target: 'medication',
       medicationId: 'm1',
       appointmentId: '',
-      recipientEmail: 'contact@dashflow.app',
     });
     fixture.detectChanges();
 
@@ -78,11 +72,9 @@ describe('ReminderForm (Signal Forms)', () => {
     await fixture.whenStable();
 
     expect(emitted).toEqual({
-      type: 'email',
       target: 'medication',
       medicationId: 'm1',
       appointmentId: null,
-      recipientEmail: 'contact@dashflow.app',
       enabled: true,
     });
   });
@@ -92,11 +84,9 @@ describe('ReminderForm (Signal Forms)', () => {
     let emitted: Omit<Reminder, 'id'> | undefined;
     cmp.submitted.subscribe((v) => (emitted = v));
     cmp.model.set({
-      type: 'ical',
       target: 'appointment',
       medicationId: '',
       appointmentId: 'a1',
-      recipientEmail: 'contact@dashflow.app',
     });
     fixture.detectChanges();
 
@@ -104,11 +94,9 @@ describe('ReminderForm (Signal Forms)', () => {
     await fixture.whenStable();
 
     expect(emitted).toEqual({
-      type: 'ical',
       target: 'appointment',
       medicationId: null,
       appointmentId: 'a1',
-      recipientEmail: 'contact@dashflow.app',
       enabled: true,
     });
   });
