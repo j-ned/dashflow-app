@@ -61,8 +61,6 @@ export const documentTypeEnum = pgEnum('document_type', [
   'autre',
 ]);
 
-export const reminderTypeEnum = pgEnum('reminder_type', ['email', 'ical']);
-
 export const reminderTargetEnum = pgEnum('reminder_target', [
   'medication',
   'appointment',
@@ -249,7 +247,6 @@ export const reminders = pgTable(
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
-    type: reminderTypeEnum('type').notNull(),
     target: reminderTargetEnum('target').notNull(),
     medicationId: uuid('medication_id').references(() => medications.id, {
       onDelete: 'cascade',
@@ -257,7 +254,6 @@ export const reminders = pgTable(
     appointmentId: uuid('appointment_id').references(() => appointments.id, {
       onDelete: 'cascade',
     }),
-    recipientEmail: varchar('recipient_email', { length: 255 }).notNull(),
     enabled: boolean('enabled').notNull().default(true),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()
