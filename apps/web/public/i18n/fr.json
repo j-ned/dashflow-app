@@ -97,7 +97,7 @@
       }
     },
     "logout": {
-      "success": "Déconnexion réussie"
+      "success": "Déconnexion réussie, sur tous vos appareils"
     },
     "register": {
       "subtitle": "Créez votre compte",
@@ -403,7 +403,7 @@
       "title": "Authentification à deux facteurs",
       "subtitle": "Protégez votre compte avec une application TOTP.",
       "enabled": "Activé",
-      "enabledExplain": "La 2FA est activée sur votre compte. Pour la désactiver, entrez votre mot de passe.",
+      "enabledExplain": "La 2FA est activée sur votre compte. Pour la désactiver, entrez votre mot de passe. Pour changer de téléphone : désactivez-la, puis réactivez-la depuis le nouvel appareil.",
       "passwordLabel": "Mot de passe",
       "disable": "Désactiver la 2FA",
       "disabling": "Désactivation...",
@@ -673,6 +673,7 @@
       "generic": "Une erreur est survenue",
       "amountRequired": "Le montant est obligatoire.",
       "amountMin": "Le montant doit être supérieur à 0.",
+      "amountAboveRemaining": "Le montant dépasse le restant dû.",
       "balanceMin": "Le solde ne peut pas être négatif.",
       "labelRequired": "Le libellé est obligatoire.",
       "nameRequired": "Le nom est obligatoire.",
@@ -1151,6 +1152,8 @@
       },
       "paymentForm": {
         "legend": "Remboursement",
+        "remainingHint": "Restant dû : {{amount}} €",
+        "payAll": "Tout rembourser",
         "amount": "Montant du remboursement",
         "date": "Date",
         "note": "Note",

@@ -281,6 +281,7 @@ import { toLocalIsoDate, todayIso } from '@shared/utils/local-date';
       @if (paymentModal.isOpen()) {
         <app-record-payment-form
           [accounts]="accounts()"
+          [remaining]="selectedLoan()?.remaining ?? null"
           (submitted)="recordPayment($event)"
           (cancelled)="paymentModal.close()"
         />

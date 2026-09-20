@@ -18,7 +18,8 @@ type RecordPaymentModel = {
 };
 
 type Cmp = {
-  model: { set: (value: RecordPaymentModel) => void };
+  model: { set: (value: RecordPaymentModel) => void; (): RecordPaymentModel };
+  payAll: (due: number) => void;
   submitForm: (event: Event) => Promise<void>;
   submitted: { subscribe: (fn: (v: PaymentPayload) => void) => void };
 };
@@ -95,5 +96,54 @@ describe('RecordPaymentForm (Signal Forms)', () => {
     await fixture.whenStable();
 
     expect(onSubmit).toHaveBeenCalledTimes(1);
+  });
+
+  describe('restant dû', () => {
+    const payment = (amount: number): RecordPaymentModel => ({
+      amount,
+      date: '2026-09-20',
+      accountId: '',
+      note: '',
+    });
+
+    it.each([
+      [800, true],
+      [799.99, true],
+      [800.01, false],
+      [5000, false],
+    ])('restant dû 800 € : un remboursement de %s € → émis : %s', async (amount, emitted) => {
+      const { fixture, cmp } = make();
+      fixture.componentRef.setInput('remaining', 800);
+      const onSubmit = vi.fn();
+      cmp.submitted.subscribe(onSubmit);
+      cmp.model.set(payment(amount));
+      fixture.detectChanges();
+
+      await cmp.submitForm(new Event('submit'));
+      await fixture.whenStable();
+
+      expect(onSubmit).toHaveBeenCalledTimes(emitted ? 1 : 0);
+    });
+
+    it('sans restant dû connu : aucun plafond', async () => {
+      const { fixture, cmp } = make();
+      const onSubmit = vi.fn();
+      cmp.submitted.subscribe(onSubmit);
+      cmp.model.set(payment(5000));
+      fixture.detectChanges();
+
+      await cmp.submitForm(new Event('submit'));
+      await fixture.whenStable();
+
+      expect(onSubmit).toHaveBeenCalledTimes(1);
+    });
+
+    it('« Tout rembourser » préremplit exactement le restant dû', () => {
+      const { cmp } = make();
+
+      cmp.payAll(812.37);
+
+      expect(cmp.model().amount).toBe(812.37);
+    });
   });
 });

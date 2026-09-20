@@ -97,7 +97,7 @@
       }
     },
     "logout": {
-      "success": "Signed out successfully"
+      "success": "Signed out successfully, on all your devices"
     },
     "register": {
       "subtitle": "Create your account",
@@ -403,7 +403,7 @@
       "title": "Two-factor authentication",
       "subtitle": "Protect your account with a TOTP app.",
       "enabled": "Enabled",
-      "enabledExplain": "2FA is enabled on your account. To disable it, enter your password.",
+      "enabledExplain": "2FA is enabled on your account. To disable it, enter your password. To switch phones: disable it, then enable it again from the new device.",
       "passwordLabel": "Password",
       "disable": "Disable 2FA",
       "disabling": "Disabling...",
@@ -673,6 +673,7 @@
       "generic": "An error occurred",
       "amountRequired": "Amount is required.",
       "amountMin": "Amount must be greater than 0.",
+      "amountAboveRemaining": "The amount exceeds what is still owed.",
       "balanceMin": "Balance cannot be negative.",
       "labelRequired": "Label is required.",
       "nameRequired": "Name is required.",
@@ -1151,6 +1152,8 @@
       },
       "paymentForm": {
         "legend": "Repayment",
+        "remainingHint": "Still owed: €{{amount}}",
+        "payAll": "Pay it all",
         "amount": "Repayment amount",
         "date": "Date",
         "note": "Note",
