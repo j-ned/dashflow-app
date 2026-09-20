@@ -21,7 +21,6 @@ import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { isBalanceCheckDue, reconcileBalance } from '../../domain/balance-check';
 import { BalanceCheckStore } from '../../infra/balance-check.store';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
-import { SalaryArchiveGateway } from '../../domain/gateways/salary-archive.gateway';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { buildPendingCharges } from '../../domain/pending-charges';
@@ -32,7 +31,6 @@ import {
   withAutoPost,
 } from '../../domain/auto-post';
 import { toLocalIsoDate } from '../../domain/local-date';
-import { previousMonth } from '../../domain/salary-archive-list';
 import { immediatePostingFor } from '../../domain/immediate-posting';
 import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-cycle';
 import { buildTimelineEvents } from '../../domain/timeline-builder';
@@ -298,7 +296,6 @@ const PALETTE = [
 })
 export class BankAccount {
   private readonly entryGateway = inject(RecurringEntryGateway);
-  private readonly archiveGateway = inject(SalaryArchiveGateway);
   private readonly txGateway = inject(AccountTransactionGateway);
   private readonly accountGateway = inject(BankAccountGateway);
   private readonly balanceChecks = inject(BalanceCheckStore);
@@ -800,7 +797,7 @@ export class BankAccount {
   }
 
   // Revenus du mois : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
-  // compte pas (voir monthIncome). Le modèle brut ne sert plus qu'à l'archivage du cycle.
+  // compte pas (voir monthIncome).
   private readonly _monthIncome = computed(() =>
     monthIncome(this.incomes(), this.accountRealTxs(), this.currentMonth),
   );
@@ -968,28 +965,6 @@ export class BankAccount {
 
   protected async createEntry(data: Omit<RecurringEntry, 'id'>) {
     try {
-      // Si c'est un revenu et qu'il en existe déjà, demander à l'utilisateur
-      if (data.type === 'income' && this.incomes().length > 0) {
-        const choice = await this.confirm.choose({
-          title: this._i18n.translate('budget.bankAccount.messages.addIncomeTitle'),
-          message: this._i18n.translate('budget.bankAccount.messages.addIncomeMessage'),
-          confirmLabel: this._i18n.translate('budget.bankAccount.messages.newCycle'),
-          alternativeLabel: this._i18n.translate('budget.bankAccount.messages.addToMonth'),
-          cancelLabel: this._i18n.translate('common.cancel'),
-          variant: 'info',
-        });
-
-        if (choice === 'cancel') return;
-
-        if (choice === 'confirm') {
-          await this.archiveCurrentCycle();
-          for (const old of this.incomes()) {
-            await lastValueFrom(this.entryGateway.delete(old.id));
-          }
-          this.toaster.success('budget.bankAccount.messages.cycleArchived');
-        }
-      }
-
       const created = await lastValueFrom(this.entryGateway.create(data));
       await this._postIfDue(created);
       this.toaster.success('budget.bankAccount.messages.entryCreated');
@@ -1024,51 +999,6 @@ export class BankAccount {
       ),
     );
     this.store.refreshTransactions();
-  }
-
-  private async archiveCurrentCycle() {
-    const salary = sumAmount(this.incomes());
-    if (salary <= 0) return;
-
-    const month = previousMonth(new Date());
-    const accountId = this.store.selectedAccountId();
-    const totalExpenses = this.totalMonthlyExpenses() + this.monthlyAnnualExpenses();
-    const totalSpendings = this.totalMonthSpendings();
-    const spendings = this.monthSpendings().map((e) => ({
-      label: e.label,
-      amount: Number(e.amount),
-      date: e.date,
-      category: e.category,
-    }));
-
-    // Un mois = une archive : une clôture rejouée (double clic, second cycle le même mois)
-    // met à jour l'archive existante au lieu d'en créer une jumelle.
-    const existing = (await lastValueFrom(this.archiveGateway.getAll())).find(
-      (a) => a.month === month,
-    );
-    if (existing) {
-      await lastValueFrom(
-        this.archiveGateway.update(existing.id, {
-          ...existing,
-          salary,
-          totalExpenses,
-          totalSpendings,
-          spendings,
-          accountId: accountId ?? existing.accountId,
-        }),
-      );
-      return;
-    }
-
-    const fd = new FormData();
-    fd.append('month', month);
-    fd.append('salary', String(salary));
-    fd.append('totalExpenses', String(totalExpenses));
-    fd.append('totalSpendings', String(totalSpendings));
-    fd.append('spendings', JSON.stringify(spendings));
-    if (accountId) fd.append('accountId', accountId);
-
-    await lastValueFrom(this.archiveGateway.create(fd));
   }
 
   protected async deleteEntry(id: string) {
