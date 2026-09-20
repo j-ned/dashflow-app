@@ -124,7 +124,7 @@ import { todayIso } from '@shared/utils/local-date';
             @if (presc.appointmentDate; as aDate) {
               <p class="text-xs text-text-muted mb-2 ml-10">
                 {{ 'medical.prescription.linkedAppointment' | transloco }} :
-                <span class="font-mono text-ib-purple">{{ aDate }}</span>
+                <span class="text-ib-purple">{{ aDate | date: 'd MMM y, HH:mm' }}</span>
               </p>
             }
 
@@ -281,7 +281,7 @@ export class Prescriptions {
   private readonly appointmentMap = computed(() => {
     const map = new Map<string, string>();
     for (const a of this.appointments()) {
-      map.set(a.id, `${a.date} ${a.time}`);
+      map.set(a.id, `${a.date}T${a.time}`);
     }
     return map;
   });

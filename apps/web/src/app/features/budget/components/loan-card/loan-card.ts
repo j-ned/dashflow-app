@@ -50,7 +50,8 @@ import { AchievementRibbon } from '@shared/components/achievement-ribbon/achieve
             </div>
           </div>
         </div>
-        <div class="text-right">
+        <!-- Soldé : le ruban d'angle passerait sur le montant. -->
+        <div class="text-right" [class.mr-12]="vm().status === 'settled'">
           <span class="block text-lg font-mono font-bold" [class]="remainingClass()"
             >{{ vm().loan.remaining | number: '1.2-2'
             }}<span class="text-sm ml-0.5">&euro;</span></span
