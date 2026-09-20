@@ -1,5 +1,7 @@
 import { describe, it, expect } from 'vitest';
+import * as z from 'zod/mini';
 import { normalizeSalaryArchive } from './salary-archive.adapter';
+import { SalaryArchiveSchema } from './schemas/salary-archive.schema';
 
 const CLEARTEXT_API_ARCHIVE = {
   id: 'sa-1',
@@ -46,6 +48,20 @@ describe('normalizeSalaryArchive', () => {
     expect(result.totalExpenses).toBe(200);
     expect(result.totalSpendings).toBe(50);
     expect(result.spendings[0].amount).toBe(12.5);
+  });
+
+  it('ramène date/category absents à null et passe le schéma (archives du seed démo)', () => {
+    const legacy = { ...CLEARTEXT_API_ARCHIVE, spendings: [{ label: 'Courses', amount: '12.50' }] };
+
+    const result = normalizeSalaryArchive({ ...legacy } as never);
+
+    expect(result.spendings[0]).toEqual({
+      label: 'Courses',
+      amount: 12.5,
+      date: null,
+      category: null,
+    });
+    expect(z.safeParse(SalaryArchiveSchema, result).success).toBe(true);
   });
 
   it('renvoie [] quand spendings est absent', () => {
