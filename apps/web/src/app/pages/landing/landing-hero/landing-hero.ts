@@ -68,7 +68,7 @@ import { Icon } from '@shared/components/icon/icon';
         class="mt-14 overflow-hidden rounded-lg border border-border bg-surface p-2 shadow-2xl shadow-black/40 lg:mt-16"
       >
         <img
-          ngSrc="/screen/img_9.webp"
+          ngSrc="/screen/vue-globale.webp"
           [alt]="'landing.hero.screenshotAlt' | transloco"
           class="block h-auto w-full rounded-md"
           priority
