@@ -53,9 +53,17 @@ Thumbs.db
 
 # AI ignore
 .agents
-# .claude/ est vendoré (agents AAK) et committé pour les sessions cloud ;
-# seules les préférences locales restent ignorées.
+# Fichiers AAK (licence propriétaire, redistribution interdite) : jamais
+# committés dans ce dépôt public — installés par le plugin ou /aak-sync en local.
 .claude/settings.local.json
+.claude/.aak-version
+.claude/agents/
+.claude/commands/aak-*
+.claude/eslint/
+.claude/skills/angular-async-testing/
+.claude/skills/angular-routing-patterns/
+.claude/skills/angular-signal-forms/
+.claude/skills/tutor/
 .remember
 PRODUCT.md
 DESIGN.md
