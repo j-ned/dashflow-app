@@ -263,7 +263,7 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ## Backend -- NestJS + PostgreSQL + Drizzle + Zod
 
-> ⚠️ **Repo separe** : le backend vit dans `nest-dashflow-app` (depot distinct), **pas** dans ce repo frontend. Aucun `apps/api/**` ici, pas de monorepo. Cette section sert de reference quand on travaille dans le repo backend ; les chemins ci-dessous sont relatifs a `nest-dashflow-app`.
+> **Monorepo** : le backend vit dans `apps/api` (workspace pnpm `dashflow`, a cote de ce front `apps/web`). Les chemins ci-dessous sont relatifs a `apps/api`.
 
 ### Structure NestJS
 ```
@@ -413,7 +413,7 @@ pnpm build                  # Build production
 pnpm test                   # Vitest
 pnpm ng generate            # Schematics
 
-# Backend NestJS -- repo separe `nest-dashflow-app` (commandes a lancer la-bas)
+# Backend NestJS -- apps/api (depuis la racine : pnpm --filter @dashflow/api <script>)
 pnpm start:dev              # Dev API
 pnpm drizzle-kit generate   # Generer migration depuis schema
 pnpm drizzle-kit migrate    # Appliquer migrations

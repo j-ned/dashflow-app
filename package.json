@@ -1,0 +1,17 @@
+{
+  "name": "dashflow",
+  "private": true,
+  "packageManager": "pnpm@11.24.0",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "dev:web": "pnpm --filter @dashflow/web start",
+    "dev:api": "pnpm --filter @dashflow/api start:dev",
+    "build": "pnpm -r build",
+    "lint": "pnpm --filter @dashflow/web lint && pnpm --filter @dashflow/api lint:check",
+    "test": "pnpm -r test",
+    "test:integration": "pnpm --filter @dashflow/api test:integration",
+    "test:e2e": "pnpm --filter @dashflow/api test:e2e"
+  }
+}

@@ -1,5 +1,5 @@
 {
-  "name": "dash-flow",
+  "name": "@dashflow/web",
   "version": "0.0.0",
   "scripts": {
     "ng": "ng",
@@ -12,7 +12,6 @@
     "format:check": "prettier --check ."
   },
   "private": true,
-  "packageManager": "pnpm@9.15.4",
   "dependencies": {
     "@angular/common": "^22.1.6",
     "@angular/compiler": "^22.1.6",
@@ -46,10 +45,5 @@
     "typescript": "~6.0.3",
     "typescript-eslint": "8.59.2",
     "vitest": "^4.0.8"
-  },
-  "pnpm": {
-    "overrides": {
-      "js-yaml@<4.3.0": ">=5.2.2"
-    }
   }
 }

@@ -1,8 +1,0 @@
-allowBuilds:
-  argon2: true
-  '@swc/core': true
-  esbuild: true
-  '@nestjs/core': false
-
-overrides:
-  multer: ^2.2.0

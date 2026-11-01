@@ -1,0 +1,16 @@
+# Contexte de build Docker = racine du monorepo (les deux Dockerfiles en dépendent).
+**/node_modules
+**/dist
+**/.angular
+**/coverage
+**/.env
+**/.env.*
+!**/.env.example
+.git
+.github
+**/.idea
+**/.vscode
+**/.claude
+**/.gemini
+**/*.log
+**/__screenshots__

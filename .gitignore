@@ -1,0 +1,7 @@
+# Racine du monorepo — chaque app garde son propre .gitignore (apps/web, apps/api).
+node_modules/
+.env
+.env.local
+.idea/
+.DS_Store
+*.log
