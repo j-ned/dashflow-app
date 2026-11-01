@@ -1,4 +1,9 @@
-import { fileTypeFromBuffer } from 'file-type';
+/**
+ * `file-type` n'est publié qu'en ESM : chargé par import() dynamique depuis ce module CommonJS.
+ * `require()` d'un module ESM échoue sur le runtime Node de Vercel (ERR_REQUIRE_ESM).
+ */
+const detectFileType = async (buffer: Buffer) =>
+  (await import('file-type')).fileTypeFromBuffer(buffer);
 import { BadRequestError } from '../errors';
 
 /** Types de fichiers acceptés en upload (documents médicaux, fiches de paie, justificatifs). */
@@ -42,7 +47,7 @@ export async function assertValidUpload(file: {
   if (!ALLOWED_UPLOAD_MIME_TYPES.includes(file.mimetype)) {
     throw new BadRequestError('Type de fichier non autorisé');
   }
-  const detected = await fileTypeFromBuffer(file.buffer);
+  const detected = await detectFileType(file.buffer);
   if (!detected || !ALLOWED_UPLOAD_MIME_TYPES.includes(detected.mime)) {
     throw new BadRequestError(
       'Contenu du fichier invalide (type réel non autorisé)',
@@ -64,7 +69,7 @@ export async function assertValidImageUpload(file: {
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
     throw new BadRequestError('Type image invalide');
   }
-  const detected = await fileTypeFromBuffer(file.buffer);
+  const detected = await detectFileType(file.buffer);
   if (!detected || !ALLOWED_IMAGE_MIME_TYPES.includes(detected.mime)) {
     throw new BadRequestError(
       "Contenu de l'image invalide (type réel non autorisé)",

@@ -17,8 +17,8 @@ export function oauthRoutes(d: HttpDeps) {
   const strict = throttle(STRICT_THROTTLE);
 
   return new Hono<AppEnv>()
-    .get('/', strict, (c) => {
-      const { url, state, codeVerifier } = d.oauth.createAuthorization();
+    .get('/', strict, async (c) => {
+      const { url, state, codeVerifier } = await d.oauth.createAuthorization();
       setAppCookie(c, OAUTH_STATE_COOKIE, state, oauthCookieOptions(isProd));
       setAppCookie(
         c,

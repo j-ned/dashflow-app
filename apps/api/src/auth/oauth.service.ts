@@ -1,4 +1,10 @@
-import { Google, generateState, generateCodeVerifier } from 'arctic';
+import type { Google } from 'arctic';
+
+/**
+ * `arctic` n'est publié qu'en ESM : chargé par import() dynamique depuis ce module CommonJS.
+ * `require()` d'un module ESM échoue sur le runtime Node de Vercel (ERR_REQUIRE_ESM).
+ */
+const loadArctic = () => import('arctic');
 import { AuthRepository } from './auth.repository';
 import type { Env } from '../config/env.schema';
 import type { users } from '../db/schema';
@@ -20,19 +26,26 @@ export class OAuthService {
     private readonly repo: AuthRepository,
   ) {}
 
-  private google(): Google {
+  private async google(): Promise<Google> {
     const clientId = this.config.GOOGLE_CLIENT_ID;
     const clientSecret = this.config.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret)
       throw new InternalError('Google OAuth non configuré');
     const redirectUri = `${this.config.APP_URL}/auth/oauth/google/callback`;
+    const { Google } = await loadArctic();
     return new Google(clientId, clientSecret, redirectUri);
   }
 
-  createAuthorization(): { url: string; state: string; codeVerifier: string } {
+  async createAuthorization(): Promise<{
+    url: string;
+    state: string;
+    codeVerifier: string;
+  }> {
+    const { generateState, generateCodeVerifier } = await loadArctic();
+    const google = await this.google();
     const state = generateState();
     const codeVerifier = generateCodeVerifier();
-    const url = this.google().createAuthorizationURL(state, codeVerifier, [
+    const url = google.createAuthorizationURL(state, codeVerifier, [
       'openid',
       'email',
       'profile',
@@ -44,10 +57,8 @@ export class OAuthService {
     code: string,
     codeVerifier: string,
   ): Promise<GoogleProfile> {
-    const tokens = await this.google().validateAuthorizationCode(
-      code,
-      codeVerifier,
-    );
+    const google = await this.google();
+    const tokens = await google.validateAuthorizationCode(code, codeVerifier);
     const res = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokens.accessToken()}` },
     });

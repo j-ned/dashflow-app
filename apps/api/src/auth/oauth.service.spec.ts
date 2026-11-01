@@ -20,20 +20,20 @@ describe('OAuthService', () => {
     r = repo();
   });
 
-  it('createAuthorization : URL Google + state + verifier', () => {
+  it('createAuthorization : URL Google + state + verifier', async () => {
     const svc = new OAuthService(config('cid'), r as unknown as AuthRepository);
-    const { url, state, codeVerifier } = svc.createAuthorization();
+    const { url, state, codeVerifier } = await svc.createAuthorization();
     expect(url).toContain('accounts.google.com');
     expect(state.length).toBeGreaterThan(0);
     expect(codeVerifier.length).toBeGreaterThan(0);
   });
 
-  it('createAuthorization : lance si non configuré', () => {
+  it('createAuthorization : lance si non configuré', async () => {
     const svc = new OAuthService(
       config(undefined),
       r as unknown as AuthRepository,
     );
-    expect(() => svc.createAuthorization()).toThrow();
+    await expect(svc.createAuthorization()).rejects.toThrow();
   });
 
   it('findOrCreate : googleId existant → renvoie le user', async () => {
