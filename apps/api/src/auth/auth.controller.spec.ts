@@ -1,0 +1,328 @@
+import {
+  describe,
+  it,
+  expect,
+  beforeAll,
+  afterAll,
+  beforeEach,
+  vi,
+} from 'vitest';
+import request from 'supertest';
+import { Test } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
+import type { INestApplication, ExecutionContext } from '@nestjs/common';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+import { TokenService } from './token.service';
+import { CsrfService } from './csrf.service';
+import { SecurityEventsService } from '../security-events/security-events.service';
+import { SecurityEventsInterceptor } from '../security-events/security-events.interceptor';
+import { DemoService } from '../modules/demo/demo.service';
+import { StorageService } from '../storage/storage.service';
+import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
+import { CsrfGuard } from '../common/guards/csrf.guard';
+import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
+import { SESSION_COOKIE } from './cookie';
+
+// Le comportement attendu : 204, appel service avec l'userId courant, purge du cookie de session.
+// Signature PNG + IHDR minimal : reconnu par file-type comme image/png.
+const PNG_BYTES = Buffer.from([
+  0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a, 0x00, 0x00, 0x00, 0x0d, 0x49,
+  0x48, 0x44, 0x52, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x01, 0x08, 0x06,
+  0x00, 0x00, 0x00, 0x1f, 0x15, 0xc4, 0x89,
+]);
+
+describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () => {
+  let app: INestApplication;
+  const mockAuth = { deleteAccount: vi.fn() };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test'),
+  };
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuth },
+        { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
+        { provide: DemoService, useValue: {} },
+        { provide: StorageService, useValue: {} },
+        { provide: ConfigService, useValue: mockConfig },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (ctx: ExecutionContext) => {
+          ctx.switchToHttp().getRequest().user = { id: 'u1', email: 'a@b.com' };
+          return true;
+        },
+      })
+      .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => {
+    mockAuth.deleteAccount
+      .mockReset()
+      .mockResolvedValue({ success: true, data: null });
+  });
+
+  it('appel authentifié → 204 et appelle authService.deleteAccount(userId)', async () => {
+    const res = await request(app.getHttpServer()).delete('/auth/me');
+
+    expect(res.status).toBe(204);
+    expect(mockAuth.deleteAccount).toHaveBeenCalledWith('u1');
+  });
+
+  it('vide le cookie de session (clearCookie sur SESSION_COOKIE)', async () => {
+    const res = await request(app.getHttpServer()).delete('/auth/me');
+
+    const setCookie = res.headers['set-cookie'] ?? [];
+    const cookies = Array.isArray(setCookie) ? setCookie : [setCookie];
+    expect(cookies.some((c) => c.startsWith(`${SESSION_COOKIE}=`))).toBe(true);
+  });
+});
+
+// Couverture HTTP multipart de POST /auth/me/avatar.
+// Champ multer attendu : FileInterceptor('file'). Le mimetype doit être une image
+// (jpeg/png/webp/gif) ; le controller valide la liste blanche avant l'upload.
+describe('AuthController — POST /auth/me/avatar (multipart)', () => {
+  let app: INestApplication;
+
+  const DB_USER = {
+    id: 'u1',
+    email: 'a@b.com',
+    displayName: 'Alice',
+    avatarUrl: 'avatars/u1.png',
+    totpEnabled: false,
+    password: 'hash',
+    googleId: null,
+    encryptionVersion: 1,
+    encryptionPassphrase: false,
+    isDemoAccount: false,
+    role: 'user',
+    encryptionSalt: null,
+    wrappedMasterKey: null,
+    recoveryWrappedKey: null,
+  };
+
+  const mockAuth = { setAvatar: vi.fn() };
+  const mockStorage = {
+    avatarKey: vi.fn(() => 'avatars/u1.png'),
+    deletePrefix: vi.fn().mockResolvedValue(undefined),
+    upload: vi.fn(),
+    getStream: vi.fn(),
+  };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? false : 'test'),
+  };
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuth },
+        { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
+        { provide: DemoService, useValue: {} },
+        { provide: StorageService, useValue: mockStorage },
+        { provide: ConfigService, useValue: mockConfig },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (ctx: ExecutionContext) => {
+          ctx.switchToHttp().getRequest().user = { id: 'u1', email: 'a@b.com' };
+          return true;
+        },
+      })
+      .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  beforeEach(() => {
+    mockAuth.setAvatar.mockReset().mockResolvedValue(DB_USER);
+    mockStorage.avatarKey.mockClear();
+    mockStorage.upload.mockReset().mockResolvedValue(undefined);
+  });
+
+  it('contenu non-image déclaré image/png → 400 (magic-bytes), rien uploadé', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', Buffer.from('fakepngbytes'), {
+        filename: 'a.png',
+        contentType: 'image/png',
+      });
+    expect(res.status).toBe(400);
+    expect(mockStorage.upload).not.toHaveBeenCalled();
+  });
+
+  it('GIF déclaré → 400 (format retiré de la whitelist)', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', Buffer.from('GIF89a'), {
+        filename: 'a.gif',
+        contentType: 'image/gif',
+      });
+    expect(res.status).toBe(400);
+  });
+
+  it("champ 'file' image → 201, storage.upload appelé, auth.setAvatar reçoit la clé", async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', PNG_BYTES, {
+        filename: 'a.png',
+        contentType: 'image/png',
+      });
+
+    expect(res.status).toBe(201);
+    expect(mockStorage.deletePrefix).toHaveBeenCalledWith('avatars/u1.');
+    expect(mockStorage.upload).toHaveBeenCalledTimes(1);
+    expect(mockAuth.setAvatar).toHaveBeenCalledWith('u1', 'avatars/u1.png');
+    expect(res.body).toMatchObject({ id: 'u1', avatarUrl: '/auth/avatar/u1' });
+  });
+
+  it('sans fichier → 400, storage.upload jamais appelé', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/me/avatar');
+
+    expect(res.status).toBe(400);
+    expect(mockStorage.upload).not.toHaveBeenCalled();
+    expect(mockAuth.setAvatar).not.toHaveBeenCalled();
+  });
+
+  it('mimetype non-image (pdf) → 400 (type image invalide), upload jamais appelé', async () => {
+    const res = await request(app.getHttpServer())
+      .post('/auth/me/avatar')
+      .attach('file', Buffer.from('%PDF-1.4'), {
+        filename: 'f.pdf',
+        contentType: 'application/pdf',
+      });
+
+    expect(res.status).toBe(400);
+    expect(mockStorage.upload).not.toHaveBeenCalled();
+    expect(mockAuth.setAvatar).not.toHaveBeenCalled();
+  });
+});
+
+// Session démo (claim `demo` → request.user.isDemo). DemoAccountGuard n'est PAS surchargé :
+// c'est le vrai garde, appliqué par les décorateurs des routes, qui doit produire le 403.
+describe('AuthController — session démo : routes d’identité verrouillées', () => {
+  let app: INestApplication;
+  const mockAuth = {
+    updateProfile: vi.fn(),
+    setupTotp: vi.fn(),
+    deleteAccount: vi.fn(),
+  };
+  const mockDemo = { reset: vi.fn().mockResolvedValue(undefined) };
+  const mockConfig = {
+    get: (k: string) => (k === 'DEMO_ENABLED' ? true : 'test'),
+  };
+
+  beforeAll(async () => {
+    const moduleRef = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuth },
+        { provide: TokenService, useValue: {} },
+        { provide: CsrfService, useValue: { tokenFor: () => 'csrf-token' } },
+        {
+          provide: SecurityEventsService,
+          useValue: {
+            record: vi.fn(),
+            recordForEmail: vi.fn(),
+            listFor: vi.fn(() => Promise.resolve([])),
+          },
+        },
+        SecurityEventsInterceptor,
+        { provide: DemoService, useValue: mockDemo },
+        { provide: StorageService, useValue: {} },
+        { provide: ConfigService, useValue: mockConfig },
+      ],
+    })
+      .overrideGuard(JwtAuthGuard)
+      .useValue({
+        canActivate: (ctx: ExecutionContext) => {
+          ctx.switchToHttp().getRequest().user = {
+            id: 'demo',
+            email: 'demo@dashflow.app',
+            isDemo: true,
+          };
+          return true;
+        },
+      })
+      .overrideGuard(CsrfGuard)
+      .useValue({ canActivate: () => true })
+      .overrideGuard(EmailThrottlerGuard)
+      .useValue({ canActivate: () => true })
+      .compile();
+
+    app = moduleRef.createNestApplication();
+    await app.init();
+  });
+
+  afterAll(async () => {
+    await app.close();
+  });
+
+  it.each([
+    ['patch', '/auth/me'],
+    ['patch', '/auth/me/password'],
+    ['post', '/auth/me/set-password'],
+    ['post', '/auth/me/2fa/setup'],
+    ['post', '/auth/me/2fa/verify'],
+    ['post', '/auth/me/2fa/disable'],
+    ['post', '/auth/me/avatar'],
+    ['delete', '/auth/me'],
+  ] as const)('%s %s → 403, service jamais appelé', async (method, path) => {
+    const res = await request(app.getHttpServer())[method](path).send({});
+    expect(res.status).toBe(403);
+    expect(mockAuth.updateProfile).not.toHaveBeenCalled();
+    expect(mockAuth.setupTotp).not.toHaveBeenCalled();
+    expect(mockAuth.deleteAccount).not.toHaveBeenCalled();
+  });
+
+  it('post /auth/demo-reset reste autorisé au compte démo', async () => {
+    const res = await request(app.getHttpServer()).post('/auth/demo-reset');
+    expect(res.status).toBe(200);
+    expect(mockDemo.reset).toHaveBeenCalledWith('demo');
+  });
+});

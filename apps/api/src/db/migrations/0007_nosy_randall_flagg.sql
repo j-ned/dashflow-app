@@ -1,0 +1,2 @@
+CREATE TYPE "public"."verification_code_purpose" AS ENUM('verification', 'reset');--> statement-breakpoint
+ALTER TABLE "verification_codes" ADD COLUMN "purpose" "verification_code_purpose" DEFAULT 'verification' NOT NULL;
