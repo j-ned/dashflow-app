@@ -3,7 +3,6 @@ import type { HttpDeps } from './deps';
 import { installErrorHandling } from './error-handling';
 import { defaultBodyLimit } from './middleware/body-limit';
 import { clientIp } from './middleware/client-ip';
-import { corsPolicy } from './middleware/cors';
 import { rateLimit } from './middleware/rate-limit';
 import { securityHeaders } from './middleware/security-headers';
 import { authRoutes } from './routes/auth';
@@ -29,8 +28,9 @@ import type { AppEnv } from './types';
 
 /**
  * Socle HTTP commun à toutes les routes, dans l'ordre : en-têtes de sécurité (posés sur toute
- * réponse), CORS (le preflight répond ici, sans throttling), IP client, throttling par route,
- * plafond de corps. Les groupes de routes métier s'y montent avec `app.route()`.
+ * réponse), IP client, throttling par route, plafond de corps. Les groupes de routes métier s'y
+ * montent avec `app.route()`. Pas de CORS : le front est servi sur la même origine (/api) ; un
+ * autre site ne peut donc ni lire les réponses ni envoyer de requête « non simple ».
  */
 export function createApp(
   deps: HttpDeps,
@@ -41,7 +41,6 @@ export function createApp(
     ? new Hono<AppEnv>().basePath(opts.basePath)
     : new Hono<AppEnv>();
   app.use(securityHeaders());
-  app.use(corsPolicy(deps.env));
   app.use(clientIp());
   app.use(rateLimit(deps.rateLimits));
   app.use(defaultBodyLimit());

@@ -1,15 +1,16 @@
 import { createMiddleware } from 'hono/factory';
 
 /**
- * En-têtes de sécurité, valeur pour valeur ceux que posait Helmet 8 avec la configuration de
- * l'API Nest (CORP cross-origin pour l'avatar en <img>, frameguard deny, CSP par défaut +
- * frame-ancestors 'none'). Statiques : une liste explicite se relit mieux qu'une config.
+ * En-têtes de sécurité de Helmet 8 (frameguard deny, CSP par défaut + frame-ancestors 'none'),
+ * avec CORP `same-origin` : front et API partagent l'origine, aucun autre site n'a à charger une
+ * ressource de l'API (avatar, document) — ni en <img>, ni autrement. Statiques : une liste
+ * explicite se relit mieux qu'une config.
  */
 export const SECURITY_HEADERS: Readonly<Record<string, string>> = {
   'Content-Security-Policy':
     "frame-ancestors 'none';default-src 'self';base-uri 'self';font-src 'self' https: data:;form-action 'self';img-src 'self' data:;object-src 'none';script-src 'self';script-src-attr 'none';style-src 'self' https: 'unsafe-inline';upgrade-insecure-requests",
   'Cross-Origin-Opener-Policy': 'same-origin',
-  'Cross-Origin-Resource-Policy': 'cross-origin',
+  'Cross-Origin-Resource-Policy': 'same-origin',
   'Origin-Agent-Cluster': '?1',
   'Referrer-Policy': 'no-referrer',
   'Strict-Transport-Security': 'max-age=31536000; includeSubDomains',

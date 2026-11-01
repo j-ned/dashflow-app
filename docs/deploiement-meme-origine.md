@@ -76,7 +76,7 @@ Vérifications :
 ### 5. Retirer l'ancien sous-domaine (quand plus aucun client ne l'utilise)
 
 - **Dokploy :** retire le domaine `api-dashflow.nedellec-julien.fr` du service API, ainsi que l'ancienne URI de redirection côté Google.
-- **Code (suite à faire) :** supprimer le middleware CORS de l'API (`src/http/middleware/cors.ts`) et passer `Cross-Origin-Resource-Policy` à `same-origin`. Plus aucune lecture cross-origin ne sera alors possible.
+- **Code (fait le 1er novembre 2026) :** middleware CORS supprimé de l'API et `Cross-Origin-Resource-Policy` à `same-origin`. Plus aucune lecture cross-origin n'est possible.
 
 ## Retour arrière
 

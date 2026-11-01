@@ -65,7 +65,7 @@ Variables d'environnement principales (voir `.env.example` pour la liste complè
 | `NODE_ENV`     | Environnement d'exécution (`development`, `production`)                      |
 | `PORT`         | Port HTTP du serveur                                                         |
 | `DATABASE_URL` | Chaîne de connexion PostgreSQL                                               |
-| `CORS_ORIGIN`  | Origine(s) autorisée(s) pour le frontend, séparées par des virgules          |
+| `CORS_ORIGIN`  | Origine(s) du front, séparées par des virgules : contrôle CSRF (Origin) et liens des mails (la première). Nom historique : l'API n'émet plus d'en-têtes CORS |
 | `JWT_SECRET`   | Secret de signature des tokens JWT (minimum 32 caractères)                   |
 | `APP_URL`      | URL publique de l'API, utilisée notamment dans les liens transmis par email  |
 | `MAILER`       | Fournisseur d'envoi d'email (`console` ou `smtp`)                            |

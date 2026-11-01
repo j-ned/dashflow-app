@@ -105,40 +105,26 @@ describe('Socle HTTP Hono', () => {
     expect(body).not.toContain('hunter2');
   });
 
-  it('CORS : preflight 204 pour le front (en-têtes demandés reflétés), rien pour une origine étrangère', async () => {
+  it('même origine : aucune autorisation CORS, ni au preflight ni sur une réponse', async () => {
     const app = createApp(d);
-    const ok = await app.request('/health', {
-      method: 'OPTIONS',
-      headers: {
-        Origin: FRONT,
-        'Access-Control-Request-Method': 'POST',
-        'Access-Control-Request-Headers': 'content-type,x-csrf-token',
-      },
-    });
-    expect(ok.status).toBe(204);
-    expect(ok.headers.get('Access-Control-Allow-Origin')).toBe(FRONT);
-    expect(ok.headers.get('Access-Control-Allow-Credentials')).toBe('true');
-    expect(ok.headers.get('Access-Control-Allow-Headers')).toBe(
-      'content-type,x-csrf-token',
-    );
-    expect(ok.headers.get('Access-Control-Allow-Methods')).toBe(
-      'GET,HEAD,PUT,PATCH,POST,DELETE',
-    );
-
-    const evil = await app.request('/health', {
-      method: 'OPTIONS',
-      headers: {
-        Origin: 'http://evil.test',
-        'Access-Control-Request-Method': 'POST',
-      },
-    });
-    expect(evil.headers.get('Access-Control-Allow-Origin')).toBeNull();
-
-    const get = await app.request('/health', { headers: { Origin: FRONT } });
-    expect(get.headers.get('Access-Control-Allow-Origin')).toBe(FRONT);
-    expect(get.headers.get('Access-Control-Expose-Headers')).toBe(
-      'X-Next-Cursor',
-    );
+    for (const origin of [FRONT, 'http://evil.test']) {
+      const preflight = await app.request('/health', {
+        method: 'OPTIONS',
+        headers: {
+          Origin: origin,
+          'Access-Control-Request-Method': 'POST',
+          'Access-Control-Request-Headers': 'content-type,x-csrf-token',
+        },
+      });
+      expect(preflight.headers.get('Access-Control-Allow-Origin')).toBeNull();
+      expect(
+        preflight.headers.get('Access-Control-Allow-Credentials'),
+      ).toBeNull();
+      const get = await app.request('/health', { headers: { Origin: origin } });
+      expect(get.headers.get('Access-Control-Allow-Origin')).toBeNull();
+    }
+    const res = await app.request('/health');
+    expect(res.headers.get('Cross-Origin-Resource-Policy')).toBe('same-origin');
   });
 
   it('corps JSON > 100 Ko : 413 (et non 500), multipart laissé au plafond de la route', async () => {
