@@ -15,7 +15,7 @@ allowBuilds:
 
 # Overrides : pnpm ne les lit qu'à la racine du workspace.
 overrides:
-  # apps/api — CVE multer < 2.2
-  multer: ^2.2.0
+  # apps/api — CVE multer < 2.5
+  multer: ^2.5.0
   # apps/web — CVE js-yaml < 4.3
   'js-yaml@<4.3.0': '>=5.2.2'
