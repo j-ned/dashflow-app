@@ -41,9 +41,8 @@ COUNTS_SQL="SELECT string_agg(t, ' ' ORDER BY t) FROM (
   FROM information_schema.tables WHERE table_schema = 'public' AND table_type = 'BASE TABLE') s;"
 
 echo "Comparaison des volumes (VPS ↔ Neon)…"
-SOURCE="$(ssh vps "CID=\$(sudo docker ps -qf name=dashflow-app-database); \
-  PW=\$(sudo docker exec \"\$CID\" printenv POSTGRES_PASSWORD); \
-  sudo docker exec -i -e PGPASSWORD=\"\$PW\" \"\$CID\" psql -U djoudj -d dashflow_db -tA" <<< "${COUNTS_SQL}")"
+SOURCE="$(ssh "${DASHFLOW_SSH_HOST:-homeserver}" 'CID=$(docker ps -qf name=dashflow-database); \
+  docker exec -i "$CID" sh -c "PGPASSWORD=\"\$POSTGRES_PASSWORD\" psql -U \"\$POSTGRES_USER\" -d \"\$POSTGRES_DB\" -tA"' <<< "${COUNTS_SQL}")"
 TARGET="$(neon 'psql "$PGURL" -tA' <<< "${COUNTS_SQL}")"
 
 if [ "${SOURCE}" == "${TARGET}" ]; then
