@@ -1,66 +1,37 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
+import { startApi, type E2eApi } from './e2e/api-server';
 import * as OTPAuth from 'otpauth';
-import { AppModule } from '../src/app.module';
-import { MAILER, type Mailer } from '../src/mail/mailer';
 import { authKey } from './auth-key';
 
-class CapturingMailer implements Mailer {
-  sendSecurityNotice(): Promise<void> {
-    return Promise.resolve();
-  }
-  sendAccountExists(): Promise<void> {
-    return Promise.resolve();
-  }
-  lastCode = '';
-  sendVerificationCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendPasswordResetCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-}
-
 describe('Auth e2e', () => {
-  let app: INestApplication;
-  const mailer = new CapturingMailer();
+  let api: E2eApi;
   const email = `e2e+${Date.now()}@dashflow.test`;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER)
-      .useValue(mailer)
-      .compile();
-    app = moduleRef.createNestApplication();
-    app.use(cookieParser());
-    await app.init();
+    api = await startApi();
   });
 
   afterAll(async () => {
-    await app.close();
+    await api?.stop();
   });
 
   it('register → verify → cookie → GET /me', async () => {
-    await request(app.getHttpServer())
+    await request(api.url)
       .post('/auth/register')
       .send({ email, password: authKey('motdepasse-long-12') })
       .expect(201);
 
-    const verify = await request(app.getHttpServer())
+    const verify = await request(api.url)
       .post('/auth/verify')
-      .send({ email, code: mailer.lastCode })
+      .send({ email, code: api.mail.lastCode })
       .expect(200);
 
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
     expect(cookieArr.join(';')).toContain('dashflow_session');
 
-    const me = await request(app.getHttpServer())
+    const me = await request(api.url)
       .get('/auth/me')
       .set('Cookie', cookieArr)
       .expect(200);
@@ -71,7 +42,7 @@ describe('Auth e2e', () => {
   });
 
   it('pre-account-takeover : le mot de passe du premier inscrit (non vérifié) est invalidé par la seconde inscription', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const victim = `e2e-pat+${Date.now()}@dashflow.test`;
 
     // 1. L'attaquant « réserve » l'e-mail de la victime avec SON mot de passe, sans le vérifier.
@@ -87,7 +58,7 @@ describe('Auth e2e', () => {
       .expect(201);
     await request(server)
       .post('/auth/verify')
-      .send({ email: victim, code: mailer.lastCode })
+      .send({ email: victim, code: api.mail.lastCode })
       .expect(200);
 
     // 3. Seul le mot de passe de la personne qui a prouvé l'e-mail fonctionne.
@@ -102,7 +73,7 @@ describe('Auth e2e', () => {
   });
 
   it('logout révoque réellement la session : l’ancien cookie renvoie 401 sur GET /me', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const login = await request(server)
       .post('/auth/login')
       .send({ email, password: authKey('motdepasse-long-12') })
@@ -129,7 +100,7 @@ describe('Auth e2e', () => {
   });
 
   it('changement de mot de passe : l’ancien cookie est révoqué, la réponse porte un cookie à jour', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const login = await request(server)
       .post('/auth/login')
       .send({ email, password: authKey('motdepasse-long-12') })
@@ -184,13 +155,13 @@ describe('Auth e2e', () => {
   });
 
   it('code OTP : détruit après 5 échecs, même le bon code ne passe plus', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const target = `e2e-otp+${Date.now()}@dashflow.test`;
     await request(server)
       .post('/auth/register')
       .send({ email: target, password: authKey('motdepasse-long-12') })
       .expect(201);
-    const good = mailer.lastCode;
+    const good = api.mail.lastCode;
     const wrong = good === '000000' ? '111111' : '000000';
     for (let i = 0; i < 5; i++) {
       await request(server)
@@ -205,14 +176,14 @@ describe('Auth e2e', () => {
   });
 
   it('login mauvais mot de passe → 401', async () => {
-    await request(app.getHttpServer())
+    await request(api.url)
       .post('/auth/login')
       .send({ email, password: authKey('mauvais') })
       .expect(401);
   });
 
   it('mutation authentifiée sans CSRF → 403', async () => {
-    const login = await request(app.getHttpServer())
+    const login = await request(api.url)
       .post('/auth/login')
       .send({ email, password: authKey('motdepasse-long-12') })
       .expect(200);
@@ -222,7 +193,7 @@ describe('Auth e2e', () => {
       ? loginCookie
       : [loginCookie];
 
-    await request(app.getHttpServer())
+    await request(api.url)
       .post('/auth/logout')
       .set('Cookie', loginCookieArr)
       .expect(403);
@@ -230,14 +201,14 @@ describe('Auth e2e', () => {
 
   it('2FA : setup → enable → login exige le code', async () => {
     const email2 = `e2e2fa+${Date.now()}@dashflow.test`;
-    const server = app.getHttpServer();
+    const server = api.url;
     await request(server)
       .post('/auth/register')
       .send({ email: email2, password: authKey('motdepasse-long-12') })
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
-      .send({ email: email2, code: mailer.lastCode })
+      .send({ email: email2, code: api.mail.lastCode })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
@@ -340,7 +311,7 @@ describe('Auth e2e', () => {
 
   it('journal de sécurité : la vérification d’e-mail est tracée avec IP et navigateur, consultable par le compte', async () => {
     const email = `e2esec+${Date.now()}@dashflow.test`;
-    const server = app.getHttpServer();
+    const server = api.url;
     await request(server)
       .post('/auth/register')
       .send({ email, password: authKey('motdepasse-long-12') })
@@ -348,7 +319,7 @@ describe('Auth e2e', () => {
     const verify = await request(server)
       .post('/auth/verify')
       .set('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/130.0')
-      .send({ email, code: mailer.lastCode })
+      .send({ email, code: api.mail.lastCode })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
@@ -375,7 +346,7 @@ describe('Auth e2e', () => {
   });
 
   it('nouveau secret de connexion : un mot de passe brut est refusé (400), seule une clé d’authentification passe', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const res = await request(server)
       .post('/auth/register')
       .send({

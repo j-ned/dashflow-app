@@ -1,49 +1,20 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { MAILER, type Mailer } from '../src/mail/mailer';
+import { startApi, type E2eApi } from './e2e/api-server';
 import { authKey } from './auth-key';
 
-class CapturingMailer implements Mailer {
-  sendSecurityNotice(): Promise<void> {
-    return Promise.resolve();
-  }
-  sendAccountExists(): Promise<void> {
-    return Promise.resolve();
-  }
-  lastCode = '';
-  sendVerificationCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendPasswordResetCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-}
-
 describe('Medical e2e', () => {
-  let app: INestApplication;
-  const mailer = new CapturingMailer();
+  let api: E2eApi;
 
   beforeAll(async () => {
-    const m = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER)
-      .useValue(mailer)
-      .compile();
-    app = m.createNestApplication();
-    app.use(cookieParser());
-    await app.init();
+    api = await startApi();
   });
   afterAll(async () => {
-    await app.close();
+    await api?.stop();
   });
 
   async function authedClient() {
-    const s = app.getHttpServer();
+    const s = api.url;
     const email = `med+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`;
     await request(s)
       .post('/auth/register')
@@ -51,7 +22,7 @@ describe('Medical e2e', () => {
       .expect(201);
     const v = await request(s)
       .post('/auth/verify')
-      .send({ email, code: mailer.lastCode })
+      .send({ email, code: api.mail.lastCode })
       .expect(200);
     const sessionCookie = v.headers['set-cookie'] as unknown as string[];
     const csrf = await request(s)

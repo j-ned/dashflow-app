@@ -1,67 +1,31 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { MAILER, type Mailer } from '../src/mail/mailer';
+import { startApi, type E2eApi } from './e2e/api-server';
 import { authKey } from './auth-key';
 
-class CapturingMailer implements Mailer {
-  sendSecurityNotice(): Promise<void> {
-    return Promise.resolve();
-  }
-  sendAccountExists(): Promise<void> {
-    return Promise.resolve();
-  }
-  lastCode = '';
-  sendVerificationCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendPasswordResetCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  async sendCalendarInvitation(
-    _to: string,
-    _senderName: string,
-    _calendarToken: string,
-  ) {
-    /* no-op */
-  }
-}
-
-// Application dédiée : les compteurs de throttling (par IP et par route) sont en mémoire, par app.
+// Serveur dédié : les compteurs de throttling (par IP et par route) sont en mémoire, par processus.
 describe('Encryption e2e', () => {
-  let app: INestApplication;
-  const mailer = new CapturingMailer();
+  let api: E2eApi;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER)
-      .useValue(mailer)
-      .compile();
-    app = moduleRef.createNestApplication();
-    app.use(cookieParser());
-    await app.init();
+    api = await startApi();
   });
 
   afterAll(async () => {
-    await app.close();
+    await api?.stop();
   });
 
   it('compte E2EE : remplacer les clés exige le mot de passe, le reset classique est refusé et le reset avec récupération est atomique', async () => {
     const email = `e2ekeys+${Date.now()}@dashflow.test`;
     const password = authKey('motdepasse-long-12');
-    const server = app.getHttpServer();
+    const server = api.url;
     await request(server)
       .post('/auth/register')
       .send({ email, password })
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
-      .send({ email, code: mailer.lastCode })
+      .send({ email, code: api.mail.lastCode })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
@@ -104,7 +68,7 @@ describe('Encryption e2e', () => {
       .post('/auth/forgot-password')
       .send({ email })
       .expect(200);
-    const code = mailer.lastCode;
+    const code = api.mail.lastCode;
     const refused = await request(server)
       .post('/auth/reset-password')
       .send({ email, code, newPassword: authKey('nouveau-motdepasse-12') });

@@ -1,59 +1,24 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
-import { AppModule } from '../src/app.module';
-import { MAILER, type Mailer } from '../src/mail/mailer';
+import { startApi, type E2eApi } from './e2e/api-server';
 import postgres from 'postgres';
 import argon2 from 'argon2';
 import { authKey } from './auth-key';
 
-class CapturingMailer implements Mailer {
-  sendSecurityNotice(): Promise<void> {
-    return Promise.resolve();
-  }
-  sendAccountExists(): Promise<void> {
-    return Promise.resolve();
-  }
-  lastCode = '';
-  sendVerificationCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendPasswordResetCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  async sendCalendarInvitation(
-    _to: string,
-    _senderName: string,
-    _calendarToken: string,
-  ) {
-    /* no-op */
-  }
-}
-
-// Application dédiée : les compteurs de throttling (par IP et par route) sont en mémoire, par app.
+// Serveur dédié : les compteurs de throttling (par IP et par route) sont en mémoire, par processus.
 describe('Auth upgrade e2e', () => {
-  let app: INestApplication;
+  let api: E2eApi;
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER)
-      .useValue(new CapturingMailer())
-      .compile();
-    app = moduleRef.createNestApplication();
-    app.use(cookieParser());
-    await app.init();
+    api = await startApi();
   });
 
   afterAll(async () => {
-    await app.close();
+    await api?.stop();
   });
 
   it('compte d’avant la dérivation côté client : prelogin 0 → login au mot de passe → upgrade → prelogin 1, seule la clé ouvre ensuite', async () => {
-    const server = app.getHttpServer();
+    const server = api.url;
     const legacy = `e2elegacy+${Date.now()}@dashflow.test`;
     const rawPassword = 'mot-de-passe-historique';
     const sql = postgres(process.env.DATABASE_URL!);

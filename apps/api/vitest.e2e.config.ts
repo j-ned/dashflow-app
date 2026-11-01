@@ -31,6 +31,8 @@ export default defineConfig({
     environment: 'node',
     root: './',
     include: ['test/**/*.e2e-spec.ts'],
+    // Chaque fichier démarre son propre processus API (cf. test/e2e/api-server.ts).
+    hookTimeout: 60_000,
     env: dotEnvVars,
   },
   plugins: [swc.vite({ module: { type: 'es6' } })],

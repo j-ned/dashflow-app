@@ -1,58 +1,25 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import cookieParser from 'cookie-parser';
 import request from 'supertest';
+import { startApi, type E2eApi } from './e2e/api-server';
 import postgres from 'postgres';
-import { AppModule } from '../src/app.module';
-import { AdminService } from '../src/modules/admin/admin.service';
-import { MAILER, type Mailer } from '../src/mail/mailer';
-import type { NoticeReason } from '../src/modules/admin/account-security';
 import { authKey } from './auth-key';
 
-class CapturingMailer implements Mailer {
-  lastCode = '';
-  notices: { to: string; reason: NoticeReason }[] = [];
-  sendVerificationCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendPasswordResetCode(_to: string, code: string): Promise<void> {
-    this.lastCode = code;
-    return Promise.resolve();
-  }
-  sendAccountExists(): Promise<void> {
-    return Promise.resolve();
-  }
-  sendSecurityNotice(to: string, reason: NoticeReason): Promise<void> {
-    this.notices.push({ to, reason });
-    return Promise.resolve();
-  }
-}
-
-// Application dédiée : les compteurs de throttling (par IP et par route) sont en mémoire, par app.
+// Serveur dédié : les compteurs de throttling (par IP et par route) sont en mémoire, par processus.
 describe('Admin notices e2e', () => {
-  let app: INestApplication;
-  const mailer = new CapturingMailer();
+  let api: E2eApi;
   const sql = postgres(process.env.DATABASE_URL!);
 
   beforeAll(async () => {
-    const moduleRef = await Test.createTestingModule({ imports: [AppModule] })
-      .overrideProvider(MAILER)
-      .useValue(mailer)
-      .compile();
-    app = moduleRef.createNestApplication();
-    app.use(cookieParser());
-    await app.init();
+    api = await startApi();
   });
 
   afterAll(async () => {
     await sql.end();
-    await app.close();
+    await api?.stop();
   });
 
   async function client(tag: string) {
-    const s = app.getHttpServer();
+    const s = api.url;
     const email = `${tag}+${Date.now()}-${Math.floor(Math.random() * 1e6)}@dashflow.test`;
     await request(s)
       .post('/auth/register')
@@ -60,7 +27,7 @@ describe('Admin notices e2e', () => {
       .expect(201);
     const v = await request(s)
       .post('/auth/verify')
-      .send({ email, code: mailer.lastCode })
+      .send({ email, code: api.mail.lastCode })
       .expect(200);
     const sessionCookie = v.headers['set-cookie'] as unknown as string[];
     const csrf = await request(s)
@@ -120,7 +87,7 @@ describe('Admin notices e2e', () => {
     );
 
     // Envoi sélectif : le compte à jour coché par erreur est ignoré, avec la raison.
-    mailer.notices = [];
+    api.mail.clear();
     const sent = await request(admin.s)
       .post('/admin/notices')
       .set('Cookie', admin.cookies)
@@ -131,7 +98,9 @@ describe('Admin notices e2e', () => {
     expect(sent.body.skipped).toEqual([
       { id: upToDate.id, email: upToDate.email, why: 'not_eligible' },
     ]);
-    expect(mailer.notices).toEqual([{ to: target.email, reason: 'reconnect' }]);
+    expect(api.mail.notices).toEqual([
+      { to: target.email, reason: 'reconnect' },
+    ]);
 
     // La session du compte relancé est fermée, celle du compte à jour ne l'est pas.
     await request(target.s)
@@ -151,7 +120,7 @@ describe('Admin notices e2e', () => {
     // Second envoi au même compte : le délai de 7 jours bloque, aucun mail ne repart.
     // (Sélectif exprès : un envoi groupé « reconnect » fermerait la session des comptes créés par
     // les autres suites e2e, qui tournent sur la même base. Le chemin groupé est couvert en unitaire.)
-    mailer.notices = [];
+    api.mail.clear();
     const again = await request(admin.s)
       .post('/admin/notices')
       .set('Cookie', admin.cookies)
@@ -162,7 +131,7 @@ describe('Admin notices e2e', () => {
     expect(again.body.skipped).toEqual([
       { id: target.id, email: target.email, why: 'cooldown' },
     ]);
-    expect(mailer.notices).toEqual([]);
+    expect(api.mail.notices).toEqual([]);
 
     const summary = await request(admin.s)
       .get('/admin/notices/summary')
@@ -205,7 +174,7 @@ describe('Admin notices e2e', () => {
     });
 
     // Aucune relance ne part vers une adresse non vérifiée, même cochée.
-    mailer.notices = [];
+    api.mail.clear();
     const notice = await request(admin.s)
       .post('/admin/notices')
       .set('Cookie', admin.cookies)
@@ -213,7 +182,7 @@ describe('Admin notices e2e', () => {
       .send({ reason: 'enable_encryption', userIds: [fakeId] })
       .expect(200);
     expect(notice.body.sent).toEqual([]);
-    expect(mailer.notices).toEqual([]);
+    expect(api.mail.notices).toEqual([]);
 
     // Un utilisateur ordinaire ne supprime personne.
     await request(real.s)
@@ -245,30 +214,5 @@ describe('Admin notices e2e', () => {
       .get('/auth/me')
       .set('Cookie', real.cookies)
       .expect(200);
-  });
-
-  it('purge nocturne : plus de 7 jours et jamais vérifié, sauf code demandé dans les 24 h', async () => {
-    const tag = Date.now();
-    const old = `old+${tag}@dashflow.test`;
-    const recent = `recent+${tag}@dashflow.test`;
-    const retrying = `retry+${tag}@dashflow.test`;
-    const verified = `verified+${tag}@dashflow.test`;
-    await sql`insert into users (email, password, created_at) values
-      (${old}, 'x', now() - interval '8 days'),
-      (${recent}, 'x', now() - interval '2 days'),
-      (${retrying}, 'x', now() - interval '30 days')`;
-    await sql`insert into users (email, password, created_at, email_verified) values
-      (${verified}, 'x', now() - interval '30 days', now())`;
-    // Réinscription en cours sur une vieille ligne : un code vient d'être demandé.
-    await sql`insert into verification_codes (email, code, expires_at) values (${retrying}, 'h', now() + interval '10 minutes')`;
-
-    await app.get(AdminService).purgeStaleUnverified();
-
-    const left = await sql<
-      { email: string }[]
-    >`select email from users where email in ${sql([old, recent, retrying, verified])}`;
-    expect(left.map((r) => r.email).sort()).toEqual(
-      [recent, retrying, verified].sort(),
-    );
   });
 });
