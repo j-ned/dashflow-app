@@ -1,0 +1,8 @@
+{
+  "extraKnownMarketplaces": {
+    "aak": {
+      "source": { "source": "github", "repo": "GaetanRdn/aak-agents", "ref": "v0" }
+    }
+  },
+  "enabledPlugins": { "angular-team@aak": true }
+}

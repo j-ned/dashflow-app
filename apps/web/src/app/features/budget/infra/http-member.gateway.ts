@@ -1,0 +1,50 @@
+import { inject, Injectable } from '@angular/core';
+import { map, Observable } from 'rxjs';
+import { ApiClient } from '@core/services/api/api-client';
+import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList } from '@core/services/crypto/validate-decrypted';
+import { Member } from '../domain/models/member.model';
+import { MemberGateway } from '../domain/gateways/member.gateway';
+import { MemberSchema } from './schemas/member.schema';
+
+const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
+
+@Injectable()
+export class HttpMemberGateway implements MemberGateway {
+  private readonly api = inject(ApiClient);
+  private readonly crypto = inject(CryptoStore);
+
+  getAll(): Observable<Member[]> {
+    return decryptList(this.api.getList<ApiRow>('/members'), this.crypto.getMasterKey()).pipe(
+      map((members) => validateList(MemberSchema, members, { entity: 'Member' })),
+    );
+  }
+
+  create(member: Omit<Member, 'id'>): Observable<Member> {
+    return mutateEncrypted(
+      member as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/members', body),
+    );
+  }
+
+  update(id: string, member: Member): Observable<Member> {
+    // Membre déchiffré COMPLET (au runtime il porte aussi d'éventuels champs médicaux du blob)
+    // → le ré-encryptage ne perd pas les données médicales de la personne.
+    const { id: _id, ...rest } = member;
+    return mutateEncrypted(
+      rest as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/members/${id}`, body),
+      { rowId: id },
+    );
+  }
+
+  delete(id: string, options?: { force?: boolean }): Observable<void> {
+    return this.api.delete(`/members/${id}${options?.force ? '?force=true' : ''}`);
+  }
+}

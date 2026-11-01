@@ -1,0 +1,353 @@
+import { Component, ChangeDetectionStrategy, inject, signal, viewChild } from '@angular/core';
+import { Router } from '@angular/router';
+import { reportError } from '@core/monitoring/error-reporter';
+import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
+import { ApiClient } from '@core/services/api/api-client';
+import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { encryptEntity } from '@core/services/crypto/entity-crypto';
+import { firstValueFrom } from 'rxjs';
+import { AuthStore } from '../../auth.store';
+import { AuthEncryptionStore } from '../../auth-encryption.store';
+import { RecoveryKeyModal } from '../../components/recovery-key-modal/recovery-key-modal';
+import { EncryptionPassphraseModal } from '../../components/encryption-passphrase-modal/encryption-passphrase-modal';
+import { ConfirmPasswordModal } from '../../components/confirm-password-modal/confirm-password-modal';
+
+const CLEARTEXT_KEYS: Record<string, readonly string[]> = {
+  bankAccounts: ['id', 'userId', 'createdAt'],
+  // Miroir de http-account-transaction.gateway.ts : ce qui reste en clair pour le tri/les FK.
+  accountTransactions: [
+    'id',
+    'userId',
+    'accountId',
+    'toAccountId',
+    'direction',
+    'memberId',
+    'recurringEntryId',
+    'createdAt',
+  ],
+  envelopes: ['id', 'userId', 'memberId'],
+  envelopeTransactions: ['id', 'envelopeId', 'createdAt'],
+  loans: ['id', 'userId', 'memberId'],
+  loanTransactions: ['id', 'loanId', 'createdAt'],
+  recurringEntries: ['id', 'userId', 'memberId', 'accountId', 'createdAt'],
+  salaryArchives: ['id', 'userId', 'accountId', 'createdAt'],
+  patients: ['id', 'userId', 'createdAt'],
+  practitioners: ['id', 'userId', 'createdAt'],
+  appointments: ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'],
+  prescriptions: ['id', 'userId', 'appointmentId', 'practitionerId', 'patientId', 'createdAt'],
+  medications: ['id', 'userId', 'prescriptionId', 'patientId', 'createdAt'],
+  documents: ['id', 'userId', 'patientId', 'practitionerId', 'createdAt'],
+};
+
+const API_PATHS: Record<string, string> = {
+  bankAccounts: '/bank-accounts',
+  accountTransactions: '/transactions/all',
+  envelopes: '/envelopes',
+  envelopeTransactions: '/envelopes/transactions/all',
+  loans: '/loans',
+  loanTransactions: '/loans/transactions/all',
+  recurringEntries: '/recurring-entries',
+  salaryArchives: '/salary-archives',
+  patients: '/patients',
+  practitioners: '/practitioners',
+  appointments: '/appointments',
+  prescriptions: '/prescriptions',
+  medications: '/medications',
+  documents: '/documents',
+};
+
+@Component({
+  selector: 'app-encryption-setup',
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [RecoveryKeyModal, EncryptionPassphraseModal, ConfirmPasswordModal, TranslocoPipe],
+  host: { class: 'flex min-h-screen items-center justify-center bg-canvas p-4' },
+  template: `
+    <main>
+      <article class="w-full max-w-lg rounded-xl border border-border bg-surface p-8 shadow-lg">
+        <header class="mb-6 text-center">
+          <div
+            class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              width="24"
+              height="24"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              class="text-ib-green"
+              aria-hidden="true"
+            >
+              <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+            </svg>
+          </div>
+          <h1 class="text-xl font-bold text-text-primary">
+            {{ 'auth.encryptionSetup.title' | transloco }}
+          </h1>
+          <p class="mt-2 text-sm text-text-muted">
+            {{ 'auth.encryptionSetup.subtitle' | transloco }}
+          </p>
+        </header>
+
+        @if (error()) {
+          <p role="alert" class="mb-4 rounded-md bg-ib-red/10 p-3 text-sm text-ib-red">
+            {{ error() }}
+          </p>
+        }
+
+        <div class="flex flex-col gap-4">
+          @switch (step()) {
+            @case ('init') {
+              <div class="rounded-lg bg-ib-amber/10 border border-ib-amber/20 p-4">
+                <p class="text-sm font-medium text-ib-amber">
+                  {{ 'auth.encryptionSetup.warningTitle' | transloco }}
+                </p>
+                <p class="mt-1 text-sm text-text-primary">
+                  {{ 'auth.encryptionSetup.warningBody' | transloco }}
+                </p>
+              </div>
+
+              <button
+                type="button"
+                (click)="startSetup()"
+                [disabled]="loading()"
+                class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {{
+                  (loading() ? 'auth.encryptionSetup.preparing' : 'auth.encryptionSetup.activate')
+                    | transloco
+                }}
+              </button>
+            }
+
+            @case ('migrating') {
+              <div class="flex flex-col items-center gap-4 py-8">
+                <div
+                  class="h-8 w-8 animate-spin rounded-full border-2 border-ib-blue border-t-transparent"
+                ></div>
+                <p class="text-sm text-text-muted">{{ progressMessage() }}</p>
+                <div class="w-full bg-canvas rounded-full h-2">
+                  <div
+                    class="bg-ib-blue h-2 rounded-full transition duration-300"
+                    [style.width.%]="progress()"
+                  ></div>
+                </div>
+              </div>
+            }
+
+            @case ('done') {
+              <div class="flex flex-col items-center gap-4 py-4">
+                <div class="flex h-12 w-12 items-center justify-center rounded-full bg-ib-green/10">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    class="text-ib-green"
+                    aria-hidden="true"
+                  >
+                    <polyline points="20 6 9 17 4 12" />
+                  </svg>
+                </div>
+                <p class="text-sm font-medium text-text-primary">
+                  {{ 'auth.encryptionSetup.doneTitle' | transloco }}
+                </p>
+                <button
+                  type="button"
+                  (click)="goToDashboard()"
+                  class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90"
+                >
+                  {{ 'auth.encryptionSetup.goToDashboard' | transloco }}
+                </button>
+              </div>
+            }
+          }
+        </div>
+      </article>
+
+      <app-recovery-key-modal [recoveryKey]="recoveryKey()" (keySaved)="onRecoveryKeyConfirmed()" />
+
+      <app-encryption-passphrase-modal (passphraseSet)="onPassphraseSet($event)" />
+
+      <app-confirm-password-modal (confirmed)="onPasswordConfirmed($event)" />
+    </main>
+  `,
+})
+export class EncryptionSetup {
+  private readonly auth = inject(AuthStore);
+  private readonly authEncryption = inject(AuthEncryptionStore);
+  private readonly cryptoStore = inject(CryptoStore);
+  private readonly api = inject(ApiClient);
+  private readonly router = inject(Router);
+  private readonly _i18n = inject(TranslocoService);
+
+  private readonly recoveryModal = viewChild.required(RecoveryKeyModal);
+  private readonly passphraseModal = viewChild.required(EncryptionPassphraseModal);
+  private readonly confirmPasswordModal = viewChild.required(ConfirmPasswordModal);
+
+  protected readonly step = signal<'init' | 'migrating' | 'done'>('init');
+  protected readonly loading = signal(false);
+  protected readonly error = signal('');
+  protected readonly recoveryKey = signal('');
+  protected readonly progress = signal(0);
+  protected readonly progressMessage = signal('');
+
+  private _password = '';
+
+  constructor() {
+    this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.preparing'));
+  }
+
+  protected startSetup(): void {
+    const user = this.auth.user();
+    if (!user) return;
+
+    if (!user.hasPassword) {
+      this.passphraseModal().open();
+      return;
+    }
+
+    this.confirmPasswordModal().open();
+  }
+
+  protected async onPasswordConfirmed(password: string): Promise<void> {
+    this._password = '';
+    this.loading.set(true);
+    this.error.set('');
+
+    try {
+      this._password = password;
+
+      const key = await this.authEncryption.setupEncryption(password);
+      this.recoveryKey.set(key);
+      this.loading.set(false);
+      this.recoveryModal().open();
+    } catch (e) {
+      reportError(e, { flow: 'e2ee-setup' });
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.prepareFailed'));
+      this.loading.set(false);
+    }
+  }
+
+  protected onPassphraseSet(passphrase: string): void {
+    this._password = passphrase;
+    this.startEncryptionWithPassword(passphrase);
+  }
+
+  private async startEncryptionWithPassword(password: string): Promise<void> {
+    this.loading.set(true);
+    this.error.set('');
+
+    try {
+      await this.authEncryption.markPassphraseProtected();
+
+      const key = await this.authEncryption.setupEncryption(password);
+      this.recoveryKey.set(key);
+      this.loading.set(false);
+      this.recoveryModal().open();
+    } catch (e) {
+      reportError(e, { flow: 'e2ee-setup-passphrase' });
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.passphraseFailed'));
+      this.loading.set(false);
+    }
+  }
+
+  protected async onRecoveryKeyConfirmed(): Promise<void> {
+    this.step.set('migrating');
+    await this.migrateData();
+  }
+
+  private async migrateData(): Promise<void> {
+    try {
+      const keyMaterial = this.auth.getKeyMaterial();
+      if (keyMaterial) {
+        await this.cryptoStore.unlock(
+          this._password,
+          keyMaterial.salt,
+          keyMaterial.wrappedMasterKey,
+        );
+      }
+
+      const masterKey = this.cryptoStore.getMasterKey();
+      if (!masterKey) {
+        this.error.set(this._i18n.translate('auth.encryptionSetup.errors.unlockFailed'));
+        this.step.set('init');
+        return;
+      }
+
+      const tableNames = Object.keys(API_PATHS);
+      const encryptedData: Record<string, { id: string; encryptedData: string }[]> = {};
+
+      let completed = 0;
+      const total = tableNames.length;
+      const failedTables: string[] = [];
+
+      for (const tableName of tableNames) {
+        this.progressMessage.set(
+          this._i18n.translate('auth.encryptionSetup.encryptingTable', { table: tableName }),
+        );
+        this.progress.set(Math.round((completed / total) * 100));
+
+        try {
+          const rows = await firstValueFrom(
+            this.api.get<Record<string, unknown>[]>(API_PATHS[tableName]),
+          );
+
+          if (rows.length > 0) {
+            const encrypted: { id: string; encryptedData: string }[] = [];
+            for (const row of rows) {
+              const result = await encryptEntity(row, CLEARTEXT_KEYS[tableName], masterKey, {
+                rowId: row['id'] as string,
+              });
+              encrypted.push({ id: row['id'] as string, encryptedData: result.encryptedData });
+            }
+            encryptedData[tableName] = encrypted;
+          }
+        } catch (e) {
+          reportError(e, { flow: 'e2ee-migration', table: tableName });
+          failedTables.push(tableName);
+        }
+
+        completed++;
+      }
+
+      if (failedTables.length > 0) {
+        this.step.set('init');
+        this.error.set(
+          this._i18n.translate('auth.encryptionSetup.errors.tablesFailed', {
+            tables: failedTables.join(', '),
+          }),
+        );
+        return;
+      }
+
+      this.progressMessage.set(this._i18n.translate('auth.encryptionSetup.sendingEncrypted'));
+      this.progress.set(90);
+
+      await this.authEncryption.migrateEncryption(encryptedData);
+
+      this.progress.set(100);
+      this.step.set('done');
+    } catch (e) {
+      reportError(e, { flow: 'e2ee-migration' });
+      this.step.set('init');
+      this.error.set(this._i18n.translate('auth.encryptionSetup.errors.migrationFailed'));
+    } finally {
+      // Le mot de passe n'est nécessaire qu'au tout début (unlock ci-dessus) : zéroisé dès la fin
+      // de la migration, succès ou échec, pour limiter sa durée de vie en mémoire.
+      this._password = '';
+    }
+  }
+
+  protected goToDashboard(): void {
+    this.router.navigate(['/budget']);
+  }
+}

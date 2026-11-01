@@ -1,0 +1,196 @@
+import { autoPostCandidates, duePostings, isAutoEntry, withAutoPost } from './auto-post';
+import { RecurringEntry } from './models/recurring-entry.model';
+import { AccountTransaction } from './models/account-transaction.model';
+
+const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
+  id: 'r1',
+  memberId: null,
+  accountId: 'a',
+  toAccountId: null,
+  label: 'Loyer',
+  amount: 800,
+  type: 'expense',
+  dayOfMonth: 5,
+  date: null,
+  endDate: null,
+  category: null,
+  payslipKey: null,
+  autoPost: true,
+  autoPostSince: '2026-06',
+  variableAmount: false,
+  ...p,
+});
+
+const tx = (p: Partial<AccountTransaction>): AccountTransaction => ({
+  id: 'x',
+  accountId: 'a',
+  amount: 0,
+  direction: 'expense',
+  toAccountId: null,
+  date: '2026-06-01',
+  category: null,
+  note: null,
+  memberId: null,
+  recurringEntryId: null,
+  ...p,
+});
+
+const CTX = { currentMonth: '2026-06', currentDay: 10 };
+
+describe('duePostings', () => {
+  it('poste une échéance du mois courant dont le jour est passé', () => {
+    const res = duePostings([entry({ dayOfMonth: 5 })], [], CTX);
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({
+      month: '2026-06',
+      date: '2026-06-05',
+      amount: 800,
+      direction: 'expense',
+    });
+  });
+
+  it("ne poste pas une échéance du mois courant dont le jour n'est pas encore passé", () => {
+    expect(duePostings([entry({ dayOfMonth: 20 })], [], CTX)).toEqual([]);
+  });
+
+  it('ignore une récurrence non auto-pointée', () => {
+    expect(duePostings([entry({ autoPost: false })], [], CTX)).toEqual([]);
+  });
+
+  it('ignore une récurrence sans compte ou sans jour', () => {
+    expect(duePostings([entry({ accountId: null })], [], CTX)).toEqual([]);
+    expect(duePostings([entry({ dayOfMonth: null })], [], CTX)).toEqual([]);
+  });
+
+  it('ignore les types non éligibles (spending, annual_expense)', () => {
+    expect(duePostings([entry({ type: 'spending' })], [], CTX)).toEqual([]);
+    expect(duePostings([entry({ type: 'annual_expense' })], [], CTX)).toEqual([]);
+  });
+
+  it('mappe la direction selon le type', () => {
+    expect(duePostings([entry({ type: 'income', dayOfMonth: 5 })], [], CTX)[0].direction).toBe(
+      'income',
+    );
+    expect(duePostings([entry({ type: 'transfer', dayOfMonth: 5 })], [], CTX)[0].direction).toBe(
+      'transfer',
+    );
+  });
+
+  it('est idempotent : ignore un mois déjà pointé', () => {
+    const posted = [tx({ recurringEntryId: 'r1', date: '2026-06-05' })];
+    expect(duePostings([entry({ dayOfMonth: 5 })], posted, CTX)).toEqual([]);
+  });
+
+  it('rattrape les mois sautés depuis autoPostSince (un posting par mois)', () => {
+    const res = duePostings([entry({ dayOfMonth: 5, autoPostSince: '2026-04' })], [], CTX);
+    expect(res.map((r) => r.month)).toEqual(['2026-04', '2026-05', '2026-06']);
+    expect(res.map((r) => r.date)).toEqual(['2026-04-05', '2026-05-05', '2026-06-05']);
+  });
+
+  it('poste un mois PASSÉ en entier même si le jour est après le jour courant', () => {
+    const res = duePostings([entry({ dayOfMonth: 20, autoPostSince: '2026-05' })], [], CTX);
+    expect(res.map((r) => r.month)).toEqual(['2026-05']);
+  });
+
+  it('ne backfille rien avant autoPostSince', () => {
+    const res = duePostings([entry({ dayOfMonth: 5, autoPostSince: '2026-06' })], [], CTX);
+    expect(res.map((r) => r.month)).toEqual(['2026-06']);
+  });
+
+  it('respecte endDate : pas de posting après le mois de fin', () => {
+    const res = duePostings(
+      [entry({ dayOfMonth: 5, autoPostSince: '2026-04', endDate: '2026-05-31' })],
+      [],
+      CTX,
+    );
+    expect(res.map((r) => r.month)).toEqual(['2026-04', '2026-05']);
+  });
+
+  it('autoPostSince null → pas de rattrapage, mois courant seulement', () => {
+    const res = duePostings([entry({ dayOfMonth: 5, autoPostSince: null })], [], CTX);
+    expect(res.map((r) => r.month)).toEqual(['2026-06']);
+  });
+});
+
+describe('isAutoEntry', () => {
+  it('true pour un virement quel que soit autoPost', () => {
+    expect(isAutoEntry(entry({ type: 'transfer', toAccountId: 'b', autoPost: false }))).toBe(true);
+  });
+
+  it('reflète autoPost pour income/expense', () => {
+    expect(isAutoEntry(entry({ type: 'expense', autoPost: true }))).toBe(true);
+    expect(isAutoEntry(entry({ type: 'expense', autoPost: false }))).toBe(false);
+  });
+});
+
+describe('duePostings : virements toujours auto', () => {
+  it('poste un virement récurrent même si autoPost est false', () => {
+    const res = duePostings(
+      [
+        entry({
+          type: 'transfer',
+          toAccountId: 'b',
+          dayOfMonth: 5,
+          autoPost: false,
+          autoPostSince: null,
+          variableAmount: false,
+        }),
+      ],
+      [],
+      CTX,
+    );
+    expect(res).toHaveLength(1);
+    expect(res[0]).toMatchObject({ month: '2026-06', date: '2026-06-05', direction: 'transfer' });
+  });
+
+  it('une dépense non auto-pointée reste ignorée (non-régression)', () => {
+    expect(duePostings([entry({ type: 'expense', autoPost: false })], [], CTX)).toEqual([]);
+  });
+});
+
+describe('autoPostCandidates', () => {
+  it('retient les prélèvements mensuels fixes encore confirmés à la main, et eux seuls', () => {
+    const manual = { autoPost: false, autoPostSince: null } as const;
+    const entries = [
+      entry({ ...manual, id: 'loyer', type: 'expense', accountId: 'a', dayOfMonth: 1 }),
+      entry({ id: 'deja-auto', type: 'expense', accountId: 'a', dayOfMonth: 5, autoPost: true }),
+      entry({ ...manual, id: 'orphelin', type: 'expense', accountId: null, dayOfMonth: 5 }),
+      entry({ ...manual, id: 'sans-jour', type: 'expense', accountId: 'a', dayOfMonth: null }),
+      entry({ ...manual, id: 'salaire', type: 'income', accountId: 'a', dayOfMonth: 1 }),
+      entry({ ...manual, id: 'taxe', type: 'annual_expense', accountId: 'a', dayOfMonth: 1 }),
+    ];
+    expect(autoPostCandidates(entries).map((e) => e.id)).toEqual(['loyer']);
+  });
+});
+
+describe('withAutoPost', () => {
+  it("active le pointage à partir du mois courant, sans l'identifiant dans le payload", () => {
+    const payload = withAutoPost(
+      entry({ id: 'loyer', type: 'expense', dayOfMonth: 1, autoPost: false, autoPostSince: null }),
+      '2026-09',
+    );
+    expect(payload).toMatchObject({ autoPost: true, autoPostSince: '2026-09' });
+    expect('id' in payload).toBe(false);
+  });
+
+  it("ne rattrape jamais les mois d'avant l'activation", () => {
+    const loyer = entry({
+      id: 'loyer',
+      type: 'expense',
+      dayOfMonth: 1,
+      autoPost: false,
+      autoPostSince: null,
+    });
+    const automated = { id: 'loyer', ...withAutoPost(loyer, '2026-09') };
+    const due = duePostings([automated], [], { currentMonth: '2026-09', currentDay: 19 });
+    expect(due.map((d) => d.month)).toEqual(['2026-09']);
+  });
+
+  it("conserve une date d'activation déjà figée", () => {
+    const payload = withAutoPost(
+      entry({ id: 'x', type: 'expense', accountId: 'a', dayOfMonth: 1, autoPostSince: '2026-06' }),
+      '2026-09',
+    );
+    expect(payload.autoPostSince).toBe('2026-06');
+  });
+});

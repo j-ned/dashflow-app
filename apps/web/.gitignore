@@ -1,0 +1,71 @@
+# See https://docs.github.com/get-started/getting-started-with-git/ignoring-files for more about ignoring files.
+
+# Compiled output
+/dist
+backend/dist
+/tmp
+/out-tsc
+/bazel-out
+
+# Node
+/node_modules
+backend/node_modules
+backend/.env
+backend/.env.example
+.env
+.env.local
+npm-debug.log
+yarn-error.log
+
+# IDEs and editors
+.idea/
+.project
+.classpath
+.gemini
+.c9/
+*.launch
+.settings/
+*.sublime-workspace
+
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/mcp.json
+.history/*
+
+# Miscellaneous
+/.angular/cache
+.sass-cache/
+/connect.lock
+/coverage
+/libpeerconnection.log
+testem.log
+/typings
+__screenshots__/
+
+# System files
+.DS_Store
+Thumbs.db
+
+# AI ignore
+.agents
+# Fichiers AAK (licence propriétaire, redistribution interdite) : jamais
+# committés dans ce dépôt public — installés par le plugin ou /aak-sync en local.
+.claude/settings.local.json
+.claude/.aak-version
+.claude/agents/
+.claude/commands/aak-*
+.claude/eslint/
+.claude/skills/angular-async-testing/
+.claude/skills/angular-routing-patterns/
+.claude/skills/angular-signal-forms/
+.claude/skills/tutor/
+.remember
+PRODUCT.md
+DESIGN.md
+skills-lock.json
+docs/*

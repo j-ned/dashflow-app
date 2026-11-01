@@ -1,0 +1,66 @@
+import { inject, Injectable } from '@angular/core';
+import { map, Observable } from 'rxjs';
+import { ApiClient } from '@core/services/api/api-client';
+import { CryptoStore } from '@core/services/crypto/crypto.store';
+import { ApiRow } from '@core/services/crypto/entity-crypto';
+import { decryptList, mutateEncrypted } from '@core/services/crypto/crypto-transport';
+import { validateList } from '@core/services/crypto/validate-decrypted';
+import { BankAccount, BankAccountType } from '../domain/models/bank-account.model';
+import { BankAccountGateway } from '../domain/gateways/bank-account.gateway';
+import { BankAccountSchema } from './schemas/bank-account.schema';
+
+const CLEARTEXT_KEYS = ['id', 'userId', 'createdAt'] as const;
+
+// `type` est chiffré : les comptes créés avant A3-type n'en ont pas → défaut 'courant'.
+// initialBalance est désormais chiffré aussi (comme envelope.balance/loan.amount) ; la colonne Postgres
+// `initial_balance` garde son défaut '0' pour les nouveaux comptes (cf. schéma backend), la vraie valeur
+// vit dans encryptedData. Coercition en number nécessaire dans tous les cas : legacy = string Postgres
+// (comptes créés avant ce fix, jamais backfillés), E2EE = déjà un number réel après décryptage (no-op).
+function coerceBankAccount(row: ApiRow): BankAccount {
+  const a = row as Record<string, unknown>;
+  return {
+    ...(a as unknown as BankAccount),
+    type: (a['type'] as BankAccountType) ?? 'courant',
+    initialBalance: Number(a['initialBalance']),
+  };
+}
+
+@Injectable()
+export class HttpBankAccountGateway implements BankAccountGateway {
+  private readonly api = inject(ApiClient);
+  private readonly crypto = inject(CryptoStore);
+
+  getAll(): Observable<BankAccount[]> {
+    // coerce appliqué après décryptage : vaut pour les comptes en clair comme chiffrés.
+    return decryptList<ApiRow>(
+      this.api.getList<ApiRow>('/bank-accounts'),
+      this.crypto.getMasterKey(),
+    ).pipe(
+      map((rows) => rows.map(coerceBankAccount)),
+      map((accounts) => validateList(BankAccountSchema, accounts, { entity: 'BankAccount' })),
+    );
+  }
+
+  create(data: Omit<BankAccount, 'id'>): Observable<BankAccount> {
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.post<ApiRow>('/bank-accounts', body),
+    );
+  }
+
+  update(id: string, data: Partial<Omit<BankAccount, 'id'>>): Observable<BankAccount> {
+    return mutateEncrypted(
+      data as Record<string, unknown>,
+      CLEARTEXT_KEYS,
+      this.crypto.getMasterKey(),
+      (body) => this.api.put<ApiRow>(`/bank-accounts/${id}`, body),
+      { rowId: id },
+    );
+  }
+
+  delete(id: string): Observable<void> {
+    return this.api.delete(`/bank-accounts/${id}`);
+  }
+}
