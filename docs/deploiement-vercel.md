@@ -53,20 +53,20 @@ L'intégration injecte `DATABASE_URL` (connexion poolée, utilisée par l'API) e
 
 ## 5. Copier les données (fenêtre de maintenance)
 
-L'ancienne API doit être arrêtée (ou au moins ne plus recevoir d'écritures) pendant la copie. Sinon, tout ce qui est écrit entre l'export et la bascule DNS est perdu.
+Arrête d'abord l'ancienne API dans Dokploy, ou empêche-la au moins de recevoir des écritures. Sinon, tout ce qui est écrit entre l'export et la bascule DNS est perdu.
 
 ```bash
-# 1. Export depuis le VPS (format custom, sans propriétaires/droits propres à l'ancien serveur)
-pg_dump --format=custom --no-owner --no-acl "$ANCIENNE_DATABASE_URL" > dashflow.dump
-
-# 2. Import dans Neon (connexion DIRECTE, pas le pooler)
-pg_restore --no-owner --no-acl --dbname="$DATABASE_URL_UNPOOLED" dashflow.dump
-
-# 3. Migrations éventuellement en attente
-DATABASE_URL="$DATABASE_URL_UNPOOLED" pnpm --filter @dashflow/api db:migrate
+cd apps/api
+make db-pull      # export de la prod par SSH (vps) → ~/backups/dashflow/*.dump
+NEON_DATABASE_URL='<DATABASE_URL_UNPOOLED, copiée depuis Vercel>' make db-to-neon
 ```
 
-Vérifie ensuite que les deux bases ont le même nombre de lignes, par exemple sur `users`, `account_transactions` et `documents`. Les fichiers restent dans R2 : rien à copier de ce côté.
+`db-to-neon` (`scripts/db/copy-to-neon.sh`) :
+- **Refus d'écraser :** il refuse une base Neon qui contient déjà des données (`FORCE=1` pour passer outre).
+- **Restauration :** il restaure le dernier dump via `postgres:18` dans Docker, sans installation locale.
+- **Vérification :** il compare **table par table** le nombre de lignes entre le VPS et Neon, et échoue au moindre écart.
+
+Les fichiers restent dans R2 : rien à copier de ce côté. La table des migrations (`drizzle.__drizzle_migrations_nest`) fait partie du dump, donc les migrations déjà appliquées ne seront pas rejouées.
 
 ## 6. Premier déploiement et tests sur l'URL `*.vercel.app`
 
