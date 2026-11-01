@@ -67,7 +67,7 @@ jobs:
       - name: Lint
         run: pnpm --filter @dashflow/api lint:check # eslint sans --fix (échoue s'il reste une erreur)
       - name: Build
-        run: pnpm --filter @dashflow/api build # nest build (typecheck complet)
+        run: pnpm --filter @dashflow/api build # tsc (typecheck complet)
       - name: Test
         run: pnpm --filter @dashflow/api test # vitest run (unit + module, dont les tests HTTP multipart)
 
@@ -104,13 +104,8 @@ jobs:
         run: pnpm --filter @dashflow/api db:migrate # applique les migrations drizzle sur la base éphémère
       - name: Integration tests
         run: pnpm --filter @dashflow/api test:integration # filet anti-régression migration (schema-integrity, ...)
-      - name: E2E tests (Nest)
+      - name: E2E tests
         run: pnpm --filter @dashflow/api test:e2e # boîte noire : l'API tourne dans son propre processus
-      # Même suite contre l'implémentation Hono, tant que les deux coexistent.
-      - name: E2E tests (Hono)
-        run: pnpm --filter @dashflow/api test:e2e
-        env:
-          E2E_API_CMD: node dist/http/server.js
 
   docker:
     name: Docker Build (${{ matrix.app }})

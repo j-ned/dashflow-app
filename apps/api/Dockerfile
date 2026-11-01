@@ -9,7 +9,7 @@ WORKDIR /repo
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY apps/api/package.json apps/api/
 RUN pnpm install --frozen-lockfile --filter @dashflow/api
-COPY apps/api/tsconfig.json apps/api/tsconfig.build.json apps/api/nest-cli.json apps/api/
+COPY apps/api/tsconfig.json apps/api/tsconfig.build.json apps/api/
 COPY apps/api/src/ apps/api/src/
 RUN pnpm --filter @dashflow/api build
 

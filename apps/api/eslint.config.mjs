@@ -43,28 +43,8 @@ export default tseslint.config(
     },
   },
   {
-    // Couche métier (services, repositories, mailers, stockage, utilitaires) : sans framework,
-    // pour être recâblée telle quelle sous un autre serveur HTTP. Nest reste confiné à la
-    // couche HTTP et au câblage, listés ci-dessous.
-    files: ['src/**/*.ts'],
-    ignores: [
-      'src/main.ts',
-      'src/instrument.ts',
-      '**/*.spec.ts',
-      '**/*.module.ts',
-      '**/*.controller.ts',
-      '**/*.interceptor.ts',
-      '**/*.decorator.ts',
-      'src/common/guards/**',
-      'src/common/pipes/**',
-      'src/common/filters/**',
-      'src/common/decorators/**',
-      'src/common/nest/**',
-      'src/common/logger.ts',
-      'src/auth/http-error.ts',
-      'src/health/**',
-      'src/scheduler/**',
-    ],
+    // L'API a quitté NestJS pour Hono : plus aucun import du framework ne doit revenir.
+    files: ['src/**/*.ts', 'test/**/*.ts'],
     rules: {
       'no-restricted-imports': [
         'error',
@@ -72,8 +52,7 @@ export default tseslint.config(
           patterns: [
             {
               group: ['@nestjs/*'],
-              message:
-                'Couche métier sans framework : passer par common/errors, common/logger ou un jeton injecté.',
+              message: 'NestJS a été retiré : passer par src/http (Hono).',
             },
           ],
         },

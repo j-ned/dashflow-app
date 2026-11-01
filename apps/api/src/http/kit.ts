@@ -8,6 +8,7 @@ import { AppError, BadRequestError } from '../common/errors';
 import { NEXT_CURSOR_HEADER, type Page } from '../common/crud/keyset';
 import type { Result } from '../auth/auth.result';
 import {
+  type CookieSettings,
   SESSION_COOKIE_NAMES,
   sessionCookieName,
   sessionCookieOptions,
@@ -50,24 +51,12 @@ export const clientOf = (c: Context<AppEnv>): ClientContext => ({
   userAgent: c.req.header('user-agent') ?? null,
 });
 
-/** Options Express (`maxAge` en ms, `sameSite` en minuscules) → options Hono. */
-function honoCookieOptions(opts: {
-  httpOnly?: boolean;
-  secure?: boolean;
-  sameSite?: unknown;
-  path?: string;
-  maxAge?: number;
-}): CookieOptions {
-  const sameSite =
-    opts.sameSite === 'none'
-      ? 'None'
-      : opts.sameSite === 'lax'
-        ? 'Lax'
-        : 'Strict';
+/** Réglages applicatifs (`maxAge` en ms) → options Hono (`Max-Age` en s + `Expires`). */
+function honoCookieOptions(opts: Partial<CookieSettings>): CookieOptions {
   return {
     httpOnly: opts.httpOnly,
     secure: opts.secure,
-    sameSite,
+    sameSite: opts.sameSite === 'strict' ? 'Strict' : 'Lax',
     path: opts.path,
     ...(opts.maxAge !== undefined
       ? {
@@ -78,19 +67,19 @@ function honoCookieOptions(opts: {
   };
 }
 
-export function setCookieExpress(
+export function setAppCookie(
   c: Context,
   name: string,
   value: string,
-  opts: Parameters<typeof honoCookieOptions>[0],
+  opts: Partial<CookieSettings>,
 ): void {
   setCookie(c, name, value, honoCookieOptions(opts));
 }
 
-export function clearCookieExpress(
+export function clearAppCookie(
   c: Context,
   name: string,
-  opts: Parameters<typeof honoCookieOptions>[0],
+  opts: Partial<CookieSettings>,
 ): void {
   const { maxAge: _maxAge, ...rest } = opts;
   deleteCookie(c, name, honoCookieOptions(rest));
@@ -115,7 +104,7 @@ export class SessionCookies {
       sv: user.sessionVersion,
       ...(opts.demo ? { demo: true as const } : {}),
     });
-    setCookieExpress(
+    setAppCookie(
       c,
       sessionCookieName(this.isProd),
       jwt,
@@ -128,7 +117,7 @@ export class SessionCookies {
     for (const name of SESSION_COOKIE_NAMES) {
       // `__Host-` n'est accepté par le navigateur (et par Hono) qu'avec Secure.
       if (name.startsWith('__Host-') && !this.isProd) continue;
-      clearCookieExpress(c, name, sessionCookieOptions(this.isProd));
+      clearAppCookie(c, name, sessionCookieOptions(this.isProd));
     }
   }
 }

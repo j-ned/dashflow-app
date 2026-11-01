@@ -6,7 +6,7 @@ import {
   oauthCookieOptions,
 } from '../../auth/cookie';
 import type { HttpDeps } from '../deps';
-import { clearCookieExpress, clientOf, setCookieExpress } from '../kit';
+import { clearAppCookie, clientOf, setAppCookie } from '../kit';
 import { STRICT_THROTTLE, throttle } from '../middleware/rate-limit';
 import type { AppEnv } from '../types';
 
@@ -19,13 +19,8 @@ export function oauthRoutes(d: HttpDeps) {
   return new Hono<AppEnv>()
     .get('/', strict, (c) => {
       const { url, state, codeVerifier } = d.oauth.createAuthorization();
-      setCookieExpress(
-        c,
-        OAUTH_STATE_COOKIE,
-        state,
-        oauthCookieOptions(isProd),
-      );
-      setCookieExpress(
+      setAppCookie(c, OAUTH_STATE_COOKIE, state, oauthCookieOptions(isProd));
+      setAppCookie(
         c,
         OAUTH_VERIFIER_COOKIE,
         codeVerifier,
@@ -39,8 +34,8 @@ export function oauthRoutes(d: HttpDeps) {
       const state = c.req.query('state');
       const cookieState = getCookie(c, OAUTH_STATE_COOKIE);
       const codeVerifier = getCookie(c, OAUTH_VERIFIER_COOKIE);
-      clearCookieExpress(c, OAUTH_STATE_COOKIE, oauthCookieOptions(isProd));
-      clearCookieExpress(c, OAUTH_VERIFIER_COOKIE, oauthCookieOptions(isProd));
+      clearAppCookie(c, OAUTH_STATE_COOKIE, oauthCookieOptions(isProd));
+      clearAppCookie(c, OAUTH_VERIFIER_COOKIE, oauthCookieOptions(isProd));
 
       if (
         !code ||

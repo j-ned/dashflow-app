@@ -1,4 +1,11 @@
-import type { CookieOptions } from 'express';
+/** Réglages d'un cookie, indépendants du framework (`maxAge` en millisecondes). */
+export type CookieSettings = {
+  readonly httpOnly: boolean;
+  readonly secure: boolean;
+  readonly sameSite: 'lax' | 'strict';
+  readonly path: string;
+  readonly maxAge?: number;
+};
 
 /**
  * Nom du cookie de session. En production, préfixe `__Host-` (RFC 6265bis) : le navigateur
@@ -18,11 +25,16 @@ export const SESSION_COOKIE_NAMES = [
 export const CSRF_HEADER = 'x-csrf-token';
 const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
 
-export function sessionCookieOptions(isProd: boolean): CookieOptions {
+/**
+ * `SameSite=Lax` partout : le front et l'API sont sur le même site (même origine derrière /api,
+ * et déjà même site entre `dashflow.` et `api-dashflow.nedellec-julien.fr`). `None` exposait le
+ * cookie à toute requête intersite, ce dont l'app n'a jamais eu besoin.
+ */
+export function sessionCookieOptions(isProd: boolean): CookieSettings {
   return {
     httpOnly: true,
     secure: isProd,
-    sameSite: isProd ? 'none' : 'lax',
+    sameSite: 'lax',
     path: '/',
     maxAge: SEVEN_DAYS_MS,
   };
@@ -31,7 +43,7 @@ export function sessionCookieOptions(isProd: boolean): CookieOptions {
 export const OAUTH_STATE_COOKIE = 'dashflow_oauth_state';
 export const OAUTH_VERIFIER_COOKIE = 'dashflow_oauth_verifier';
 
-export function oauthCookieOptions(isProd: boolean): CookieOptions {
+export function oauthCookieOptions(isProd: boolean): CookieSettings {
   return {
     httpOnly: true,
     secure: isProd,

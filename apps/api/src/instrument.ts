@@ -1,11 +1,8 @@
-import * as Sentry from '@sentry/nestjs';
+import * as Sentry from '@sentry/node';
 
-// DOIT être importé en tout premier dans main.ts (avant NestFactory et les autres modules) :
-// l'auto-instrumentation Sentry patche les modules au moment du require.
-//
-// DSN lu depuis process.env DIRECTEMENT (ce fichier s'exécute avant le ConfigModule Nest, donc
-// avant la validation Zod / le chargement .env). En prod il vient de l'env Dokploy ; absent en
-// dev → Sentry reste inactif (aucun envoi, aucun quota consommé).
+// DOIT être importé en tout premier par server.ts : l'auto-instrumentation Sentry patche les
+// modules au moment du require. DSN lu dans process.env directement (avant la validation Zod).
+// Absent en dev → Sentry reste inactif (aucun envoi, aucun quota consommé).
 if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,

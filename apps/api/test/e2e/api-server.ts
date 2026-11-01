@@ -7,10 +7,10 @@ import { SmtpSink } from './smtp-sink';
 
 /**
  * Harnais e2e boîte noire : démarre l'API dans un PROCESSUS SÉPARÉ et ne lui parle qu'en HTTP
- * (et en SMTP pour les mails). Rien ici ne dépend du framework de l'API : la même suite valide
- * l'implémentation NestJS et sa remplaçante.
+ * (et en SMTP pour les mails). Rien ici ne dépend du framework de l'API (elle a d'ailleurs
+ * changé de framework sous cette suite, de NestJS à Hono).
  *
- * - `E2E_API_CMD` : commande de démarrage (défaut `node dist/main.js`, après `nest build`).
+ * - `E2E_API_CMD` : commande de démarrage (défaut `node dist/main.js`, après `pnpm build`).
  *   Découpée sur les espaces, sans gestion des guillemets.
  * - `E2E_API_LOGS=1` : recopie stdout/stderr du serveur dans la sortie des tests.
  *

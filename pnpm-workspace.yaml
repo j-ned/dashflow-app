@@ -2,12 +2,10 @@ packages:
   - apps/*
   - packages/*
 
-# Scripts d'install autorisés (pnpm 10+ les bloque par défaut). Repris de apps/api, plus ceux du front.
+# Scripts d'install autorisés (pnpm 10+ les bloque par défaut).
 allowBuilds:
   argon2: true
-  '@swc/core': true
   esbuild: true
-  '@nestjs/core': false
   # Front (Angular CLI) : watcher natif et cache disque — exécutés par défaut sous pnpm 9.
   '@parcel/watcher': true
   lmdb: true
@@ -15,7 +13,5 @@ allowBuilds:
 
 # Overrides : pnpm ne les lit qu'à la racine du workspace.
 overrides:
-  # apps/api — CVE multer < 2.5
-  multer: ^2.5.0
   # apps/web — CVE js-yaml < 4.3
   'js-yaml@<4.3.0': '>=5.2.2'

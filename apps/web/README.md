@@ -10,7 +10,7 @@
 
 [![Angular](https://img.shields.io/badge/Angular-22-DD0031?style=for-the-badge&logo=angular&logoColor=white)](https://angular.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-6.0-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![NestJS](https://img.shields.io/badge/NestJS-11-E0234E?style=for-the-badge&logo=nestjs&logoColor=white)](https://nestjs.com)
+[![Hono](https://img.shields.io/badge/Hono-4-E36002?style=for-the-badge&logo=hono&logoColor=white)](https://hono.dev)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-18-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![Tailwind](https://img.shields.io/badge/Tailwind-v4-06B6D4?style=for-the-badge&logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
 [![License](https://img.shields.io/badge/License-Private-333?style=for-the-badge)]()
@@ -161,9 +161,9 @@ graph TD
   UC --> MD
 ```
 
-### Backend — NestJS (repo séparé)
+### Backend — Hono (même monorepo)
 
-Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expose une API REST consommée par le frontend via `/api` (cookie httpOnly). Voir le README du repo backend pour la structure détaillée.
+Le backend vit dans [`apps/api`](../api) du même monorepo. Il expose une API REST servie sur le domaine du front sous `/api` (cookie httpOnly `SameSite=Lax`, jeton CSRF). Voir [`apps/api/README.md`](../api/README.md) pour la structure détaillée.
 
 ---
 
@@ -178,9 +178,9 @@ Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expo
 - **Tests** : Vitest (unit + component)
 - **Build** : @angular/build avec esbuild
 
-### Backend (repo `nest-dashflow-app`)
+### Backend (`apps/api`)
 
-- **Runtime** : Node.js + NestJS
+- **Runtime** : Node.js + Hono
 - **ORM** : Drizzle ORM + drizzle-kit migrations
 - **Database** : PostgreSQL 18
 - **Auth** : JWT (cookies httpOnly), Argon2id, Arctic (OAuth)
@@ -249,34 +249,25 @@ Le backend vit dans le repo [`nest-dashflow-app`](../nest-dashflow-app). Il expo
 
 > Pré-requis : Node.js ≥ 20, pnpm
 
-### Frontend (ce repo)
+### Depuis la racine du monorepo
 
 ```bash
-git clone https://github.com/j-ned/dash-flow.git
-cd dash-flow
 pnpm install
-pnpm start
-# → http://localhost:4200 (appelle directement NestJS sur http://localhost:3001, cf. apiUrl ci-dessous)
+(cd apps/api && make db-up)   # PostgreSQL via Docker/Podman
+pnpm dev:api                  # API → http://localhost:3001
+pnpm dev:web                  # front → http://localhost:4200
 ```
 
-### Backend (repo séparé)
+Le front appelle `/api` (`apiUrl` dans `src/environments/environment.ts`) : en dev, le serveur Angular le relaie vers `http://localhost:3001` (`proxy.conf.json`). Aucune variable d'environnement n'est requise côté Angular.
+
+### Docker
 
 ```bash
-# Voir nest-dashflow-app/README.md
-make db-up          # démarre PostgreSQL via Docker/Podman
-pnpm start:dev      # → http://localhost:3001
+docker build -f apps/web/Dockerfile -t dashflow-web .   # depuis la racine du monorepo
+docker run -p 8080:8080 dashflow-web
 ```
 
-Le frontend appelle directement le backend via une URL absolue (`apiUrl: 'http://localhost:3001'` dans `src/environments/environment.ts`, pas de proxy dev). Le backend doit donc autoriser `http://localhost:4200` dans son CORS (`CORS_ORIGIN`, cf. `nest-dashflow-app`). Aucune variable d'environnement n'est requise côté Angular.
-
-### Docker (image frontend uniquement)
-
-```bash
-docker build -t dashflow-front .
-docker run -p 80:80 dashflow-front
-```
-
-> Prod : 2 services Dokploy séparés, pas de proxy — le frontend (`dashflow.nedellec-julien.fr`) appelle directement le backend sur son propre sous-domaine (`api-dashflow.nedellec-julien.fr`), autorisé via CORS.
+> Prod : un seul domaine (`dashflow.nedellec-julien.fr`). Traefik route `/api` vers le conteneur de l'API et le reste vers ce conteneur nginx — cf. [`docs/deploiement-meme-origine.md`](../../docs/deploiement-meme-origine.md).
 
 ---
 

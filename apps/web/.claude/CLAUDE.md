@@ -1,4 +1,4 @@
-You are an expert TypeScript / Angular / NestJS engineer. You write functional, maintainable, performant and accessible code.
+You are an expert TypeScript / Angular / Hono engineer. You write functional, maintainable, performant and accessible code.
 
 ---
 
@@ -261,26 +261,38 @@ providers: [{ provide: AppointmentGateway, useClass: HttpAppointmentGateway }]
 
 ---
 
-## Backend -- NestJS + PostgreSQL + Drizzle + Zod
+## Backend -- Hono + PostgreSQL + Drizzle + Zod
 
-> **Monorepo** : le backend vit dans `apps/api` (workspace pnpm `dashflow`, a cote de ce front `apps/web`). Les chemins ci-dessous sont relatifs a `apps/api`.
+> **Monorepo** : le backend vit dans `apps/api` (workspace pnpm `dashflow`, a cote de ce front `apps/web`). Les chemins ci-dessous sont relatifs a `apps/api`. NestJS a ete retire (fin 2026) : une regle ESLint interdit tout import `@nestjs/*`.
 
-### Structure NestJS
+### Structure
 ```
 src/
+├── main.ts                       # demarrage (serve, taches de fond, arret propre)
+├── http/                         # couche HTTP Hono
+│   ├── app.ts                    # socle : en-tetes, CORS, IP client, throttling, plafond de corps
+│   ├── deps.ts                   # racine de composition (remplace la DI Nest)
+│   ├── middleware/               # requireAuth, csrfOnMutations, rejectDemo, requireRole, rate-limit
+│   ├── routes/<feature>.ts       # une ressource = un routeur (+ <feature>.spec.ts via honoTestApp)
+│   ├── kit.ts / validate.ts      # uuidParam, sendPage, uploads, jsonBody
+│   └── scheduler.ts              # taches cron
 ├── modules/<feature>/
-│   ├── <feature>.module.ts
-│   ├── <feature>.controller.ts   # routes + DTO validation Zod
-│   ├── <feature>.service.ts      # logique metier
+│   ├── <feature>.service.ts      # logique metier, TS pur (aucun import de framework)
 │   ├── <feature>.repository.ts   # acces Drizzle
 │   ├── dto/                      # Zod schemas + types inferes
 │   └── *.spec.ts
 ├── db/
 │   ├── schema/                   # Drizzle tables
-│   ├── migrations/               # genere par drizzle-kit
-│   └── index.ts                  # client db
-└── common/                       # guards, pipes, filters, interceptors
+│   └── migrations/               # genere par drizzle-kit
+└── common/                       # erreurs metier (AppError...), logger, pagination, fichiers
 ```
+
+### Regles HTTP
+- Routes authentifiees : `authedRouter(d)` / `ownedCrudRoutes(...)` -> session + CSRF sur toute mutation, **sur par defaut**
+- Erreurs : lever `BadRequestError` / `NotFoundError` / `resultError(r)` (Result pattern), jamais de `Response` d'erreur a la main
+- Corps : `jsonBody(c, schema)` (JSON lu seulement si declare `application/json`), params UUID via `uuidParam`
+- Uploads : `uploadLimit(N)` avant lecture + `uploadedFile(c, champ, N)`, puis validation par magic-bytes
+- Tests de route : `honoTestApp()` (`test/support/hono-test-app.ts`) ; e2e en boite noire (`test/e2e/api-server.ts`)
 
 ### Drizzle
 - Schemas typees dans `db/schema/<feature>.ts`
@@ -293,14 +305,14 @@ src/
 ### Zod aux frontieres
 - 1 schema Zod par DTO d'entree (body, query, params)
 - Type infere : `type CreateUserDto = z.infer<typeof CreateUserSchema>`
-- `ZodValidationPipe` (NestJS) sur chaque controller
+- `jsonBody(c, schema)` / `parseWith(schema, value)` au bord de chaque route
 - Schema partage front/back via package commun si monorepo
 - Sortie : DTO de reponse explicite, **jamais** l'entite Drizzle directe (fuite de schema BDD)
 
-### Gateway Angular <-> NestJS
-- `HttpClient` type sur les DTOs partages
+### Gateway Angular <-> API
+- `HttpClient` type sur les DTOs partages, base `environment.apiUrl` = `/api` (meme origine ; proxy de dev `proxy.conf.json`)
 - Adapter cote front : DTO API -> modele domain
-- Intercepteur fonctionnel pour `Authorization: Bearer <token>`
+- Session par cookie HttpOnly (`withCredentials`) + intercepteur fonctionnel `X-CSRF-Token` sur les mutations (pas de Bearer)
 - Erreurs HTTP -> Result pattern dans le use case
 
 ---
@@ -386,7 +398,7 @@ src/
 | Angular | https://angular.dev |
 | Angular AI | https://angular.dev/ai |
 | Angular RFC style guide 2025 | https://github.com/angular/angular/discussions/59522 |
-| NestJS | https://docs.nestjs.com |
+| Hono | https://hono.dev |
 | Drizzle ORM | https://orm.drizzle.team/docs/overview |
 | Drizzle Kit | https://orm.drizzle.team/docs/kit-overview |
 | Zod | https://zod.dev |
@@ -413,14 +425,14 @@ pnpm build                  # Build production
 pnpm test                   # Vitest
 pnpm ng generate            # Schematics
 
-# Backend NestJS -- apps/api (depuis la racine : pnpm --filter @dashflow/api <script>)
-pnpm start:dev              # Dev API
+# Backend Hono -- apps/api (depuis la racine : pnpm --filter @dashflow/api <script>)
+pnpm start:dev              # Dev API (tsx watch)
 pnpm drizzle-kit generate   # Generer migration depuis schema
 pnpm drizzle-kit migrate    # Appliquer migrations
 pnpm drizzle-kit studio     # UI inspection BDD
 ```
 
 ## Ressources
-- [Angular](https://angular.dev) · [NestJS](https://docs.nestjs.com) · [Drizzle](https://orm.drizzle.team) · [Zod](https://zod.dev) · [RxJS](https://rxjs.dev) · [Vitest](https://vitest.dev)
+- [Angular](https://angular.dev) · [Hono](https://hono.dev) · [Drizzle](https://orm.drizzle.team) · [Zod](https://zod.dev) · [RxJS](https://rxjs.dev) · [Vitest](https://vitest.dev)
 - Skills locales : `~/.claude/skills/`
 - Conventions EAK : `~/Documents/Obsidian Vault/EAK - Easy Angular Kit/`

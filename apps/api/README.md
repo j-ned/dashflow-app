@@ -1,14 +1,14 @@
 # DashFlow API
 
-API backend de l'application DashFlow, construite avec NestJS, Drizzle ORM et PostgreSQL. Elle expose la gestion budgétaire (comptes, enveloppes, transactions, prêts, virements récurrents) et la gestion santé/famille (patients, praticiens, rendez-vous, traitements, ordonnances, documents).
+API backend de l'application DashFlow, construite avec Hono, Drizzle ORM et PostgreSQL. Elle expose la gestion budgétaire (comptes, enveloppes, transactions, prêts, virements récurrents) et la gestion santé/famille (patients, praticiens, rendez-vous, traitements, ordonnances, documents).
 
 ## Stack technique
 
 - Runtime : Node.js, TypeScript (mode strict)
-- Framework : NestJS 11
+- Framework HTTP : Hono 4 (serveur `@hono/node-server`), migré depuis NestJS 11
 - Base de données : PostgreSQL, accès via Drizzle ORM
-- Validation : Zod (pipes de validation Nest)
-- Authentification : JWT (access token court + refresh token), 2FA TOTP, guard global via Throttler
+- Validation : Zod, aux bords de chaque route (`src/http/validate.ts`)
+- Authentification : JWT de session (7 jours) en cookie `__Host-` HttpOnly `SameSite=Lax`, révocable via `session_version`, jeton CSRF HMAC, 2FA TOTP et codes de secours
 - Stockage fichiers : S3 compatible (Cloudflare R2)
 - Observabilité : Sentry
 - Tests : Vitest (unitaires, intégration, end-to-end)
@@ -49,13 +49,7 @@ pnpm db:migrate
 # développement, avec rechargement à chaud
 pnpm start:dev
 
-# développement, sans rechargement
-pnpm start
-
-# débogage
-pnpm start:debug
-
-# production (nécessite un build préalable)
+# production (nécessite un build préalable : tsc → dist/)
 pnpm build
 pnpm start:prod
 ```
@@ -108,34 +102,35 @@ Le code applicatif est organisé par domaine sous `src/` :
 - `auth/` : authentification, JWT, 2FA, gestion de session
 - `db/` : configuration Drizzle, schéma, migrations
 - `config/` : chargement et validation de la configuration
-- `common/` : guards, pipes, filtres et éléments transverses
+- `http/` : couche HTTP Hono — `app.ts` (socle de sécurité), `deps.ts` (racine de composition), `middleware/`, `routes/` (un fichier par ressource), `scheduler.ts` (tâches de fond)
+- `common/` : erreurs métier, journal, pagination, validation des fichiers
 - `mail/` : envoi d'email
 - `storage/` : stockage de fichiers (S3)
-- `health/` : endpoint de supervision
 - `modules/` : modules métier, un dossier par domaine fonctionnel :
   - Budget : `bank-accounts`, `envelopes`, `account-transactions`, `loans`, `recurring-entries`, `salary-archives`
   - Santé et famille : `patients`, `members`, `practitioners`, `appointments`, `medications`, `prescriptions`, `documents`, `reminders`
   - Administration : `admin`, `demo`
 
-Chaque module suit la structure standard NestJS : contrôleur, service, DTO/schéma de validation, tests colocalisés (`*.spec.ts`).
+Chaque module contient son service (logique métier, sans dépendance au framework HTTP), ses schémas Zod (`dto/`) et ses tests colocalisés (`*.spec.ts`). Les routes correspondantes vivent dans `src/http/routes/` ; une règle ESLint interdit tout retour de `@nestjs/*`.
 
 ## Tests
 
 ```bash
 pnpm test              # unitaires
 pnpm test:integration  # intégration (nécessite une base de données)
-pnpm test:e2e          # end-to-end
+pnpm test:e2e          # end-to-end (build puis API lancée dans son propre processus)
 ```
 
-Les tests sont écrits avec Vitest et colocalisés avec le code qu'ils couvrent.
+Les tests sont écrits avec Vitest et colocalisés avec le code qu'ils couvrent. Les e2e sont en boîte noire (`test/e2e/api-server.ts`) : ils ne parlent à l'API qu'en HTTP, et récupèrent les mails via un serveur SMTP de test.
 
 ## Sécurité
 
-- En-têtes de sécurité via Helmet
-- Limitation de débit globale via `ThrottlerGuard`
-- Mots de passe hachés avec Argon2
-- Tokens JWT à durée de vie courte, avec rotation du refresh token
-- Application derrière un reverse proxy : `trust proxy` est activé pour que la limitation de débit s'applique par IP réelle, pas par IP du proxy
+- En-têtes de sécurité (CSP, HSTS, X-Frame-Options… : `src/http/middleware/security-headers.ts`)
+- Limitation de débit par route et par IP (1000 / 15 min), 10 / 15 min sur les routes d'authentification, avec un second compteur par e-mail
+- Corps de requête plafonnés (100 Ko en JSON, plafond propre à chaque envoi de fichier), fichiers vérifiés par magic-bytes
+- CSRF appliqué par défaut à toute mutation authentifiée (Origin + jeton HMAC lié à la session)
+- Mots de passe : clé dérivée côté client puis hachée avec Argon2 ; secrets TOTP chiffrés au repos
+- Derrière Traefik : l'IP client est l'entrée la plus à droite de `X-Forwarded-For`, pour que la limitation de débit s'applique à l'IP réelle et ne soit pas contournable par un en-tête forgé
 
 Toute variable sensible (secrets, identifiants) doit être fournie via variables d'environnement, jamais commitée dans le dépôt.
 

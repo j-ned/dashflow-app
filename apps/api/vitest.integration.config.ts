@@ -1,4 +1,3 @@
-import swc from 'unplugin-swc';
 import { defineConfig } from 'vitest/config';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
@@ -36,5 +35,4 @@ export default defineConfig({
     fileParallelism: false,
     env: dotEnvVars,
   },
-  plugins: [swc.vite({ module: { type: 'es6' } })],
 });
