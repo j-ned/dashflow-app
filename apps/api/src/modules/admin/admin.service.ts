@@ -1,6 +1,4 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
-import { MAILER, type Mailer } from '../../mail/mailer';
+import type { Mailer } from '../../mail/mailer';
 import {
   AdminRepository,
   type AdminNoticeRow,
@@ -17,6 +15,7 @@ import {
   type AccountSecurity,
   type NoticeReason,
 } from './account-security';
+import { createLogger } from '../../common/logger';
 
 export type AdminNoticeView = { reason: NoticeReason; at: Date };
 
@@ -73,13 +72,12 @@ const reasonOf = (eventType: string): NoticeReason | null => {
 const securityOf = (row: AdminUserRow): AccountSecurity =>
   assessAccountSecurity(row);
 
-@Injectable()
 export class AdminService {
-  private readonly logger = new Logger(AdminService.name);
+  private readonly logger = createLogger(AdminService.name);
 
   constructor(
     private readonly admin: AdminRepository,
-    @Inject(MAILER) private readonly mailer: Mailer,
+    private readonly mailer: Mailer,
   ) {}
 
   async listUsers(opts: {
@@ -226,7 +224,6 @@ export class AdminService {
   }
 
   /** Chaque nuit : les inscriptions jamais confirmées depuis plus de 7 jours disparaissent. */
-  @Cron(CronExpression.EVERY_DAY_AT_5AM)
   async purgeStaleUnverified(): Promise<void> {
     try {
       const now = Date.now();

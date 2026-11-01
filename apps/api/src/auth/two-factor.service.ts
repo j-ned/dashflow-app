@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { randomInt } from 'node:crypto';
 import * as OTPAuth from 'otpauth';
 import * as QRCode from 'qrcode';
@@ -12,7 +11,6 @@ const BACKUP_ALPHABET = 'abcdefghjkmnpqrstuvwxyz23456789';
 export const BACKUP_CODES_COUNT = 10;
 const BACKUP_CODE_LENGTH = 10;
 
-@Injectable()
 export class TwoFactorService {
   generateSecret(email: string): { secret: string; otpauthUri: string } {
     const secret = new OTPAuth.Secret({ size: 20 });

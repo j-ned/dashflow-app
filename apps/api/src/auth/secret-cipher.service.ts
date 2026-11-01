@@ -1,5 +1,3 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   createCipheriv,
   createDecipheriv,
@@ -8,6 +6,7 @@ import {
   randomBytes,
 } from 'node:crypto';
 import type { Env } from '../config/env.schema';
+import { createLogger } from '../common/logger';
 
 const VERSION = 'v1';
 const ALGO = 'aes-256-gcm';
@@ -22,9 +21,8 @@ const KEY_BYTES = 32;
  * `v1.<iv>.<ciphertext>.<tag>` en base64url. Une valeur sans ce préfixe est un secret
  * historique en clair : `decrypt` le rend tel quel et l'appelant le ré-écrit chiffré.
  */
-@Injectable()
 export class SecretCipherService {
-  private readonly logger = new Logger(SecretCipherService.name);
+  private readonly logger = createLogger(SecretCipherService.name);
   private readonly key: Buffer;
   /**
    * Clé dérivée de JWT_SECRET, utilisée tant que TOTP_ENC_KEY n'était pas définie. Gardée en
@@ -33,19 +31,19 @@ export class SecretCipherService {
    */
   private readonly legacyKey: Buffer | null;
 
-  constructor(config: ConfigService<Env, true>) {
+  constructor(config: Pick<Env, 'JWT_SECRET' | 'NODE_ENV' | 'TOTP_ENC_KEY'>) {
     // Clé dérivée du secret JWT (HKDF, contexte dédié). Sûre, mais couple les deux secrets :
     // une rotation de JWT_SECRET rendrait illisibles les secrets qu'elle protège encore.
     const derived = Buffer.from(
       hkdfSync(
         'sha256',
-        config.get('JWT_SECRET', { infer: true }),
+        config.JWT_SECRET,
         'dashflow-secret-cipher',
         'totp-secret-at-rest',
         KEY_BYTES,
       ),
     );
-    const raw = config.get('TOTP_ENC_KEY', { infer: true });
+    const raw = config.TOTP_ENC_KEY;
     if (raw) {
       this.key = SecretCipherService.decodeKey(raw);
       this.legacyKey = derived;
@@ -53,7 +51,7 @@ export class SecretCipherService {
     }
     this.key = derived;
     this.legacyKey = null;
-    if (config.get('NODE_ENV', { infer: true }) === 'production') {
+    if (config.NODE_ENV === 'production') {
       this.logger.warn(
         'TOTP_ENC_KEY absent : clé dérivée de JWT_SECRET. Définissez TOTP_ENC_KEY (32 octets, hex ou base64) pour découpler les rotations.',
       );

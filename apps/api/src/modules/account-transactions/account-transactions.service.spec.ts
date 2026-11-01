@@ -1,5 +1,4 @@
-import { Test } from '@nestjs/testing';
-import { DRIZZLE } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { AccountTransactionsService } from './account-transactions.service';
 
 describe('AccountTransactionsService', () => {
@@ -9,13 +8,7 @@ describe('AccountTransactionsService', () => {
         from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }),
       }),
     };
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        AccountTransactionsService,
-        { provide: DRIZZLE, useValue: fakeDb },
-      ],
-    }).compile();
-    const svc = moduleRef.get(AccountTransactionsService);
+    const svc = new AccountTransactionsService(fakeDb as unknown as DrizzleDB);
 
     const result = await svc.addTransaction('user-1', 'acc-x', {
       amount: '10',
@@ -34,13 +27,9 @@ describe('AccountTransactionsService', () => {
         throw new Error('ne doit pas interroger la base avec un uuid invalide');
       },
     };
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        AccountTransactionsService,
-        { provide: DRIZZLE, useValue: throwingDb },
-      ],
-    }).compile();
-    const svc = moduleRef.get(AccountTransactionsService);
+    const svc = new AccountTransactionsService(
+      throwingDb as unknown as DrizzleDB,
+    );
     const result = await svc.addTransaction('user-1', 'null', {
       amount: '10',
       direction: 'expense',
@@ -55,13 +44,7 @@ describe('AccountTransactionsService', () => {
         from: () => ({ where: () => ({ limit: () => Promise.resolve([]) }) }),
       }),
     };
-    const moduleRef = await Test.createTestingModule({
-      providers: [
-        AccountTransactionsService,
-        { provide: DRIZZLE, useValue: fakeDb },
-      ],
-    }).compile();
-    const svc = moduleRef.get(AccountTransactionsService);
+    const svc = new AccountTransactionsService(fakeDb as unknown as DrizzleDB);
     const res = await svc.addBatch('u1', 'acc-x', [
       { amount: '10', direction: 'expense', date: '2026-06-01' },
     ] as never);

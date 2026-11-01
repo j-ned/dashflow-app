@@ -1,5 +1,5 @@
-import { BadRequestException } from '@nestjs/common';
 import { fileTypeFromBuffer } from 'file-type';
+import { BadRequestError } from '../errors';
 
 /** Types de fichiers acceptés en upload (documents médicaux, fiches de paie, justificatifs). */
 const ALLOWED_UPLOAD_MIME_TYPES: readonly string[] = [
@@ -36,11 +36,11 @@ export async function assertValidUpload(file: {
   mimetype: string;
 }): Promise<void> {
   if (!ALLOWED_UPLOAD_MIME_TYPES.includes(file.mimetype)) {
-    throw new BadRequestException('Type de fichier non autorisé');
+    throw new BadRequestError('Type de fichier non autorisé');
   }
   const detected = await fileTypeFromBuffer(file.buffer);
   if (!detected || !ALLOWED_UPLOAD_MIME_TYPES.includes(detected.mime)) {
-    throw new BadRequestException(
+    throw new BadRequestError(
       'Contenu du fichier invalide (type réel non autorisé)',
     );
   }
@@ -58,11 +58,11 @@ export async function assertValidImageUpload(file: {
   mimetype: string;
 }): Promise<void> {
   if (!ALLOWED_IMAGE_MIME_TYPES.includes(file.mimetype)) {
-    throw new BadRequestException('Type image invalide');
+    throw new BadRequestError('Type image invalide');
   }
   const detected = await fileTypeFromBuffer(file.buffer);
   if (!detected || !ALLOWED_IMAGE_MIME_TYPES.includes(detected.mime)) {
-    throw new BadRequestException(
+    throw new BadRequestError(
       "Contenu de l'image invalide (type réel non autorisé)",
     );
   }

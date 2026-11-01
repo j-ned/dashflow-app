@@ -1,9 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import type { ConfigService } from '@nestjs/config';
 import { CsrfService } from './csrf.service';
 
-const config = (secret: string) =>
-  ({ get: () => secret }) as unknown as ConfigService;
+const config = (secret: string) => ({ JWT_SECRET: secret });
 
 describe('CsrfService', () => {
   const svc = new CsrfService(config('s'.repeat(40)));

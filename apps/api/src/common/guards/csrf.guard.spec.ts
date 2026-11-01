@@ -6,7 +6,7 @@ import { CsrfService } from '../../auth/csrf.service';
 
 const config = (env: Record<string, string>) =>
   ({ get: (k: string) => env[k] }) as unknown as ConfigService;
-const csrf = new CsrfService(config({ JWT_SECRET: 's'.repeat(40) }));
+const csrf = new CsrfService({ JWT_SECRET: 's'.repeat(40) });
 const user = { id: 'u1', email: 'a@b.c', sessionVersion: 2 };
 
 function ctx(headers: Record<string, string>, withUser = true) {

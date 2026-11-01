@@ -1,14 +1,5 @@
-import {
-  ForbiddenException,
-  Inject,
-  Injectable,
-  Logger,
-  NotFoundException,
-} from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { eq, sql } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { users } from '../../db/schema';
 import type { Env } from '../../config/env.schema';
 import { APP_TIMEZONE, today } from '../../common/today';
@@ -19,6 +10,8 @@ import {
   previousMonth,
   type DateColumns,
 } from './demo-rebase';
+import { ForbiddenError, NotFoundError } from '../../common/errors';
+import { createLogger } from '../../common/logger';
 
 // Ordre de suppression : enfants avant parents (FK). Tables scopées par user_id.
 const DELETE_USER_ORDER = [
@@ -67,16 +60,15 @@ const DEMO_RESET_LOCK_KEY = 8_213_047;
 
 type DemoTx = Parameters<Parameters<DrizzleDB['transaction']>[0]>[0];
 
-@Injectable()
 export class DemoService {
-  private readonly logger = new Logger(DemoService.name);
+  private readonly logger = createLogger(DemoService.name);
   private readonly demoEnabled: boolean;
 
   constructor(
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
-    config: ConfigService<Env, true>,
+    private readonly db: DrizzleDB,
+    config: Pick<Env, 'DEMO_ENABLED'>,
   ) {
-    this.demoEnabled = config.get('DEMO_ENABLED', { infer: true });
+    this.demoEnabled = config.DEMO_ENABLED;
   }
 
   // Réinitialise toutes les données du compte démo à partir des snapshots demo_seed_*.
@@ -89,9 +81,9 @@ export class DemoService {
       .where(eq(users.isDemoAccount, true))
       .limit(1)
       .then((r) => r[0]);
-    if (!demo) throw new NotFoundException('Compte démo indisponible');
+    if (!demo) throw new NotFoundError('Compte démo indisponible');
     if (callerId !== undefined && demo.id !== callerId) {
-      throw new ForbiddenException('Réinitialisation réservée au compte démo');
+      throw new ForbiddenError('Réinitialisation réservée au compte démo');
     }
     const id = demo.id;
 
@@ -304,7 +296,6 @@ export class DemoService {
   }
 
   // Réinitialisation automatique toutes les 6h (no-op si DEMO_ENABLED=false).
-  @Cron(CronExpression.EVERY_6_HOURS)
   async scheduledReset(): Promise<void> {
     if (!this.demoEnabled) return;
     try {

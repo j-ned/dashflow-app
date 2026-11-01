@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestError } from '../errors';
 import { UploadPolicy } from './upload-policy';
 import type { AuthRepository } from '../../auth/auth.repository';
 
@@ -34,7 +34,7 @@ describe('UploadPolicy', () => {
     repo.findById.mockResolvedValue({ id: 'u1', encryptionVersion: 0 });
 
     await expect(policy.assertValid('u1', OPAQUE)).rejects.toBeInstanceOf(
-      BadRequestException,
+      BadRequestError,
     );
   });
 
@@ -42,7 +42,7 @@ describe('UploadPolicy', () => {
     repo.findById.mockResolvedValue(undefined);
 
     await expect(policy.assertValid('u1', OPAQUE)).rejects.toBeInstanceOf(
-      BadRequestException,
+      BadRequestError,
     );
   });
 
@@ -59,6 +59,6 @@ describe('UploadPolicy', () => {
 
     await expect(
       policy.assertValid('u1', { ...OPAQUE, mimetype: 'application/pdf' }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(BadRequestError);
   });
 });

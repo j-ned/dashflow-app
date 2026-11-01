@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createTransport, type Transporter } from 'nodemailer';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
@@ -27,29 +25,39 @@ const codeCard = (label: string, code: string): string => `
 export const webUrlFrom = (corsOrigin: string): string =>
   corsOrigin.split(',')[0].trim().replace(/\/+$/, '');
 
-@Injectable()
 export class SmtpMailer implements Mailer {
   private readonly transporter: Transporter;
   private readonly from: string;
   /** Adresse du site (pas de l'API) : c'est là que mènent les liens des mails. */
   private readonly webUrl: string;
 
-  constructor(config: ConfigService<Env, true>) {
+  constructor(
+    config: Pick<
+      Env,
+      | 'CORS_ORIGIN'
+      | 'SMTP_FROM'
+      | 'SMTP_HOST'
+      | 'SMTP_PASS'
+      | 'SMTP_PORT'
+      | 'SMTP_SECURE'
+      | 'SMTP_USER'
+    >,
+  ) {
     this.transporter = createTransport({
-      host: config.get('SMTP_HOST', { infer: true }),
-      port: config.get('SMTP_PORT', { infer: true }),
-      secure: config.get('SMTP_SECURE', { infer: true }),
+      host: config.SMTP_HOST,
+      port: config.SMTP_PORT,
+      secure: config.SMTP_SECURE,
       auth: {
-        user: config.get('SMTP_USER', { infer: true }),
-        pass: config.get('SMTP_PASS', { infer: true }),
+        user: config.SMTP_USER,
+        pass: config.SMTP_PASS,
       },
       connectionTimeout: 30_000,
       greetingTimeout: 30_000,
       socketTimeout: 45_000,
     });
-    this.from = config.get('SMTP_FROM', { infer: true });
+    this.from = config.SMTP_FROM;
     // APP_URL est l'adresse de l'API (callback OAuth). Le site est la première origine CORS.
-    this.webUrl = webUrlFrom(config.get('CORS_ORIGIN', { infer: true }));
+    this.webUrl = webUrlFrom(config.CORS_ORIGIN);
   }
 
   async sendVerificationCode(to: string, code: string): Promise<void> {

@@ -25,6 +25,7 @@ import { DocumentsModule } from './modules/documents/documents.module';
 import { RemindersModule } from './modules/reminders/reminders.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { StorageModule } from './storage/storage.module';
+import { SchedulerModule } from './scheduler/scheduler.module';
 
 @Module({
   imports: [
@@ -56,6 +57,7 @@ import { StorageModule } from './storage/storage.module';
     RemindersModule,
     AdminModule,
     StorageModule,
+    SchedulerModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

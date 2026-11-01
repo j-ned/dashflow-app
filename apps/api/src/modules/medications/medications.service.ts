@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { and, eq, isNull, sql } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { medications, patients, prescriptions } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
@@ -13,9 +12,8 @@ type Medication = typeof medications.$inferSelect;
 
 export type MedicationWithAlert = Medication & StockProjection;
 
-@Injectable()
 export class MedicationsService extends OwnedCrudService<Medication> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(db: DrizzleDB) {
     super(db, medications);
   }
 

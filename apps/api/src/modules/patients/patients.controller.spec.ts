@@ -6,6 +6,7 @@ import { PatientsController } from './patients.controller';
 import { PatientsService } from './patients.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 describe('PatientsController (routes héritées de OwnedCrudController)', () => {
   let app: INestApplication;
@@ -34,6 +35,10 @@ describe('PatientsController (routes héritées de OwnedCrudController)', () => 
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

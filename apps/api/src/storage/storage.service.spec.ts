@@ -1,5 +1,4 @@
 import { describe, it, expect, vi } from 'vitest';
-import type { ConfigService } from '@nestjs/config';
 import { StorageService } from './storage.service';
 import type { Env } from '../config/env.schema';
 
@@ -12,9 +11,7 @@ const cfg = (configured: boolean) => {
     S3_BUCKET: 'dashflow-app',
   };
   const unconfiguredValues: Record<string, string> = { S3_REGION: 'auto' };
-  return {
-    get: (k: string) => (configured ? configuredValues : unconfiguredValues)[k],
-  } as unknown as ConfigService<Env, true>;
+  return (configured ? configuredValues : unconfiguredValues) as unknown as Env;
 };
 
 describe('StorageService key builders', () => {

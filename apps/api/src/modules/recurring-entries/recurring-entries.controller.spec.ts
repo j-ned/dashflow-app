@@ -16,6 +16,7 @@ import { StorageService } from '../../storage/storage.service';
 import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 // Expose les transformations protégées (pures) pour les tester sans HTTP ni DB.
 class TestableController extends RecurringEntriesController {
@@ -108,6 +109,10 @@ describe('RecurringEntriesController — POST /recurring-entries/:id/payslip (mu
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

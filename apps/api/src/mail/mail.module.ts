@@ -1,18 +1,18 @@
 import { Global, Module } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { MAILER } from './mailer';
 import { ConsoleMailer } from './console.mailer';
 import { SmtpMailer } from './smtp.mailer';
 import type { Env } from '../config/env.schema';
+import { ENV } from '../config/env.token';
 
 @Global()
 @Module({
   providers: [
     {
       provide: MAILER,
-      inject: [ConfigService],
-      useFactory: (config: ConfigService<Env, true>) =>
-        config.get('MAILER', { infer: true }) === 'smtp'
+      inject: [ENV],
+      useFactory: (config: Env) =>
+        config.MAILER === 'smtp'
           ? new SmtpMailer(config)
           : new ConsoleMailer(config),
     },

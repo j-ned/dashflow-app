@@ -20,6 +20,7 @@ import { StorageService } from '../../storage/storage.service';
 import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 // Couverture HTTP multipart de POST /documents/:id/file.
 // Champ multer attendu : FileInterceptor('file'). Un .attach() sous ce nom
@@ -71,6 +72,10 @@ describe('DocumentsController — POST /documents/:id/file (multipart)', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

@@ -3,7 +3,6 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import type { ConfigService } from '@nestjs/config';
 import * as schema from '../src/db/schema';
 import { DemoService } from '../src/modules/demo/demo.service';
 import { today } from '../src/common/today';
@@ -17,7 +16,7 @@ const client = postgres(process.env.DATABASE_URL!, {
   onnotice: () => {},
 });
 const db = drizzle(client, { schema });
-const config = { get: () => true } as unknown as ConfigService<Env, true>;
+const config: Pick<Env, 'DEMO_ENABLED'> = { DEMO_ENABLED: true };
 
 const DAYS_AGO = 100;
 const iso = (d: Date) => d.toISOString().slice(0, 10);

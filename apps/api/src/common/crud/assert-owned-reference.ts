@@ -1,7 +1,7 @@
-import { NotFoundException } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../../db/drizzle.constants';
 import type { OwnedTable } from './owned-crud.service';
+import { NotFoundError } from '../errors';
 
 /**
  * Vérifie qu'une ressource référencée par FK (patientId, accountId, ...) appartient bien
@@ -20,6 +20,6 @@ export async function assertOwnedReference(
     .where(and(eq(table.id, id), eq(table.userId, userId)))
     .limit(1);
   if (rows.length === 0) {
-    throw new NotFoundException('Référence invalide');
+    throw new NotFoundError('Référence invalide');
   }
 }

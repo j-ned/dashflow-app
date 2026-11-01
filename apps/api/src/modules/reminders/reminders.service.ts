@@ -1,14 +1,12 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { reminders, medications, appointments } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 
 type Reminder = typeof reminders.$inferSelect;
 
-@Injectable()
 export class RemindersService extends OwnedCrudService<Reminder> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(db: DrizzleDB) {
     super(db, reminders);
   }
 

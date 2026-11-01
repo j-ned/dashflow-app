@@ -14,6 +14,7 @@ import {
   type SecurityEventOptions,
 } from './security-event.decorator';
 import { SecurityEventsService } from './security-events.service';
+import { AppError } from '../common/errors';
 
 type Req = Request & { user?: AuthUser };
 
@@ -81,8 +82,13 @@ export class SecurityEventsInterceptor implements NestInterceptor {
     err: unknown,
   ): Promise<void> {
     if (!opts.failure) return;
-    if (!(err instanceof HttpException)) return;
-    const status = err.getStatus();
+    const status =
+      err instanceof HttpException
+        ? err.getStatus()
+        : err instanceof AppError
+          ? err.status
+          : undefined;
+    if (status === undefined) return;
     if (status < 400 || status >= 500 || status === 429) return;
     if (req.user?.id) {
       await this.events.record(opts.failure, req.user.id, req);

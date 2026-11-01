@@ -1,6 +1,5 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, getTableColumns } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { loans, loanTransactions, patients } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
@@ -16,12 +15,12 @@ import {
 import { addMoney, toCents } from '../../common/money';
 import { today } from '../../common/today';
 import type { Loan } from './loan.response';
+import { BadRequestError } from '../../common/errors';
 
 type LoanTransaction = typeof loanTransactions.$inferSelect;
 
-@Injectable()
 export class LoansService extends OwnedCrudService<Loan> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(db: DrizzleDB) {
     super(db, loans);
   }
 
@@ -135,7 +134,7 @@ export class LoansService extends OwnedCrudService<Loan> {
       // Un paiement supérieur au restant dû casserait l'invariant Σ paiements = amount − remaining
       // (avant : remaining clampé à 0 mais le mouvement enregistré en entier).
       if (toCents(opts.amount) > toCents(remaining)) {
-        throw new BadRequestException(
+        throw new BadRequestError(
           `Le paiement dépasse le restant dû (${remaining.toFixed(2)})`,
         );
       }

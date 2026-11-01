@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Test } from '@nestjs/testing';
-import { DRIZZLE } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { EnvelopesService } from './envelopes.service';
 
 type FakeDbOptions = {
@@ -58,12 +57,12 @@ function createFakeDb(opts: FakeDbOptions) {
   };
 }
 
-async function createService(opts: FakeDbOptions) {
+function createService(opts: FakeDbOptions) {
   const fake = createFakeDb(opts);
-  const moduleRef = await Test.createTestingModule({
-    providers: [EnvelopesService, { provide: DRIZZLE, useValue: fake.db }],
-  }).compile();
-  return { svc: moduleRef.get(EnvelopesService), ...fake };
+  return Promise.resolve({
+    svc: new EnvelopesService(fake.db as unknown as DrizzleDB),
+    ...fake,
+  });
 }
 
 describe('EnvelopesService.credit', () => {

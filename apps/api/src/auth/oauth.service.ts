@@ -1,9 +1,8 @@
-import { Injectable, InternalServerErrorException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { Google, generateState, generateCodeVerifier } from 'arctic';
 import { AuthRepository } from './auth.repository';
 import type { Env } from '../config/env.schema';
 import type { users } from '../db/schema';
+import { InternalError } from '../common/errors';
 
 type User = typeof users.$inferSelect;
 export interface GoogleProfile {
@@ -12,21 +11,21 @@ export interface GoogleProfile {
   displayName: string;
 }
 
-@Injectable()
 export class OAuthService {
   constructor(
-    private readonly config: ConfigService<Env, true>,
+    private readonly config: Pick<
+      Env,
+      'APP_URL' | 'GOOGLE_CLIENT_ID' | 'GOOGLE_CLIENT_SECRET'
+    >,
     private readonly repo: AuthRepository,
   ) {}
 
   private google(): Google {
-    const clientId = this.config.get('GOOGLE_CLIENT_ID', { infer: true });
-    const clientSecret = this.config.get('GOOGLE_CLIENT_SECRET', {
-      infer: true,
-    });
+    const clientId = this.config.GOOGLE_CLIENT_ID;
+    const clientSecret = this.config.GOOGLE_CLIENT_SECRET;
     if (!clientId || !clientSecret)
-      throw new InternalServerErrorException('Google OAuth non configuré');
-    const redirectUri = `${this.config.get('APP_URL', { infer: true })}/auth/oauth/google/callback`;
+      throw new InternalError('Google OAuth non configuré');
+    const redirectUri = `${this.config.APP_URL}/auth/oauth/google/callback`;
     return new Google(clientId, clientSecret, redirectUri);
   }
 

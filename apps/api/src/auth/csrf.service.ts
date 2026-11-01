@@ -1,5 +1,3 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import { createHmac, hkdfSync, timingSafeEqual } from 'node:crypto';
 import type { Env } from '../config/env.schema';
 
@@ -11,15 +9,14 @@ import type { Env } from '../config/env.schema';
  * de mot de passe incrémentent `sv`). Il est renvoyé par GET /auth/csrf et par les réponses de
  * connexion ; le front le met dans `X-CSRF-Token` sur chaque mutation.
  */
-@Injectable()
 export class CsrfService {
   private readonly key: Buffer;
 
-  constructor(config: ConfigService<Env, true>) {
+  constructor(config: Pick<Env, 'JWT_SECRET'>) {
     this.key = Buffer.from(
       hkdfSync(
         'sha256',
-        config.get('JWT_SECRET', { infer: true }),
+        config.JWT_SECRET,
         'dashflow-csrf',
         'csrf-token-v1',
         32,

@@ -8,6 +8,7 @@ import {
 } from '@nestjs/common';
 import type { Request, Response } from 'express';
 import * as Sentry from '@sentry/nestjs';
+import { AppError } from '../errors';
 
 type Normalized = {
   status: number;
@@ -85,6 +86,9 @@ export function pgErrorCode(exception: unknown): string | undefined {
 }
 
 export function normalizeException(exception: unknown): Normalized {
+  // Erreur métier (couche sans framework) : même forme de réponse qu'une HttpException.
+  if (exception instanceof AppError)
+    return { status: exception.status, message: exception.message };
   if (exception instanceof HttpException) {
     const status = exception.getStatus();
     const resp = exception.getResponse();

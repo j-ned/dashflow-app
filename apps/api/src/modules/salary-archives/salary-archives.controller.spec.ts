@@ -16,6 +16,7 @@ import { StorageService } from '../../storage/storage.service';
 import { UploadPolicy } from '../../common/files/upload-policy';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 // Le front poste TOUJOURS l'archive en multipart/form-data (postForm). Le create
 // hérité d'OwnedCrudController n'a pas d'interceptor multer → le body multipart
@@ -66,6 +67,10 @@ describe('SalaryArchivesController — POST /salary-archives (multipart)', () =>
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 
@@ -192,6 +197,10 @@ describe('SalaryArchivesController — POST /salary-archives garde CSRF active',
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

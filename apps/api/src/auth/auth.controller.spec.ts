@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../common/guards/csrf.guard';
 import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { SESSION_COOKIE } from './cookie';
+import { HttpExceptionFilter } from '../common/filters/http-exception.filter';
 
 // Le comportement attendu : 204, appel service avec l'userId courant, purge du cookie de session.
 // Signature PNG + IHDR minimal : reconnu par file-type comme image/png.
@@ -74,6 +75,10 @@ describe('AuthController — DELETE /auth/me (suppression de compte RGPD)', () =
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 
@@ -172,6 +177,10 @@ describe('AuthController — POST /auth/me/avatar (multipart)', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 
@@ -296,6 +305,10 @@ describe('AuthController — session démo : routes d’identité verrouillées'
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

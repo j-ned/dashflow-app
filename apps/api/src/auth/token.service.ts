@@ -1,5 +1,9 @@
-import { Injectable } from '@nestjs/common';
-import { JwtService } from '@nestjs/jwt';
+import jwt from 'jsonwebtoken';
+import type { Env } from '../config/env.schema';
+
+export const JWT_ISSUER = 'dashflow-api';
+export const JWT_AUDIENCE = 'dashflow-web';
+const JWT_EXPIRES_IN = '7d';
 
 export interface JwtPayload {
   sub: string;
@@ -14,14 +18,52 @@ export interface JwtPayload {
   demo?: true;
 }
 
-@Injectable()
+/**
+ * Jetons de session HS256. Algorithme et audience explicites : un token signé autrement (ou
+ * pour un autre service partageant le secret) est refusé. Les tokens sans iss/aud sont
+ * invalides : reconnexion unique depuis l'introduction de ces claims.
+ */
 export class TokenService {
-  constructor(private readonly jwt: JwtService) {}
-  sign(payload: JwtPayload): Promise<string> {
-    return this.jwt.signAsync(payload);
+  private readonly secret: string;
+
+  constructor(config: Pick<Env, 'JWT_SECRET'>) {
+    this.secret = config.JWT_SECRET;
   }
+
+  sign(payload: JwtPayload): Promise<string> {
+    return new Promise((resolve, reject) =>
+      jwt.sign(
+        payload,
+        this.secret,
+        {
+          expiresIn: JWT_EXPIRES_IN,
+          algorithm: 'HS256',
+          issuer: JWT_ISSUER,
+          audience: JWT_AUDIENCE,
+        },
+        (err, token) =>
+          token ? resolve(token) : reject(err ?? new Error('jwt_sign_failed')),
+      ),
+    );
+  }
+
   async verify(token: string): Promise<JwtPayload> {
-    const p = await this.jwt.verifyAsync<Partial<JwtPayload>>(token);
+    const decoded = await new Promise<string | jwt.JwtPayload | undefined>(
+      (resolve, reject) =>
+        jwt.verify(
+          token,
+          this.secret,
+          {
+            algorithms: ['HS256'],
+            issuer: JWT_ISSUER,
+            audience: JWT_AUDIENCE,
+          },
+          (err, payload) => (err ? reject(err) : resolve(payload)),
+        ),
+    );
+    const p = (
+      typeof decoded === 'object' ? decoded : {}
+    ) as Partial<JwtPayload>;
     if (typeof p.sub !== 'string' || typeof p.email !== 'string') {
       throw new Error('jwt_payload_invalid');
     }

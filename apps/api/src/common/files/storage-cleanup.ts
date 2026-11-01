@@ -1,10 +1,10 @@
-import { Logger } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../../db/drizzle.constants';
 import { documents, prescriptions } from '../../db/schema';
 import type { StorageService } from '../../storage/storage.service';
+import { createLogger } from '../logger';
 
-const logger = new Logger('StorageCleanup');
+const logger = createLogger('StorageCleanup');
 
 /**
  * Supprime un objet R2 en tolérant l'échec : un objet orphelin coûte quelques Ko, une

@@ -1,7 +1,6 @@
 import { describe, it, expect, afterAll } from 'vitest';
 import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
-import type { ConfigService } from '@nestjs/config';
 import * as schema from '../src/db/schema';
 import { DemoService } from '../src/modules/demo/demo.service';
 import type { Env } from '../src/config/env.schema';
@@ -12,7 +11,7 @@ import type { Env } from '../src/config/env.schema';
 // (user_id de snapshot périmé → violation FK) et vérifie que le re-pointage la neutralise.
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client, { schema });
-const config = { get: () => true } as unknown as ConfigService<Env, true>;
+const config: Pick<Env, 'DEMO_ENABLED'> = { DEMO_ENABLED: true };
 
 describe('DemoService.reset (intégration DB locale)', () => {
   afterAll(async () => {

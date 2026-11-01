@@ -1,4 +1,4 @@
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../errors';
 
 export type StoragePrefix = 'documents' | 'prescriptions' | 'payslips';
 
@@ -15,7 +15,7 @@ export function assertOwnedStorageKey(
   prefix: StoragePrefix,
 ): string {
   if (!key.startsWith(`${prefix}/${userId}/`) || key.includes('..')) {
-    throw new NotFoundException('Fichier introuvable');
+    throw new NotFoundError('Fichier introuvable');
   }
   return key;
 }

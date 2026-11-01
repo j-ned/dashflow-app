@@ -1,7 +1,6 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
 import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
+import type { DrizzleDB } from '../db/drizzle.constants';
 import { totpBackupCodes, users, verificationCodes } from '../db/schema';
 
 type User = typeof users.$inferSelect;
@@ -14,9 +13,8 @@ export const MAX_CODE_ATTEMPTS = 5;
 const hashCode = (code: string): string =>
   createHash('sha256').update(code).digest('hex');
 
-@Injectable()
 export class AuthRepository {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(private readonly db: DrizzleDB) {}
 
   findByGoogleId(googleId: string): Promise<User | undefined> {
     return this.db

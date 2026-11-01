@@ -1,9 +1,8 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
-import { Cron, CronExpression } from '@nestjs/schedule';
 import { and, desc, eq, lt } from 'drizzle-orm';
 import type { Request } from 'express';
-import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
+import type { DrizzleDB } from '../db/drizzle.constants';
 import { securityEvents, users, type SecurityEventType } from '../db/schema';
+import { createLogger } from '../common/logger';
 
 export type SecurityEventRow = {
   id: string;
@@ -28,11 +27,10 @@ export function clientContext(req: Request): {
   };
 }
 
-@Injectable()
 export class SecurityEventsService {
-  private readonly logger = new Logger(SecurityEventsService.name);
+  private readonly logger = createLogger(SecurityEventsService.name);
 
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(private readonly db: DrizzleDB) {}
 
   /** Ne lève jamais : un journal en panne ne doit pas bloquer une connexion. */
   async record(
@@ -88,7 +86,6 @@ export class SecurityEventsService {
   }
 
   /** Rétention bornée : l'historique de connexion est utile quelques mois, pas des années. */
-  @Cron(CronExpression.EVERY_DAY_AT_4AM)
   async purgeOld(): Promise<void> {
     const cutoff = new Date(Date.now() - RETENTION_DAYS * 86_400_000);
     try {

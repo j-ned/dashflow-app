@@ -1,12 +1,9 @@
 import { describe, it, expect, vi } from 'vitest';
 import { Logger } from '@nestjs/common';
-import type { ConfigService } from '@nestjs/config';
 import { ConsoleMailer } from './console.mailer';
 import type { Env } from '../config/env.schema';
 
-const fakeConfig = {
-  get: () => 'http://localhost:3001',
-} as unknown as ConfigService<Env, true>;
+const fakeConfig = { APP_URL: 'http://localhost:3001' } as Env;
 
 describe('ConsoleMailer', () => {
   it('logge le code de vérification (une seule fois, via Logger)', async () => {

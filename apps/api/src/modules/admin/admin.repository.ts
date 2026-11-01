@@ -1,4 +1,3 @@
-import { Inject, Injectable } from '@nestjs/common';
 import {
   and,
   count,
@@ -13,7 +12,7 @@ import {
   ne,
   sql,
 } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { securityEvents, users, verificationCodes } from '../../db/schema';
 
 /** Échappe les jokers ILIKE pour qu'une recherche « 50% » cherche bien « 50% ». */
@@ -57,9 +56,8 @@ const NEVER_VERIFIED = [
   eq(users.isDemoAccount, false),
 ];
 
-@Injectable()
 export class AdminRepository {
-  constructor(@Inject(DRIZZLE) private readonly db: DrizzleDB) {}
+  constructor(private readonly db: DrizzleDB) {}
 
   async listUsers(opts: {
     search?: string;

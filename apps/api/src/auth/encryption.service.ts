@@ -1,8 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
 import { and, eq, inArray } from 'drizzle-orm';
 import { AuthRepository } from './auth.repository';
-import { DRIZZLE, type DrizzleDB } from '../db/drizzle.constants';
+import type { DrizzleDB } from '../db/drizzle.constants';
 import { ok, fail, type Result } from './auth.result';
 import type {
   SetupEncryptionKeysDto,
@@ -169,11 +168,10 @@ const WIPE_TABLES: OwnedTable[] = [
   schema.documents,
 ];
 
-@Injectable()
 export class EncryptionService {
   constructor(
     private readonly repo: AuthRepository,
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly db: DrizzleDB,
   ) {}
 
   /**

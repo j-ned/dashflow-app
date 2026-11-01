@@ -1,9 +1,8 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { StorageService } from '../../storage/storage.service';
 import { purgePatientFiles } from '../../common/files/storage-cleanup';
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { PgColumn, PgTable } from 'drizzle-orm/pg-core';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import {
   appointments,
   documents,
@@ -56,10 +55,9 @@ const count = (table: PgTable & { patientId: PgColumn }) =>
     Number,
   );
 
-@Injectable()
 export class MembersService {
   constructor(
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
+    private readonly db: DrizzleDB,
     private readonly storage: StorageService,
   ) {}
 

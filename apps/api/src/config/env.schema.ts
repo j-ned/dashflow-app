@@ -83,3 +83,5 @@ export const envSchema = envBaseSchema.superRefine((env, ctx) => {
 });
 
 export type Env = z.infer<typeof envBaseSchema>;
+
+export const ENV_KEYS = Object.keys(envBaseSchema.shape) as (keyof Env)[];

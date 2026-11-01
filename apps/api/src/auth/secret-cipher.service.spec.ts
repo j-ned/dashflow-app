@@ -1,14 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { ConfigService } from '@nestjs/config';
 import { SecretCipherService } from './secret-cipher.service';
+import type { Env } from '../config/env.schema';
 
 const HEX_KEY = 'a'.repeat(64);
 const JWT_SECRET = 'j'.repeat(40);
 // JWT_SECRET est obligatoire dans l'env réel (env.schema) : présent par défaut ici aussi.
-const config = (env: Record<string, string | undefined>) =>
-  ({
-    get: (k: string) => ({ JWT_SECRET, ...env })[k],
-  }) as unknown as ConfigService;
+type CipherEnv = Pick<Env, 'JWT_SECRET' | 'NODE_ENV' | 'TOTP_ENC_KEY'>;
+const config = (env: Partial<CipherEnv>): CipherEnv => ({
+  JWT_SECRET,
+  NODE_ENV: 'test',
+  ...env,
+});
 
 describe('SecretCipherService', () => {
   const svc = new SecretCipherService(config({ TOTP_ENC_KEY: HEX_KEY }));
@@ -47,7 +49,10 @@ describe('SecretCipherService', () => {
   });
 
   it('sans TOTP_ENC_KEY : clé dérivée de JWT_SECRET, stable entre instances', () => {
-    const env = { JWT_SECRET: 'x'.repeat(40), NODE_ENV: 'test' };
+    const env: Partial<CipherEnv> = {
+      JWT_SECRET: 'x'.repeat(40),
+      NODE_ENV: 'test',
+    };
     const a = new SecretCipherService(config(env));
     const b = new SecretCipherService(config(env));
     expect(b.decrypt(a.encrypt('S'))).toBe('S');

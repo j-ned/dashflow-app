@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { and, eq } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { prescriptions, patients, practitioners } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
@@ -9,10 +8,9 @@ import { deleteStorageObjectQuietly } from '../../common/files/storage-cleanup';
 
 type Prescription = typeof prescriptions.$inferSelect;
 
-@Injectable()
 export class PrescriptionsService extends OwnedCrudService<Prescription> {
   constructor(
-    @Inject(DRIZZLE) db: DrizzleDB,
+    db: DrizzleDB,
     private readonly storage: StorageService,
   ) {
     super(db, prescriptions);

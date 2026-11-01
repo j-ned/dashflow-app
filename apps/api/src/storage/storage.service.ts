@@ -1,5 +1,3 @@
-import { Injectable, ServiceUnavailableException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import {
   S3Client,
   PutObjectCommand,
@@ -10,6 +8,7 @@ import {
 } from '@aws-sdk/client-s3';
 import type { Readable } from 'node:stream';
 import type { Env } from '../config/env.schema';
+import { ServiceUnavailableError } from '../common/errors';
 
 function ext(contentType: string, fallback: string): string {
   // Fichier chiffré côté client (E2EE) : contenu opaque, extension neutre.
@@ -17,20 +16,28 @@ function ext(contentType: string, fallback: string): string {
   return (contentType.split('/')[1] ?? fallback).replace('jpeg', 'jpg');
 }
 
-@Injectable()
 export class StorageService {
   private readonly client: S3Client | null;
   private readonly bucket: string | undefined;
 
-  constructor(config: ConfigService<Env, true>) {
-    const endpoint = config.get('S3_ENDPOINT', { infer: true });
-    const accessKeyId = config.get('S3_ACCESS_KEY_ID', { infer: true });
-    const secretAccessKey = config.get('S3_SECRET_ACCESS_KEY', { infer: true });
-    this.bucket = config.get('S3_BUCKET', { infer: true });
+  constructor(
+    config: Pick<
+      Env,
+      | 'S3_ACCESS_KEY_ID'
+      | 'S3_BUCKET'
+      | 'S3_ENDPOINT'
+      | 'S3_REGION'
+      | 'S3_SECRET_ACCESS_KEY'
+    >,
+  ) {
+    const endpoint = config.S3_ENDPOINT;
+    const accessKeyId = config.S3_ACCESS_KEY_ID;
+    const secretAccessKey = config.S3_SECRET_ACCESS_KEY;
+    this.bucket = config.S3_BUCKET;
     this.client =
       endpoint && accessKeyId && secretAccessKey && this.bucket
         ? new S3Client({
-            region: config.get('S3_REGION', { infer: true }),
+            region: config.S3_REGION,
             endpoint,
             credentials: { accessKeyId, secretAccessKey },
             forcePathStyle: true,
@@ -40,7 +47,7 @@ export class StorageService {
 
   private ready(): { client: S3Client; bucket: string } {
     if (!this.client || !this.bucket)
-      throw new ServiceUnavailableException('Stockage R2 non configuré');
+      throw new ServiceUnavailableError('Stockage R2 non configuré');
     return { client: this.client, bucket: this.bucket };
   }
 

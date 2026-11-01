@@ -1,6 +1,4 @@
 import { Module } from '@nestjs/common';
-import { JwtModule } from '@nestjs/jwt';
-import { ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { AuthRepository } from './auth.repository';
@@ -19,51 +17,36 @@ import { DemoAccountGuard } from '../common/guards/demo-account.guard';
 import { EmailThrottlerGuard } from '../common/guards/email-throttler.guard';
 import { DemoModule } from '../modules/demo/demo.module';
 import { SecurityEventsModule } from '../security-events/security-events.module';
-import type { Env } from '../config/env.schema';
-
-export const JWT_ISSUER = 'dashflow-api';
-export const JWT_AUDIENCE = 'dashflow-web';
+import { StorageService } from '../storage/storage.service';
+import { provideClass } from '../common/nest/provide-class';
+import { DRIZZLE } from '../db/drizzle.constants';
+import { ENV } from '../config/env.token';
+import { MAILER } from '../mail/mailer';
 
 @Module({
-  imports: [
-    DemoModule,
-    SecurityEventsModule,
-    JwtModule.registerAsync({
-      inject: [ConfigService],
-      useFactory: (c: ConfigService<Env, true>) => ({
-        secret: c.get('JWT_SECRET', { infer: true }),
-        // Algorithme et audience explicites : un token signé autrement (ou pour un autre
-        // service partageant le secret) est refusé. Les tokens antérieurs à ce changement
-        // (sans iss/aud) deviennent invalides : reconnexion unique.
-        signOptions: {
-          expiresIn: '7d',
-          algorithm: 'HS256',
-          issuer: JWT_ISSUER,
-          audience: JWT_AUDIENCE,
-        },
-        verifyOptions: {
-          algorithms: ['HS256'],
-          issuer: JWT_ISSUER,
-          audience: JWT_AUDIENCE,
-        },
-      }),
-    }),
-  ],
+  imports: [DemoModule, SecurityEventsModule],
   controllers: [AuthController, EncryptionController, OAuthController],
   providers: [
-    AuthService,
-    AuthRepository,
-    TokenService,
-    CsrfService,
-    TwoFactorService,
-    SecretCipherService,
-    EncryptionService,
-    OAuthService,
+    provideClass(
+      AuthService,
+      AuthRepository,
+      MAILER,
+      TwoFactorService,
+      StorageService,
+      SecretCipherService,
+    ),
+    provideClass(AuthRepository, DRIZZLE),
+    provideClass(TokenService, ENV),
+    provideClass(CsrfService, ENV),
+    provideClass(TwoFactorService),
+    provideClass(SecretCipherService, ENV),
+    provideClass(EncryptionService, AuthRepository, DRIZZLE),
+    provideClass(OAuthService, ENV, AuthRepository),
     JwtAuthGuard,
     CsrfGuard,
     DemoAccountGuard,
     EmailThrottlerGuard,
-    UploadPolicy,
+    provideClass(UploadPolicy, AuthRepository),
   ],
   exports: [
     TokenService,

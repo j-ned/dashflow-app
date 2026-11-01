@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestError } from '../errors';
 import {
   decodeCursor,
   encodeCursor,
@@ -14,25 +14,23 @@ describe('keyset pagination', () => {
   it('encode/decode : aller-retour et arité vérifiée', () => {
     const c = encodeCursor(['2026-09-16T10:00:00.123456Z', 'abc']);
     expect(decodeCursor(c, 2)).toEqual(['2026-09-16T10:00:00.123456Z', 'abc']);
-    expect(() => decodeCursor(c, 1)).toThrow(BadRequestException);
+    expect(() => decodeCursor(c, 1)).toThrow(BadRequestError);
     expect(decodeCursor(undefined, 2)).toBeUndefined();
   });
 
   it('decode : curseur forgé (pas du base64 JSON de chaînes) → 400', () => {
-    expect(() => decodeCursor('not-a-cursor', 2)).toThrow(BadRequestException);
+    expect(() => decodeCursor('not-a-cursor', 2)).toThrow(BadRequestError);
     const notStrings = Buffer.from(JSON.stringify([1, 2])).toString(
       'base64url',
     );
-    expect(() => decodeCursor(notStrings, 2)).toThrow(BadRequestException);
+    expect(() => decodeCursor(notStrings, 2)).toThrow(BadRequestError);
   });
 
   it('parsePageQuery : coercition, bornes, défaut', () => {
     expect(parsePageQuery({ limit: '10' })).toEqual({ limit: 10 });
     expect(pageLimit(parsePageQuery({}))).toBe(DEFAULT_PAGE_SIZE);
-    expect(() => parsePageQuery({ limit: '0' })).toThrow(BadRequestException);
-    expect(() => parsePageQuery({ limit: '5000' })).toThrow(
-      BadRequestException,
-    );
+    expect(() => parsePageQuery({ limit: '0' })).toThrow(BadRequestError);
+    expect(() => parsePageQuery({ limit: '5000' })).toThrow(BadRequestError);
   });
 
   it('toPage : la ligne excédentaire est retirée et devient le curseur', () => {

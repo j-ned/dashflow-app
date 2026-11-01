@@ -4,7 +4,6 @@ import * as OTPAuth from 'otpauth';
 import { AuthService } from './auth.service';
 import { TwoFactorService } from './two-factor.service';
 import { SecretCipherService } from './secret-cipher.service';
-import type { ConfigService } from '@nestjs/config';
 import type { StorageService } from '../storage/storage.service';
 import type { Result } from './auth.result';
 import type { AuthRepository } from './auth.repository';
@@ -27,9 +26,9 @@ const repo = () => ({
 });
 const cipher = () =>
   new SecretCipherService({
-    get: (k: string) =>
-      ({ TOTP_ENC_KEY: 'c'.repeat(64), JWT_SECRET: 'j'.repeat(40) })[k],
-  } as unknown as ConfigService);
+    TOTP_ENC_KEY: 'c'.repeat(64),
+    JWT_SECRET: 'j'.repeat(40),
+  });
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
   sendPasswordResetCode: vi.fn(),
@@ -310,9 +309,7 @@ describe('AuthService', () => {
   });
 
   describe('2FA écrite avant la pose de TOTP_ENC_KEY (clé dérivée de JWT_SECRET)', () => {
-    const before = new SecretCipherService({
-      get: (k: string) => ({ JWT_SECRET: 'j'.repeat(40) })[k],
-    } as unknown as ConfigService);
+    const before = new SecretCipherService({ JWT_SECRET: 'j'.repeat(40) });
     const tf = new TwoFactorService();
     const loginUser = async (extra: object) => ({
       id: 'u1',

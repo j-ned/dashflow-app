@@ -1,11 +1,10 @@
 import { randomInt } from 'node:crypto';
-import { Inject, Injectable } from '@nestjs/common';
 import argon2 from 'argon2';
 import {
   AuthRepository,
   type VerificationCodePurpose,
 } from './auth.repository';
-import { MAILER, type Mailer } from '../mail/mailer';
+import type { Mailer } from '../mail/mailer';
 import { ok, fail, type Result } from './auth.result';
 import { TwoFactorService } from './two-factor.service';
 import { SecretCipherService } from './secret-cipher.service';
@@ -31,11 +30,10 @@ const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
 const DUMMY_PASSWORD_HASH =
   '$argon2id$v=19$m=65536,t=3,p=4$nDnJoEKnqivb4YJYimLDew$LsQ3NFQxFz3z6loo2TfhGsD7UEA5TiG67s9tn/ynstM';
 
-@Injectable()
 export class AuthService {
   constructor(
     private readonly repo: AuthRepository,
-    @Inject(MAILER) private readonly mailer: Mailer,
+    private readonly mailer: Mailer,
     private readonly twoFactor: TwoFactorService,
     private readonly storage: StorageService,
     private readonly cipher: SecretCipherService,

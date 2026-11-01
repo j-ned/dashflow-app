@@ -1,4 +1,3 @@
-import { Injectable } from '@nestjs/common';
 import { AuthRepository } from '../../auth/auth.repository';
 import { assertValidUpload, OPAQUE_MIME_TYPE } from './validate-upload';
 
@@ -15,7 +14,6 @@ export type UploadedFileLike = { buffer: Buffer; mimetype: string };
  * Un compte en clair qui enverrait `application/octet-stream` est refusé : la validation
  * par contenu ne doit jamais pouvoir être contournée en déclarant un blob opaque.
  */
-@Injectable()
 export class UploadPolicy {
   constructor(private readonly repo: AuthRepository) {}
 

@@ -14,6 +14,7 @@ import { LoansController } from './loans.controller';
 import { LoansService } from './loans.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { CsrfGuard } from '../../common/guards/csrf.guard';
+import { HttpExceptionFilter } from '../../common/filters/http-exception.filter';
 
 // Couvre le DTO de sortie (toLoanResponse) : `userId` ne doit jamais fuiter dans la
 // réponse HTTP, et les routes héritées d'OwnedCrudController (list/getOne/create/update)
@@ -66,6 +67,10 @@ describe('LoansController — DTO de sortie', () => {
       .compile();
 
     app = moduleRef.createNestApplication();
+
+    // Comme APP_FILTER dans AppModule : erreurs métier et HTTP → même réponse JSON.
+
+    app.useGlobalFilters(new HttpExceptionFilter());
     await app.init();
   });
 

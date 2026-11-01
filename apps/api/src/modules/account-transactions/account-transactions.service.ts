@@ -1,12 +1,6 @@
-import {
-  BadRequestException,
-  Inject,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
 import { z } from 'zod';
 import { and, desc, eq, getTableColumns, type SQL } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import {
   accountTransactions,
   bankAccounts,
@@ -24,6 +18,7 @@ import {
   type Page,
   type PageQuery,
 } from '../../common/crud/keyset';
+import { BadRequestError, NotFoundError } from '../../common/errors';
 
 type AccountTransaction = typeof accountTransactions.$inferSelect;
 
@@ -40,9 +35,8 @@ type NewTransactionValues = {
   encryptedData?: string | null;
 };
 
-@Injectable()
 export class AccountTransactionsService extends OwnedCrudService<AccountTransaction> {
-  constructor(@Inject(DRIZZLE) db: DrizzleDB) {
+  constructor(db: DrizzleDB) {
     super(db, accountTransactions);
   }
 
@@ -96,7 +90,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
     toAccountId: string | null | undefined,
   ): void {
     if (toAccountId && toAccountId === accountId) {
-      throw new BadRequestException(
+      throw new BadRequestError(
         "Un virement ne peut pas cibler le compte d'origine",
       );
     }
@@ -156,7 +150,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
       values.toAccountId &&
       !(await this.ownsAccount(userId, values.toAccountId))
     ) {
-      throw new NotFoundException('Compte destination non trouvé');
+      throw new NotFoundError('Compte destination non trouvé');
     }
     const rows = await this.db
       .insert(accountTransactions)
@@ -181,7 +175,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
         item.toAccountId &&
         !(await this.ownsAccount(userId, item.toAccountId))
       ) {
-        throw new NotFoundException('Compte destination non trouvé');
+        throw new NotFoundError('Compte destination non trouvé');
       }
     }
     return this.db
@@ -197,7 +191,7 @@ export class AccountTransactionsService extends OwnedCrudService<AccountTransact
   ): Promise<AccountTransaction | undefined> {
     if (typeof patch.toAccountId === 'string') {
       if (!(await this.ownsAccount(userId, patch.toAccountId))) {
-        throw new NotFoundException('Compte destination non trouvé');
+        throw new NotFoundError('Compte destination non trouvé');
       }
       const current = await this.getOne(userId, id);
       if (!current) return undefined;

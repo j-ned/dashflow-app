@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { BadRequestException } from '@nestjs/common';
-import { Test } from '@nestjs/testing';
-import { DRIZZLE } from '../../db/drizzle.constants';
+import { BadRequestError } from '../../common/errors';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { LoansService } from './loans.service';
 
 type FakeDbOptions = {
@@ -59,12 +58,12 @@ function createFakeDb(opts: FakeDbOptions) {
   };
 }
 
-async function createService(opts: FakeDbOptions) {
+function createService(opts: FakeDbOptions) {
   const fake = createFakeDb(opts);
-  const moduleRef = await Test.createTestingModule({
-    providers: [LoansService, { provide: DRIZZLE, useValue: fake.db }],
-  }).compile();
-  return { svc: moduleRef.get(LoansService), ...fake };
+  return Promise.resolve({
+    svc: new LoansService(fake.db as unknown as DrizzleDB),
+    ...fake,
+  });
 }
 
 describe('LoansService.recordPayment', () => {
@@ -90,7 +89,7 @@ describe('LoansService.recordPayment', () => {
 
     await expect(
       svc.recordPayment('user-1', 'loan-1', { amount: 80 }),
-    ).rejects.toBeInstanceOf(BadRequestException);
+    ).rejects.toBeInstanceOf(BadRequestError);
     expect(updatePatches).toHaveLength(0);
     expect(insertValues).toHaveLength(0);
   });

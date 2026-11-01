@@ -1,6 +1,5 @@
-import { Inject, Injectable } from '@nestjs/common';
 import { and, desc, eq, sql } from 'drizzle-orm';
-import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
+import type { DrizzleDB } from '../../db/drizzle.constants';
 import { salaryArchives, bankAccounts } from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
@@ -16,10 +15,9 @@ import {
 
 type SalaryArchive = typeof salaryArchives.$inferSelect;
 
-@Injectable()
 export class SalaryArchivesService extends OwnedCrudService<SalaryArchive> {
   constructor(
-    @Inject(DRIZZLE) db: DrizzleDB,
+    db: DrizzleDB,
     private readonly storage: StorageService,
   ) {
     super(db, salaryArchives);

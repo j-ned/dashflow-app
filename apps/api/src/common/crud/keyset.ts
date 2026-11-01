@@ -1,7 +1,7 @@
-import { BadRequestException } from '@nestjs/common';
 import { sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import { z } from 'zod';
+import { BadRequestError } from '../errors';
 
 /**
  * Pagination par curseur (keyset), rétrocompatible : la réponse reste un tableau, et la
@@ -26,7 +26,7 @@ const pageQuerySchema = z.object({
 export function parsePageQuery(query: unknown): PageQuery {
   const r = pageQuerySchema.safeParse(query ?? {});
   if (!r.success) {
-    throw new BadRequestException('Paramètres de pagination invalides');
+    throw new BadRequestError('Paramètres de pagination invalides');
   }
   return r.data;
 }
@@ -56,7 +56,7 @@ export function decodeCursor(
   } catch {
     /* curseur illisible → 400 ci-dessous */
   }
-  throw new BadRequestException('Curseur de pagination invalide');
+  throw new BadRequestError('Curseur de pagination invalide');
 }
 
 /** `rows` doit avoir été lu avec `limit + 1` lignes : la ligne excédentaire prouve la suite. */

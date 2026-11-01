@@ -1,14 +1,12 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
 import type { Mailer } from './mailer';
 import type { Env } from '../config/env.schema';
 import type { NoticeReason } from '../modules/admin/account-security';
+import { createLogger } from '../common/logger';
 
-@Injectable()
 export class ConsoleMailer implements Mailer {
-  private readonly logger = new Logger('ConsoleMailer');
+  private readonly logger = createLogger('ConsoleMailer');
 
-  constructor(private readonly config: ConfigService<Env, true>) {}
+  constructor(private readonly config: Env) {}
 
   sendVerificationCode(to: string, code: string): Promise<void> {
     this.logger.log(`[verification] ${to} → code ${code}`);

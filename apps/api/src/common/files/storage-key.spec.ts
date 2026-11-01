@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { NotFoundException } from '@nestjs/common';
+import { NotFoundError } from '../errors';
 import { assertOwnedStorageKey } from './storage-key';
 
 const ME = '11111111-1111-4111-8111-111111111111';
@@ -19,8 +19,6 @@ describe('assertOwnedStorageKey', () => {
     ['préfixe seul sans séparateur', `documents/${ME}x/doc.pdf`, 'documents'],
     ['clé vide', '', 'payslips'],
   ] as const)('refuse : %s', (_label, key, prefix) => {
-    expect(() => assertOwnedStorageKey(ME, key, prefix)).toThrow(
-      NotFoundException,
-    );
+    expect(() => assertOwnedStorageKey(ME, key, prefix)).toThrow(NotFoundError);
   });
 });
