@@ -7,12 +7,20 @@
       "framework": "angular",
       "buildCommand": "pnpm build",
       "outputDirectory": "dist/dash-flow/browser",
-      "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }],
+      "rewrites": [
+        {
+          "source": "/(.*)",
+          "destination": "/index.html"
+        }
+      ],
       "headers": [
         {
           "source": "/(.*)",
           "headers": [
-            { "key": "Cache-Control", "value": "no-cache" },
+            {
+              "key": "Cache-Control",
+              "value": "no-cache"
+            },
             {
               "key": "Content-Security-Policy",
               "value": "default-src 'self'; connect-src 'self' https://*.ingest.de.sentry.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'"
@@ -21,39 +29,86 @@
               "key": "Permissions-Policy",
               "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
             },
-            { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-            { "key": "Strict-Transport-Security", "value": "max-age=31536000; includeSubDomains" },
-            { "key": "X-Content-Type-Options", "value": "nosniff" },
-            { "key": "X-Frame-Options", "value": "DENY" }
+            {
+              "key": "Referrer-Policy",
+              "value": "strict-origin-when-cross-origin"
+            },
+            {
+              "key": "Strict-Transport-Security",
+              "value": "max-age=31536000; includeSubDomains"
+            },
+            {
+              "key": "X-Content-Type-Options",
+              "value": "nosniff"
+            },
+            {
+              "key": "X-Frame-Options",
+              "value": "DENY"
+            }
           ]
         },
         {
           "source": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico|webp|avif|woff|woff2|ttf|map)",
-          "headers": [{ "key": "Cache-Control", "value": "public, max-age=31536000, immutable" }]
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=31536000, immutable"
+            }
+          ]
         },
         {
           "source": "/(screen|icons)/(.*)",
-          "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=86400"
+            }
+          ]
         },
         {
           "source": "/favicon.(ico|svg)",
-          "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400" }]
+          "headers": [
+            {
+              "key": "Cache-Control",
+              "value": "public, max-age=86400"
+            }
+          ]
         }
       ]
     },
     "api": {
-      "root": "apps/api/",
+      "root": "./",
       "framework": "hono",
-      "entrypoint": "src/vercel.ts"
+      "entrypoint": "apps/api/src/vercel.ts",
+      "buildCommand": "pnpm --filter @dashflow/api build"
     }
   },
   "rewrites": [
-    { "source": "/api/(.*)", "destination": { "service": "api" } },
-    { "source": "/(.*)", "destination": { "service": "web" } }
+    {
+      "source": "/api/(.*)",
+      "destination": {
+        "service": "api"
+      }
+    },
+    {
+      "source": "/(.*)",
+      "destination": {
+        "service": "web"
+      }
+    }
   ],
   "crons": [
-    { "path": "/api/cron/purge-security-events", "schedule": "0 4 * * *" },
-    { "path": "/api/cron/purge-unverified-accounts", "schedule": "0 5 * * *" },
-    { "path": "/api/cron/reset-demo", "schedule": "0 3 * * *" }
+    {
+      "path": "/api/cron/purge-security-events",
+      "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/purge-unverified-accounts",
+      "schedule": "0 5 * * *"
+    },
+    {
+      "path": "/api/cron/reset-demo",
+      "schedule": "0 3 * * *"
+    }
   ]
 }
