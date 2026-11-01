@@ -15,6 +15,7 @@ import {
 } from './security-event.decorator';
 import { SecurityEventsService } from './security-events.service';
 import { AppError } from '../common/errors';
+import { expressClient } from './express-client';
 
 type Req = Request & { user?: AuthUser };
 
@@ -56,13 +57,17 @@ export class SecurityEventsInterceptor implements NestInterceptor {
     const userId =
       req.user?.id ?? (typeof fromBody === 'string' ? fromBody : undefined);
     if (userId) {
-      await this.events.record(opts.success, userId, req);
+      await this.events.record(opts.success, userId, expressClient(req));
       // Connexion par code de secours : événement à part, l'utilisateur doit le voir.
       if (
         (body as { backupCodesRemaining?: unknown } | null)
           ?.backupCodesRemaining !== undefined
       ) {
-        await this.events.record('backup_code_used', userId, req);
+        await this.events.record(
+          'backup_code_used',
+          userId,
+          expressClient(req),
+        );
       }
       return;
     }
@@ -72,7 +77,7 @@ export class SecurityEventsInterceptor implements NestInterceptor {
     await this.events.recordForEmail(
       opts.success,
       (req.body as { email?: unknown } | undefined)?.email,
-      req,
+      expressClient(req),
     );
   }
 
@@ -91,13 +96,13 @@ export class SecurityEventsInterceptor implements NestInterceptor {
     if (status === undefined) return;
     if (status < 400 || status >= 500 || status === 429) return;
     if (req.user?.id) {
-      await this.events.record(opts.failure, req.user.id, req);
+      await this.events.record(opts.failure, req.user.id, expressClient(req));
       return;
     }
     await this.events.recordForEmail(
       opts.failure,
       (req.body as { email?: unknown } | undefined)?.email,
-      req,
+      expressClient(req),
     );
   }
 }

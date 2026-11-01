@@ -4,6 +4,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { OAuthService } from './oauth.service';
 import { TokenService } from './token.service';
+import { expressClient } from '../security-events/express-client';
 import { SecurityEventsService } from '../security-events/security-events.service';
 import {
   sessionCookieName,
@@ -79,7 +80,11 @@ export class OAuthController {
         jwt,
         sessionCookieOptions(this.isProd),
       );
-      await this.securityEvents.record('login_oauth', user.id, req);
+      await this.securityEvents.record(
+        'login_oauth',
+        user.id,
+        expressClient(req),
+      );
       res.redirect(`${this.frontUrl}/auth/login?oauth=success`);
     } catch (err) {
       const reason =

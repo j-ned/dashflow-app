@@ -82,7 +82,14 @@ export function pgErrorCode(exception: unknown): string | undefined {
  */
 export function normalizeError(exception: unknown): ErrorBody {
   if (exception instanceof AppError)
-    return { status: exception.status, message: exception.message };
+    return {
+      status: exception.status,
+      message: exception.message,
+      ...(exception.code ? { code: exception.code } : {}),
+      ...(exception.details !== undefined
+        ? { details: exception.details }
+        : {}),
+    };
   const pg = pgErrorCode(exception);
   const mapped = pg ? PG_ERRORS[pg] : undefined;
   if (mapped) return { ...mapped };

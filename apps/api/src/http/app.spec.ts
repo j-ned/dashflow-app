@@ -1,7 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { Hono } from 'hono';
 import { createApp } from './app';
-import type { HttpDeps } from './deps';
+import { createDepsWith, type HttpDeps } from './deps';
+import type { Mailer } from '../mail/mailer';
 import { RateLimitStore } from './rate-limit-store';
 import { resolveClientIp } from './middleware/client-ip';
 import { SECURITY_HEADERS } from './middleware/security-headers';
@@ -17,10 +18,6 @@ import {
   requireRole,
 } from './middleware/auth';
 import { jsonBody } from './validate';
-import { CsrfService } from '../auth/csrf.service';
-import { CsrfPolicy } from '../auth/csrf-policy';
-import { RoleChecker } from '../auth/role-checker';
-import { SessionAuthenticator } from '../auth/session-authenticator';
 import { TokenService } from '../auth/token.service';
 import { SESSION_COOKIE } from '../auth/cookie';
 import type { DrizzleDB } from '../db/drizzle.constants';
@@ -52,17 +49,7 @@ function deps(db: DrizzleDB, env: Partial<Env> = {}): HttpDeps {
     HEALTH_TOKEN: 'h'.repeat(24),
     ...env,
   } as Env;
-  const tokens = new TokenService(fullEnv);
-  const csrf = new CsrfService(fullEnv);
-  return {
-    env: fullEnv,
-    db,
-    sessions: new SessionAuthenticator(tokens, db),
-    csrf,
-    csrfPolicy: new CsrfPolicy(csrf, fullEnv),
-    roles: new RoleChecker(db),
-    rateLimits: new RateLimitStore(),
-  };
+  return createDepsWith(fullEnv, db, {} as Mailer);
 }
 
 const sessionCookie = async (sv: number, demo = false) =>
@@ -180,16 +167,42 @@ describe('Socle HTTP Hono', () => {
     app.post('/v', async (c) =>
       c.json(await jsonBody(c, z.object({ email: z.string() }))),
     );
-    const bad = await app.request('/v', { method: 'POST', body: '{bad' });
+    const json = { 'Content-Type': 'application/json; charset=utf-8' };
+    const bad = await app.request('/v', {
+      method: 'POST',
+      headers: json,
+      body: '{bad',
+    });
     expect(bad.status).toBe(400);
     expect(await bad.json()).toMatchObject({ message: 'Corps JSON invalide' });
     const invalid = await app.request('/v', {
       method: 'POST',
+      headers: json,
       body: '{"email":1}',
     });
     expect(invalid.status).toBe(400);
-    const empty = await app.request('/v', { method: 'POST' });
+    const ok = await app.request('/v', {
+      method: 'POST',
+      headers: json,
+      body: '{"email":"a@b.c"}',
+    });
+    expect(await ok.json()).toEqual({ email: 'a@b.c' });
+    const empty = await app.request('/v', { method: 'POST', headers: json });
     expect(empty.status).toBe(400); // `{}` validé : email manquant
+  });
+
+  it('corps non déclaré application/json ignoré (anti « login CSRF » par formulaire text/plain)', async () => {
+    const app = createApp(d);
+    app.post('/v', async (c) =>
+      c.json(await jsonBody(c, z.object({ email: z.string() }))),
+    );
+    // Un <form enctype="text/plain"> d'un autre site passe sans preflight CORS.
+    const forged = await app.request('/v', {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: '{"email":"a@b.c"}',
+    });
+    expect(forged.status).toBe(400);
   });
 });
 

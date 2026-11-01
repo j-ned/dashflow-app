@@ -5,6 +5,7 @@ import { envSchema } from '../config/env.schema';
 import { createLogger } from '../common/logger';
 import { createApp } from './app';
 import { createDeps } from './deps';
+import { startScheduledJobs } from './scheduler';
 
 const logger = createLogger('HttpServer');
 
@@ -17,6 +18,7 @@ try {
 
 const env = envSchema.parse(process.env);
 const { deps, close } = createDeps(env);
+const stopJobs = startScheduledJobs(deps);
 const server = serve({ fetch: createApp(deps).fetch, port: env.PORT }, (info) =>
   logger.log(`API Hono à l'écoute sur le port ${info.port}`),
 );
@@ -25,6 +27,7 @@ const server = serve({ fetch: createApp(deps).fetch, port: env.PORT }, (info) =>
 // en vie jusqu'au SIGKILL (10 s, code 137) à chaque déploiement.
 for (const signal of ['SIGTERM', 'SIGINT'] as const) {
   process.once(signal, () => {
+    stopJobs();
     server.close(() => {
       void close().finally(() => process.exit(0));
     });

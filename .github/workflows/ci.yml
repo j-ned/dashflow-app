@@ -104,8 +104,13 @@ jobs:
         run: pnpm --filter @dashflow/api db:migrate # applique les migrations drizzle sur la base éphémère
       - name: Integration tests
         run: pnpm --filter @dashflow/api test:integration # filet anti-régression migration (schema-integrity, ...)
-      - name: E2E tests
-        run: pnpm --filter @dashflow/api test:e2e # vitest e2e — boote le vrai AppModule contre Postgres
+      - name: E2E tests (Nest)
+        run: pnpm --filter @dashflow/api test:e2e # boîte noire : l'API tourne dans son propre processus
+      # Même suite contre l'implémentation Hono, tant que les deux coexistent.
+      - name: E2E tests (Hono)
+        run: pnpm --filter @dashflow/api test:e2e
+        env:
+          E2E_API_CMD: node dist/http/server.js
 
   docker:
     name: Docker Build (${{ matrix.app }})

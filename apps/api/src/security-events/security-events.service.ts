@@ -1,5 +1,4 @@
 import { and, desc, eq, lt } from 'drizzle-orm';
-import type { Request } from 'express';
 import type { DrizzleDB } from '../db/drizzle.constants';
 import { securityEvents, users, type SecurityEventType } from '../db/schema';
 import { createLogger } from '../common/logger';
@@ -15,15 +14,20 @@ export type SecurityEventRow = {
 const RETENTION_DAYS = 180;
 const LIST_MAX = 100;
 
-/** IP et User-Agent du client, bornés pour la colonne (et pour ne pas stocker un roman). */
-export function clientContext(req: Request): {
+/** IP et User-Agent du client, résolus par la couche HTTP. */
+export type ClientContext = {
+  readonly ip: string | null | undefined;
+  readonly userAgent: string | null | undefined;
+};
+
+/** Bornés pour la colonne (et pour ne pas stocker un roman). */
+function bounded(ctx: ClientContext): {
   ip: string | null;
   userAgent: string | null;
 } {
-  const ua = req.headers['user-agent'];
   return {
-    ip: req.ip?.slice(0, 64) ?? null,
-    userAgent: typeof ua === 'string' ? ua.slice(0, 255) : null,
+    ip: ctx.ip?.slice(0, 64) ?? null,
+    userAgent: ctx.userAgent?.slice(0, 255) ?? null,
   };
 }
 
@@ -36,12 +40,12 @@ export class SecurityEventsService {
   async record(
     type: SecurityEventType,
     userId: string,
-    req: Request,
+    client: ClientContext,
   ): Promise<void> {
     try {
       await this.db
         .insert(securityEvents)
-        .values({ userId, type, ...clientContext(req) });
+        .values({ userId, type, ...bounded(client) });
     } catch (err) {
       this.logger.warn(
         `Événement ${type} non journalisé : ${err instanceof Error ? err.message : String(err)}`,
@@ -53,7 +57,7 @@ export class SecurityEventsService {
   async recordForEmail(
     type: SecurityEventType,
     email: unknown,
-    req: Request,
+    client: ClientContext,
   ): Promise<void> {
     if (typeof email !== 'string' || !email) return;
     try {
@@ -62,7 +66,7 @@ export class SecurityEventsService {
         .from(users)
         .where(eq(users.email, email.toLowerCase().trim()))
         .limit(1);
-      if (u) await this.record(type, u.id, req);
+      if (u) await this.record(type, u.id, client);
     } catch (err) {
       this.logger.warn(
         `Événement ${type} non journalisé : ${err instanceof Error ? err.message : String(err)}`,

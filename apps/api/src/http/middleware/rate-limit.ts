@@ -4,6 +4,7 @@ import { matchedRoutes } from 'hono/route';
 import { TooManyRequestsError } from '../errors';
 import type { RateLimitStore, ThrottleRule } from '../rate-limit-store';
 import type { AppEnv } from '../types';
+import { rawJsonBody } from '../validate';
 
 /**
  * Plafond par défaut, par route et par IP. 100 / 15 min était atteignable par un foyer actif
@@ -75,7 +76,8 @@ export function throttle(rule: ThrottleRule): MiddlewareHandler {
  */
 export const throttleByEmail = (store: RateLimitStore, rule: ThrottleRule) =>
   createMiddleware<AppEnv>(async (c, next) => {
-    const body: unknown = await c.req.json().catch(() => undefined);
+    // Même lecture que la route (JSON déclaré seulement), cf. rawJsonBody.
+    const body: unknown = await rawJsonBody(c).catch(() => undefined);
     const raw = (body as { email?: unknown } | undefined)?.email;
     const email = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const route = matchedRoute(c);

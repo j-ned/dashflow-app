@@ -38,6 +38,7 @@
     "arctic": "^3.7.0",
     "argon2": "^0.43.1",
     "cookie-parser": "^1.4.7",
+    "cron": "^4.4.0",
     "drizzle-orm": "^0.45.2",
     "file-type": "^22.0.1",
     "helmet": "^8.2.0",

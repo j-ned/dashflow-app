@@ -6,6 +6,9 @@ export class AppError extends Error {
   constructor(
     readonly status: number,
     message: string,
+    /** Code stable lu par le front (ex. `EMAIL_NOT_VERIFIED`). */
+    readonly code?: string,
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = new.target.name;
