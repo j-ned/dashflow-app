@@ -1,9 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import {
-  ForbiddenException,
-  UnauthorizedException,
-  type ExecutionContext,
-} from '@nestjs/common';
+import { type ExecutionContext } from '@nestjs/common';
+import { ForbiddenError, UnauthorizedError } from '../errors';
 import { Reflector } from '@nestjs/core';
 import { RolesGuard } from './roles.guard';
 import type { DrizzleDB } from '../../db/drizzle.constants';
@@ -38,13 +35,13 @@ describe('RolesGuard', () => {
   it('refuse (403) un user non admin', async () => {
     const guard = new RolesGuard(reflector(['admin']), db('user'));
     await expect(guard.canActivate(ctx({ id: 'u1' }))).rejects.toBeInstanceOf(
-      ForbiddenException,
+      ForbiddenError,
     );
   });
   it('refuse (401) sans utilisateur', async () => {
     const guard = new RolesGuard(reflector(['admin']), db('admin'));
     await expect(guard.canActivate(ctx(undefined))).rejects.toBeInstanceOf(
-      UnauthorizedException,
+      UnauthorizedError,
     );
   });
 });

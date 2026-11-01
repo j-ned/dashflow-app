@@ -108,12 +108,16 @@ async function waitUntilReady(
 }
 
 export async function startApi(
-  opts: { env?: Readonly<Record<string, string>> } = {},
+  opts: {
+    env?: Readonly<Record<string, string>>;
+    /** Commande imposée (prime sur E2E_API_CMD) : sert à comparer deux implémentations. */
+    cmd?: string;
+  } = {},
 ): Promise<E2eApi> {
   const sink = new SmtpSink();
   const smtpPort = await sink.listen();
   const port = await freePort();
-  const [cmd, ...args] = (process.env.E2E_API_CMD ?? DEFAULT_CMD)
+  const [cmd, ...args] = (opts.cmd ?? process.env.E2E_API_CMD ?? DEFAULT_CMD)
     .split(/\s+/)
     .filter(Boolean);
 

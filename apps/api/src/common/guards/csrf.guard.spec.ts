@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
+import { type ExecutionContext } from '@nestjs/common';
+import { ForbiddenError } from '../errors';
 import type { ConfigService } from '@nestjs/config';
 import { CsrfGuard } from './csrf.guard';
 import { CsrfService } from '../../auth/csrf.service';
@@ -52,10 +53,10 @@ describe('CsrfGuard', () => {
       guard().canActivate(
         ctx({ 'x-csrf-token': stale, origin: 'https://dashflow.example' }),
       ),
-    ).toThrow(ForbiddenException);
+    ).toThrow(ForbiddenError);
     expect(() =>
       guard().canActivate(ctx({ origin: 'https://dashflow.example' })),
-    ).toThrow(ForbiddenException);
+    ).toThrow(ForbiddenError);
     expect(() =>
       guard().canActivate(
         ctx(
@@ -63,7 +64,7 @@ describe('CsrfGuard', () => {
           false,
         ),
       ),
-    ).toThrow(ForbiddenException);
+    ).toThrow(ForbiddenError);
   });
 
   it('403 : Origin étrangère, même avec un bon jeton (cookie tossing / site piégé)', () => {

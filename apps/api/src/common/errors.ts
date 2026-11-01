@@ -18,6 +18,12 @@ export class BadRequestError extends AppError {
   }
 }
 
+export class UnauthorizedError extends AppError {
+  constructor(message: string) {
+    super(401, message);
+  }
+}
+
 export class ForbiddenError extends AppError {
   constructor(message: string) {
     super(403, message);

@@ -1,5 +1,6 @@
 import { describe, it, expect, vi } from 'vitest';
-import { UnauthorizedException, type ExecutionContext } from '@nestjs/common';
+import { type ExecutionContext } from '@nestjs/common';
+import { UnauthorizedError } from '../errors';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { SESSION_COOKIE, SESSION_COOKIE_HOST } from '../../auth/cookie';
 import type { TokenService } from '../../auth/token.service';
@@ -57,7 +58,7 @@ describe('JwtAuthGuard', () => {
   it('401 sans cookie', async () => {
     const guard = new JwtAuthGuard(tokenWith({}), dbWith([]));
     await expect(guard.canActivate(ctx({}))).rejects.toBeInstanceOf(
-      UnauthorizedException,
+      UnauthorizedError,
     );
   });
 
@@ -70,7 +71,7 @@ describe('JwtAuthGuard', () => {
     );
     await expect(
       guard.canActivate(ctx({ [SESSION_COOKIE]: 'tok' })),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
   it('401 « Session révoquée » quand session_version en base a avancé (logout, reset, changement de mot de passe)', async () => {
@@ -90,7 +91,7 @@ describe('JwtAuthGuard', () => {
     );
     await expect(
       guard.canActivate(ctx({ [SESSION_COOKIE]: 'tok' })),
-    ).rejects.toBeInstanceOf(UnauthorizedException);
+    ).rejects.toBeInstanceOf(UnauthorizedError);
   });
 
   it('lit aussi le cookie préfixé __Host- (nom de production)', async () => {

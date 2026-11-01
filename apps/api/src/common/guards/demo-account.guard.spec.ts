@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { ForbiddenException, type ExecutionContext } from '@nestjs/common';
+import { type ExecutionContext } from '@nestjs/common';
+import { ForbiddenError } from '../errors';
 import { DemoAccountGuard } from './demo-account.guard';
 
 function ctx(user: unknown) {
@@ -14,7 +15,7 @@ describe('DemoAccountGuard', () => {
   it('given session démo (isDemo: true), then 403', () => {
     expect(() =>
       guard.canActivate(ctx({ id: 'demo', email: 'd@x.io', isDemo: true })),
-    ).toThrow(ForbiddenException);
+    ).toThrow(ForbiddenError);
   });
 
   it('given session normale (isDemo: false), then passe', () => {

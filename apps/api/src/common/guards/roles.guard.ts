@@ -1,23 +1,25 @@
 import {
-  CanActivate,
-  ExecutionContext,
-  ForbiddenException,
+  type CanActivate,
+  type ExecutionContext,
   Inject,
   Injectable,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
-import { eq } from 'drizzle-orm';
 import { DRIZZLE, type DrizzleDB } from '../../db/drizzle.constants';
-import { users } from '../../db/schema';
+import { RoleChecker } from '../../auth/role-checker';
 import { ROLES_KEY, type UserRole } from '../decorators/roles.decorator';
 
+/** Adaptateur Nest de RoleChecker : rôles requis lus sur `@Roles(...)`. */
 @Injectable()
 export class RolesGuard implements CanActivate {
+  private readonly roles: RoleChecker;
+
   constructor(
     private readonly reflector: Reflector,
-    @Inject(DRIZZLE) private readonly db: DrizzleDB,
-  ) {}
+    @Inject(DRIZZLE) db: DrizzleDB,
+  ) {
+    this.roles = new RoleChecker(db);
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     const required = this.reflector.getAllAndOverride<UserRole[] | undefined>(
@@ -25,19 +27,8 @@ export class RolesGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
     if (!required || required.length === 0) return true;
-
     const req = context.switchToHttp().getRequest<{ user?: { id?: string } }>();
-    const userId = req.user?.id;
-    if (!userId) throw new UnauthorizedException('Non authentifié');
-
-    const rows = await this.db
-      .select({ role: users.role })
-      .from(users)
-      .where(eq(users.id, userId))
-      .limit(1);
-    const role = rows[0]?.role as UserRole | undefined;
-    if (!role || !required.includes(role))
-      throw new ForbiddenException('Accès réservé');
+    await this.roles.assert(req.user?.id, required);
     return true;
   }
 }

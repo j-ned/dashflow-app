@@ -31,6 +31,9 @@ export default defineConfig({
     environment: 'node',
     root: './',
     include: ['test/**/*.integration-spec.ts'],
+    // Une seule base partagée, et des fichiers qui touchent au même compte démo (demo-reset /
+    // demo-rebase) : en parallèle, l'un réinitialise le compte que l'autre est en train de vérifier.
+    fileParallelism: false,
     env: dotEnvVars,
   },
   plugins: [swc.vite({ module: { type: 'es6' } })],

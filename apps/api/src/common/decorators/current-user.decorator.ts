@@ -1,13 +1,7 @@
 import { createParamDecorator, type ExecutionContext } from '@nestjs/common';
+import type { AuthUser } from '../../auth/auth-user';
 
-export interface AuthUser {
-  id: string;
-  email: string;
-  /** `users.session_version` porté par le JWT : lie le jeton CSRF à la session. */
-  sessionVersion: number;
-  /** Vrai pour une session démo anonyme (claim `demo` du JWT). */
-  isDemo?: boolean;
-}
+export type { AuthUser };
 
 export const CurrentUser = createParamDecorator(
   (_data: unknown, ctx: ExecutionContext): AuthUser =>
