@@ -708,7 +708,8 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
   });
 
   it('ne double-compte pas dans le projeté du livret un ponctuel déjà posté', () => {
-    const month = new Date().toISOString().slice(0, 7);
+    // Jour 01 en mois local (cohérent avec le SUT) → toujours ≤ aujourd'hui, donc déjà « posté »
+    const month = toLocalIsoDate(new Date()).slice(0, 7);
     const entry = {
       id: 'ot1',
       accountId: 'a',
@@ -717,7 +718,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
       amount: 500,
       type: 'transfer',
       dayOfMonth: null,
-      date: `${month}-02`,
+      date: `${month}-01`,
       endDate: null,
       category: null,
       memberId: null,
@@ -732,7 +733,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
       amount: 500,
       direction: 'transfer',
       toAccountId: 'liv',
-      date: `${month}-02`,
+      date: `${month}-01`,
       category: null,
       note: null,
       memberId: null,
