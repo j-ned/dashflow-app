@@ -1,8 +1,9 @@
 // Règles d'upload appliquées côté client AVANT chiffrement E2EE : une fois chiffré, le serveur
 // ne peut plus vérifier le type réel du fichier, c'est donc ici que la whitelist s'applique.
-// Miroir de nest-dashflow-app/src/common/files/validate-upload.ts (types + 10 Mo).
+// Miroir de apps/api/src/common/files/validate-upload.ts (types + 4 Mo, plafond des fonctions
+// Vercel : 4,5 Mo par requête, enveloppe multipart et chiffrement compris).
 
-export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 
 export const UPLOAD_ALLOWED_MIME_TYPES: readonly string[] = [
   'application/pdf',

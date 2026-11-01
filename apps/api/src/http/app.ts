@@ -18,6 +18,7 @@ import { membersRoutes } from './routes/members';
 import { prescriptionsRoutes } from './routes/prescriptions';
 import { recurringEntriesRoutes } from './routes/recurring-entries';
 import { salaryArchivesRoutes } from './routes/salary-archives';
+import { cronRoutes } from './routes/cron';
 import { healthRoutes } from './routes/health';
 import { oauthRoutes } from './routes/oauth';
 import { appointmentsRoutes } from './routes/appointments';
@@ -31,8 +32,14 @@ import type { AppEnv } from './types';
  * réponse), CORS (le preflight répond ici, sans throttling), IP client, throttling par route,
  * plafond de corps. Les groupes de routes métier s'y montent avec `app.route()`.
  */
-export function createApp(deps: HttpDeps): Hono<AppEnv> {
-  const app = new Hono<AppEnv>();
+export function createApp(
+  deps: HttpDeps,
+  /** Préfixe public : `/api` sur Vercel, où la fonction reçoit le chemin complet. */
+  opts: { basePath?: string } = {},
+): Hono<AppEnv> {
+  const app = opts.basePath
+    ? new Hono<AppEnv>().basePath(opts.basePath)
+    : new Hono<AppEnv>();
   app.use(securityHeaders());
   app.use(corsPolicy(deps.env));
   app.use(clientIp());
@@ -40,6 +47,7 @@ export function createApp(deps: HttpDeps): Hono<AppEnv> {
   app.use(defaultBodyLimit());
 
   app.route('/health', healthRoutes(deps));
+  app.route('/cron', cronRoutes(deps));
   app.route('/auth/oauth/google', oauthRoutes(deps));
   app.route('/auth', authRoutes(deps));
   app.route('/patients', patientsRoutes(deps));

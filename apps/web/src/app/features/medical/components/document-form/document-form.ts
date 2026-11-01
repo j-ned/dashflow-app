@@ -13,6 +13,7 @@ import { MedicalDocument, DocumentType } from '../../domain/models/document.mode
 import { Patient } from '../../domain/models/patient.model';
 import { Practitioner } from '../../domain/models/practitioner.model';
 import { todayIso } from '@shared/utils/local-date';
+import { UPLOAD_MAX_BYTES } from '@shared/forms/upload-file-policy';
 
 type DocumentModel = {
   patientId: string;
@@ -274,7 +275,7 @@ export class DocumentForm {
   });
 
   private readonly ALLOWED_TYPES = ['application/pdf', 'image/jpeg', 'image/png', 'image/webp'];
-  private readonly MAX_SIZE = 10 * 1024 * 1024;
+  private readonly MAX_SIZE = UPLOAD_MAX_BYTES;
 
   protected onDragOver(event: DragEvent) {
     event.preventDefault();

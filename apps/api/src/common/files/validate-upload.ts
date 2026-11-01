@@ -16,12 +16,16 @@ const ALLOWED_UPLOAD_MIME_TYPES: readonly string[] = [
 export const OPAQUE_MIME_TYPE = 'application/octet-stream';
 
 /** Taille max d'un fichier utilisateur (miroir de la règle côté client). */
-export const UPLOAD_MAX_BYTES = 10 * 1024 * 1024;
+/**
+ * 4 Mo : une requête vers une fonction Vercel est plafonnée à 4,5 Mo, enveloppe multipart et
+ * surcoût E2EE compris. Au-delà, il faudrait un envoi direct vers R2 (URL pré-signée).
+ */
+export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 
 /**
  * Limite multer : le client valide `UPLOAD_MAX_BYTES` sur le fichier EN CLAIR ; en E2EE le blob
  * reçu porte en plus l'en-tête de format (≤ 260 octets), l'IV (12) et le tag GCM (16).
- * Sans cette marge, un fichier de 10 Mo tout juste valide côté client serait refusé ici.
+ * Sans cette marge, un fichier de 4 Mo tout juste valide côté client serait refusé ici.
  */
 export const UPLOAD_MULTER_LIMIT_BYTES = UPLOAD_MAX_BYTES + 1024;
 

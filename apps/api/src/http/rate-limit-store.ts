@@ -14,6 +14,15 @@ export type ThrottleResult = {
   readonly timeToBlockExpire: number;
 };
 
+/** Compteur de throttling : en mémoire (un processus) ou Redis (plusieurs instances). */
+export type RateLimiter = {
+  increment(
+    key: string,
+    rule: ThrottleRule,
+  ): ThrottleResult | Promise<ThrottleResult>;
+  dispose(): void;
+};
+
 type Entry = {
   ttlMs: number;
   hits: number[];

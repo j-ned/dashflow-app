@@ -30,5 +30,7 @@ docker build -f apps/web/Dockerfile -t dashflow-web .
 
 ## Déploiement
 
-Front et API partagent le domaine du front : Traefik route `/api` vers l'image de l'API (préfixe retiré).
-Procédure de bascule et retour arrière : [docs/deploiement-meme-origine.md](docs/deploiement-meme-origine.md).
+Production sur **Vercel** : un projet, deux services (`vercel.json`). Le front est servi à la racine et l'API sous `/api`, sur le même domaine.
+Procédure complète (Neon, Upstash, variables, copie des données, domaine, retour arrière) : [docs/deploiement-vercel.md](docs/deploiement-vercel.md).
+
+Auto-hébergement Docker (Dokploy/Traefik, images `apps/*/Dockerfile`) : [docs/deploiement-meme-origine.md](docs/deploiement-meme-origine.md).

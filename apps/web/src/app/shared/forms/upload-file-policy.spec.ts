@@ -43,7 +43,7 @@ describe('upload-file-policy', () => {
     expect(() => assertUploadable(file('scan.bin', ''))).toThrow(UploadFileError);
   });
 
-  it('given un fichier > 10 Mo, then UploadFileError tooLarge', () => {
+  it('given un fichier > 4 Mo, then UploadFileError tooLarge', () => {
     const big = file('a.pdf', 'application/pdf', UPLOAD_MAX_BYTES + 1);
     expect(() => assertUploadable(big)).toThrow(UploadFileError);
     expect(
@@ -60,7 +60,7 @@ describe('upload-file-policy', () => {
     ).toBe('shared.upload.tooLarge');
   });
 
-  it('given exactement 10 Mo, then accepté', () => {
+  it('given exactement 4 Mo, then accepté', () => {
     expect(() =>
       assertUploadable(file('a.pdf', 'application/pdf', UPLOAD_MAX_BYTES)),
     ).not.toThrow();

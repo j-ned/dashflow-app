@@ -2,7 +2,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
 import type { DrizzleDB } from '../db/drizzle.constants';
-import type { Env } from '../config/env.schema';
+import { redisRestConfig, type Env } from '../config/env.schema';
 import type { Mailer } from '../mail/mailer';
 import { ConsoleMailer } from '../mail/console.mailer';
 import { SmtpMailer } from '../mail/smtp.mailer';
@@ -37,13 +37,19 @@ import { PrescriptionsService } from '../modules/prescriptions/prescriptions.ser
 import { RecurringEntriesService } from '../modules/recurring-entries/recurring-entries.service';
 import { RemindersService } from '../modules/reminders/reminders.service';
 import { SalaryArchivesService } from '../modules/salary-archives/salary-archives.service';
-import { RateLimitStore } from './rate-limit-store';
+import { RateLimitStore, type RateLimiter } from './rate-limit-store';
+import { RedisRateLimitStore } from './redis-rate-limit-store';
 import { SessionCookies } from './kit';
 
 /** Tout ce dont la couche HTTP Hono a besoin, construit une fois au démarrage. */
 export type HttpDeps = ReturnType<typeof buildDeps>;
 
-function buildDeps(env: Env, db: DrizzleDB, mailer: Mailer) {
+function buildDeps(
+  env: Env,
+  db: DrizzleDB,
+  mailer: Mailer,
+  rateLimits: RateLimiter = new RateLimitStore(),
+) {
   const tokens = new TokenService(env);
   const csrf = new CsrfService(env);
   const storage = new StorageService(env);
@@ -64,7 +70,7 @@ function buildDeps(env: Env, db: DrizzleDB, mailer: Mailer) {
     ),
     csrfPolicy: new CsrfPolicy(csrf, env),
     roles: new RoleChecker(db),
-    rateLimits: new RateLimitStore(),
+    rateLimits,
     uploadPolicy: new UploadPolicy(authRepo),
     securityEvents: new SecurityEventsService(db),
     auth: new AuthService(
@@ -100,11 +106,23 @@ export function createDeps(env: Env): {
   deps: HttpDeps;
   close: () => Promise<void>;
 } {
-  const client = postgres(env.DATABASE_URL);
+  const onVercel = env.VERCEL === '1';
+  // Sur Vercel : peu de connexions par instance (elles se multiplient avec les instances) et pas
+  // de requêtes préparées, que le pooler de Neon/PgBouncer en mode transaction ne garantit pas.
+  const client = postgres(
+    env.DATABASE_URL,
+    onVercel ? { max: 3, prepare: false, idle_timeout: 20 } : {},
+  );
   const db = drizzle(client, { schema });
   const mailer: Mailer =
     env.MAILER === 'smtp' ? new SmtpMailer(env) : new ConsoleMailer(env);
-  const deps = buildDeps(env, db, mailer);
+  const redis = redisRestConfig(env);
+  const deps = buildDeps(
+    env,
+    db,
+    mailer,
+    redis ? new RedisRateLimitStore(redis) : new RateLimitStore(),
+  );
   return {
     deps,
     close: async () => {

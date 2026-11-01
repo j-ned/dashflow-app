@@ -1662,7 +1662,7 @@
         "removeFile": "Retirer",
         "dropHere": "Glissez-déposez un fichier ici ou",
         "browse": "parcourir",
-        "fileHint": "PDF, JPG, PNG, WEBP : max 10 Mo",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 4 Mo",
         "create": "Créer",
         "save": "Enregistrer"
       },
@@ -1813,7 +1813,7 @@
         "removeFile": "Retirer",
         "dropHere": "Glissez-déposez un fichier ici ou",
         "browse": "parcourir",
-        "fileHint": "PDF, JPG, PNG, WEBP : max 10 Mo",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 4 Mo",
         "create": "Créer",
         "save": "Enregistrer"
       },
@@ -1934,7 +1934,7 @@
     },
     "upload": {
       "invalidType": "Format non pris en charge : PDF, JPG, PNG ou WebP uniquement.",
-      "tooLarge": "Fichier trop volumineux : 10 Mo maximum."
+      "tooLarge": "Fichier trop volumineux : 4 Mo maximum."
     }
   },
   "admin": {

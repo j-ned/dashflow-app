@@ -2,7 +2,7 @@ import type { Context, MiddlewareHandler } from 'hono';
 import { createMiddleware } from 'hono/factory';
 import { matchedRoutes } from 'hono/route';
 import { TooManyRequestsError } from '../errors';
-import type { RateLimitStore, ThrottleRule } from '../rate-limit-store';
+import type { RateLimiter, ThrottleRule } from '../rate-limit-store';
 import type { AppEnv } from '../types';
 import { rawJsonBody } from '../validate';
 
@@ -24,13 +24,13 @@ function matchedRoute(c: Context): string | undefined {
   return route ? `${route.method} ${route.path}` : undefined;
 }
 
-function check(
+async function check(
   c: Context,
-  store: RateLimitStore,
+  store: RateLimiter,
   key: string,
   rule: ThrottleRule,
-): void {
-  const r = store.increment(key, rule);
+): Promise<void> {
+  const r = await store.increment(key, rule);
   if (r.isBlocked) {
     c.header('Retry-After', String(r.timeToBlockExpire));
     throw new TooManyRequestsError();
@@ -47,7 +47,7 @@ function check(
  * Throttling par route et par IP pour toute l'app (équivalent du ThrottlerGuard global).
  * Les 404 ne sont pas comptées, comme sous Nest.
  */
-export const rateLimit = (store: RateLimitStore) =>
+export const rateLimit = (store: RateLimiter) =>
   createMiddleware<AppEnv>(async (c, next) => {
     const route = matchedRoute(c);
     if (route) {
@@ -55,7 +55,7 @@ export const rateLimit = (store: RateLimitStore) =>
         matchedRoutes(c)
           .map((r) => routeRules.get(r.handler))
           .findLast((x) => x !== undefined) ?? DEFAULT_THROTTLE;
-      check(c, store, `${route}|ip:${c.get('clientIp')}`, rule);
+      await check(c, store, `${route}|ip:${c.get('clientIp')}`, rule);
     }
     await next();
   });
@@ -74,13 +74,13 @@ export function throttle(rule: ThrottleRule): MiddlewareHandler {
  * obtient sinon N × la limite contre UN compte. Sans e-mail exploitable, rien de plus que le
  * compteur par IP déjà appliqué.
  */
-export const throttleByEmail = (store: RateLimitStore, rule: ThrottleRule) =>
+export const throttleByEmail = (store: RateLimiter, rule: ThrottleRule) =>
   createMiddleware<AppEnv>(async (c, next) => {
     // Même lecture que la route (JSON déclaré seulement), cf. rawJsonBody.
     const body: unknown = await rawJsonBody(c).catch(() => undefined);
     const raw = (body as { email?: unknown } | undefined)?.email;
     const email = typeof raw === 'string' ? raw.trim().toLowerCase() : '';
     const route = matchedRoute(c);
-    if (email && route) check(c, store, `${route}|email:${email}`, rule);
+    if (email && route) await check(c, store, `${route}|email:${email}`, rule);
     await next();
   });

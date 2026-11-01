@@ -59,12 +59,71 @@ const envBaseSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('DashFlow <noreply@dashflow.app>'),
+  // ── Vercel ──
+  // Posé par la plateforme ('1') : l'API tourne en fonctions, plusieurs instances en parallèle.
+  VERCEL: z.string().optional(),
+  // Jeton des tâches planifiées (Vercel Cron l'envoie en `Authorization: Bearer …`). Absent → les
+  // routes /cron/* répondent 404.
+  CRON_SECRET: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .min(16, 'CRON_SECRET doit faire au moins 16 caractères')
+      .optional(),
+  ),
+  // Redis REST (Upstash) pour le throttling partagé entre instances. Noms posés par
+  // l'intégration Vercel (KV_REST_API_*) ou par Upstash directement (UPSTASH_REDIS_REST_*).
+  KV_REST_API_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().url().optional(),
+  ),
+  KV_REST_API_TOKEN: z.string().optional(),
+  UPSTASH_REDIS_REST_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().url().optional(),
+  ),
+  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
+
+/** Redis REST configuré, quel que soit le nom des variables. */
+export function redisRestConfig(
+  env: Pick<
+    z.infer<typeof envBaseSchema>,
+    | 'KV_REST_API_URL'
+    | 'KV_REST_API_TOKEN'
+    | 'UPSTASH_REDIS_REST_URL'
+    | 'UPSTASH_REDIS_REST_TOKEN'
+  >,
+): { url: string; token: string } | undefined {
+  const url = env.KV_REST_API_URL ?? env.UPSTASH_REDIS_REST_URL;
+  const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
+  return url && token ? { url, token } : undefined;
+}
 
 // Garde-fous production : le mailer « console » écrit les codes OTP dans stdout (logs Dokploy),
 // et le secret JWT d'exemple du .env.example ne doit jamais signer une session réelle.
 export const envSchema = envBaseSchema.superRefine((env, ctx) => {
   if (env.NODE_ENV !== 'production') return;
+  // Sur Vercel, des compteurs en mémoire seraient propres à chaque instance : le throttling
+  // anti-brute-force serait contournable. Et sans CRON_SECRET, aucune tâche de fond ne tourne.
+  if (env.VERCEL === '1') {
+    if (!redisRestConfig(env)) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['KV_REST_API_URL'],
+        message:
+          'Sur Vercel, un Redis REST (Upstash) est requis pour le throttling',
+      });
+    }
+    if (!env.CRON_SECRET) {
+      ctx.addIssue({
+        code: 'custom',
+        path: ['CRON_SECRET'],
+        message:
+          'Sur Vercel, CRON_SECRET est requis pour les tâches planifiées',
+      });
+    }
+  }
   if (env.MAILER !== 'smtp' || !env.SMTP_HOST) {
     ctx.addIssue({
       code: 'custom',

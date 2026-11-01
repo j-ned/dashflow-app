@@ -1662,7 +1662,7 @@
         "removeFile": "Remove",
         "dropHere": "Drag and drop a file here or",
         "browse": "browse",
-        "fileHint": "PDF, JPG, PNG, WEBP : max 10 MB",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 4 MB",
         "create": "Create",
         "save": "Save"
       },
@@ -1813,7 +1813,7 @@
         "removeFile": "Remove",
         "dropHere": "Drag and drop a file here or",
         "browse": "browse",
-        "fileHint": "PDF, JPG, PNG, WEBP : max 10 MB",
+        "fileHint": "PDF, JPG, PNG, WEBP : max 4 MB",
         "create": "Create",
         "save": "Save"
       },
@@ -1934,7 +1934,7 @@
     },
     "upload": {
       "invalidType": "Unsupported format: PDF, JPG, PNG or WebP only.",
-      "tooLarge": "File too large: 10 MB maximum."
+      "tooLarge": "File too large: 4 MB maximum."
     }
   },
   "admin": {

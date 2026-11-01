@@ -29,10 +29,11 @@ jobs:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       # Version pnpm lue depuis "packageManager" (package.json racine) : une seule source de vérité.
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
+      # Sans `cache: pnpm` : ce job n'installe rien, le cache n'aurait aucun dossier à sauver
+      # (et son étape de fin ferait échouer le job).
       - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
         with:
           node-version: 22
-          cache: pnpm
       - run: pnpm audit --prod --audit-level=high
 
   web:
@@ -88,10 +89,23 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      # Throttling partagé (Vercel) : Redis + émulateur de l'API REST d'Upstash.
+      redis:
+        image: redis:7-alpine
+      redis-http:
+        image: hiett/serverless-redis-http:latest
+        env:
+          SRH_MODE: env
+          SRH_TOKEN: ci-redis-token
+          SRH_CONNECTION_STRING: redis://redis:6379
+        ports:
+          - 8079:80
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/dashflow_test
       JWT_SECRET: ci-e2e-test-secret-at-least-32-characters-long
       NODE_ENV: test
+      RATE_LIMIT_REDIS_URL: http://localhost:8079
+      RATE_LIMIT_REDIS_TOKEN: ci-redis-token
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - uses: pnpm/action-setup@b906affcce14559ad1aafd4ab0e942779e9f58b1 # v4
