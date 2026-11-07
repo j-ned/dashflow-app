@@ -5,6 +5,7 @@ import {
   OAUTH_VERIFIER_COOKIE,
   oauthCookieOptions,
 } from '../../auth/cookie';
+import { servesOverHttps } from '../../config/env.schema';
 import type { HttpDeps } from '../deps';
 import { clearAppCookie, clientOf, setAppCookie } from '../kit';
 import { STRICT_THROTTLE, throttle } from '../middleware/rate-limit';
@@ -12,7 +13,7 @@ import type { AppEnv } from '../types';
 
 /** Routes /auth/oauth/google (contrôleur Nest OAuthController). */
 export function oauthRoutes(d: HttpDeps) {
-  const isProd = d.env.NODE_ENV === 'production';
+  const isProd = servesOverHttps(d.env);
   const frontUrl = d.env.CORS_ORIGIN.split(',')[0];
   const strict = throttle(STRICT_THROTTLE);
 
