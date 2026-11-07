@@ -68,3 +68,52 @@ describe('CsrfPolicy', () => {
     );
   });
 });
+
+describe('CsrfPolicy — preview Vercel', () => {
+  const good = csrf.tokenFor('u1', 2);
+  const deploymentHost = 'dashflow-app-abc123-team.vercel.app';
+  const branchHost = 'dashflow-app-git-feat-x-team.vercel.app';
+  const previewPolicy = (vercelEnv: 'preview' | 'production') =>
+    new CsrfPolicy(csrf, {
+      CORS_ORIGIN: 'http://localhost:4200',
+      NODE_ENV: 'production',
+      VERCEL_ENV: vercelEnv,
+      VERCEL_URL: deploymentHost,
+      VERCEL_BRANCH_URL: branchHost,
+    });
+
+  it('accepte l’origine de la preview elle-même (URL de déploiement et de branche)', () => {
+    for (const host of [deploymentHost, branchHost])
+      expect(() =>
+        previewPolicy('preview').assert(
+          { token: good, origin: `https://${host}` },
+          user,
+        ),
+      ).not.toThrow();
+  });
+
+  it('refuse toujours une origine étrangère et une origine absente en preview', () => {
+    expect(() =>
+      previewPolicy('preview').assert(
+        { token: good, origin: 'https://evil.vercel.app' },
+        user,
+      ),
+    ).toThrow(/Origine non autorisée/);
+    expect(() =>
+      new CsrfPolicy(csrf, {
+        CORS_ORIGIN: 'http://localhost:4200',
+        NODE_ENV: 'test',
+        VERCEL_ENV: 'preview',
+      }).assert({ token: good }, user),
+    ).toThrow(/Origine manquante/);
+  });
+
+  it('en production, seule CORS_ORIGIN fait foi (VERCEL_URL ignorée)', () => {
+    expect(() =>
+      previewPolicy('production').assert(
+        { token: good, origin: `https://${deploymentHost}` },
+        user,
+      ),
+    ).toThrow(/Origine non autorisée/);
+  });
+});

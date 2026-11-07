@@ -7,6 +7,7 @@ import {
   SECURITY_NOTICE_FOOTER,
   securityNoticeText,
 } from './security-notice.content';
+import { MAIL_SUBJECTS } from './subjects';
 
 const shell = (subtitle: string, inner: string): string => `
   <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 20px;">
@@ -64,7 +65,7 @@ export class SmtpMailer implements Mailer {
     await this.transporter.sendMail({
       from: this.from,
       to,
-      subject: 'Votre code de vérification - DashFlow',
+      subject: MAIL_SUBJECTS.verification,
       text: `Votre code de vérification est : ${code}\n\nCe code expire dans 10 minutes.\n\nSi vous n'avez pas demandé ce code, ignorez cet email.`,
       html: shell(
         'Vérification de votre adresse email',
@@ -78,7 +79,7 @@ export class SmtpMailer implements Mailer {
     await this.transporter.sendMail({
       from: this.from,
       to,
-      subject: 'Vous avez déjà un compte DashFlow',
+      subject: MAIL_SUBJECTS.accountExists,
       text: `Un compte DashFlow existe déjà pour cette adresse.\n\nConnectez-vous : ${this.webUrl}/auth/login\nMot de passe oublié : ${this.webUrl}/auth/forgot-password`,
       html: shell(
         'Vous avez déjà un compte DashFlow',
@@ -120,7 +121,7 @@ export class SmtpMailer implements Mailer {
     await this.transporter.sendMail({
       from: this.from,
       to,
-      subject: 'Réinitialisation de mot de passe - DashFlow',
+      subject: MAIL_SUBJECTS.passwordReset,
       text: `Votre code de réinitialisation est : ${code}\n\nCe code expire dans 10 minutes.\n\nSi vous n'avez pas demandé cette réinitialisation, ignorez cet email.`,
       html: shell(
         'Réinitialisation de votre mot de passe',

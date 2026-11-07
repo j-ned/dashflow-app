@@ -2,10 +2,13 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
 import type { DrizzleDB } from '../db/drizzle.constants';
-import { redisRestConfig, type Env } from '../config/env.schema';
+import {
+  redisRestConfig,
+  servesOverHttps,
+  type Env,
+} from '../config/env.schema';
 import type { Mailer } from '../mail/mailer';
-import { ConsoleMailer } from '../mail/console.mailer';
-import { SmtpMailer } from '../mail/smtp.mailer';
+import { createMailer } from '../mail/create-mailer';
 import { StorageService } from '../storage/storage.service';
 import { TokenService } from '../auth/token.service';
 import { CsrfService } from '../auth/csrf.service';
@@ -63,11 +66,7 @@ function buildDeps(
     tokens,
     csrf,
     sessions: new SessionAuthenticator(tokens, db),
-    sessionCookies: new SessionCookies(
-      tokens,
-      csrf,
-      env.NODE_ENV === 'production',
-    ),
+    sessionCookies: new SessionCookies(tokens, csrf, servesOverHttps(env)),
     csrfPolicy: new CsrfPolicy(csrf, env),
     roles: new RoleChecker(db),
     rateLimits,
@@ -114,8 +113,7 @@ export function createDeps(env: Env): {
     onVercel ? { max: 3, prepare: false, idle_timeout: 20 } : {},
   );
   const db = drizzle(client, { schema });
-  const mailer: Mailer =
-    env.MAILER === 'smtp' ? new SmtpMailer(env) : new ConsoleMailer(env);
+  const mailer = createMailer(env);
   const redis = redisRestConfig(env);
   const deps = buildDeps(
     env,
