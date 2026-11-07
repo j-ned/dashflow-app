@@ -33,4 +33,6 @@ docker build -f apps/web/Dockerfile -t dashflow-web .
 Production sur **Vercel** : un projet, deux services (`vercel.json`). Le front est servi à la racine et l'API sous `/api`, sur le même domaine.
 Procédure complète (Neon, Upstash, variables, copie des données, domaine, retour arrière) : [docs/deploiement-vercel.md](docs/deploiement-vercel.md).
 
+Previews isolées de la production (base Neon `preview`, aucun email, variables Preview) : [docs/preview-env.md](docs/preview-env.md).
+
 Auto-hébergement Docker (Dokploy/Traefik, images `apps/*/Dockerfile`) : [docs/deploiement-meme-origine.md](docs/deploiement-meme-origine.md).
