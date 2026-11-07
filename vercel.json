@@ -5,7 +5,9 @@
     "web": {
       "root": "apps/web/",
       "framework": "angular",
+      "installCommand": "pnpm install --frozen-lockfile --filter @dashflow/web",
       "buildCommand": "pnpm build",
+      "ignoreCommand": "cd \"$(git rev-parse --show-toplevel)\" && B=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" && ! git diff --quiet \"$B\" HEAD && git diff --quiet \"$B\" HEAD -- . ':(exclude,glob)**/*.md' ':(exclude)docs' ':(exclude)apps/web/specs' ':(exclude)apps/api/docs' ':(exclude,glob)**/.claude/**' ':(exclude)apps/web/.superpowers' ':(exclude).github'",
       "outputDirectory": "dist/dash-flow/browser",
       "rewrites": [
         {
@@ -89,7 +91,9 @@
       "root": "./",
       "framework": "hono",
       "entrypoint": "apps/api/src/vercel.ts",
-      "buildCommand": "pnpm --filter @dashflow/api build"
+      "installCommand": "pnpm install --frozen-lockfile --filter @dashflow/api",
+      "buildCommand": "pnpm --filter @dashflow/api exec tsc -p tsconfig.build.json --noEmit",
+      "ignoreCommand": "cd \"$(git rev-parse --show-toplevel)\" && B=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" && ! git diff --quiet \"$B\" HEAD && git diff --quiet \"$B\" HEAD -- . ':(exclude,glob)**/*.md' ':(exclude)docs' ':(exclude)apps/web/specs' ':(exclude)apps/api/docs' ':(exclude,glob)**/.claude/**' ':(exclude)apps/web/.superpowers' ':(exclude).github'"
     }
   },
   "rewrites": [
