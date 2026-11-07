@@ -5,74 +5,66 @@
     "web": {
       "root": "apps/web/",
       "framework": "angular",
+      "installCommand": "pnpm install --frozen-lockfile --filter @dashflow/web",
       "buildCommand": "pnpm build",
+      "ignoreCommand": "cd \"$(git rev-parse --show-toplevel)\" && B=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" && ! git diff --quiet \"$B\" HEAD && git diff --quiet \"$B\" HEAD -- . ':(exclude,glob)**/*.md' ':(exclude)docs' ':(exclude)apps/web/specs' ':(exclude)apps/api/docs' ':(exclude,glob)**/.claude/**' ':(exclude)apps/web/.superpowers' ':(exclude).github'",
       "outputDirectory": "dist/dash-flow/browser",
-      "rewrites": [
+      "routes": [
         {
-          "source": "/(.*)",
-          "destination": "/index.html"
-        }
-      ],
-      "headers": [
-        {
-          "source": "/(.*)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "no-cache"
-            },
-            {
-              "key": "Content-Security-Policy",
-              "value": "default-src 'self'; connect-src 'self' https://*.ingest.de.sentry.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'"
-            },
-            {
-              "key": "Permissions-Policy",
-              "value": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()"
-            },
-            {
-              "key": "Referrer-Policy",
-              "value": "strict-origin-when-cross-origin"
-            },
-            {
-              "key": "Strict-Transport-Security",
-              "value": "max-age=31536000; includeSubDomains"
-            },
-            {
-              "key": "X-Content-Type-Options",
-              "value": "nosniff"
-            },
-            {
-              "key": "X-Frame-Options",
-              "value": "DENY"
-            }
-          ]
+          "src": "^/(.*)$",
+          "headers": {
+            "Cache-Control": "no-cache",
+            "Content-Security-Policy": "default-src 'self'; connect-src 'self' https://*.ingest.de.sentry.io; img-src 'self' data:; style-src 'self' 'unsafe-inline'; base-uri 'self'; frame-ancestors 'none'",
+            "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=(), interest-cohort=()",
+            "Referrer-Policy": "strict-origin-when-cross-origin",
+            "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+            "X-Content-Type-Options": "nosniff",
+            "X-Frame-Options": "DENY"
+          },
+          "continue": true
         },
         {
-          "source": "/(.*)\\.(js|css|svg|png|jpg|jpeg|gif|ico|webp|avif|woff|woff2|ttf|map)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "public, max-age=31536000, immutable"
-            }
-          ]
+          "src": "^/(?:main|chunk|styles)-[a-zA-Z0-9_-]{8}\\.(?:js|css)$",
+          "headers": {
+            "Cache-Control": "public, max-age=31536000, immutable"
+          },
+          "continue": true
         },
         {
-          "source": "/(screen|icons)/(.*)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "public, max-age=86400"
-            }
-          ]
+          "src": "^/media/.+$",
+          "headers": {
+            "Cache-Control": "public, max-age=31536000, immutable"
+          },
+          "continue": true
         },
         {
-          "source": "/favicon.(ico|svg)",
-          "headers": [
-            {
-              "key": "Cache-Control",
-              "value": "public, max-age=86400"
-            }
-          ]
+          "src": "^/(?:screen|icons)/.+$",
+          "headers": {
+            "Cache-Control": "public, max-age=86400"
+          },
+          "continue": true
+        },
+        {
+          "src": "^/favicon\\.(?:ico|svg)$",
+          "headers": {
+            "Cache-Control": "public, max-age=86400"
+          },
+          "continue": true
+        },
+        {
+          "handle": "filesystem"
+        },
+        {
+          "src": "^/((?!.*\\.[a-zA-Z0-9]+$).*)$",
+          "dest": "/index.html",
+          "check": true
+        },
+        {
+          "src": "^/(.*)$",
+          "status": 404,
+          "headers": {
+            "Cache-Control": "no-cache"
+          }
         }
       ]
     },
@@ -80,7 +72,9 @@
       "root": "./",
       "framework": "hono",
       "entrypoint": "apps/api/src/vercel.ts",
-      "buildCommand": "pnpm --filter @dashflow/api build"
+      "installCommand": "pnpm install --frozen-lockfile --filter @dashflow/api",
+      "buildCommand": "pnpm --filter @dashflow/api exec tsc -p tsconfig.build.json --noEmit",
+      "ignoreCommand": "cd \"$(git rev-parse --show-toplevel)\" && B=\"${VERCEL_GIT_PREVIOUS_SHA:-HEAD^}\" && ! git diff --quiet \"$B\" HEAD && git diff --quiet \"$B\" HEAD -- . ':(exclude,glob)**/*.md' ':(exclude)docs' ':(exclude)apps/web/specs' ':(exclude)apps/api/docs' ':(exclude,glob)**/.claude/**' ':(exclude)apps/web/.superpowers' ':(exclude).github'"
     }
   },
   "rewrites": [
