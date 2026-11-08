@@ -130,14 +130,6 @@ import { isAutoEntry } from '../../../domain/auto-post';
               (next)="nextMonth.emit()"
             />
           </div>
-          <button
-            type="button"
-            class="inline-flex items-center gap-1 rounded-lg bg-ib-cyan min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-cyan/90 transition-colors shadow-sm"
-            (click)="createOneTime.emit()"
-          >
-            <app-icon name="plus" size="12" />
-            {{ 'budget.bankAccount.transfers.addOneTime' | transloco }}
-          </button>
         </div>
         @if (monthOneTimeTransfers().length > 0) {
           <div class="divide-y divide-border/30">
@@ -250,7 +242,6 @@ export class BankTransfersPanel {
 
   protected readonly isAutoEntry = isAutoEntry;
 
-  readonly createOneTime = output<void>();
   readonly edit = output<RecurringEntry>();
   readonly delete = output<string>();
   readonly prevMonth = output<void>();

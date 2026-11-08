@@ -1,12 +1,15 @@
 import {
+  afterNextRender,
   afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
+  DOCUMENT,
   effect,
   ElementRef,
   inject,
+  Injector,
   signal,
   untracked,
   viewChild,
@@ -58,6 +61,9 @@ import { PendingChargesPanel } from './pending-charges-panel/pending-charges-pan
 import { OrphanEntriesPanel } from './orphan-entries-panel/orphan-entries-panel';
 import { AccountManager } from './account-manager/account-manager';
 import { BudgetDataStore } from './budget-data.store';
+import { BankTodoPanel } from './bank-todo-panel/bank-todo-panel';
+import { BankAddMenu } from './bank-add-menu/bank-add-menu';
+import { TabList, type TabItem } from '@shared/components/tab-list/tab-list';
 
 const PALETTE = [
   'var(--color-ib-blue)',
@@ -69,6 +75,9 @@ const PALETTE = [
   'var(--color-ib-yellow)',
   'var(--color-ib-red)',
 ] as const;
+
+const MONTH_TABS = ['incomes', 'outflows', 'transfers', 'timeline'] as const;
+type MonthTab = (typeof MONTH_TABS)[number];
 
 @Component({
   selector: 'app-bank-account',
@@ -88,6 +97,9 @@ const PALETTE = [
     PendingChargesPanel,
     OrphanEntriesPanel,
     AccountManager,
+    BankTodoPanel,
+    BankAddMenu,
+    TabList,
   ],
   providers: [BudgetDataStore],
   host: { class: 'block space-y-6' },
@@ -152,25 +164,7 @@ const PALETTE = [
       </nav>
     </header>
 
-    <!-- ═══ Échéances à confirmer ═══ -->
-    <app-pending-charges-panel
-      [charges]="pendingCharges()"
-      [accountNameById]="accountNameByIdFn"
-      (confirm)="confirmCharge($event.id, $event.amount)"
-      [automatableCount]="automatable().length"
-      (confirmAll)="confirmAllCharges()"
-      (automateAll)="automateAllCharges()"
-      (ignore)="ignoreCharge($event)"
-    />
-
-    <app-orphan-entries-panel
-      [entries]="orphanEntries()"
-      [accounts]="store.accounts()"
-      (reassign)="reassignEntry($event.id, $event.accountId)"
-      (delete)="deleteEntry($event)"
-    />
-
-    <!-- ═══ Solde : confirmé → projeté ═══ -->
+    <!-- ═══ 1. Solde : confirmé → projeté ═══ -->
     <app-bank-balance-band
       [confirmedBalance]="confirmedBalance()"
       [projectedBalance]="projectedBalance()"
@@ -178,6 +172,7 @@ const PALETTE = [
       [unknownIncomes]="unknownIncomeLabels()"
       [needsStartingBalance]="needsStartingBalance()"
       [today]="today"
+      (enterIncome)="showPendingIncomes()"
     >
       @if (selectedAccount(); as account) {
         <app-balance-check
@@ -190,75 +185,118 @@ const PALETTE = [
       }
     </app-bank-balance-band>
 
-    <!-- ═══ Ce qui compose le mois (décomposition + barre) ═══ -->
-    <app-budget-usage-bar
-      [totalIncome]="totalIncome()"
-      [incomeIncomplete]="incomeIncomplete()"
-      [totalAllExpenses]="totalAllExpenses()"
-      [usagePercent]="usagePercent()"
-      [totalMonthlyExpenses]="totalMonthlyExpenses()"
-      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
-      [totalMonthSpendings]="totalMonthSpendings()"
-    />
+    <!-- ═══ 2. À traiter : un seul bloc repliable ═══ -->
+    <app-bank-todo-panel [count]="todoCount()" [(open)]="todoOpen">
+      <app-pending-charges-panel
+        [charges]="pendingCharges()"
+        [accountNameById]="accountNameByIdFn"
+        (confirm)="confirmCharge($event.id, $event.amount)"
+        [automatableCount]="automatable().length"
+        (confirmAll)="confirmAllCharges()"
+        (automateAll)="automateAllCharges()"
+        (ignore)="ignoreCharge($event)"
+      />
+      <app-orphan-entries-panel
+        [entries]="orphanEntries()"
+        [accounts]="store.accounts()"
+        (reassign)="reassignEntry($event.id, $event.accountId)"
+        (delete)="deleteEntry($event)"
+      />
+    </app-bank-todo-panel>
 
-    <!-- ═══ Revenus ═══ -->
-    <app-bank-incomes-table
-      [incomes]="incomes()"
-      [memberMap]="memberMap()"
-      (create)="openCreateModal('income')"
-      (edit)="openEditModal($event)"
-      (delete)="deleteEntry($event)"
-      (openPayslip)="openPayslipById($event)"
-    />
+    <!-- ═══ 3. Le mois en détail : répartition + onglets ═══ -->
+    <section class="space-y-4" aria-labelledby="month-detail-title">
+      <div class="flex items-center justify-between gap-3">
+        <h3 id="month-detail-title" class="text-lg font-semibold text-text-primary">
+          {{ 'budget.bankAccount.detail.title' | transloco }}
+        </h3>
+        <app-bank-add-menu (add)="openCreateModal($event.type, $event.transferMode)" />
+      </div>
 
-    <!-- ═══ 3 colonnes : Prélèvements / Annuels / Dépenses ═══ -->
-    <app-bank-expense-columns
-      [monthlyExpenses]="monthlyOutflowRows()"
-      [savingsSubtotal]="savingsTransfersTotal()"
-      [accountNameById]="accountNameByIdFn"
-      [annualExpenses]="annualExpenses()"
-      [monthSpendings]="monthSpendings()"
-      [totalMonthlyExpenses]="totalMonthlyExpenses()"
-      [totalAnnualExpenses]="totalAnnualExpenses()"
-      [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
-      [totalMonthSpendings]="totalMonthSpendings()"
-      [spendingMonthLabel]="spendingMonthLabel()"
-      [memberMap]="memberMap()"
-      [isExpensePassed]="isExpensePassedFn"
-      (createMonthly)="openCreateModal('expense')"
-      (createAnnual)="openCreateModal('annual_expense')"
-      (createSpending)="openCreateModal('spending')"
-      (edit)="openEditModal($event)"
-      (delete)="deleteEntry($event)"
-      (prevMonth)="prevMonth()"
-      (nextMonth)="nextMonth()"
-    />
+      <app-budget-usage-bar
+        [totalIncome]="totalIncome()"
+        [incomeIncomplete]="incomeIncomplete()"
+        [totalAllExpenses]="totalAllExpenses()"
+        [usagePercent]="usagePercent()"
+        [totalMonthlyExpenses]="totalMonthlyExpenses()"
+        [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
+        [totalMonthSpendings]="totalMonthSpendings()"
+      />
 
-    <!-- ═══ Virements ═══ -->
-    <app-bank-transfers-panel
-      [recurringTransfers]="incomingTransfers()"
-      [monthOneTimeTransfers]="monthOneTimeTransfers()"
-      [totalOneTimeOutgoing]="totalOneTimeOutgoing()"
-      [totalOneTimeIncoming]="totalOneTimeIncoming()"
-      [selectedAccountId]="store.selectedAccountId()"
-      [memberMap]="memberMap()"
-      [accountNameById]="accountNameByIdFn"
-      [isExpensePassed]="isExpensePassedFn"
-      [spendingMonthLabel]="spendingMonthLabel()"
-      [accountsCount]="store.accounts().length"
-      (createOneTime)="openCreateModal('transfer', 'one_time')"
-      (edit)="openEditModal($event)"
-      (delete)="deleteEntry($event)"
-      (prevMonth)="prevMonth()"
-      (nextMonth)="nextMonth()"
-    />
+      <app-tab-list
+        idPrefix="month"
+        [tabs]="monthTabs()"
+        [label]="'budget.bankAccount.detail.title' | transloco"
+        [selected]="activeMonthTab()"
+        (selectedChange)="selectMonthTab($event)"
+      />
 
-    <!-- ═══ Timeline du mois ═══ -->
-    <app-bank-timeline
-      [timelineEvents]="timelineEvents()"
-      [currentDay]="currentDay"
-      [currentBalance]="confirmedBalance()"
-    />
+      @let tab = activeMonthTab();
+      <div
+        role="tabpanel"
+        tabindex="0"
+        class="rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+        [id]="'month-panel-' + tab"
+        [attr.aria-labelledby]="'month-tab-' + tab"
+      >
+        @switch (tab) {
+          @case ('incomes') {
+            <app-bank-incomes-table
+              [incomes]="incomes()"
+              [memberMap]="memberMap()"
+              (edit)="openEditModal($event)"
+              (delete)="deleteEntry($event)"
+              (openPayslip)="openPayslipById($event)"
+            />
+          }
+          @case ('outflows') {
+            <app-bank-expense-columns
+              [monthlyExpenses]="monthlyOutflowRows()"
+              [savingsSubtotal]="savingsTransfersTotal()"
+              [accountNameById]="accountNameByIdFn"
+              [annualExpenses]="annualExpenses()"
+              [monthSpendings]="monthSpendings()"
+              [totalMonthlyExpenses]="totalMonthlyExpenses()"
+              [totalAnnualExpenses]="totalAnnualExpenses()"
+              [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
+              [totalMonthSpendings]="totalMonthSpendings()"
+              [spendingMonthLabel]="spendingMonthLabel()"
+              [memberMap]="memberMap()"
+              [isExpensePassed]="isExpensePassedFn"
+              (edit)="openEditModal($event)"
+              (delete)="deleteEntry($event)"
+              (prevMonth)="prevMonth()"
+              (nextMonth)="nextMonth()"
+            />
+          }
+          @case ('transfers') {
+            <app-bank-transfers-panel
+              [recurringTransfers]="incomingTransfers()"
+              [monthOneTimeTransfers]="monthOneTimeTransfers()"
+              [totalOneTimeOutgoing]="totalOneTimeOutgoing()"
+              [totalOneTimeIncoming]="totalOneTimeIncoming()"
+              [selectedAccountId]="store.selectedAccountId()"
+              [memberMap]="memberMap()"
+              [accountNameById]="accountNameByIdFn"
+              [isExpensePassed]="isExpensePassedFn"
+              [spendingMonthLabel]="spendingMonthLabel()"
+              [accountsCount]="store.accounts().length"
+              (edit)="openEditModal($event)"
+              (delete)="deleteEntry($event)"
+              (prevMonth)="prevMonth()"
+              (nextMonth)="nextMonth()"
+            />
+          }
+          @case ('timeline') {
+            <app-bank-timeline
+              [timelineEvents]="timelineEvents()"
+              [currentDay]="currentDay"
+              [currentBalance]="confirmedBalance()"
+            />
+          }
+        }
+      </div>
+    </section>
 
     <!-- ═══ Modals ═══ -->
     <app-account-manager
@@ -309,6 +347,8 @@ export class BankAccount {
   private readonly _i18n = inject(TranslocoService);
   private readonly _destroyRef = inject(DestroyRef);
   protected readonly store = inject(BudgetDataStore);
+  private readonly _injector = inject(Injector);
+  private readonly _document = inject(DOCUMENT);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -557,6 +597,53 @@ export class BankAccount {
       txs: this.accountRealTxs(),
     }),
   );
+
+  // ── Bloc « À traiter » ──
+  protected readonly todoCount = computed(
+    () => this.pendingCharges().length + this.orphanEntries().length,
+  );
+  protected readonly todoOpen = signal(false);
+
+  /** Depuis le solde : déplie « À traiter » et place le focus sur le premier revenu à saisir. */
+  protected showPendingIncomes(): void {
+    this.todoOpen.set(true);
+    afterNextRender(
+      {
+        write: () =>
+          this._document.querySelector<HTMLInputElement>('#pending-incomes input')?.focus(),
+      },
+      { injector: this._injector },
+    );
+  }
+
+  // ── Détail du mois : un onglet à la fois ──
+  private readonly _monthTab = signal<MonthTab>('incomes');
+
+  private readonly hasTransfers = computed(
+    () =>
+      this.incomingTransfers().length > 0 ||
+      this.monthOneTimeTransfers().length > 0 ||
+      this.store.accounts().length > 1,
+  );
+
+  protected readonly monthTabs = computed<readonly TabItem[]>(() => {
+    this._i18nReady();
+    return MONTH_TABS.filter((id) => id !== 'transfers' || this.hasTransfers()).map((id) => ({
+      id,
+      label: this._i18n.translate(`budget.bankAccount.tabs.${id}`),
+    }));
+  });
+
+  // L'onglet Virements peut disparaître (changement de compte) : on retombe alors sur Revenus.
+  protected readonly activeMonthTab = computed<MonthTab>(() => {
+    const tab = this._monthTab();
+    return this.monthTabs().some((t) => t.id === tab) ? tab : 'incomes';
+  });
+
+  protected selectMonthTab(id: string): void {
+    const tab = MONTH_TABS.find((t) => t === id);
+    if (tab) this._monthTab.set(tab);
+  }
 
   protected reassignEntry(id: string, accountId: string): void {
     const entry = this.store.entries().find((e) => e.id === id);

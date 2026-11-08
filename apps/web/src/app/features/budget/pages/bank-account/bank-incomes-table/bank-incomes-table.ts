@@ -21,14 +21,6 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
             {{ 'budget.bankAccount.incomes.title' | transloco }}
           </h3>
         </div>
-        <button
-          type="button"
-          class="inline-flex items-center gap-1 rounded-lg bg-ib-green min-h-8 px-3 py-1.5 text-xs font-medium text-canvas hover:bg-ib-green/90 transition-colors shadow-sm"
-          (click)="create.emit()"
-        >
-          <app-icon name="plus" size="12" />
-          {{ 'budget.bankAccount.incomes.addButton' | transloco }}
-        </button>
       </div>
       @if (incomes().length > 0) {
         <div class="divide-y divide-border/30">
@@ -133,7 +125,6 @@ export class BankIncomesTable {
   readonly incomes = input.required<RecurringEntry[]>();
   readonly memberMap = input.required<Map<string, { name: string; color: string }>>();
 
-  readonly create = output<void>();
   readonly edit = output<RecurringEntry>();
   readonly delete = output<string>();
   readonly openPayslip = output<string>();
