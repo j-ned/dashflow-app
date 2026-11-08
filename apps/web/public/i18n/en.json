@@ -781,7 +781,7 @@
         "stateOk": "Healthy",
         "stateTight": "Tight",
         "stateOver": "Over budget",
-        "incomeUnknown": "This month's income has not been entered yet: the share of your income already committed will be computed once you do."
+        "excludesHint": "Income excluding {{incomes}} (variable amount, counted once received): the committed share will show then."
       },
       "incomes": {
         "title": "Income",

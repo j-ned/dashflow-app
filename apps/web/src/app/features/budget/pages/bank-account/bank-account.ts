@@ -217,7 +217,7 @@ type MonthTab = (typeof MONTH_TABS)[number];
 
       <app-budget-usage-bar
         [totalIncome]="totalIncome()"
-        [incomeIncomplete]="incomeIncomplete()"
+        [unknownIncomes]="unknownIncomeLabels()"
         [totalAllExpenses]="totalAllExpenses()"
         [usagePercent]="usagePercent()"
         [totalMonthlyExpenses]="totalMonthlyExpenses()"
@@ -895,7 +895,6 @@ export class BankAccount {
     monthIncome(this.incomes(), this.accountRealTxs(), this.currentMonth),
   );
   protected readonly totalIncome = computed(() => this._monthIncome().total);
-  protected readonly incomeIncomplete = computed(() => this._monthIncome().incomplete);
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
   protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);

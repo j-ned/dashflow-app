@@ -781,7 +781,7 @@
         "stateOk": "Sain",
         "stateTight": "Tendu",
         "stateOver": "Dépassé",
-        "incomeUnknown": "Le revenu de ce mois n'est pas encore saisi : la part de vos revenus déjà engagée sera calculée dès que vous l'aurez indiqué."
+        "excludesHint": "Revenus sans {{incomes}} (montant variable, compté une fois reçu) : la part engagée s'affichera alors."
       },
       "incomes": {
         "title": "Revenus",
