@@ -19,6 +19,7 @@ const EXPENSE: RecurringEntry = {
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
 };
 const SAVING: RecurringEntry = {
   id: 't1',
@@ -36,6 +37,7 @@ const SAVING: RecurringEntry = {
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
 };
 
 function mount(rows: RecurringEntry[], savingsSubtotal: number) {

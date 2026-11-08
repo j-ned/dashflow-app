@@ -8,14 +8,19 @@ import {
   viewChild,
 } from '@angular/core';
 import { rxResource, takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { map } from 'rxjs';
+import { Observable, of, switchMap } from 'rxjs';
 import { DatePipe, DecimalPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AccountTransaction } from '../../domain/models/account-transaction.model';
 import { AccountTransactionGateway } from '../../domain/gateways/account-transaction.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
-import { AUTO_POST_NOTE } from '../../domain/auto-post';
+import {
+  AUTO_POST_NOTE,
+  skipDeletedOccurrence,
+  unskipRestoredOccurrence,
+} from '../../domain/auto-post';
+import { RecurringEntry } from '../../domain/models/recurring-entry.model';
 import { confirmedBalance } from '../../domain/account-balance';
 import { CATEGORY_GROUPS, categoryMeta } from '../../domain/categories';
 import { TranslocoPipe } from '@jsverse/transloco';
@@ -211,13 +216,16 @@ export class Transactions {
     return this.accounts().find((a) => a.id === id) ?? null;
   });
 
-  // Libellé des récurrences, pour nommer les opérations qu'elles ont générées : une opération
-  // pointée automatiquement porte la note technique « auto », pas « Loyer ».
-  private readonly _entryLabels = toSignal(
-    this._entryGateway
-      .getAll()
-      .pipe(map((entries) => new Map(entries.map((e) => [e.id, e.label] as const)))),
-    { initialValue: new Map<string, string>() },
+  // Récurrences : leur libellé nomme les opérations qu'elles ont générées (une opération pointée
+  // automatiquement porte la note technique « auto », pas « Loyer »), et la suppression d'une de ces
+  // opérations doit être retenue sur la récurrence. Tenue à jour localement après chaque écriture :
+  // deux suppressions à la suite s'appuieraient sinon sur une copie périmée et écraseraient la première.
+  private readonly _entries = rxResource({
+    stream: () => this._entryGateway.getAll(),
+    defaultValue: [] as RecurringEntry[],
+  });
+  private readonly _entryLabels = computed(
+    () => new Map(this._entries.value().map((e) => [e.id, e.label] as const)),
   );
 
   protected readonly transactions = computed<TransactionViewModel[]>(() => {
@@ -278,25 +286,32 @@ export class Transactions {
       });
   }
 
-  /** Supprime sans confirmation, mais laisse quelques secondes pour revenir en arrière. */
+  /**
+   * Supprime sans confirmation, mais laisse quelques secondes pour revenir en arrière. Une opération
+   * pointée automatiquement fait d'abord retenir son mois sur la récurrence : supprimer avant laisserait
+   * une fenêtre où le pointage (page Compte, autre appareil) la recréerait.
+   */
   protected removeTransaction(id: string): void {
     const removed = this.allTx().find((t) => t.id === id);
-    this._txGateway
-      .delete(id)
-      .pipe(takeUntilDestroyed(this._destroyRef))
-      .subscribe({
-        next: () => {
-          this._txResource.reload();
-          this._toaster.success('budget.transactions.feedback.deleted', undefined, {
-            duration: UNDO_WINDOW_MS,
-            action: removed && {
-              labelKey: 'shared.toast.undo',
-              run: () => this.restoreTransaction(removed),
-            },
-          });
-        },
-        error: () => this._toaster.error('budget.transactions.feedback.deleteFailed'),
-      });
+    const deletion$ = this.saveOccurrenceChange(removed, skipDeletedOccurrence).pipe(
+      switchMap(() => this._txGateway.delete(id)),
+    );
+    deletion$.pipe(takeUntilDestroyed(this._destroyRef)).subscribe({
+      next: () => {
+        this._txResource.reload();
+        this._toaster.success('budget.transactions.feedback.deleted', undefined, {
+          duration: UNDO_WINDOW_MS,
+          action: removed && {
+            labelKey: 'shared.toast.undo',
+            run: () => this.restoreTransaction(removed),
+          },
+        });
+      },
+      error: () => {
+        this._entries.reload();
+        this._toaster.error('budget.transactions.feedback.deleteFailed');
+      },
+    });
   }
 
   /** Annuler une suppression = recréer l'opération à l'identique (elle reçoit un nouvel id). */
@@ -304,14 +319,45 @@ export class Transactions {
     const { id: _id, accountId, ...data } = removed;
     this._txGateway
       .create(accountId, data)
-      .pipe(takeUntilDestroyed(this._destroyRef))
+      .pipe(
+        // Le mois retenu ne sert plus : l'opération existe à nouveau. Le libérer après la recréation
+        // seulement, sinon le pointage pourrait la recréer une seconde fois entre les deux appels.
+        switchMap(() => this.saveOccurrenceChange(removed, unskipRestoredOccurrence)),
+        takeUntilDestroyed(this._destroyRef),
+      )
       .subscribe({
         next: () => {
           this._txResource.reload();
           this._toaster.success('budget.transactions.feedback.restored');
         },
-        error: () => this._toaster.error('budget.transactions.feedback.restoreFailed'),
+        error: () => {
+          this._txResource.reload();
+          this._entries.reload();
+          this._toaster.error('budget.transactions.feedback.restoreFailed');
+        },
       });
+  }
+
+  /**
+   * Enregistre sur la récurrence d'origine le changement calculé par `change` (mois retenu ou
+   * oublié), en tenant la copie locale à jour : deux suppressions à la suite s'appuieraient sinon sur
+   * une copie périmée et écraseraient la première. N'émet rien de plus si rien n'est à changer.
+   */
+  private saveOccurrenceChange(
+    tx: AccountTransaction | undefined,
+    change: (
+      tx: AccountTransaction,
+      entry: RecurringEntry | undefined,
+    ) => Omit<RecurringEntry, 'id'> | null,
+  ): Observable<unknown> {
+    if (tx === undefined) return of(null);
+    const entry = this._entries.value().find((e) => e.id === tx.recurringEntryId);
+    const next = entry === undefined ? null : change(tx, entry);
+    if (entry === undefined || next === null) return of(null);
+    this._entries.value.update((list) =>
+      list.map((e) => (e.id === entry.id ? { ...next, id: entry.id } : e)),
+    );
+    return this._entryGateway.update(entry.id, next);
   }
 
   protected readonly existingForImport = computed(() =>

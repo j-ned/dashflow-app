@@ -812,6 +812,7 @@
         "annualNoDate": "Annual charge (no fixed date)"
       },
       "transfers": {
+        "missingTarget": "Destination account deleted: transfer paused, edit it",
         "automaticTitle": "Automatic transfers",
         "addRecurring": "Recurring transfer",
         "automaticEmpty": "Schedule automatic transfers between your accounts",
@@ -897,7 +898,8 @@
         "entryReassignError": "Error reassigning entry",
         "autoPosted": "{{count}} entry/entries posted automatically",
         "autoPostCaughtUp": "{{count}} entry/entries caught up over {{months}} months",
-        "autoPostError": "{{failed}} auto entry/entries failed"
+        "autoPostError": "{{failed}} auto entry/entries failed",
+        "autoPostDedupError": "A duplicate automatic transaction could not be removed"
       },
       "orphans": {
         "title": "Operations without an account",

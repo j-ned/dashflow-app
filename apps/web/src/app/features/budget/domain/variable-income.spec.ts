@@ -30,6 +30,7 @@ function entry(
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
     ...over,
   };
 }

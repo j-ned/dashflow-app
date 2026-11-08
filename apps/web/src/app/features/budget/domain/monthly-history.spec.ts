@@ -37,6 +37,7 @@ const entry = (id: string, type: RecurringEntry['type'], label: string): Recurri
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
 });
 
 const ENTRIES = [

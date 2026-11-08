@@ -17,6 +17,7 @@ const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
   ...p,
 });
 
@@ -59,7 +60,10 @@ describe('immediatePostingFor', () => {
     });
 
     it('When c’est un virement récurrent dû Then poste avec direction transfer', () => {
-      const posting = immediatePostingFor(entry({ type: 'transfer', dayOfMonth: 5 }), CTX);
+      const posting = immediatePostingFor(
+        entry({ type: 'transfer', toAccountId: 'b', dayOfMonth: 5 }),
+        CTX,
+      );
 
       expect(posting).toMatchObject({ direction: 'transfer', date: '2026-06-05' });
     });
@@ -133,6 +137,27 @@ describe('immediatePostingFor', () => {
 
     it('When le type est annual_expense Then null (montant lissé sur 12 mois, hors post immédiat)', () => {
       expect(immediatePostingFor(entry({ type: 'annual_expense', dayOfMonth: 5 }), CTX)).toBeNull();
+    });
+  });
+
+  describe('Given les cas limites d’une récurrence', () => {
+    it('When un jour 31 est créé le 30 juin Then poste au 30, dernier jour du mois', () => {
+      const posting = immediatePostingFor(entry({ type: 'expense', dayOfMonth: 31 }), {
+        today: '2026-06-30',
+        currentMonth: '2026-06',
+        currentDay: 30,
+      });
+      expect(posting?.date).toBe('2026-06-30');
+    });
+
+    it('When l’échéance du mois tombe après la date de fin Then null', () => {
+      const created = entry({ type: 'expense', dayOfMonth: 8, endDate: '2026-06-05' });
+      expect(immediatePostingFor(created, CTX)).toBeNull();
+    });
+
+    it('When un virement n’a pas de compte destinataire Then null', () => {
+      const created = entry({ type: 'transfer', dayOfMonth: 5, toAccountId: null });
+      expect(immediatePostingFor(created, CTX)).toBeNull();
     });
   });
 });

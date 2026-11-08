@@ -22,6 +22,10 @@ describe('normalizeRecurringEntry', () => {
     expect(result.autoPostSince).toBeNull();
   });
 
+  it('applique skippedMonths=[] quand absent (récurrence antérieure à l’annulation d’occurrence)', () => {
+    expect(normalizeRecurringEntry({ ...base } as never).skippedMonths).toEqual([]);
+  });
+
   it('préserve les valeurs présentes', () => {
     const result = normalizeRecurringEntry({
       ...base,

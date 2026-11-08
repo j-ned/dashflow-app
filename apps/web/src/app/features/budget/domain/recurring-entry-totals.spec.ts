@@ -19,6 +19,7 @@ function e(amount: number): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 }
 

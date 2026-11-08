@@ -13,7 +13,7 @@ export const NEXT_CURSOR_HEADER = 'X-Next-Cursor';
 /** Garde-fou : 200 pages × 500 lignes = 100 000 lignes, très au-delà d'un foyer. */
 const MAX_PAGES = 200;
 
-function isApiError(e: unknown): e is ApiError {
+export function isApiError(e: unknown): e is ApiError {
   return (
     !!e &&
     typeof e === 'object' &&

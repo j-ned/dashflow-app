@@ -1,5 +1,11 @@
 import { RecurringEntry } from './models/recurring-entry.model';
 import { AUTO_POST_TYPES, directionOf, DuePosting } from './auto-post';
+import {
+  isPastEndDate,
+  lacksTransferTarget,
+  occurrenceDate,
+  occurrenceDay,
+} from './recurrence-occurrence';
 
 // Types matérialisables immédiatement à la création : le cycle d'auto-post mensuel
 // (AUTO_POST_TYPES) + les dépenses variables (spending), qui sont des mouvements ponctuels
@@ -14,7 +20,7 @@ export function immediatePostingFor(
   entry: RecurringEntry,
   ctx: { today: string; currentMonth: string; currentDay: number },
 ): DuePosting | null {
-  if (entry.accountId == null) return null;
+  if (entry.accountId == null || lacksTransferTarget(entry)) return null;
   if (!IMMEDIATE_POST_TYPES.has(entry.type)) return null;
 
   let date: string;
@@ -26,13 +32,13 @@ export function immediatePostingFor(
     date = entry.date;
     month = date.slice(0, 7);
   } else {
-    // Récurrent : dû ssi dayOfMonth ≤ currentDay (borne inclusive)
-    if (entry.dayOfMonth > ctx.currentDay) return null;
+    // Récurrent : dû ssi le jour effectif (plafonné à la fin du mois) ≤ currentDay
     month = ctx.currentMonth;
-    date = `${month}-${String(entry.dayOfMonth).padStart(2, '0')}`;
+    if (occurrenceDay(month, entry.dayOfMonth) > ctx.currentDay) return null;
+    date = occurrenceDate(month, entry.dayOfMonth);
   }
 
-  if (entry.endDate != null && month > entry.endDate.slice(0, 7)) return null;
+  if (isPastEndDate(entry, date)) return null;
 
   return {
     entry,

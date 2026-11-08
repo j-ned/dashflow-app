@@ -28,6 +28,7 @@ const entry = (p: Partial<RecurringEntry>): RecurringEntry => ({
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
   ...p,
 });
 

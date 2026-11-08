@@ -28,5 +28,6 @@ export function buildEnvelopeCreditEntry(
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 }

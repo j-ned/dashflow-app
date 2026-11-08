@@ -18,6 +18,7 @@ export const RecurringEntrySchema = z.object({
   autoPost: z.boolean(),
   autoPostSince: z.nullable(z.string()),
   variableAmount: z.boolean(),
+  skippedMonths: z.array(z.string()),
 });
 
 // Garde-fou anti-dérive : si RecurringEntry évolue sans ce schéma, le build casse.

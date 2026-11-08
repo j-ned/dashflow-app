@@ -43,5 +43,6 @@ export function buildRecurringEntryPayload(
     autoPost,
     autoPostSince,
     variableAmount,
+    skippedMonths: ctx.initial?.skippedMonths ?? [],
   };
 }

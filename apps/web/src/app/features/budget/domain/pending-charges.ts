@@ -3,6 +3,7 @@ import { AccountTransaction } from './models/account-transaction.model';
 import { PendingCharge } from './pending-charge';
 import { isRecurrencePosted } from './account-balance';
 import { isAutoEntry } from './auto-post';
+import { isPastEndDate, occurrenceDate, occurrenceDay } from './recurrence-occurrence';
 
 export type PendingChargesInput = {
   readonly incomes: readonly RecurringEntry[];
@@ -15,27 +16,20 @@ export type PendingChargesInput = {
   readonly txs: readonly AccountTransaction[];
 };
 
-const pad = (n: number): string => String(n).padStart(2, '0');
-
 function previousMonthOf(month: string): string {
   const [y, m] = month.split('-').map(Number);
-  return m === 1 ? `${y - 1}-12` : `${y}-${pad(m - 1)}`;
-}
-
-function lastDayOf(month: string): number {
-  const [y, m] = month.split('-').map(Number);
-  return new Date(Date.UTC(y, m, 0)).getUTCDate();
+  return m === 1 ? `${y - 1}-12` : `${y}-${String(m - 1).padStart(2, '0')}`;
 }
 
 /**
  * Mois ('YYYY-MM') de l'échéance à confirmer, ou `null` si rien n'est échu.
- * - jour ≤ aujourd'hui → l'échéance du mois courant (même règle que le pointage automatique :
- *   jamais de date future) ;
+ * - jour effectif (plafonné à la fin du mois) ≤ aujourd'hui → l'échéance du mois courant (même
+ *   règle que le pointage automatique : jamais de date future) ;
  * - sinon, tant que le salaire du mois n'est pas tombé, une échéance de fin de mois (jour ≥ jour
  *   de salaire) est celle du mois PRÉCÉDENT : le salaire du 28 août se saisit encore le 3 septembre.
  */
 function dueMonth(day: number, p: PendingChargesInput): string | null {
-  if (day <= p.currentDay) return p.currentMonth;
+  if (occurrenceDay(p.currentMonth, day) <= p.currentDay) return p.currentMonth;
   if (p.currentDay < p.salaryDay && day >= p.salaryDay) return previousMonthOf(p.currentMonth);
   return null;
 }
@@ -49,10 +43,12 @@ export function buildPendingCharges(p: PendingChargesInput): PendingCharge[] {
     }
     const month = dueMonth(e.dayOfMonth, p);
     if (month === null || isRecurrencePosted(e.id, month, p.txs)) continue;
+    const suggestedDate = occurrenceDate(month, e.dayOfMonth);
+    if (isPastEndDate(e, suggestedDate)) continue;
     charges.push({
       entry: e,
       direction: e.type === 'income' ? 'income' : e.type === 'transfer' ? 'transfer' : 'expense',
-      suggestedDate: `${month}-${pad(Math.min(e.dayOfMonth, lastDayOf(month)))}`,
+      suggestedDate,
       suggestedAmount: e.type === 'income' && e.variableAmount ? null : Number(e.amount),
     });
   }

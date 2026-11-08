@@ -465,6 +465,7 @@ export class Onboarding {
             autoPost: false,
             autoPostSince: null,
             variableAmount: false,
+            skippedMonths: [],
           }),
         );
       }
