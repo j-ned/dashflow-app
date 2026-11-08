@@ -20,6 +20,7 @@ function re(over: Partial<RecurringEntry>): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
     ...over,
   };
 }
@@ -165,5 +166,23 @@ describe('buildPendingCharges', () => {
 
       expect(charges[0].suggestedDate).toBe('2026-09-30');
     });
+  });
+
+  it('propose un jour 31 au dernier jour d’un mois de 30 jours, le jour même', () => {
+    const out = buildPendingCharges({
+      ...BASE,
+      salaryDay: 1,
+      currentDay: 30,
+      monthlyExpenses: [re({ id: 'e', dayOfMonth: 31 })],
+    });
+    expect(out.map((c) => c.suggestedDate)).toEqual(['2026-06-30']);
+  });
+
+  it('ne propose pas une échéance tombant après la date de fin', () => {
+    const out = buildPendingCharges({
+      ...BASE,
+      monthlyExpenses: [re({ id: 'e', dayOfMonth: 15, endDate: '2026-06-10' })],
+    });
+    expect(out).toEqual([]);
   });
 });

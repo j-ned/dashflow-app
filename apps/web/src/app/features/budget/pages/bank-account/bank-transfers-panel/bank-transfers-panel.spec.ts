@@ -20,6 +20,7 @@ function re(over: Partial<RecurringEntry>): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
     ...over,
   };
 }
@@ -60,5 +61,17 @@ describe('BankTransfersPanel : badge auto', () => {
 describe('BankTransfersPanel : badge date de fin (régression pipe imbriqué dans transloco)', () => {
   it("n'explose pas quand un virement récurrent a une endDate", () => {
     expect(() => mount([re({ endDate: '2026-12-31' })])).not.toThrow();
+  });
+});
+
+describe('BankTransfersPanel : virement sans destinataire', () => {
+  it('signale qu’un virement dont le compte destinataire a été supprimé est suspendu', () => {
+    const el: HTMLElement = mount([re({ toAccountId: null })]).nativeElement;
+    expect(el.querySelector('[data-testid="missing-target-badge"]')).not.toBeNull();
+  });
+
+  it('ne signale rien quand le destinataire existe', () => {
+    const el: HTMLElement = mount([re({})]).nativeElement;
+    expect(el.querySelector('[data-testid="missing-target-badge"]')).toBeNull();
   });
 });

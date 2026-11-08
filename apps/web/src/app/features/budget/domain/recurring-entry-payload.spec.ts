@@ -32,6 +32,7 @@ function initial(over: Partial<RecurringEntry> = {}): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
     ...over,
   };
 }
@@ -180,5 +181,15 @@ describe('buildRecurringEntryPayload', () => {
         expect(payload.variableAmount).toBe(false);
       },
     );
+  });
+
+  it('édition → conserve les mois dont l’occurrence a été annulée', () => {
+    const p = buildRecurringEntryPayload(VALUE, {
+      type: 'expense',
+      initial: initial({ skippedMonths: ['2026-05'] }),
+      forcedAccountId: null,
+      currentMonth: '2026-06',
+    });
+    expect(p.skippedMonths).toEqual(['2026-05']);
   });
 });

@@ -75,6 +75,13 @@ import { isAutoEntry } from '../../../domain/auto-post';
                       <app-icon name="arrow-right" size="10" class="text-text-muted" />
                       @if (accountNameById()(entry.toAccountId); as toName) {
                         <span class="text-[11px] text-ib-purple font-medium">{{ toName }}</span>
+                      } @else {
+                        <span
+                          data-testid="missing-target-badge"
+                          class="inline-flex items-center rounded-md bg-ib-red/10 px-1.5 py-0.5 text-[10px] font-medium text-ib-red"
+                        >
+                          {{ 'budget.bankAccount.transfers.missingTarget' | transloco }}
+                        </span>
                       }
                       @if (entry.endDate) {
                         <span

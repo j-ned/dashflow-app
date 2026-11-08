@@ -20,6 +20,7 @@ function re(id: string, amount: number): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 }
 
@@ -95,6 +96,7 @@ describe('computeForecastDelta', () => {
       autoPost: false,
       autoPostSince: null,
       variableAmount: false,
+      skippedMonths: [],
     };
     const tx: AccountTransaction = {
       id: 't',

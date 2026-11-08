@@ -20,6 +20,7 @@ function entry(over: Partial<RecurringEntry>): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
     ...over,
   };
 }

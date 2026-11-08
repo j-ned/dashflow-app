@@ -12,7 +12,8 @@ import {
   viewChild,
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
-import { lastValueFrom } from 'rxjs';
+import { catchError, forkJoin, lastValueFrom, of, throwError } from 'rxjs';
+import { isApiError } from '@core/services/api/api-client';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
 import { RecurringEntry, RecurringEntryType } from '../../domain/models/recurring-entry.model';
 import {
@@ -30,6 +31,7 @@ import {
   AUTO_POST_NOTE,
   autoPostCandidates,
   duePostings,
+  duplicateAutoPostings,
   withAutoPost,
 } from '../../domain/auto-post';
 import { toLocalIsoDate } from '../../domain/local-date';
@@ -382,7 +384,10 @@ export class BankAccount {
       this._autoPostAttempted.set(true);
       const entries = untracked(this.store.entries);
       const txs = untracked(this.store.transactions);
-      untracked(() => this._runAutoPost(entries, txs));
+      untracked(() => {
+        this._removeDuplicateAutoPostings(entries, txs);
+        this._runAutoPost(entries, txs);
+      });
     });
   }
 
@@ -857,6 +862,36 @@ export class BankAccount {
 
   protected ignoreCharge(id: string): void {
     this._ignoredCharges.update((s) => new Set(s).add(id));
+  }
+
+  /** Répare les occurrences automatiques postées deux fois (voir `duplicateAutoPostings`). */
+  private _removeDuplicateAutoPostings(
+    entries: readonly RecurringEntry[],
+    txs: readonly AccountTransaction[],
+  ): void {
+    const extras = duplicateAutoPostings(entries, txs);
+    if (extras.length === 0) return;
+    // L'autre appareil répare la même copie au même moment : un 404 veut dire « déjà fait ».
+    const alreadyGone = (err: unknown) => isApiError(err) && err.status === 404;
+    forkJoin(
+      extras.map((t) =>
+        this.txGateway
+          .delete(t.id)
+          .pipe(
+            catchError((err: unknown) =>
+              alreadyGone(err) ? of(undefined) : throwError(() => err),
+            ),
+          ),
+      ),
+    )
+      .pipe(takeUntilDestroyed(this._destroyRef))
+      .subscribe({
+        next: () => this.store.refreshTransactions(),
+        error: () => {
+          this.store.refreshTransactions();
+          this.toaster.error('budget.bankAccount.messages.autoPostDedupError');
+        },
+      });
   }
 
   private _runAutoPost(

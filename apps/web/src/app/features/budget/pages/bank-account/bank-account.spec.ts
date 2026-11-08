@@ -2,6 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { ChangeDetectionStrategy, Component, signal } from '@angular/core';
 import { of, throwError, type Observable } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
+import type { ApiError } from '@core/services/api/api-client';
 import { RecurringEntryGateway } from '../../domain/gateways/recurring-entry.gateway';
 import { BankAccountGateway } from '../../domain/gateways/bank-account.gateway';
 import { MemberGateway } from '../../domain/gateways/member.gateway';
@@ -47,6 +48,7 @@ function makeComponent(
     txs?: unknown[];
     accounts?: unknown[];
     createImpl?: (accountId: string, body: Record<string, unknown>) => Observable<unknown>;
+    txDeleteImpl?: (id: string) => Observable<unknown>;
     entryCreateImpl?: (data: Record<string, unknown>) => Observable<unknown>;
     updateImpl?: (id: string, data: { accountId: string }) => Observable<unknown>;
     entryDeleteImpl?: (id: string) => Observable<unknown>;
@@ -79,7 +81,11 @@ function makeComponent(
       { provide: MemberGateway, useValue: { getAll: () => of([]) } },
       {
         provide: AccountTransactionGateway,
-        useValue: { getAll: () => of(opts.txs ?? []), create: opts.createImpl ?? (() => of({})) },
+        useValue: {
+          getAll: () => of(opts.txs ?? []),
+          create: opts.createImpl ?? (() => of({})),
+          delete: opts.txDeleteImpl ?? (() => of(undefined)),
+        },
       },
       {
         provide: Toaster,
@@ -150,6 +156,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
   const SAVING = {
     id: 't1',
@@ -167,6 +174,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
   const OUT_COURANT = {
     id: 't2',
@@ -184,6 +192,7 @@ describe('BankAccount : prélèvement vers livret', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 
   it('inclut les virements récurrents sortants dans les lignes de la colonne', () => {
@@ -458,6 +467,7 @@ describe('BankAccount : échéances manuelles', () => {
       autoPost: true,
       autoPostSince: '2026-01',
       variableAmount: false,
+      skippedMonths: [],
     };
     const cmp = makeComponent({
       entries: [auto],
@@ -485,6 +495,7 @@ describe('BankAccount : virement récurrent = toujours auto (jamais en échéanc
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
   const ACCS = [
     { id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 },
@@ -533,6 +544,7 @@ describe("BankAccount : auto-pointage à l'ouverture", () => {
       autoPost: true,
       autoPostSince: new Date().toISOString().slice(0, 7),
       variableAmount: false,
+      skippedMonths: [],
     };
     makeComponent({
       entries: [auto],
@@ -571,6 +583,7 @@ describe("BankAccount : auto-pointage à l'ouverture", () => {
       autoPost: true,
       autoPostSince: month,
       variableAmount: false,
+      skippedMonths: [],
     };
     makeComponent({
       entries: [auto],
@@ -632,6 +645,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 
   type PostCmp = {
@@ -726,6 +740,7 @@ describe('BankAccount : virement ponctuel posté immédiatement', () => {
       autoPost: false,
       autoPostSince: null,
       variableAmount: false,
+      skippedMonths: [],
     };
     const tx = {
       id: 'txot',
@@ -767,6 +782,7 @@ describe('BankAccount : ajout d un revenu quand il en existe déjà', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
   const NEW_INCOME = {
     accountId: 'a',
@@ -783,6 +799,7 @@ describe('BankAccount : ajout d un revenu quand il en existe déjà', () => {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 
   type CreateCmp = { createEntry: (data: unknown) => Promise<void> };
@@ -827,6 +844,7 @@ describe('BankAccount : « Ne plus me demander » (bascule en pointage automatiq
     memberId: null,
     payslipKey: null,
     variableAmount: true,
+    skippedMonths: [],
   };
   const RENT = {
     ...SALARY,
@@ -835,6 +853,7 @@ describe('BankAccount : « Ne plus me demander » (bascule en pointage automatiq
     amount: 800,
     type: 'expense',
     variableAmount: false,
+    skippedMonths: [],
   };
   // Échéance au 31 : pas encore due, quel que soit le jour où la suite tourne (sauf un 31).
   const LATE = { ...RENT, id: 'late', label: 'Bouygues', amount: 9, dayOfMonth: 31 };
@@ -999,5 +1018,84 @@ describe('BankAccount : vérification du solde avec la banque', () => {
         },
       },
     ]);
+  });
+});
+
+describe('BankAccount : doublons de pointage automatique (deux appareils ouverts)', () => {
+  const month = toLocalIsoDate(new Date()).slice(0, 7);
+  const AUTO = {
+    id: 'r1',
+    accountId: 'a',
+    label: 'Loyer',
+    amount: 800,
+    type: 'expense' as const,
+    dayOfMonth: 1,
+    date: null,
+    endDate: null,
+    toAccountId: null,
+    category: null,
+    memberId: null,
+    payslipKey: null,
+    autoPost: true,
+    autoPostSince: month,
+    variableAmount: false,
+    skippedMonths: [],
+  };
+  const posted = (id: string) => ({
+    id,
+    accountId: 'a',
+    amount: 800,
+    direction: 'expense',
+    toAccountId: null,
+    date: `${month}-01`,
+    category: null,
+    note: 'auto',
+    memberId: null,
+    recurringEntryId: 'r1',
+  });
+  const ACC = [{ id: 'a', name: 'Courant', type: 'courant', initialBalance: 0 }];
+
+  it('supprime la copie en trop d’une occurrence postée deux fois, sans en recréer', () => {
+    const deleted: string[] = [];
+    const created: unknown[] = [];
+    makeComponent({
+      entries: [AUTO],
+      accounts: ACC,
+      txs: [posted('t2'), posted('t1')],
+      txDeleteImpl: (id) => {
+        deleted.push(id);
+        return of(undefined);
+      },
+      createImpl: (_a, body) => {
+        created.push(body);
+        return of({});
+      },
+    });
+    expect([deleted, created]).toEqual([['t2'], []]);
+  });
+
+  it('copie déjà supprimée par l’autre appareil (404) → aucune erreur affichée', () => {
+    const toaster = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    makeComponent({
+      entries: [AUTO],
+      accounts: ACC,
+      txs: [posted('t2'), posted('t1')],
+      toaster,
+      txDeleteImpl: () =>
+        throwError(() => ({ status: 404, message: 'Not found' }) satisfies ApiError),
+    });
+    expect(toaster.error).not.toHaveBeenCalled();
+  });
+
+  it('échec réel de suppression → toast d’erreur', () => {
+    const toaster = { success: vi.fn(), error: vi.fn(), info: vi.fn() };
+    makeComponent({
+      entries: [AUTO],
+      accounts: ACC,
+      txs: [posted('t2'), posted('t1')],
+      toaster,
+      txDeleteImpl: () => throwError(() => ({ status: 500, message: 'Boom' }) satisfies ApiError),
+    });
+    expect(toaster.error).toHaveBeenCalledWith('budget.bankAccount.messages.autoPostDedupError');
   });
 });

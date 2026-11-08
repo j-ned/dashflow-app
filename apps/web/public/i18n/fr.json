@@ -812,6 +812,7 @@
         "annualNoDate": "Charge annuelle (sans date fixe)"
       },
       "transfers": {
+        "missingTarget": "Compte destinataire supprimé : virement suspendu, modifiez-le",
         "automaticTitle": "Virements automatiques",
         "addRecurring": "Virement récurrent",
         "automaticEmpty": "Programmez des virements automatiques entre vos comptes",
@@ -897,7 +898,8 @@
         "entryReassignError": "Erreur lors de la réassignation",
         "autoPosted": "{{count}} échéance(s) pointée(s) automatiquement",
         "autoPostCaughtUp": "{{count}} échéance(s) rattrapée(s) sur {{months}} mois",
-        "autoPostError": "{{failed}} échéance(s) auto en échec"
+        "autoPostError": "{{failed}} échéance(s) auto en échec",
+        "autoPostDedupError": "Une opération automatique en double n'a pas pu être supprimée"
       },
       "orphans": {
         "title": "Opérations sans compte",

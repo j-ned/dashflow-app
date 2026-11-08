@@ -18,6 +18,7 @@ const VALID = {
   autoPost: false,
   autoPostSince: null,
   variableAmount: false,
+  skippedMonths: [],
 };
 
 describe('RecurringEntrySchema', () => {
@@ -29,5 +30,10 @@ describe('RecurringEntrySchema', () => {
   });
   it('rejette un autoPost non booléen', () => {
     expect(z.safeParse(RecurringEntrySchema, { ...VALID, autoPost: 'yes' }).success).toBe(false);
+  });
+  it('rejette des mois annulés qui ne sont pas une liste', () => {
+    expect(z.safeParse(RecurringEntrySchema, { ...VALID, skippedMonths: '2026-05' }).success).toBe(
+      false,
+    );
   });
 });

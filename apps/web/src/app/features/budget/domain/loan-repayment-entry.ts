@@ -29,5 +29,6 @@ export function buildLoanRepaymentEntry(
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 }

@@ -19,6 +19,7 @@ function entry(dayOfMonth: number | null): RecurringEntry {
     autoPost: false,
     autoPostSince: null,
     variableAmount: false,
+    skippedMonths: [],
   };
 }
 

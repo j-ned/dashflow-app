@@ -21,4 +21,9 @@ export type RecurringEntry = {
    * le projeté tant que le montant réel du mois n'a pas été saisi. N'a de sens que pour `income`.
    */
   variableAmount: boolean;
+  /**
+   * Mois 'YYYY-MM' dont l'utilisateur a supprimé l'opération pointée automatiquement : le pointage
+   * ne doit pas la recréer. Sans cette trace, une occurrence annulée réapparaît au chargement suivant.
+   */
+  skippedMonths: string[];
 };
