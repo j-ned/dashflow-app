@@ -33,15 +33,6 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               {{ 'budget.bankAccount.expenses.monthlyTitle' | transloco }}
             </h3>
           </div>
-          <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-red text-canvas hover:bg-ib-red/80 transition-colors shadow-sm"
-            [title]="'budget.bankAccount.expenses.addMonthly' | transloco"
-            [attr.aria-label]="'budget.bankAccount.expenses.addMonthly' | transloco"
-            (click)="createMonthly.emit()"
-          >
-            <app-icon name="plus" size="12" />
-          </button>
         </div>
         @if (monthlyExpenses().length > 0) {
           <div class="divide-y divide-border/20 px-3 py-1.5">
@@ -188,15 +179,6 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               {{ 'budget.bankAccount.expenses.annualTitle' | transloco }}
             </h3>
           </div>
-          <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-orange text-canvas hover:bg-ib-orange/80 transition-colors shadow-sm"
-            [title]="'budget.bankAccount.expenses.addAnnual' | transloco"
-            [attr.aria-label]="'budget.bankAccount.expenses.addAnnual' | transloco"
-            (click)="createAnnual.emit()"
-          >
-            <app-icon name="plus" size="12" />
-          </button>
         </div>
         @if (annualExpenses().length > 0) {
           <div class="divide-y divide-border/20 px-3 py-1.5 overflow-y-auto flex-1">
@@ -306,15 +288,6 @@ import { RecurringEntry } from '../../../domain/models/recurring-entry.model';
               (next)="nextMonth.emit()"
             />
           </div>
-          <button
-            type="button"
-            class="flex h-6 w-6 items-center justify-center rounded-lg bg-ib-yellow text-canvas hover:bg-ib-yellow/80 transition-colors shadow-sm"
-            [title]="'budget.bankAccount.expenses.addSpending' | transloco"
-            [attr.aria-label]="'budget.bankAccount.expenses.addSpending' | transloco"
-            (click)="createSpending.emit()"
-          >
-            <app-icon name="plus" size="12" />
-          </button>
         </div>
         @if (monthSpendings().length > 0) {
           <div class="divide-y divide-border/20 px-3 py-1.5 overflow-y-auto flex-1">
@@ -405,9 +378,6 @@ export class BankExpenseColumns {
   readonly savingsSubtotal = input.required<number>();
   readonly accountNameById = input.required<(id: string | null) => string | null>();
 
-  readonly createMonthly = output<void>();
-  readonly createAnnual = output<void>();
-  readonly createSpending = output<void>();
   readonly edit = output<RecurringEntry>();
   readonly delete = output<string>();
   readonly prevMonth = output<void>();

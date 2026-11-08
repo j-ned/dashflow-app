@@ -726,19 +726,19 @@
       "accountNavAria": "Account selection",
       "pending": {
         "title": "Charges to confirm",
-        "help": "These recurring debits were planned and their date has passed. Confirm the amount actually debited on your statement, or dismiss those that did not go through. 'Confirm all' only covers debits, never income.",
-        "confirm": "Debited",
+        "help": "Their date has passed. Confirm the amount debited on your statement, or ignore those that did not go through.",
+        "confirm": "Confirm",
         "confirmAll": "Confirm all",
-        "ignore": "Not debited",
+        "ignore": "Ignore",
         "dueOn": "scheduled for {{date}}",
         "amountAria": "Debited amount for {{label}}",
         "incomesTitle": "Income to enter",
-        "incomesHelp": "This income was expected and its date has passed. Enter what you actually received: a variable income is never prefilled nor counted until you enter it.",
-        "received": "Received",
+        "incomesHelp": "Enter the amount actually received. A variable income only counts once entered.",
+        "received": "Confirm",
         "notReceived": "Not received yet",
         "amountPlaceholder": "Amount",
         "amountReceivedAria": "Amount received for {{label}}",
-        "automateAll": "Stop asking me",
+        "automateAll": "Automate",
         "automateTitle": "Post these debits automatically?",
         "automateMessage": "{{count}} fixed-amount debit(s) will be recorded on their own at their due date, without confirmation: {{labels}}. Those already due this month are recorded right away. You can untick 'Post automatically' on any of them, and fix or delete a transaction from the Statement.",
         "automateConfirm": "Automate",
@@ -766,7 +766,7 @@
         "incomeSources": "{{count}} sources",
         "directDebits": "Direct debits",
         "directDebitsLabel": "{{passed}}/{{total}} processed",
-        "annual": "Annual",
+        "annual": "Annual charges",
         "annualMonthly": "≈{{value}}€/month",
         "spending": "Spending",
         "spendingCount": "{{count}} expense in {{month}}",
@@ -780,7 +780,7 @@
         "hint": "{{percent}}% of your income is committed this month",
         "passed": "Processed",
         "upcoming": "Upcoming",
-        "annual": "Annual",
+        "annual": "Annual charges",
         "spendings": "Spending",
         "stateOk": "Healthy",
         "stateTight": "Tight",
@@ -789,7 +789,6 @@
       },
       "incomes": {
         "title": "Income",
-        "addButton": "Income",
         "payslip": "Payslip",
         "empty": "Add your salary or other monthly income",
         "editAria": "Edit {{label}}",
@@ -798,13 +797,13 @@
         "deleteTitle": "Delete : {{label}}"
       },
       "expenses": {
-        "monthlyTitle": "Monthly",
-        "annualTitle": "Annual",
+        "monthlyTitle": "Direct debits",
+        "annualTitle": "Annual charges",
         "spendingsTitle": "Spending",
         "monthlyEmpty": "Rent, subscriptions, insurance...",
         "annualEmpty": "Car insurance, property taxes...",
         "spendingsEmpty": "No spending in {{month}}",
-        "debited": "Debited",
+        "debited": "Done",
         "onDay": "on day {{day}}",
         "until": "Until {{date}}",
         "monthlyApprox": "~{{value}}€/month",
@@ -814,9 +813,6 @@
         "annualMonthlySuffix": "(~{{value}}€/m)",
         "prevMonth": "Previous month",
         "nextMonth": "Next month",
-        "addMonthly": "Add a monthly charge",
-        "addAnnual": "Add an annual charge",
-        "addSpending": "Add an expense",
         "annualNoDate": "Annual charge (no fixed date)"
       },
       "transfers": {
@@ -826,7 +822,6 @@
         "incomingTitle": "Incoming transfers",
         "incomingEmpty": "No incoming transfer",
         "oneTimeTitle": "One-time transfers",
-        "addOneTime": "One-time transfer",
         "oneTimeEmpty": "No one-time transfer in {{month}}",
         "monthTotal": "Month total",
         "outgoing": "Out",
@@ -861,15 +856,15 @@
       "createTitles": {
         "income": "New income",
         "expense": "New monthly direct debit",
-        "annualExpense": "New annual direct debit",
+        "annualExpense": "New annual charge",
         "spending": "New expense",
         "transferOneTime": "New one-time transfer",
-        "transferRecurring": "New automatic transfer"
+        "transferRecurring": "New recurring transfer"
       },
       "editTitles": {
         "income": "Edit income",
         "expense": "Edit monthly direct debit",
-        "annualExpense": "Edit annual direct debit",
+        "annualExpense": "Edit annual charge",
         "spending": "Edit expense",
         "transfer": "Edit transfer",
         "default": "Edit"
@@ -909,7 +904,7 @@
         "autoPostError": "{{failed}} auto entry/entries failed"
       },
       "orphans": {
-        "title": "Recurring entries without an account",
+        "title": "Operations without an account",
         "reassignPlaceholder": "Reassign to...",
         "delete": "Delete"
       },
@@ -936,6 +931,27 @@
         "toastMatch": "Balance checked: everything matches",
         "toastAdjusted": "Balance aligned with your bank",
         "toastError": "Could not record the adjustment"
+      },
+      "todo": {
+        "title": "To review",
+        "hint": "Past operations to check against your statement"
+      },
+      "detail": {
+        "title": "The month in detail"
+      },
+      "tabs": {
+        "incomes": "Income",
+        "outflows": "Outgoings",
+        "transfers": "Transfers",
+        "timeline": "Timeline"
+      },
+      "add": {
+        "button": "Add",
+        "income": "Income",
+        "expense": "Monthly direct debit",
+        "annualExpense": "Annual charge",
+        "spending": "Expense",
+        "transfer": "Transfer"
       }
     },
     "dashboard": {

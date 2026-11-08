@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
 import { DecimalPipe } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { Icon } from '@shared/components/icon/icon';
@@ -76,13 +76,15 @@ import { TranslocoPipe } from '@jsverse/transloco';
                   | transloco: { incomes: unknownIncomes().join(', ') }
               }}
             </p>
-            <a
-              href="#pending-incomes"
+            <button
+              type="button"
+              data-testid="enter-income"
               class="mt-2 inline-flex min-h-8 items-center gap-1.5 text-xs font-medium text-ib-blue transition-colors hover:underline"
+              (click)="enterIncome.emit()"
             >
               {{ 'budget.bankAccount.balance.incompleteAction' | transloco }}
               <app-icon name="arrow-right" size="13" />
-            </a>
+            </button>
           } @else {
             <p
               class="mt-2 font-mono text-3xl font-bold tracking-tight"
@@ -148,6 +150,8 @@ export class BankBalanceBand {
   readonly unknownIncomes = input<readonly string[]>([]);
   /** Le compte n'a ni solde de départ ni opération : le « confirmé » n'a pas de sens. */
   readonly needsStartingBalance = input(false);
+  /** « Saisir le revenu reçu » : la page déplie le bloc « À traiter » et y amène l'utilisateur. */
+  readonly enterIncome = output<void>();
 
   protected readonly incomplete = computed(() => this.unknownIncomes().length > 0);
 

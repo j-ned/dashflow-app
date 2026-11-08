@@ -35,6 +35,18 @@ describe('BankBalanceBand', () => {
     expect(q('upcoming-debits')?.textContent).toContain('753');
   });
 
+  it('salaire non saisi : « Saisir le revenu reçu » le demande à la page, sans quitter la route', () => {
+    const { fixture, q } = render({ unknownIncomes: ['Salaire'] });
+    let requested = 0;
+    fixture.componentInstance.enterIncome.subscribe(() => requested++);
+
+    const action = q('enter-income');
+    action?.click();
+
+    expect(action?.tagName).toBe('BUTTON');
+    expect(requested).toBe(1);
+  });
+
   it('compte sans point de départ : explique que 0,00 € n’est pas le vrai solde', () => {
     expect(render({ needsStartingBalance: true }).q('starting-balance-hint')).not.toBeNull();
   });
