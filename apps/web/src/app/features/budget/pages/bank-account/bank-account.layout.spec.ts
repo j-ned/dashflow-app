@@ -42,9 +42,12 @@ const RENT = {
 function renderPage(entries: unknown[] = [], accounts: unknown[] = [CURRENT, SAVINGS]) {
   TestBed.configureTestingModule({
     imports: [
+      // Comme en prod, la langue est chargée avant le premier rendu : sans préchargement, le loader
+      // de test (synchrone) émettrait en plein rendu et écrirait un signal de la page (NG0600).
       TranslocoTestingModule.forRoot({
         langs: { fr: {} },
         translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+        preloadLangs: true,
       }),
     ],
     providers: [

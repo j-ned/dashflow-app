@@ -1,15 +1,24 @@
 import { TestBed } from '@angular/core/testing';
+import { TranslocoTestingModule } from '@jsverse/transloco';
 import { describe, expect, it } from 'vitest';
 import { TabList, type TabItem } from './tab-list';
 
 const TABS: readonly TabItem[] = [
-  { id: 'in', label: 'Revenus' },
-  { id: 'out', label: 'Sorties' },
-  { id: 'time', label: 'Chronologie' },
+  { id: 'in', labelKey: 'Revenus' },
+  { id: 'out', labelKey: 'Sorties' },
+  { id: 'time', labelKey: 'Chronologie' },
 ];
 
 function mount(selected = 'in') {
-  TestBed.configureTestingModule({ imports: [TabList] });
+  TestBed.configureTestingModule({
+    imports: [
+      TabList,
+      TranslocoTestingModule.forRoot({
+        langs: { fr: {} },
+        translocoConfig: { availableLangs: ['fr'], defaultLang: 'fr' },
+      }),
+    ],
+  });
   const fixture = TestBed.createComponent(TabList);
   fixture.componentRef.setInput('tabs', TABS);
   fixture.componentRef.setInput('label', 'Détail du mois');

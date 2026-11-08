@@ -626,13 +626,12 @@ export class BankAccount {
       this.store.accounts().length > 1,
   );
 
-  protected readonly monthTabs = computed<readonly TabItem[]>(() => {
-    this._i18nReady();
-    return MONTH_TABS.filter((id) => id !== 'transfers' || this.hasTransfers()).map((id) => ({
+  protected readonly monthTabs = computed<readonly TabItem[]>(() =>
+    MONTH_TABS.filter((id) => id !== 'transfers' || this.hasTransfers()).map((id) => ({
       id,
-      label: this._i18n.translate(`budget.bankAccount.tabs.${id}`),
-    }));
-  });
+      labelKey: `budget.bankAccount.tabs.${id}`,
+    })),
+  );
 
   // L'onglet Virements peut disparaître (changement de compte) : on retombe alors sur Revenus.
   protected readonly activeMonthTab = computed<MonthTab>(() => {

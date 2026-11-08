@@ -6,8 +6,10 @@ import {
   model,
   viewChildren,
 } from '@angular/core';
+import { TranslocoPipe } from '@jsverse/transloco';
 
-export type TabItem = { readonly id: string; readonly label: string };
+/** `labelKey` est une clé i18n, traduite au rendu par le pipe (jamais dans un `computed`). */
+export type TabItem = { readonly id: string; readonly labelKey: string };
 
 /**
  * Liste d'onglets (motif ARIA « tabs », activation automatique). Le parent rend les panneaux avec
@@ -16,6 +18,7 @@ export type TabItem = { readonly id: string; readonly label: string };
 @Component({
   selector: 'app-tab-list',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [TranslocoPipe],
   host: { class: 'block' },
   template: `
     <div
@@ -41,7 +44,7 @@ export type TabItem = { readonly id: string; readonly label: string };
           (click)="selected.set(tab.id)"
           (keydown)="moveWithKeyboard($event)"
         >
-          {{ tab.label }}
+          {{ tab.labelKey | transloco }}
         </button>
       }
     </div>
