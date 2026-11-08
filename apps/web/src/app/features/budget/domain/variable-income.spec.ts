@@ -62,13 +62,14 @@ const forecastInput = (incomes: RecurringEntry[], txs: AccountTransaction[] = []
   incomes,
   monthlyExpenses: [rent, phone],
   annualExpenses: [entry('taxe', 'annual_expense', 96)],
-  monthSpendings: [],
+  spendings: [],
   incomingTransfers: [],
   outgoingTransfers: [],
-  oneTimeIncoming: 0,
-  oneTimeOutgoing: 0,
+  oneTimeIncoming: [],
+  oneTimeOutgoing: [],
   txs,
-  currentMonth: MONTH,
+  // Salaire le 1er : le cycle de salaire est exactement le mois civil.
+  cycle: { start: `${MONTH}-01`, end: `${MONTH}-30` },
 });
 
 describe('revenu à montant variable', () => {

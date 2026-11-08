@@ -1,15 +1,12 @@
 import {
-  afterNextRender,
   afterRenderEffect,
   ChangeDetectionStrategy,
   Component,
   computed,
   DestroyRef,
-  DOCUMENT,
   effect,
   ElementRef,
   inject,
-  Injector,
   signal,
   untracked,
   viewChild,
@@ -41,7 +38,7 @@ import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-c
 import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
 import { computeForecast } from '../../domain/forecast-delta';
-import { monthIncome } from '../../domain/month-income';
+import { cycleIncome, occurrenceIn, salaryCycleWindow } from '../../domain/salary-cycle-window';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
@@ -63,6 +60,7 @@ import { AccountManager } from './account-manager/account-manager';
 import { BudgetDataStore } from './budget-data.store';
 import { BankTodoPanel } from './bank-todo-panel/bank-todo-panel';
 import { BankAddMenu } from './bank-add-menu/bank-add-menu';
+import { BankIncomeInbox } from './bank-income-inbox/bank-income-inbox';
 import { TabList, type TabItem } from '@shared/components/tab-list/tab-list';
 
 const PALETTE = [
@@ -100,6 +98,7 @@ type MonthTab = (typeof MONTH_TABS)[number];
     BankTodoPanel,
     BankAddMenu,
     TabList,
+    BankIncomeInbox,
   ],
   providers: [BudgetDataStore],
   host: { class: 'block space-y-6' },
@@ -168,11 +167,10 @@ type MonthTab = (typeof MONTH_TABS)[number];
     <app-bank-balance-band
       [confirmedBalance]="confirmedBalance()"
       [projectedBalance]="projectedBalance()"
-      [upcomingDebits]="forecast().upcomingDebits"
       [unknownIncomes]="unknownIncomeLabels()"
       [needsStartingBalance]="needsStartingBalance()"
       [today]="today"
-      (enterIncome)="showPendingIncomes()"
+      [projectionDate]="cycleEndLabel()"
     >
       @if (selectedAccount(); as account) {
         <app-balance-check
@@ -183,12 +181,17 @@ type MonthTab = (typeof MONTH_TABS)[number];
           (checked)="reconcileWithBank(account, $event)"
         />
       }
+      <app-bank-income-inbox
+        [charges]="pendingIncomes()"
+        (confirm)="confirmCharge($event.id, $event.amount)"
+        (ignore)="ignoreCharge($event)"
+      />
     </app-bank-balance-band>
 
     <!-- ═══ 2. À traiter : un seul bloc repliable ═══ -->
-    <app-bank-todo-panel [count]="todoCount()" [(open)]="todoOpen">
+    <app-bank-todo-panel [count]="todoCount()">
       <app-pending-charges-panel
-        [charges]="pendingCharges()"
+        [charges]="pendingDebits()"
         [accountNameById]="accountNameByIdFn"
         (confirm)="confirmCharge($event.id, $event.amount)"
         [automatableCount]="automatable().length"
@@ -215,12 +218,13 @@ type MonthTab = (typeof MONTH_TABS)[number];
 
       <app-budget-usage-bar
         [totalIncome]="totalIncome()"
-        [incomeIncomplete]="incomeIncomplete()"
+        [unknownIncomes]="unknownIncomeLabels()"
         [totalAllExpenses]="totalAllExpenses()"
         [usagePercent]="usagePercent()"
         [totalMonthlyExpenses]="totalMonthlyExpenses()"
         [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
-        [totalMonthSpendings]="totalMonthSpendings()"
+        [totalMonthSpendings]="cycleSpendingsTotal()"
+        [period]="cyclePeriodLabel()"
       />
 
       <app-tab-list
@@ -347,8 +351,6 @@ export class BankAccount {
   private readonly _i18n = inject(TranslocoService);
   private readonly _destroyRef = inject(DestroyRef);
   protected readonly store = inject(BudgetDataStore);
-  private readonly _injector = inject(Injector);
-  private readonly _document = inject(DOCUMENT);
 
   private readonly createModalRef = viewChild.required<ModalDialog>('createModal');
   private readonly editModalRef = viewChild.required<ModalDialog>('editModal');
@@ -509,10 +511,15 @@ export class BankAccount {
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
 
-  protected readonly today = new Date().toLocaleDateString(
-    this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR',
-    { day: 'numeric', month: 'short' },
-  );
+  private _shortDate(iso: string): string {
+    const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d).toLocaleDateString(
+      this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR',
+      { day: 'numeric', month: 'short' },
+    );
+  }
+
+  protected readonly today = this._shortDate(this.todayIso);
   protected readonly currentDay = new Date().getDate();
 
   protected readonly salaryDay = computed(() => {
@@ -534,20 +541,31 @@ export class BankAccount {
   protected readonly accountRealTxs = this.store.accountRealTxs;
   protected readonly confirmedBalance = this.store.confirmedBalance;
 
-  // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
-  // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).
+  // Cycle de salaire en cours : une paie le 30 finance le mois suivant, donc le 8 novembre on
+  // raisonne du 30 octobre au 29 novembre, pas du 1er au 30 novembre.
+  protected readonly cycle = computed(() => salaryCycleWindow(this.todayIso, this.salaryDay()));
+  protected readonly cycleEndLabel = computed(() => this._shortDate(this.cycle().end));
+  protected readonly cyclePeriodLabel = computed(
+    () => `${this._shortDate(this.cycle().start)} – ${this.cycleEndLabel()}`,
+  );
+
+  private readonly _oneTimeOf = (side: 'accountId' | 'toAccountId') =>
+    this.oneTimeTransfers().filter((e) => e[side] === this.store.selectedAccountId());
+
+  // Delta des échéances du cycle = projection SANS le solde confirmé, chaque somme excluant les
+  // échéances déjà postées (réconciliées avec une transaction réelle).
   protected readonly forecast = computed(() =>
     computeForecast({
       incomes: this.incomes(),
       monthlyExpenses: this.monthlyExpenses(),
       annualExpenses: this.annualExpenses(),
-      monthSpendings: this.monthSpendings(),
+      spendings: this.allSpendings(),
       incomingTransfers: this.incomingTransfers(),
       outgoingTransfers: this.outgoingTransfers(),
-      oneTimeIncoming: this.totalOneTimeIncoming(),
-      oneTimeOutgoing: this.totalOneTimeOutgoing(),
+      oneTimeIncoming: this._oneTimeOf('toAccountId'),
+      oneTimeOutgoing: this._oneTimeOf('accountId'),
       txs: this.accountRealTxs(),
-      currentMonth: this.currentMonth,
+      cycle: this.cycle(),
     }),
   );
 
@@ -598,23 +616,14 @@ export class BankAccount {
     }),
   );
 
-  // ── Bloc « À traiter » ──
-  protected readonly todoCount = computed(
-    () => this.pendingCharges().length + this.orphanEntries().length,
+  // Un revenu se saisit sous le solde ; « À traiter » ne garde que ce qui se débite.
+  protected readonly pendingIncomes = computed(() => this.pendingCharges().filter(isIncomeCharge));
+  protected readonly pendingDebits = computed(() =>
+    this.pendingCharges().filter((c) => !isIncomeCharge(c)),
   );
-  protected readonly todoOpen = signal(false);
-
-  /** Depuis le solde : déplie « À traiter » et place le focus sur le premier revenu à saisir. */
-  protected showPendingIncomes(): void {
-    this.todoOpen.set(true);
-    afterNextRender(
-      {
-        write: () =>
-          this._document.querySelector<HTMLInputElement>('#pending-incomes input')?.focus(),
-      },
-      { injector: this._injector },
-    );
-  }
+  protected readonly todoCount = computed(
+    () => this.pendingDebits().length + this.orphanEntries().length,
+  );
 
   // ── Détail du mois : un onglet à la fois ──
   private readonly _monthTab = signal<MonthTab>('incomes');
@@ -898,13 +907,11 @@ export class BankAccount {
     }
   }
 
-  // Revenus du mois : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
-  // compte pas (voir monthIncome).
-  private readonly _monthIncome = computed(() =>
-    monthIncome(this.incomes(), this.accountRealTxs(), this.currentMonth),
+  // Revenus du cycle : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
+  // compte pas (voir cycleIncome).
+  protected readonly totalIncome = computed(
+    () => cycleIncome(this.incomes(), this.accountRealTxs(), this.cycle()).total,
   );
-  protected readonly totalIncome = computed(() => this._monthIncome().total);
-  protected readonly incomeIncomplete = computed(() => this._monthIncome().incomplete);
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
   protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
@@ -926,18 +933,27 @@ export class BankAccount {
     sumAmount(this._unpostedOneTime((e) => e.toAccountId === this.store.selectedAccountId())),
   );
 
+  // « Ce qui compose le mois » suit le cycle de salaire, comme la projection.
+  private readonly _inCycle = (entries: readonly RecurringEntry[]) =>
+    entries.filter((e) => occurrenceIn(e, this.cycle()) !== null);
+  protected readonly cycleSpendingsTotal = computed(() =>
+    sumAmount(this._inCycle(this.allSpendings())),
+  );
   private readonly totalOutgoing = computed(
-    () => sumAmount(this.outgoingTransfers()) + this.totalOneTimeOutgoing(),
+    () =>
+      sumAmount(this.outgoingTransfers()) + sumAmount(this._inCycle(this._oneTimeOf('accountId'))),
   );
   private readonly totalIncoming = computed(
-    () => sumAmount(this.incomingTransfers()) + this.totalOneTimeIncoming(),
+    () =>
+      sumAmount(this.incomingTransfers()) +
+      sumAmount(this._inCycle(this._oneTimeOf('toAccountId'))),
   );
 
   protected readonly totalAllExpenses = computed(
     () =>
       this.totalMonthlyExpenses() +
       this.monthlyAnnualExpenses() +
-      this.totalMonthSpendings() +
+      this.cycleSpendingsTotal() +
       this.totalOutgoing(),
   );
 

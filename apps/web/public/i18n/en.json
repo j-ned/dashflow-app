@@ -733,7 +733,7 @@
         "dueOn": "scheduled for {{date}}",
         "amountAria": "Debited amount for {{label}}",
         "incomesTitle": "Income to enter",
-        "incomesHelp": "Enter the amount actually received. A variable income only counts once entered.",
+        "incomesHelp": "Enter the amount that reached your account: it is added to the confirmed balance.",
         "received": "Confirm",
         "notReceived": "Not received yet",
         "amountPlaceholder": "Amount",
@@ -748,16 +748,12 @@
       "balance": {
         "confirmedLabel": "Confirmed today",
         "confirmedHint": "real, from your statement as of {{date}}",
-        "projectedLabel": "Projected end of month",
-        "projectedHint": "estimate: confirmed + upcoming charges",
-        "deltaHint": "still to come before month end",
+        "projectedLabel": "Projected before payday",
+        "projectedHint": "estimate for {{date}}, the day before your next salary",
+        "deltaHint": "still to come by {{date}}",
         "seeStatement": "See full statement",
-        "incompleteTitle": "Projection incomplete",
-        "incompleteHint": "This month's income has not been entered: {{incomes}}. Its amount changes every month, so we do not guess it.",
-        "incompleteAction": "Enter the income received",
-        "upcomingDebitsHint": "of debits still to come before the end of the month (known amount)",
         "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter below the balance shown by your bank: it will be the starting point.",
-        "noUpcomingDebits": "No more debits to come before the end of the month."
+        "excludesHint": "Excluding {{incomes}}: variable income, counted once received."
       },
       "kpi": {
         "balance": "Confirmed balance",
@@ -777,7 +773,7 @@
       "usage": {
         "label": "Budget used",
         "compose": "What makes up the month",
-        "hint": "{{percent}}% of your income is committed this month",
+        "hint": "{{percent}}% of your income is committed over this period",
         "passed": "Processed",
         "upcoming": "Upcoming",
         "annual": "Annual charges",
@@ -785,7 +781,7 @@
         "stateOk": "Healthy",
         "stateTight": "Tight",
         "stateOver": "Over budget",
-        "incomeUnknown": "This month's income has not been entered yet: the share of your income already committed will be computed once you do."
+        "excludesHint": "Income excluding {{incomes}} (variable amount, counted once received): the committed share will show then."
       },
       "incomes": {
         "title": "Income",
@@ -934,7 +930,7 @@
       },
       "todo": {
         "title": "To review",
-        "hint": "Past operations to check against your statement"
+        "hint": "Past debits to check against your statement"
       },
       "detail": {
         "title": "The month in detail"

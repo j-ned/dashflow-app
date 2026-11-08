@@ -15,7 +15,13 @@ describe('BankBalanceBand', () => {
       providers: [provideRouter([])],
     });
     const fixture = TestBed.createComponent(BankBalanceBand);
-    const all = { confirmedBalance: 0, projectedBalance: 1167.41, today: '19 sept.', ...inputs };
+    const all = {
+      confirmedBalance: 0,
+      projectedBalance: 1167.41,
+      today: '19 sept.',
+      projectionDate: '29 sept.',
+      ...inputs,
+    };
     for (const [key, value] of Object.entries(all)) fixture.componentRef.setInput(key, value);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;
@@ -25,26 +31,19 @@ describe('BankBalanceBand', () => {
   it('projection complète : affiche le solde projeté', () => {
     const { q } = render({});
     expect(q('projected-balance')?.textContent).toContain('1');
-    expect(q('projection-incomplete')).toBeNull();
   });
 
-  it('salaire non saisi : aucun chiffre projeté, mais les prélèvements à venir restent affichés', () => {
-    const { q } = render({ unknownIncomes: ['Salaire'], upcomingDebits: 753.59 });
-    expect(q('projected-balance')).toBeNull();
-    expect(q('projection-incomplete')).not.toBeNull();
-    expect(q('upcoming-debits')?.textContent).toContain('753');
+  it('salaire variable non saisi : le projeté reste chiffré et dit ce qu’il ne compte pas', () => {
+    const { q } = render({ unknownIncomes: ['Salaire'], projectedBalance: -71.57 });
+
+    expect(q('projected-balance')?.textContent).toContain('71');
+    expect(q('projection-excludes')?.textContent).toContain(
+      'budget.bankAccount.balance.excludesHint',
+    );
   });
 
-  it('salaire non saisi : « Saisir le revenu reçu » le demande à la page, sans quitter la route', () => {
-    const { fixture, q } = render({ unknownIncomes: ['Salaire'] });
-    let requested = 0;
-    fixture.componentInstance.enterIncome.subscribe(() => requested++);
-
-    const action = q('enter-income');
-    action?.click();
-
-    expect(action?.tagName).toBe('BUTTON');
-    expect(requested).toBe(1);
+  it('revenus tous connus : aucune mention d’exclusion', () => {
+    expect(render({}).q('projection-excludes')).toBeNull();
   });
 
   it('compte sans point de départ : explique que 0,00 € n’est pas le vrai solde', () => {
