@@ -733,7 +733,7 @@
         "dueOn": "prévu le {{date}}",
         "amountAria": "Montant débité pour {{label}}",
         "incomesTitle": "Revenus à saisir",
-        "incomesHelp": "Indiquez le montant réellement reçu. Un revenu variable n'est compté qu'une fois saisi.",
+        "incomesHelp": "Indiquez le montant arrivé sur votre compte : il s'ajoute au solde confirmé.",
         "received": "Confirmer",
         "notReceived": "Pas encore reçu",
         "amountPlaceholder": "Montant",
@@ -752,12 +752,8 @@
         "projectedHint": "estimation : confirmé + prélèvements à venir",
         "deltaHint": "encore à venir d'ici la fin du mois",
         "seeStatement": "Voir le relevé complet",
-        "incompleteTitle": "Projection incomplète",
-        "incompleteHint": "Revenu du mois non saisi : {{incomes}}. Son montant change chaque mois, on ne le devine pas.",
-        "incompleteAction": "Saisir le revenu reçu",
-        "upcomingDebitsHint": "de prélèvements encore à venir d'ici la fin du mois (montant certain)",
         "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas votre vrai solde. Indiquez ci-dessous le solde affiché par votre banque : il servira de point de départ.",
-        "noUpcomingDebits": "Plus aucun prélèvement à venir d'ici la fin du mois."
+        "excludesHint": "Sans {{incomes}} : revenu à montant variable, compté une fois reçu."
       },
       "kpi": {
         "balance": "Solde confirmé",
@@ -934,7 +930,7 @@
       },
       "todo": {
         "title": "À traiter",
-        "hint": "Opérations passées à confirmer avec votre relevé"
+        "hint": "Prélèvements passés à confirmer avec votre relevé"
       },
       "detail": {
         "title": "Le mois en détail"

@@ -61,6 +61,26 @@ describe('PendingChargesPanel', () => {
     expect(ignored).toBe('r1');
   });
 
+  it('propose « Automatiser » seulement s’il reste des prélèvements fixes à automatiser', () => {
+    const fixture = TestBed.createComponent(PendingChargesPanel);
+    fixture.componentRef.setInput('charges', [charge('r1', 800)]);
+    fixture.componentRef.setInput('accountNameById', () => null);
+    fixture.detectChanges();
+    const automate = () =>
+      fixture.nativeElement.querySelector(
+        '[data-testid="automate-all"]',
+      ) as HTMLButtonElement | null;
+    expect(automate()).toBeNull();
+
+    fixture.componentRef.setInput('automatableCount', 1);
+    fixture.detectChanges();
+    let asked = false;
+    fixture.componentInstance.automateAll.subscribe(() => (asked = true));
+    automate()?.click();
+
+    expect(asked).toBe(true);
+  });
+
   it('ne rend rien quand la liste est vide', () => {
     const fixture = TestBed.createComponent(PendingChargesPanel);
     fixture.componentRef.setInput('charges', []);

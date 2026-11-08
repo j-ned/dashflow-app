@@ -77,7 +77,28 @@ function renderPage(entries: unknown[] = [], accounts: unknown[] = [CURRENT, SAV
 const precedes = (a: Element | null, b: Element | null) =>
   !!a && !!b && (a.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
 
+// Salaire variable du 1er, pas encore saisi : un revenu à saisir dès aujourd'hui.
+const SALARY = {
+  ...RENT,
+  id: 's1',
+  label: 'Salaire',
+  amount: 2000,
+  type: 'income',
+  variableAmount: true,
+};
+
 describe('BankAccount : mise en page simplifiée', () => {
+  it('le salaire reçu se saisit sous le solde, sans passer par « À traiter »', () => {
+    const { el } = renderPage([SALARY]);
+
+    expect(
+      el.querySelector(
+        'app-bank-balance-band [data-testid="pending-incomes"] [data-testid="amount-s1"]',
+      ),
+    ).not.toBeNull();
+    expect(el.querySelector('app-bank-todo-panel details')).toBeNull();
+  });
+
   it('le solde est la première chose affichée, avant les échéances à traiter', () => {
     const { el } = renderPage([RENT]);
 

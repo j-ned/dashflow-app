@@ -733,7 +733,7 @@
         "dueOn": "scheduled for {{date}}",
         "amountAria": "Debited amount for {{label}}",
         "incomesTitle": "Income to enter",
-        "incomesHelp": "Enter the amount actually received. A variable income only counts once entered.",
+        "incomesHelp": "Enter the amount that reached your account: it is added to the confirmed balance.",
         "received": "Confirm",
         "notReceived": "Not received yet",
         "amountPlaceholder": "Amount",
@@ -752,12 +752,8 @@
         "projectedHint": "estimate: confirmed + upcoming charges",
         "deltaHint": "still to come before month end",
         "seeStatement": "See full statement",
-        "incompleteTitle": "Projection incomplete",
-        "incompleteHint": "This month's income has not been entered: {{incomes}}. Its amount changes every month, so we do not guess it.",
-        "incompleteAction": "Enter the income received",
-        "upcomingDebitsHint": "of debits still to come before the end of the month (known amount)",
         "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter below the balance shown by your bank: it will be the starting point.",
-        "noUpcomingDebits": "No more debits to come before the end of the month."
+        "excludesHint": "Excluding {{incomes}}: variable income, counted once received."
       },
       "kpi": {
         "balance": "Confirmed balance",
@@ -934,7 +930,7 @@
       },
       "todo": {
         "title": "To review",
-        "hint": "Past operations to check against your statement"
+        "hint": "Past debits to check against your statement"
       },
       "detail": {
         "title": "The month in detail"

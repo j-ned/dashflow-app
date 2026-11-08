@@ -1,10 +1,10 @@
-import { ChangeDetectionStrategy, Component, input, model } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslocoPipe } from '@jsverse/transloco';
 import { Icon } from '@shared/components/icon/icon';
 
 /**
- * Regroupe tout ce qui attend un geste (échéances à confirmer, revenus à saisir, opérations sans
- * compte) derrière une seule ligne repliable : la page s'ouvre sur le solde, pas sur une liste.
+ * Regroupe ce qui attend un geste sur le relevé (prélèvements à confirmer, opérations sans compte)
+ * derrière une seule ligne repliable : la page s'ouvre sur le solde, pas sur une liste.
  */
 @Component({
   selector: 'app-bank-todo-panel',
@@ -13,11 +13,7 @@ import { Icon } from '@shared/components/icon/icon';
   host: { class: 'block' },
   template: `
     @if (count() > 0) {
-      <details
-        class="group rounded-xl border border-ib-orange/40 bg-surface"
-        [open]="open()"
-        (toggle)="syncOpen($event)"
-      >
+      <details class="group rounded-xl border border-ib-orange/40 bg-surface">
         <summary
           class="flex min-h-12 cursor-pointer list-none items-center gap-3 rounded-xl px-4 py-3 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-orange [&::-webkit-details-marker]:hidden"
         >
@@ -49,10 +45,4 @@ import { Icon } from '@shared/components/icon/icon';
 export class BankTodoPanel {
   /** Nombre d'éléments en attente d'un geste. Zéro : le bloc n'existe pas. */
   readonly count = input.required<number>();
-  /** Le parent le déplie quand il y envoie l'utilisateur (ex. « Saisir le revenu reçu »). */
-  readonly open = model(false);
-
-  protected syncOpen(event: Event): void {
-    if (event.target instanceof HTMLDetailsElement) this.open.set(event.target.open);
-  }
 }
