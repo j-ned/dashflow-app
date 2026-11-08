@@ -15,7 +15,13 @@ describe('BankBalanceBand', () => {
       providers: [provideRouter([])],
     });
     const fixture = TestBed.createComponent(BankBalanceBand);
-    const all = { confirmedBalance: 0, projectedBalance: 1167.41, today: '19 sept.', ...inputs };
+    const all = {
+      confirmedBalance: 0,
+      projectedBalance: 1167.41,
+      today: '19 sept.',
+      projectionDate: '29 sept.',
+      ...inputs,
+    };
     for (const [key, value] of Object.entries(all)) fixture.componentRef.setInput(key, value);
     fixture.detectChanges();
     const el = fixture.nativeElement as HTMLElement;

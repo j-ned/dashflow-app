@@ -72,7 +72,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
             }}<span class="ml-1 text-lg text-text-muted">&euro;</span>
           </p>
           <p class="mt-1.5 text-xs text-text-muted">
-            {{ 'budget.bankAccount.balance.projectedHint' | transloco }}
+            {{ 'budget.bankAccount.balance.projectedHint' | transloco: { date: projectionDate() } }}
           </p>
           @if (unknownIncomes().length > 0) {
             <p class="mt-1.5 text-xs text-ib-orange" data-testid="projection-excludes">
@@ -100,7 +100,7 @@ import { TranslocoPipe } from '@jsverse/transloco';
           >
             {{ delta() >= 0 ? '+' : '' }}{{ delta() | number: '1.2-2' }}&euro;
           </span>
-          {{ 'budget.bankAccount.balance.deltaHint' | transloco }}
+          {{ 'budget.bankAccount.balance.deltaHint' | transloco: { date: projectionDate() } }}
         </p>
         <a
           routerLink="/budget/transactions"
@@ -117,6 +117,8 @@ export class BankBalanceBand {
   readonly confirmedBalance = input.required<number>();
   readonly projectedBalance = input.required<number>();
   readonly today = input.required<string>();
+  /** Veille de la prochaine paie : la projection s'arrête là (fin du cycle de salaire). */
+  readonly projectionDate = input.required<string>();
   /** Revenus à montant variable pas encore saisis ce mois-ci : exclus du projeté, et nommés. */
   readonly unknownIncomes = input<readonly string[]>([]);
   /** Le compte n'a ni solde de départ ni opération : le « confirmé » n'a pas de sens. */

@@ -38,7 +38,7 @@ import { isExpensePassed as isExpensePassedInCycle } from '../../domain/salary-c
 import { buildTimelineEvents } from '../../domain/timeline-builder';
 import { sumAmount } from '../../domain/recurring-entry-totals';
 import { computeForecast } from '../../domain/forecast-delta';
-import { monthIncome } from '../../domain/month-income';
+import { cycleIncome, occurrenceIn, salaryCycleWindow } from '../../domain/salary-cycle-window';
 import { ModalDialog } from '@shared/components/modal-dialog/modal-dialog';
 import { openBlobInNewTab } from '@shared/browser/open-blob-in-new-tab';
 import { RecurringEntryForm } from '../../components/recurring-entry-form/recurring-entry-form';
@@ -170,6 +170,7 @@ type MonthTab = (typeof MONTH_TABS)[number];
       [unknownIncomes]="unknownIncomeLabels()"
       [needsStartingBalance]="needsStartingBalance()"
       [today]="today"
+      [projectionDate]="cycleEndLabel()"
     >
       @if (selectedAccount(); as account) {
         <app-balance-check
@@ -222,7 +223,8 @@ type MonthTab = (typeof MONTH_TABS)[number];
         [usagePercent]="usagePercent()"
         [totalMonthlyExpenses]="totalMonthlyExpenses()"
         [monthlyAnnualExpenses]="monthlyAnnualExpenses()"
-        [totalMonthSpendings]="totalMonthSpendings()"
+        [totalMonthSpendings]="cycleSpendingsTotal()"
+        [period]="cyclePeriodLabel()"
       />
 
       <app-tab-list
@@ -509,10 +511,15 @@ export class BankAccount {
       .sort((a, b) => (a.date ?? '').localeCompare(b.date ?? ''));
   });
 
-  protected readonly today = new Date().toLocaleDateString(
-    this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR',
-    { day: 'numeric', month: 'short' },
-  );
+  private _shortDate(iso: string): string {
+    const [y, m, d] = iso.split('-').map(Number) as [number, number, number];
+    return new Date(y, m - 1, d).toLocaleDateString(
+      this._i18n.getActiveLang() === 'en' ? 'en-US' : 'fr-FR',
+      { day: 'numeric', month: 'short' },
+    );
+  }
+
+  protected readonly today = this._shortDate(this.todayIso);
   protected readonly currentDay = new Date().getDate();
 
   protected readonly salaryDay = computed(() => {
@@ -534,20 +541,31 @@ export class BankAccount {
   protected readonly accountRealTxs = this.store.accountRealTxs;
   protected readonly confirmedBalance = this.store.confirmedBalance;
 
-  // Delta des récurrences = formule de endOfMonthBalance SANS le solde initial,
-  // chaque somme excluant les récurrences déjà postées (réconciliées avec une transaction réelle).
+  // Cycle de salaire en cours : une paie le 30 finance le mois suivant, donc le 8 novembre on
+  // raisonne du 30 octobre au 29 novembre, pas du 1er au 30 novembre.
+  protected readonly cycle = computed(() => salaryCycleWindow(this.todayIso, this.salaryDay()));
+  protected readonly cycleEndLabel = computed(() => this._shortDate(this.cycle().end));
+  protected readonly cyclePeriodLabel = computed(
+    () => `${this._shortDate(this.cycle().start)} – ${this.cycleEndLabel()}`,
+  );
+
+  private readonly _oneTimeOf = (side: 'accountId' | 'toAccountId') =>
+    this.oneTimeTransfers().filter((e) => e[side] === this.store.selectedAccountId());
+
+  // Delta des échéances du cycle = projection SANS le solde confirmé, chaque somme excluant les
+  // échéances déjà postées (réconciliées avec une transaction réelle).
   protected readonly forecast = computed(() =>
     computeForecast({
       incomes: this.incomes(),
       monthlyExpenses: this.monthlyExpenses(),
       annualExpenses: this.annualExpenses(),
-      monthSpendings: this.monthSpendings(),
+      spendings: this.allSpendings(),
       incomingTransfers: this.incomingTransfers(),
       outgoingTransfers: this.outgoingTransfers(),
-      oneTimeIncoming: this.totalOneTimeIncoming(),
-      oneTimeOutgoing: this.totalOneTimeOutgoing(),
+      oneTimeIncoming: this._oneTimeOf('toAccountId'),
+      oneTimeOutgoing: this._oneTimeOf('accountId'),
       txs: this.accountRealTxs(),
-      currentMonth: this.currentMonth,
+      cycle: this.cycle(),
     }),
   );
 
@@ -889,12 +907,11 @@ export class BankAccount {
     }
   }
 
-  // Revenus du mois : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
-  // compte pas (voir monthIncome).
-  private readonly _monthIncome = computed(() =>
-    monthIncome(this.incomes(), this.accountRealTxs(), this.currentMonth),
+  // Revenus du cycle : le réel s'il a été saisi, le prévu sinon ; un revenu variable non saisi ne
+  // compte pas (voir cycleIncome).
+  protected readonly totalIncome = computed(
+    () => cycleIncome(this.incomes(), this.accountRealTxs(), this.cycle()).total,
   );
-  protected readonly totalIncome = computed(() => this._monthIncome().total);
   protected readonly totalMonthlyExpenses = computed(() => sumAmount(this.monthlyExpenses()));
   protected readonly totalAnnualExpenses = computed(() => sumAmount(this.annualExpenses()));
   protected readonly monthlyAnnualExpenses = computed(() => this.totalAnnualExpenses() / 12);
@@ -916,18 +933,27 @@ export class BankAccount {
     sumAmount(this._unpostedOneTime((e) => e.toAccountId === this.store.selectedAccountId())),
   );
 
+  // « Ce qui compose le mois » suit le cycle de salaire, comme la projection.
+  private readonly _inCycle = (entries: readonly RecurringEntry[]) =>
+    entries.filter((e) => occurrenceIn(e, this.cycle()) !== null);
+  protected readonly cycleSpendingsTotal = computed(() =>
+    sumAmount(this._inCycle(this.allSpendings())),
+  );
   private readonly totalOutgoing = computed(
-    () => sumAmount(this.outgoingTransfers()) + this.totalOneTimeOutgoing(),
+    () =>
+      sumAmount(this.outgoingTransfers()) + sumAmount(this._inCycle(this._oneTimeOf('accountId'))),
   );
   private readonly totalIncoming = computed(
-    () => sumAmount(this.incomingTransfers()) + this.totalOneTimeIncoming(),
+    () =>
+      sumAmount(this.incomingTransfers()) +
+      sumAmount(this._inCycle(this._oneTimeOf('toAccountId'))),
   );
 
   protected readonly totalAllExpenses = computed(
     () =>
       this.totalMonthlyExpenses() +
       this.monthlyAnnualExpenses() +
-      this.totalMonthSpendings() +
+      this.cycleSpendingsTotal() +
       this.totalOutgoing(),
   );
 

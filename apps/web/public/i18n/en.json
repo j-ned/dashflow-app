@@ -748,9 +748,9 @@
       "balance": {
         "confirmedLabel": "Confirmed today",
         "confirmedHint": "real, from your statement as of {{date}}",
-        "projectedLabel": "Projected end of month",
-        "projectedHint": "estimate: confirmed + upcoming charges",
-        "deltaHint": "still to come before month end",
+        "projectedLabel": "Projected before payday",
+        "projectedHint": "estimate for {{date}}, the day before your next salary",
+        "deltaHint": "still to come by {{date}}",
         "seeStatement": "See full statement",
         "startingHint": "This account has no starting balance and no transaction: '0.00' is not your real balance. Enter below the balance shown by your bank: it will be the starting point.",
         "excludesHint": "Excluding {{incomes}}: variable income, counted once received."
@@ -773,7 +773,7 @@
       "usage": {
         "label": "Budget used",
         "compose": "What makes up the month",
-        "hint": "{{percent}}% of your income is committed this month",
+        "hint": "{{percent}}% of your income is committed over this period",
         "passed": "Processed",
         "upcoming": "Upcoming",
         "annual": "Annual charges",

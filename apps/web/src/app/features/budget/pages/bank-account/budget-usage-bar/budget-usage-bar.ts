@@ -15,9 +15,14 @@ import { TranslocoPipe } from '@jsverse/transloco';
     @if (incomplete() || (totalIncome() > 0 && totalAllExpenses() > 0)) {
       <section class="rounded-lg border border-border bg-surface p-4">
         <div class="mb-3 flex items-center justify-between">
-          <span class="text-sm font-semibold text-text-primary">{{
-            'budget.bankAccount.usage.compose' | transloco
-          }}</span>
+          <span class="text-sm font-semibold text-text-primary"
+            >{{ 'budget.bankAccount.usage.compose' | transloco }}
+            @if (period()) {
+              <span class="ml-1 text-xs font-normal text-text-muted" data-testid="usage-period">{{
+                period()
+              }}</span>
+            }
+          </span>
           @if (!incomplete()) {
             <span class="inline-flex items-center gap-2">
               <span
@@ -141,6 +146,8 @@ export class BudgetUsageBar {
   readonly totalMonthlyExpenses = input.required<number>();
   readonly monthlyAnnualExpenses = input.required<number>();
   readonly totalMonthSpendings = input.required<number>();
+  /** Période couverte (cycle de salaire), ex. « 30 oct. – 29 nov. ». */
+  readonly period = input('');
 
   protected readonly incomplete = computed(() => this.unknownIncomes().length > 0);
 

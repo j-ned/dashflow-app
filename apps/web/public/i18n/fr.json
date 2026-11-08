@@ -748,9 +748,9 @@
       "balance": {
         "confirmedLabel": "Confirmé aujourd'hui",
         "confirmedHint": "réel, d'après votre relevé au {{date}}",
-        "projectedLabel": "Projeté fin de mois",
-        "projectedHint": "estimation : confirmé + prélèvements à venir",
-        "deltaHint": "encore à venir d'ici la fin du mois",
+        "projectedLabel": "Projeté avant la paie",
+        "projectedHint": "estimation au {{date}}, veille du prochain salaire",
+        "deltaHint": "encore à venir d'ici le {{date}}",
         "seeStatement": "Voir le relevé complet",
         "startingHint": "Ce compte n'a ni solde de départ ni opération : « 0,00 € » n'est pas votre vrai solde. Indiquez ci-dessous le solde affiché par votre banque : il servira de point de départ.",
         "excludesHint": "Sans {{incomes}} : revenu à montant variable, compté une fois reçu."
@@ -773,7 +773,7 @@
       "usage": {
         "label": "Budget utilisé",
         "compose": "Ce qui compose le mois",
-        "hint": "{{percent}}% de vos revenus sont engagés ce mois-ci",
+        "hint": "{{percent}}% de vos revenus sont engagés sur cette période",
         "passed": "Passés",
         "upcoming": "À venir",
         "annual": "Charges annuelles",
