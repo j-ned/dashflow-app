@@ -34,13 +34,10 @@ export function oauthRoutes(d: HttpDeps) {
   const isProd = servesOverHttps(d.env);
   const frontUrl = d.env.CORS_ORIGIN.split(',')[0];
   const strict = throttle(STRICT_THROTTLE);
-  // Calculé à l'usage : APP_URL n'est lu que par les routes Google, pas au montage de l'app.
-  const mfaCookie = () =>
-    oauthMfaCookieOptions(
-      isProd,
-      d.env.APP_URL,
-      MFA_PENDING_TTL_SECONDS * 1000,
-    );
+  const mfaCookie = oauthMfaCookieOptions(
+    isProd,
+    MFA_PENDING_TTL_SECONDS * 1000,
+  );
 
   /** Preuve en attente portée par le cookie, ou `undefined` si absente, expirée ou falsifiée. */
   const pendingProof = async (
@@ -48,7 +45,7 @@ export function oauthRoutes(d: HttpDeps) {
   ): Promise<MfaPendingPayload | undefined> => {
     const raw = getCookie(c, OAUTH_MFA_COOKIE);
     if (!raw) return undefined;
-    // Jeton illisible = pas de preuve : la route répond 401 et vide le cookie.
+    // guardrail-allow: un jeton expiré ou falsifié vaut absence de preuve, la route répond 401 et vide le cookie
     return d.tokens.verifyMfaPending(raw).catch(() => undefined);
   };
   // Pas d'e-mail dans le corps : le compteur par compte se cale sur le compte de la preuve.
@@ -99,7 +96,7 @@ export function oauthRoutes(d: HttpDeps) {
               sub: user.id,
               sv: user.sessionVersion,
             });
-            setAppCookie(c, OAUTH_MFA_COOKIE, proof, mfaCookie());
+            setAppCookie(c, OAUTH_MFA_COOKIE, proof, mfaCookie);
             return c.redirect(`${frontUrl}/auth/login?oauth=mfa`, 302);
           }
           // Cookie de session seul : le front relit la session (et son jeton CSRF) au retour.
@@ -127,7 +124,7 @@ export function oauthRoutes(d: HttpDeps) {
       .post('/mfa', strict, byAccount, async (c) => {
         const proof = await pendingProof(c);
         if (!proof) {
-          clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie());
+          clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie);
           throw new AppError(401, 'Connexion expirée', MFA_PROOF_REJECTED);
         }
         const dto = await jsonBody(c, oauthMfaSchema);
@@ -138,7 +135,7 @@ export function oauthRoutes(d: HttpDeps) {
         if (!r.success) {
           // Mauvais code : la preuve reste valable pour un nouvel essai. Preuve périmée : on la retire.
           if (r.code === MFA_PROOF_REJECTED)
-            clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie());
+            clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie);
           else
             await d.securityEvents.record(
               'login_failed',
@@ -147,7 +144,7 @@ export function oauthRoutes(d: HttpDeps) {
             );
           throw resultError(r);
         }
-        clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie());
+        clearAppCookie(c, OAUTH_MFA_COOKIE, mfaCookie);
         // Cookie de session seul, comme le retour Google sans 2FA : le front relit la session.
         await d.sessionCookies.open(c, r.data.user);
         await d.securityEvents.record('login_oauth', proof.sub, clientOf(c));

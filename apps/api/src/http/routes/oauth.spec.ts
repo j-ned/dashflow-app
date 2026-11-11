@@ -194,7 +194,7 @@ describe('Retour Google — un compte protégé par la 2FA n’est pas ouvert pa
     expect(t.securityEvents.record).not.toHaveBeenCalled();
   });
 
-  it('compte 2FA : pose une preuve en attente dans un cookie HttpOnly de 5 minutes, borné à la route de vérification', async () => {
+  it('compte 2FA : pose une preuve en attente dans un cookie HttpOnly de 5 minutes', async () => {
     const { user } = aTotpUser();
     const t = await setup(user);
 
@@ -208,11 +208,11 @@ describe('Retour Google — un compte protégé par la 2FA n’est pas ouvert pa
     expect(pending).toMatch(/; HttpOnly/i);
     expect(pending).toMatch(/; SameSite=Lax/i);
     expect(pending).toMatch(/; Max-Age=300(;|$)/i);
-    expect(pending).toMatch(/; Path=\/auth\/oauth\/google\/mfa(;|$)/i);
+    expect(pending).toMatch(/; Path=\/(;|$)/i);
     expect(pending).not.toMatch(/; Secure/i);
   });
 
-  it('compte 2FA en HTTPS : le cookie est Secure et son chemin suit le préfixe public de l’API', async () => {
+  it('compte 2FA en HTTPS : le cookie est Secure, et renvoyé quel que soit le préfixe public de l’API', async () => {
     const { user } = aTotpUser();
     const t = await setup(user, {
       ...TEST_ENV,
@@ -224,7 +224,7 @@ describe('Retour Google — un compte protégé par la 2FA n’est pas ouvert pa
 
     const pending = cookiesOf(res).get(OAUTH_MFA_COOKIE) ?? '';
     expect(pending).toMatch(/; Secure/i);
-    expect(pending).toMatch(/; Path=\/api\/auth\/oauth\/google\/mfa(;|$)/i);
+    expect(pending).toMatch(/; Path=\/(;|$)/i);
   });
 
   it('compte 2FA : la preuve ne voyage jamais dans l’URL de redirection', async () => {
