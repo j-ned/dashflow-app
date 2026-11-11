@@ -45,6 +45,7 @@ describe('AuthStore : demo account bypass', () => {
     upgradeAuth: vi.fn(),
     register: vi.fn(),
     disable2FA: vi.fn(),
+    completeOAuthMfa: vi.fn(),
   };
   const mockCrypto = {
     isUnlocked: () => false,
@@ -180,6 +181,46 @@ describe('AuthStore : demo account bypass', () => {
     await expect(store.hydrateFromCookie()).rejects.toBeTruthy();
 
     expect(store.isAuthenticated()).toBe(false);
+  });
+
+  describe('completeOAuthLogin (second facteur après Google)', () => {
+    it('envoie le code, puis relit la session posée par le serveur (utilisateur + jeton CSRF)', async () => {
+      const user = makeUser({ email: 'oauth@example.com', totpEnabled: true });
+      mockGateway.completeOAuthMfa.mockReturnValue(of({ message: 'Connecté' }));
+      mockGateway.getMe.mockReturnValue(of({ ...user, keyMaterial: null }));
+      mockGateway.getCsrfToken.mockReturnValue(of({ csrfToken: 'csrf-1' }));
+
+      await store.completeOAuthLogin('123456');
+
+      expect(mockGateway.completeOAuthMfa).toHaveBeenCalledWith('123456');
+      expect(store.isAuthenticated()).toBe(true);
+      expect(store.user()).toEqual(user);
+      expect(store.lastBackupCodesRemaining()).toBeNull();
+    });
+
+    it('code de secours : expose le nombre de codes restants', async () => {
+      mockGateway.completeOAuthMfa.mockReturnValue(
+        of({ message: 'Connecté', backupCodesRemaining: 7 }),
+      );
+      mockGateway.getMe.mockReturnValue(of({ ...makeUser(), keyMaterial: null }));
+      mockGateway.getCsrfToken.mockReturnValue(of({ csrfToken: 'csrf-1' }));
+
+      await store.completeOAuthLogin('abcde-fghjk');
+
+      expect(store.lastBackupCodesRemaining()).toBe(7);
+    });
+
+    it('code refusé : lève, ne relit pas la session et reste non authentifié', async () => {
+      const refused = Object.assign(new Error('Code 2FA invalide'), { status: 401 });
+      mockGateway.completeOAuthMfa.mockReturnValue(throwError(() => refused));
+      // Le store relit la session à sa création : seul l'appel d'après le refus compte.
+      mockGateway.getMe.mockClear();
+
+      await expect(store.completeOAuthLogin('000000')).rejects.toBe(refused);
+
+      expect(mockGateway.getMe).not.toHaveBeenCalled();
+      expect(store.isAuthenticated()).toBe(false);
+    });
   });
 
   it('isAdmin is TRUE when the user role is admin', () => {

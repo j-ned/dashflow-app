@@ -84,3 +84,21 @@ export const throttleByEmail = (store: RateLimiter, rule: ThrottleRule) =>
     if (email && route) await check(c, store, `${route}|email:${email}`, rule);
     await next();
   });
+
+/**
+ * Même second compteur quand le corps ne porte pas d'e-mail : `accountOf` rend l'identifiant du
+ * compte visé, tiré d'une preuve déjà vérifiée (jamais d'une valeur que le client choisit), ou
+ * `undefined` s'il n'y en a pas — la route refusera alors d'elle-même.
+ */
+export const throttleByAccount = (
+  store: RateLimiter,
+  rule: ThrottleRule,
+  accountOf: (c: Context<AppEnv>) => Promise<string | undefined>,
+) =>
+  createMiddleware<AppEnv>(async (c, next) => {
+    const account = await accountOf(c);
+    const route = matchedRoute(c);
+    if (account && route)
+      await check(c, store, `${route}|account:${account}`, rule);
+    await next();
+  });

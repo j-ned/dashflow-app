@@ -36,12 +36,15 @@ export const upgradeAuthSchema = z.object({
   authKey: password,
 });
 export const resendSchema = z.object({ email });
+// Code TOTP à 6 chiffres, ou code de secours `xxxxx-xxxxx` (tiret et casse libres).
+const secondFactorCode = z.string().min(6).max(12);
 export const loginSchema = z.object({
   email,
   password: presentedSecret('Mot de passe requis'),
-  // Code TOTP à 6 chiffres, ou code de secours `xxxxx-xxxxx` (tiret et casse libres).
-  totpCode: z.string().min(6).max(12).optional(),
+  totpCode: secondFactorCode.optional(),
 });
+/** Seconde étape d'une connexion Google sur un compte 2FA : le code seul, la preuve est en cookie. */
+export const oauthMfaSchema = z.object({ totpCode: secondFactorCode });
 export const forgotPasswordSchema = z.object({ email });
 export const resetPasswordSchema = z.object({
   email,

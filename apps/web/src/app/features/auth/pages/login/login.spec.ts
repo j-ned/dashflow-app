@@ -21,6 +21,7 @@ type AuthStoreMock = {
   needsUnlock: () => boolean;
   login: ReturnType<typeof vi.fn>;
   hydrateFromCookie: ReturnType<typeof vi.fn>;
+  completeOAuthLogin: ReturnType<typeof vi.fn>;
   lastBackupCodesRemaining: () => number | null;
 };
 
@@ -32,6 +33,7 @@ function makeComponent(
       totpCode?: string,
     ) => Promise<'authenticated' | 'mfa_required'>;
     hydrateFromCookie?: () => Promise<void>;
+    completeOAuthLogin?: (totpCode: string) => Promise<void>;
     needsEncryptionSetup?: boolean;
     needsUnlock?: boolean;
     queryParams?: Record<string, string>;
@@ -43,6 +45,7 @@ function makeComponent(
     needsUnlock: () => opts.needsUnlock ?? false,
     login: vi.fn(opts.login ?? (() => Promise.resolve('authenticated'))),
     hydrateFromCookie: vi.fn(opts.hydrateFromCookie ?? (() => Promise.resolve())),
+    completeOAuthLogin: vi.fn(opts.completeOAuthLogin ?? (() => Promise.resolve())),
     lastBackupCodesRemaining: () => opts.lastBackupCodesRemaining ?? null,
   };
   const navigate = vi.fn();
@@ -284,6 +287,122 @@ describe('Login : authentification 2 étapes (sécurité)', () => {
   });
 });
 
+describe('Login : retour Google sur un compte protégé par la 2FA (?oauth=mfa)', () => {
+  const PENDING = { queryParams: { oauth: 'mfa' } };
+
+  it('affiche l’étape du code sans ouvrir de session ni naviguer', () => {
+    const { cmp, auth, navigate, success } = makeComponent(PENDING);
+
+    expect(cmp.step()).toBe('totp');
+    expect(auth.hydrateFromCookie).not.toHaveBeenCalled();
+    expect(navigate).not.toHaveBeenCalled();
+    expect(success).not.toHaveBeenCalled();
+    expect(cmp.error()).toBe('');
+  });
+
+  it('code valide → termine la connexion Google (jamais le login par mot de passe) puis /budget', async () => {
+    const { cmp, auth, navigate, success } = makeComponent(PENDING);
+    cmp.totpValue.set('123456');
+
+    await cmp.submitTotp();
+
+    expect(auth.completeOAuthLogin).toHaveBeenCalledTimes(1);
+    expect(auth.completeOAuthLogin).toHaveBeenCalledWith('123456');
+    expect(auth.login).not.toHaveBeenCalled();
+    expect(navigate).toHaveBeenCalledWith(['/budget'], { replaceUrl: true });
+    expect(success).toHaveBeenCalledWith('auth.login.success');
+    expect(cmp.loading()).toBe(false);
+  });
+
+  it('code valide, compte chiffré verrouillé → /auth/unlock, comme un retour Google sans 2FA', async () => {
+    const { cmp, auth, navigate } = makeComponent({ ...PENDING, needsUnlock: true });
+    cmp.totpValue.set('123456');
+
+    await cmp.submitTotp();
+
+    expect(auth.completeOAuthLogin).toHaveBeenCalledWith('123456');
+    expect(navigate).toHaveBeenCalledWith(['/auth/unlock'], { replaceUrl: true });
+  });
+
+  it('code valide, chiffrement à configurer → /auth/onboarding', async () => {
+    const { cmp, auth, navigate } = makeComponent({ ...PENDING, needsEncryptionSetup: true });
+    cmp.totpValue.set('123456');
+
+    await cmp.submitTotp();
+
+    expect(auth.completeOAuthLogin).toHaveBeenCalledWith('123456');
+    expect(navigate).toHaveBeenCalledWith(['/auth/onboarding'], { replaceUrl: true });
+  });
+
+  it('code faux → erreur invalidTotp, reste sur l’étape du code, pas de navigation', async () => {
+    const { cmp, navigate } = makeComponent({
+      ...PENDING,
+      completeOAuthLogin: () => Promise.reject(new Error('Code 2FA invalide')),
+    });
+    cmp.totpValue.set('000000');
+
+    await expect(cmp.submitTotp()).resolves.toBeUndefined();
+
+    expect(cmp.error()).toBe('auth.login.errors.invalidTotp');
+    expect(cmp.step()).toBe('totp');
+    expect(navigate).not.toHaveBeenCalled();
+    expect(cmp.loading()).toBe(false);
+  });
+
+  it('preuve expirée (MFA_PROOF_REJECTED) → retour aux identifiants, message oauthExpired, URL nettoyée', async () => {
+    const expired = Object.assign(new Error('Connexion expirée'), { code: 'MFA_PROOF_REJECTED' });
+    const { cmp, navigate } = makeComponent({
+      ...PENDING,
+      completeOAuthLogin: () => Promise.reject(expired),
+    });
+    cmp.totpValue.set('123456');
+
+    await cmp.submitTotp();
+
+    expect(cmp.step()).toBe('credentials');
+    expect(cmp.error()).toBe('auth.login.errors.oauthExpired');
+    expect(navigate).toHaveBeenCalledTimes(1);
+    expect(navigate).toHaveBeenCalledWith(['/auth/login'], { replaceUrl: true });
+  });
+
+  it('code de secours → toast info avec le nombre restant', async () => {
+    const { cmp, auth, info } = makeComponent({ ...PENDING, lastBackupCodesRemaining: 4 });
+    cmp.totpValue.set('abcde-fghjk');
+
+    await cmp.submitTotp();
+
+    expect(auth.completeOAuthLogin).toHaveBeenCalledWith('abcde-fghjk');
+    expect(info).toHaveBeenCalledWith('auth.login.backupCodeUsed', { count: 4 });
+  });
+
+  it('« Retour » abandonne l’attente : URL nettoyée, et le code suivant repart sur le login par mot de passe', async () => {
+    const { cmp, auth, navigate } = makeComponent({
+      ...PENDING,
+      login: () => Promise.resolve('mfa_required'),
+    });
+
+    cmp.backToCredentials();
+    cmp.form.setValue(VALID);
+    await cmp.submitLogin();
+    cmp.totpValue.set('123456');
+    await cmp.submitTotp();
+
+    expect(navigate).toHaveBeenNthCalledWith(1, ['/auth/login'], { replaceUrl: true });
+    expect(auth.completeOAuthLogin).not.toHaveBeenCalled();
+    expect(auth.login).toHaveBeenLastCalledWith(VALID.email, VALID.password, '123456');
+  });
+
+  it('login par mot de passe : « Retour » ne touche pas à l’URL', async () => {
+    const { cmp, navigate } = makeComponent({ login: () => Promise.resolve('mfa_required') });
+    cmp.form.setValue(VALID);
+    await cmp.submitLogin();
+
+    cmp.backToCredentials();
+
+    expect(navigate).not.toHaveBeenCalled();
+  });
+});
+
 describe('Login : rendu réel du template (F014)', () => {
   function mountReal(
     opts: {
@@ -292,6 +411,7 @@ describe('Login : rendu réel du template (F014)', () => {
         password: string,
         totpCode?: string,
       ) => Promise<'authenticated' | 'mfa_required'>;
+      queryParams?: Record<string, string>;
     } = {},
   ) {
     const auth: AuthStoreMock = {
@@ -299,6 +419,7 @@ describe('Login : rendu réel du template (F014)', () => {
       needsUnlock: () => false,
       login: vi.fn(opts.login ?? (() => Promise.resolve('authenticated'))),
       hydrateFromCookie: vi.fn(() => Promise.resolve()),
+      completeOAuthLogin: vi.fn(() => Promise.resolve()),
       lastBackupCodesRemaining: () => null,
     };
     TestBed.configureTestingModule({
@@ -312,7 +433,10 @@ describe('Login : rendu réel du template (F014)', () => {
       providers: [
         provideRouter([]),
         { provide: AuthStore, useValue: auth },
-        { provide: ActivatedRoute, useValue: { snapshot: { queryParams: {} } } },
+        {
+          provide: ActivatedRoute,
+          useValue: { snapshot: { queryParams: opts.queryParams ?? {} } },
+        },
         { provide: Toaster, useValue: { success: vi.fn() } },
       ],
     });
@@ -355,6 +479,15 @@ describe('Login : rendu réel du template (F014)', () => {
       '[data-testid="login-totp-step"]',
     );
     expect(totpStep).not.toBeNull();
+  });
+
+  it("retour Google en attente du second facteur (?oauth=mfa) : l'étape 'totp' est rendue, pas le formulaire d'identifiants", () => {
+    const { fixture } = mountReal({ queryParams: { oauth: 'mfa' } });
+    const root = fixture.nativeElement as HTMLElement;
+
+    expect(root.querySelector('[data-testid="login-totp-step"]')).not.toBeNull();
+    expect(root.querySelector('[data-testid="login-submit"]')).toBeNull();
+    expect(root.querySelector<HTMLInputElement>('#totp')?.autocomplete).toBe('one-time-code');
   });
 
   it('isSecondFactorCode : 6 chiffres ou code de secours (casse, tiret, espace libres)', () => {

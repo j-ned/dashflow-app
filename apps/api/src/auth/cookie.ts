@@ -52,3 +52,24 @@ export function oauthCookieOptions(isProd: boolean): CookieSettings {
     maxAge: 600_000,
   };
 }
+
+/**
+ * Preuve « Google validé, second facteur en attente » d'un compte 2FA (cf. routes/oauth.ts).
+ * Jamais dans l'URL de redirection : un cookie HttpOnly, de la durée de vie de la preuve.
+ * `Path=/` comme les autres cookies OAuth : un chemin borné à la route devrait suivre le préfixe
+ * public de l'API, et une variable mal réglée empêcherait alors le navigateur de le renvoyer.
+ */
+export const OAUTH_MFA_COOKIE = 'dashflow_oauth_mfa';
+
+export function oauthMfaCookieOptions(
+  isProd: boolean,
+  maxAgeMs: number,
+): CookieSettings {
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: 'lax',
+    path: '/',
+    maxAge: maxAgeMs,
+  };
+}

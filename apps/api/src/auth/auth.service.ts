@@ -24,6 +24,14 @@ type User = typeof users.$inferSelect;
 export type LoginOutcome =
   | { kind: 'authenticated'; user: User; backupCodesRemaining?: number }
   | { kind: 'mfa_required' };
+/** Preuve de premier facteur inutilisable (compte disparu, session révoquée, 2FA retirée). */
+export const MFA_PROOF_REJECTED = 'MFA_PROOF_REJECTED';
+
+/** Compte dont l'ouverture de session exige un second facteur, quel que soit le premier. */
+export const requiresSecondFactor = (
+  user: Pick<User, 'totpEnabled' | 'totpSecret'>,
+): boolean => Boolean(user.totpEnabled && user.totpSecret);
+
 const CODE_TTL_MS = 10 * 60 * 1000;
 const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
 // hash factice précalculé : cible de argon2.verify sur le chemin « user inconnu » (anti-timing)
@@ -127,30 +135,64 @@ export class AuthService {
       return fail(401, 'Identifiants invalides');
     if (!user.emailVerified)
       return fail(403, 'Email non vérifié', 'EMAIL_NOT_VERIFIED');
-    if (user.totpEnabled && user.totpSecret) {
+    if (requiresSecondFactor(user)) {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
       if (!dto.totpCode) return ok({ kind: 'mfa_required' });
-      const code = dto.totpCode.trim();
-      if (this.twoFactor.isTotpCode(code)) {
-        const secret = await this.totpSecretOf(user);
-        const step = this.twoFactor.verifyStep(secret, code);
-        if (step === null || this.isReplayedTotp(user, step))
-          return fail(401, 'Code 2FA invalide');
-        await this.repo.updateUser(user.id, { totpLastUsedStep: step });
-        return ok({ kind: 'authenticated', user });
-      }
-      // Code de secours : à usage unique, consommé atomiquement.
-      const backup = this.twoFactor.normalizeBackupCode(code);
-      if (!backup || !(await this.consumeBackupCode(user.id, backup)))
-        return fail(401, 'Code 2FA invalide');
-      return ok({
-        kind: 'authenticated',
-        user,
-        backupCodesRemaining: await this.repo.countUnusedBackupCodes(user.id),
-      });
+      const factor = await this.checkSecondFactor(user, dto.totpCode);
+      if (!factor.success) return factor;
+      return ok({ kind: 'authenticated', user, ...factor.data });
     }
     return ok({ kind: 'authenticated', user });
+  }
+
+  /**
+   * Seconde étape d'une connexion dont le premier facteur n'est pas le mot de passe (Google) :
+   * `proof` vient d'une preuve signée, émise quand ce premier facteur a été validé. Elle ne vaut
+   * que pour le compte tel qu'il était alors : une révocation de session entre-temps (logout,
+   * changement de mot de passe, désactivation de la 2FA) la périme, et un compte qui n'a plus de
+   * 2FA n'a rien à vérifier ici — il repasse par la connexion plutôt que d'obtenir une session.
+   */
+  async completeSecondFactor(
+    proof: { userId: string; sessionVersion: number },
+    code: string,
+  ): Promise<Result<{ user: User; backupCodesRemaining?: number }>> {
+    const user = await this.repo.findById(proof.userId);
+    if (
+      !user ||
+      user.sessionVersion !== proof.sessionVersion ||
+      !requiresSecondFactor(user)
+    )
+      return fail(401, 'Connexion expirée', MFA_PROOF_REJECTED);
+    const factor = await this.checkSecondFactor(user, code);
+    if (!factor.success) return factor;
+    return ok({ user, ...factor.data });
+  }
+
+  /**
+   * Second facteur d'un compte 2FA : code TOTP (anti-rejeu par `totp_last_used_step`) ou code de
+   * secours à usage unique. Unique implémentation, quel que soit le premier facteur présenté.
+   */
+  private async checkSecondFactor(
+    user: User,
+    rawCode: string,
+  ): Promise<Result<{ backupCodesRemaining?: number }>> {
+    const code = rawCode.trim();
+    if (this.twoFactor.isTotpCode(code)) {
+      const secret = await this.totpSecretOf(user);
+      const step = this.twoFactor.verifyStep(secret, code);
+      if (step === null || this.isReplayedTotp(user, step))
+        return fail(401, 'Code 2FA invalide');
+      await this.repo.updateUser(user.id, { totpLastUsedStep: step });
+      return ok({});
+    }
+    // Code de secours : à usage unique, consommé atomiquement.
+    const backup = this.twoFactor.normalizeBackupCode(code);
+    if (!backup || !(await this.consumeBackupCode(user.id, backup)))
+      return fail(401, 'Code 2FA invalide');
+    return ok({
+      backupCodesRemaining: await this.repo.countUnusedBackupCodes(user.id),
+    });
   }
 
   // Connexion au compte démo public, sans mot de passe (gatée par DEMO_ENABLED côté controller).
