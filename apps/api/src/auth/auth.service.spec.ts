@@ -273,6 +273,36 @@ describe('AuthService', () => {
     expect(res).toMatchObject({ success: false, status: 400 });
   });
 
+  it('setPassword : compte qui a déjà un mot de passe → 409, mot de passe et clés inchangés', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: await argon2.hash('actuel-long-1'),
+      encryptionVersion: 0,
+    });
+    const res = await svc.setPassword('u1', {
+      newPassword: 'mot-de-passe-pirate',
+    });
+    expect(res).toMatchObject({ success: false, status: 409 });
+    expect(r.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('setPassword : compte sans mot de passe (Google seul) → le mot de passe est posé, haché', async () => {
+    r.findById.mockResolvedValue({
+      id: 'u1',
+      password: null,
+      encryptionVersion: 0,
+    });
+    r.updateUser.mockResolvedValue({ id: 'u1' });
+    const res = await svc.setPassword('u1', {
+      newPassword: 'premier-mdp-long-1',
+    });
+    expect(res.success).toBe(true);
+    const patch = r.updateUser.mock.calls[0][1];
+    expect(await argon2.verify(patch.password, 'premier-mdp-long-1')).toBe(
+      true,
+    );
+  });
+
   it('forgotPassword : toujours success (générique) même si compte inconnu', async () => {
     r.findByEmail.mockResolvedValue(undefined);
     const res = await svc.forgotPassword('inconnu@b.com');
