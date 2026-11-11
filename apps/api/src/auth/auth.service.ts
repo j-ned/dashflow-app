@@ -220,6 +220,9 @@ export class AuthService {
   ): Promise<Result<null>> {
     const user = await this.repo.findById(userId);
     if (!user) return fail(404, 'Compte introuvable');
+    // Sans mot de passe actuel à présenter, cette route ne vaut que pour un premier mot de passe :
+    // sinon une session détournée suffirait à remplacer le secret qui garde la 2FA et les clés.
+    if (user.password) return fail(409, 'Un mot de passe est déjà défini');
     const rewrap = this.checkRewrap(
       user.encryptionVersion,
       dto.newSalt,
