@@ -239,6 +239,12 @@ export class Login {
   protected readonly error = signal('');
   protected readonly step = signal<'credentials' | 'totp'>('credentials');
   protected readonly totpValue = signal('');
+  /**
+   * Retour Google sur un compte 2FA : le serveur n'a pas ouvert de session, il attend le second
+   * facteur (preuve du premier dans un cookie HttpOnly). L'étape du code sert alors à terminer
+   * cette connexion-là, pas un login par mot de passe.
+   */
+  private readonly oauthPending = signal(false);
   /** Code TOTP à 6 chiffres ou code de secours `xxxxx-xxxxx` (casse, tiret, espaces libres). */
   protected readonly totpValueValid = computed(() => isSecondFactorCode(this.totpValue()));
 
@@ -258,6 +264,12 @@ export class Login {
       this.error.set(
         messages[params['error']] ?? this._i18n.translate('auth.login.errors.oauthGeneric'),
       );
+      return;
+    }
+
+    if (params['oauth'] === 'mfa') {
+      this.oauthPending.set(true);
+      this.step.set('totp');
       return;
     }
 
@@ -320,14 +332,24 @@ export class Login {
     this.error.set('');
 
     try {
-      const { email, password } = this.form.getRawValue();
-      await this.auth.login(email, password, code);
+      if (this.oauthPending()) {
+        await this.auth.completeOAuthLogin(code);
+      } else {
+        const { email, password } = this.form.getRawValue();
+        await this.auth.login(email, password, code);
+      }
       const remaining = this.auth.lastBackupCodesRemaining();
       if (remaining !== null) {
         this.toaster.info('auth.login.backupCodeUsed', { count: remaining });
       }
       this.redirectAfterLogin();
-    } catch {
+    } catch (err: unknown) {
+      if (this.getErrorCode(err) === 'MFA_PROOF_REJECTED') {
+        // La preuve du passage par Google n'est plus valable : il faut repartir de la connexion.
+        this.backToCredentials();
+        this.error.set(this._i18n.translate('auth.login.errors.oauthExpired'));
+        return;
+      }
       this.error.set(this._i18n.translate('auth.login.errors.invalidTotp'));
     } finally {
       this.loading.set(false);
@@ -338,6 +360,11 @@ export class Login {
     this.step.set('credentials');
     this.totpValue.set('');
     this.error.set('');
+    if (this.oauthPending()) {
+      this.oauthPending.set(false);
+      // Sans `?oauth=mfa` dans l'URL, un rechargement ne ramène pas à l'étape du code.
+      this.router.navigate(['/auth/login'], { replaceUrl: true });
+    }
   }
 
   private redirectAfterLogin(): void {

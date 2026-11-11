@@ -194,6 +194,13 @@ export class AuthStore {
     this._keyMaterial = keyMaterial ?? null;
   }
 
+  /** Retour Google sur un compte 2FA : le code ouvre la session, relue ensuite comme un retour Google direct. */
+  async completeOAuthLogin(totpCode: string): Promise<void> {
+    const res = await firstValueFrom(this.gateway.completeOAuthMfa(totpCode));
+    this._lastBackupCodesRemaining.set(res.backupCodesRemaining ?? null);
+    await this.hydrateFromCookie();
+  }
+
   async logout(): Promise<void> {
     await this.crypto.lock();
     try {

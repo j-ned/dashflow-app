@@ -71,6 +71,14 @@ export class HttpAuthGateway {
     return this.api.post('/auth/login', { email, password: secret, totpCode });
   }
 
+  /**
+   * Seconde étape d'une connexion Google sur un compte 2FA. La preuve du premier facteur est un
+   * cookie HttpOnly posé au retour de Google : seul le code part d'ici.
+   */
+  completeOAuthMfa(totpCode: string): Observable<{ backupCodesRemaining?: number }> {
+    return this.api.post('/auth/oauth/google/mfa', { totpCode });
+  }
+
   /** Bascule le compte sur la clé d'authentification, juste après un login au mot de passe. */
   upgradeAuth(currentPassword: string, authKey: string): Observable<AuthUser> {
     return this.api.post('/auth/me/upgrade-auth', { currentPassword, authKey });
