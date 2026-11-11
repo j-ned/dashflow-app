@@ -878,3 +878,147 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
     expect(r.deleteBackupCodes).toHaveBeenCalledWith('u1');
   });
 });
+
+describe('AuthService — second facteur après un premier facteur Google', () => {
+  const tf = new TwoFactorService();
+  let r: ReturnType<typeof repo>;
+  let svc: AuthService;
+
+  const totpAccount = (secret: string) => ({
+    id: 'u1',
+    email: 'a@b.com',
+    password: null,
+    googleId: 'g-1',
+    emailVerified: new Date(),
+    sessionVersion: 4,
+    totpEnabled: new Date() as Date | null,
+    totpSecret: cipher().encrypt(secret) as string | null,
+    totpLastUsedStep: null as number | null,
+  });
+  const generatorFor = (secret: string) =>
+    new OTPAuth.TOTP({
+      issuer: 'DashFlow',
+      label: 'a@b.com',
+      secret: OTPAuth.Secret.fromBase32(secret),
+    });
+
+  beforeEach(() => {
+    r = repo();
+    svc = new AuthService(
+      r as unknown as AuthRepository,
+      mailer(),
+      tf,
+      {} as StorageService,
+      cipher(),
+    );
+  });
+
+  it('code TOTP valide → renvoie le compte et mémorise le pas consommé', async () => {
+    const { secret } = tf.generateSecret('a@b.com');
+    const user = totpAccount(secret);
+    r.findById.mockResolvedValue(user);
+
+    const res = await svc.completeSecondFactor(
+      { userId: 'u1', sessionVersion: 4 },
+      generatorFor(secret).generate(),
+    );
+
+    expect(res).toMatchObject({ success: true, data: { user: { id: 'u1' } } });
+    expect(r.updateUser).toHaveBeenCalledWith('u1', {
+      totpLastUsedStep: expect.any(Number) as number,
+    });
+  });
+
+  it('code TOTP faux → 401 « Code 2FA invalide », sans code d’erreur de preuve', async () => {
+    const { secret } = tf.generateSecret('a@b.com');
+    r.findById.mockResolvedValue(totpAccount(secret));
+
+    const res = await svc.completeSecondFactor(
+      { userId: 'u1', sessionVersion: 4 },
+      '000000',
+    );
+
+    expect(res).toEqual({
+      success: false,
+      status: 401,
+      error: 'Code 2FA invalide',
+      code: undefined,
+      details: undefined,
+    });
+    expect(r.updateUser).not.toHaveBeenCalled();
+  });
+
+  it('un code TOTP déjà consommé est refusé au second essai (anti-rejeu partagé avec le login)', async () => {
+    const { secret } = tf.generateSecret('a@b.com');
+    const user = totpAccount(secret);
+    r.findById.mockResolvedValue(user);
+    r.updateUser.mockImplementation((_id, patch) => {
+      Object.assign(user, patch);
+      return Promise.resolve(user);
+    });
+    const code = generatorFor(secret).generate();
+    const proof = { userId: 'u1', sessionVersion: 4 };
+
+    const first = await svc.completeSecondFactor(proof, code);
+    const replay = await svc.completeSecondFactor(proof, code);
+
+    expect(first.success).toBe(true);
+    expect(replay).toMatchObject({ success: false, status: 401 });
+  });
+
+  it('code de secours valide → consommé (HMAC) et restant renvoyé ; déjà utilisé → 401', async () => {
+    const { secret } = tf.generateSecret('a@b.com');
+    r.findById.mockResolvedValue(totpAccount(secret));
+    r.consumeBackupCode.mockResolvedValueOnce(true);
+    r.countUnusedBackupCodes.mockResolvedValueOnce(9);
+    const proof = { userId: 'u1', sessionVersion: 4 };
+
+    const res = await svc.completeSecondFactor(proof, 'ABCDE FGHJK');
+    const reused = await svc.completeSecondFactor(proof, 'abcde-fghjk');
+
+    expect(res).toMatchObject({
+      success: true,
+      data: { backupCodesRemaining: 9 },
+    });
+    expect(r.consumeBackupCode).toHaveBeenCalledWith(
+      'u1',
+      cipher().hmac('abcde-fghjk'),
+    );
+    expect(reused).toMatchObject({ success: false, status: 401 });
+  });
+
+  it.each([
+    ['le compte n’existe plus', () => undefined],
+    [
+      'la version de session a changé depuis l’émission',
+      (secret: string) => ({ ...totpAccount(secret), sessionVersion: 5 }),
+    ],
+    [
+      'la 2FA a été désactivée depuis',
+      (secret: string) => ({
+        ...totpAccount(secret),
+        totpEnabled: null,
+        totpSecret: null,
+      }),
+    ],
+  ])(
+    'preuve refusée (MFA_PROOF_REJECTED) quand %s, même avec un code valide',
+    async (_cas, account) => {
+      const { secret } = tf.generateSecret('a@b.com');
+      r.findById.mockResolvedValue(account(secret));
+
+      const res = await svc.completeSecondFactor(
+        { userId: 'u1', sessionVersion: 4 },
+        generatorFor(secret).generate(),
+      );
+
+      expect(res).toMatchObject({
+        success: false,
+        status: 401,
+        code: 'MFA_PROOF_REJECTED',
+      });
+      expect(r.updateUser).not.toHaveBeenCalled();
+      expect(r.consumeBackupCode).not.toHaveBeenCalled();
+    },
+  );
+});
