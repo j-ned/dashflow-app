@@ -131,26 +131,37 @@ export class AuthService {
       // 2FA requis sans code fourni : ce n'est PAS une erreur mais une étape — succès 200
       // avec `kind: 'mfa_required'`, pour que le navigateur ne logue pas un 4xx en console.
       if (!dto.totpCode) return ok({ kind: 'mfa_required' });
-      const code = dto.totpCode.trim();
-      if (this.twoFactor.isTotpCode(code)) {
-        const secret = await this.totpSecretOf(user);
-        const step = this.twoFactor.verifyStep(secret, code);
-        if (step === null || this.isReplayedTotp(user, step))
-          return fail(401, 'Code 2FA invalide');
-        await this.repo.updateUser(user.id, { totpLastUsedStep: step });
-        return ok({ kind: 'authenticated', user });
-      }
-      // Code de secours : à usage unique, consommé atomiquement.
-      const backup = this.twoFactor.normalizeBackupCode(code);
-      if (!backup || !(await this.consumeBackupCode(user.id, backup)))
-        return fail(401, 'Code 2FA invalide');
-      return ok({
-        kind: 'authenticated',
-        user,
-        backupCodesRemaining: await this.repo.countUnusedBackupCodes(user.id),
-      });
+      const factor = await this.checkSecondFactor(user, dto.totpCode);
+      if (!factor.success) return factor;
+      return ok({ kind: 'authenticated', user, ...factor.data });
     }
     return ok({ kind: 'authenticated', user });
+  }
+
+  /**
+   * Second facteur d'un compte 2FA : code TOTP (anti-rejeu par `totp_last_used_step`) ou code de
+   * secours à usage unique. Unique implémentation, quel que soit le premier facteur présenté.
+   */
+  private async checkSecondFactor(
+    user: User,
+    rawCode: string,
+  ): Promise<Result<{ backupCodesRemaining?: number }>> {
+    const code = rawCode.trim();
+    if (this.twoFactor.isTotpCode(code)) {
+      const secret = await this.totpSecretOf(user);
+      const step = this.twoFactor.verifyStep(secret, code);
+      if (step === null || this.isReplayedTotp(user, step))
+        return fail(401, 'Code 2FA invalide');
+      await this.repo.updateUser(user.id, { totpLastUsedStep: step });
+      return ok({});
+    }
+    // Code de secours : à usage unique, consommé atomiquement.
+    const backup = this.twoFactor.normalizeBackupCode(code);
+    if (!backup || !(await this.consumeBackupCode(user.id, backup)))
+      return fail(401, 'Code 2FA invalide');
+    return ok({
+      backupCodesRemaining: await this.repo.countUnusedBackupCodes(user.id),
+    });
   }
 
   // Connexion au compte démo public, sans mot de passe (gatée par DEMO_ENABLED côté controller).
