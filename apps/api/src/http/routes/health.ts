@@ -7,6 +7,7 @@ import { NotFoundError, ServiceUnavailableError } from '../../common/errors';
 import { createLogger } from '../../common/logger';
 import type { RateLimiter } from '../rate-limit-store';
 import type { AppEnv } from '../types';
+import { describeError } from '../../common/describe-error';
 
 const logger = createLogger('Health');
 
@@ -66,9 +67,7 @@ export function healthRoutes(deps: {
         try {
           await within(ping(), REDIS_PING_TIMEOUT_MS);
         } catch (err) {
-          logger.error(
-            `Sonde : Redis injoignable (${err instanceof Error ? err.message : String(err)})`,
-          );
+          logger.error(`Sonde : Redis injoignable (${describeError(err)})`);
           throw new ServiceUnavailableError('Redis injoignable');
         }
         return c.json({

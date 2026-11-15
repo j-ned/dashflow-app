@@ -12,6 +12,7 @@ import {
 } from './demo-rebase';
 import { ForbiddenError, NotFoundError } from '../../common/errors';
 import { createLogger } from '../../common/logger';
+import { errorStack } from '../../common/describe-error';
 
 // Ordre de suppression : enfants avant parents (FK). Tables scopées par user_id.
 const DELETE_USER_ORDER = [
@@ -304,7 +305,7 @@ export class DemoService {
     } catch (err) {
       this.logger.error(
         'Échec de la réinitialisation auto du démo',
-        err instanceof Error ? err.stack : String(err),
+        errorStack(err),
       );
       this.logPostgresCause(err);
     }

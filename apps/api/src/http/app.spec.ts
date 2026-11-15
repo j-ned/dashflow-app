@@ -19,6 +19,7 @@ import {
 } from './middleware/auth';
 import { jsonBody } from './validate';
 import { ServerBusyError } from '../common/errors';
+import { DrizzleQueryError } from 'drizzle-orm';
 import { TokenService } from '../auth/token.service';
 import { SESSION_COOKIE } from '../auth/cookie';
 import type { DrizzleDB } from '../db/drizzle.constants';
@@ -282,6 +283,32 @@ describe('IP client derrière un tunnel Cloudflare (CLIENT_IP_HEADER)', () => {
 
     expect((await app.request('/login', spoofed('1.1.1.1'))).status).toBe(200);
     expect((await app.request('/login', spoofed('2.2.2.2'))).status).toBe(429);
+  });
+});
+
+describe('Erreur SQL imprévue (500)', () => {
+  it('ni la réponse ni le journal ne contiennent les valeurs liées de la requête', async () => {
+    d = deps(fakeDb());
+    const app = createApp(d);
+    app.post('/sql', () => {
+      throw new DrizzleQueryError(
+        'update "users" set "email" = $1',
+        ['victime@example.test'],
+        new Error('deadlock detected'),
+      );
+    });
+    const logged = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => undefined);
+
+    const res = await app.request('/sql', { method: 'POST' });
+
+    expect(res.status).toBe(500);
+    expect(await res.text()).not.toContain('victime@example.test');
+    const output = logged.mock.calls.flat().join('\n');
+    expect(output).toContain('deadlock detected');
+    expect(output).not.toContain('victime@example.test');
+    logged.mockRestore();
   });
 });
 

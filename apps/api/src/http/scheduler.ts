@@ -3,6 +3,7 @@ import { createLogger } from '../common/logger';
 import type { DrizzleDB } from '../db/drizzle.constants';
 import type { HttpDeps } from './deps';
 import { claimJobSlot, scheduledSlot } from './job-claims';
+import { describeError } from '../common/describe-error';
 
 const logger = createLogger('Scheduler');
 
@@ -60,9 +61,7 @@ export function startScheduledJobs(d: HttpDeps): () => void {
       onTick: () =>
         runScheduledTick(d.db, job.name, () => job.run(d), new Date()).catch(
           (err: unknown) =>
-            logger.error(
-              `Tâche ${job.name} en échec : ${err instanceof Error ? err.message : String(err)}`,
-            ),
+            logger.error(`Tâche ${job.name} en échec : ${describeError(err)}`),
         ),
     }),
   );

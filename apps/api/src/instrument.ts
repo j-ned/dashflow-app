@@ -1,4 +1,5 @@
 import * as Sentry from '@sentry/node';
+import { scrubSentryEvent } from './common/sentry-scrub';
 
 // DOIT être importé en tout premier par server.ts : l'auto-instrumentation Sentry patche les
 // modules au moment du require. DSN lu dans process.env directement (avant la validation Zod).
@@ -14,5 +15,7 @@ if (process.env.SENTRY_DSN) {
       userInfo: false,
       httpBodies: [],
     },
+    // Valeurs liées des requêtes SQL retirées de chaque événement (cf. sentry-scrub.ts).
+    beforeSend: scrubSentryEvent,
   });
 }

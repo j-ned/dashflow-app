@@ -3,6 +3,7 @@ import type { DrizzleDB } from '../../db/drizzle.constants';
 import { documents, prescriptions } from '../../db/schema';
 import type { StorageService } from '../../storage/storage.service';
 import { createLogger } from '../logger';
+import { describeError } from '../describe-error';
 
 const logger = createLogger('StorageCleanup');
 
@@ -18,9 +19,7 @@ export async function deleteStorageObjectQuietly(
   try {
     await storage.delete(key);
   } catch (err) {
-    logger.warn(
-      `Objet R2 non supprimé (${key}) : ${err instanceof Error ? err.message : String(err)}`,
-    );
+    logger.warn(`Objet R2 non supprimé (${key}) : ${describeError(err)}`);
   }
 }
 
