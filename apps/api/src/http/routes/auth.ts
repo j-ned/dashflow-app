@@ -60,7 +60,9 @@ export function authRoutes(d: HttpDeps) {
 
   return (
     new Hono<AppEnv>()
-      .post('/register', strict, async (c) => {
+      // Limite par adresse en plus de la limite par IP : sans elle, un attaquant qui change d'IP
+      // inonde la boîte d'une cible de codes ou de mails « compte existant ».
+      .post('/register', strict, byEmail, async (c) => {
         const r = await d.auth.register(await jsonBody(c, registerSchema));
         if (!r.success) throw resultError(r);
         return c.json({ message: 'Compte créé, vérifiez votre email' }, 201);
@@ -318,7 +320,10 @@ export function authRoutes(d: HttpDeps) {
       })
 
       .post('/logout', ...authed, event({ success: 'logout' }), async (c) => {
-        await d.auth.revokeSessions(c.get('user').id);
+        const user = c.get('user');
+        // Le compte démo est partagé par tous les visiteurs : révoquer ses sessions déconnecterait
+        // tout le monde. On ferme seulement celle-ci.
+        if (!user.isDemo) await d.auth.revokeSessions(user.id);
         d.sessionCookies.clear(c);
         return c.json({ message: 'Déconnecté' });
       })
