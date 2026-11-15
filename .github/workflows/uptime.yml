@@ -1,0 +1,54 @@
+name: Sonde de production
+
+# Supervision externe de la production : hors du serveur, elle signale aussi une panne du serveur
+# lui-même. Toutes les 5 minutes (l'intervalle minimal de GitHub, retards possibles), elle
+# interroge /api/health/ready, qui vérifie la base et Redis. Un échec fait échouer le run, et GitHub
+# l'annonce par mail à l'auteur du dernier changement de ce fichier.
+#
+# Secret du dépôt HEALTH_TOKEN : la même valeur que la variable HEALTH_TOKEN de Dokploy. Sans lui,
+# la sonde est sautée avec un avertissement (rien n'est vérifié).
+# Variable facultative du dépôt HEALTH_READY_URL : adresse de la sonde, si elle change.
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions: {}
+
+# Un seul run à la fois : si GitHub en retarde un, le suivant ne s'empile pas derrière.
+concurrency:
+  group: uptime
+  cancel-in-progress: true
+
+jobs:
+  ready:
+    name: /api/health/ready
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    env:
+      HEALTH_TOKEN: ${{ secrets.HEALTH_TOKEN }}
+      READY_URL: ${{ vars.HEALTH_READY_URL || 'https://dashflow.nedellec-julien.fr/api/health/ready' }}
+    steps:
+      - name: Secret absent, sonde sautée
+        if: env.HEALTH_TOKEN == ''
+        run: |
+          echo "::warning::Secret HEALTH_TOKEN absent : la production n'est pas surveillée"
+
+      # Trois essais espacés de 20 s : un redémarrage de conteneur pendant un déploiement ne doit
+      # pas déclencher d'alerte. Le jeton passe par l'entrée standard, pas par la ligne de commande.
+      - name: Base et Redis joignables
+        if: env.HEALTH_TOKEN != ''
+        run: |
+          body="$(printf 'header = "X-Health-Token: %s"\n' "$HEALTH_TOKEN" | curl --config - \
+            --fail --silent --show-error --max-time 10 \
+            --retry 2 --retry-delay 20 --retry-all-errors "$READY_URL")" || {
+            echo "::error::Production en panne : $READY_URL ne répond pas 200 après 3 essais"
+            exit 1
+          }
+          case "$body" in
+            *'"ok":true'*) echo "Production en bonne santé : $body" ;;
+            *)
+              echo "::error::Réponse inattendue de $READY_URL : $body"
+              exit 1
+              ;;
+          esac

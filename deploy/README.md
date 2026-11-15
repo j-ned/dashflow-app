@@ -66,7 +66,15 @@ Mise en place :
    curl -s -H "X-Health-Token: <jeton>" https://dashflow.nedellec-julien.fr/api/health/ready
    ```
    La réponse attendue est `{"ok":true,"db":true,"redis":true}`.
-3. Dans ton outil de supervision (Uptime Kuma, Better Stack, UptimeRobot…), crée une sonde HTTP sur cette adresse, avec l'en-tête `X-Health-Token`, toutes les minutes, en alerte si le code n'est pas 200. Choisis un outil **hors du serveur** : s'il tombe avec lui, il ne peut pas te prévenir.
+3. Ajoute la **même valeur** en secret du dépôt GitHub : _Settings_ → _Secrets and variables_ → _Actions_ → _New repository secret_, nom `HEALTH_TOKEN`.
+
+Le workflow `.github/workflows/uptime.yml` interroge alors cette sonde toutes les 5 minutes, depuis GitHub, donc hors du serveur. Il fait trois essais espacés de 20 secondes avant de déclarer une panne, pour ne pas alerter pendant un redéploiement. En cas d'échec, GitHub envoie un mail à l'auteur du dernier changement de ce fichier. Vérifie que les notifications « Actions » sont activées dans tes réglages GitHub (_Settings_ → _Notifications_).
+
+Limites à connaître :
+- GitHub peut retarder une exécution planifiée de quelques minutes.
+- Sur un dépôt public, les workflows planifiés se **désactivent après 60 jours sans commit**. GitHub prévient par mail, et il suffit de les réactiver dans l'onglet _Actions_.
+
+Pour tester sans attendre : onglet _Actions_ → _Sonde de production_ → _Run workflow_.
 
 En cas d'alerte, les journaux de `dashflow-api` donnent la cause (`Sonde : Redis injoignable (…)`, ou une erreur de base).
 
