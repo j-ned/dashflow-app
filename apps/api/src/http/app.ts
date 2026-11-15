@@ -17,7 +17,6 @@ import { membersRoutes } from './routes/members';
 import { prescriptionsRoutes } from './routes/prescriptions';
 import { recurringEntriesRoutes } from './routes/recurring-entries';
 import { salaryArchivesRoutes } from './routes/salary-archives';
-import { cronRoutes } from './routes/cron';
 import { healthRoutes } from './routes/health';
 import { oauthRoutes } from './routes/oauth';
 import { appointmentsRoutes } from './routes/appointments';
@@ -32,21 +31,14 @@ import type { AppEnv } from './types';
  * montent avec `app.route()`. Pas de CORS : le front est servi sur la même origine (/api) ; un
  * autre site ne peut donc ni lire les réponses ni envoyer de requête « non simple ».
  */
-export function createApp(
-  deps: HttpDeps,
-  /** Préfixe public : `/api` sur Vercel, où la fonction reçoit le chemin complet. */
-  opts: { basePath?: string } = {},
-): Hono<AppEnv> {
-  const app = opts.basePath
-    ? new Hono<AppEnv>().basePath(opts.basePath)
-    : new Hono<AppEnv>();
+export function createApp(deps: HttpDeps): Hono<AppEnv> {
+  const app = new Hono<AppEnv>();
   app.use(securityHeaders());
   app.use(clientIp(deps.env.CLIENT_IP_HEADER));
   app.use(rateLimit(deps.rateLimits));
   app.use(defaultBodyLimit());
 
   app.route('/health', healthRoutes(deps));
-  app.route('/cron', cronRoutes(deps));
   app.route('/auth/oauth/google', oauthRoutes(deps));
   app.route('/auth', authRoutes(deps));
   app.route('/patients', patientsRoutes(deps));

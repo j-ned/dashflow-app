@@ -1,6 +1,5 @@
 /**
  * `file-type` n'est publié qu'en ESM : chargé par import() dynamique depuis ce module CommonJS.
- * `require()` d'un module ESM échoue sur le runtime Node de Vercel (ERR_REQUIRE_ESM).
  */
 const detectFileType = async (buffer: Buffer) =>
   (await import('file-type')).fileTypeFromBuffer(buffer);
@@ -22,8 +21,8 @@ export const OPAQUE_MIME_TYPE = 'application/octet-stream';
 
 /** Taille max d'un fichier utilisateur (miroir de la règle côté client). */
 /**
- * 4 Mo : une requête vers une fonction Vercel est plafonnée à 4,5 Mo, enveloppe multipart et
- * surcoût E2EE compris. Au-delà, il faudrait un envoi direct vers R2 (URL pré-signée).
+ * 4 Mo, enveloppe multipart et surcoût E2EE en plus : le relais nginx du front accepte 5 Mo par
+ * requête (client_max_body_size, apps/web/nginx.conf). À relever ensemble.
  */
 export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 

@@ -1,13 +1,5 @@
 import { z } from 'zod';
 
-const vercelHost = z.preprocess(
-  (v) => (v === '' ? undefined : v),
-  z
-    .string()
-    .regex(/^[a-z0-9.-]+$/i, 'nom d’hôte attendu, sans schéma ni chemin')
-    .optional(),
-);
-
 const envBaseSchema = z.object({
   NODE_ENV: z
     .enum(['development', 'production', 'test'])
@@ -52,9 +44,8 @@ const envBaseSchema = z.object({
       .min(24, 'HEALTH_TOKEN doit faire au moins 24 caractères')
       .optional(),
   ),
-  // Redis joint en TCP (conteneur `dashflow-redis` de la pile Dokploy) : compteurs de throttling
-  // partagés entre les instances de l'API. Absent → Redis REST (Upstash) s'il est réglé, sinon
-  // compteurs en mémoire, propres à chaque processus.
+  // Redis (service de Dokploy) : compteurs de throttling partagés entre les instances de l'API.
+  // Absent → compteurs en mémoire, propres à chaque processus.
   REDIS_URL: z.preprocess(
     (v) => (v === '' ? undefined : v),
     z
@@ -102,83 +93,19 @@ const envBaseSchema = z.object({
   SMTP_USER: z.string().optional(),
   SMTP_PASS: z.string().optional(),
   SMTP_FROM: z.string().default('DashFlow <noreply@dashflow.app>'),
-  // ── Vercel ──
-  // Posé par la plateforme ('1') : l'API tourne en fonctions, plusieurs instances en parallèle.
-  VERCEL: z.string().optional(),
-  // Posé par la plateforme, jamais par le projet : seule source fiable pour distinguer une preview
-  // de la production (Vercel peut poser NODE_ENV=production sur les deux). Valeur inconnue → refus.
-  VERCEL_ENV: z.enum(['production', 'preview', 'development']).optional(),
-  // Noms d'hôte du déploiement et de la branche (sans schéma), posés par Vercel : en preview, ce
-  // sont les seules origines du front, qui changent à chaque déploiement (cf. CsrfPolicy).
-  VERCEL_URL: vercelHost,
-  VERCEL_BRANCH_URL: vercelHost,
-  // Jeton des tâches planifiées (Vercel Cron l'envoie en `Authorization: Bearer …`). Absent → les
-  // routes /cron/* répondent 404.
-  CRON_SECRET: z.preprocess(
-    (v) => (v === '' ? undefined : v),
-    z
-      .string()
-      .min(16, 'CRON_SECRET doit faire au moins 16 caractères')
-      .optional(),
-  ),
-  // Redis REST (Upstash) pour le throttling partagé entre instances. Noms posés par
-  // l'intégration Vercel (KV_REST_API_*) ou par Upstash directement (UPSTASH_REDIS_REST_*).
-  KV_REST_API_URL: z.preprocess(
-    (v) => (v === '' ? undefined : v),
-    z.string().url().optional(),
-  ),
-  KV_REST_API_TOKEN: z.string().optional(),
-  UPSTASH_REDIS_REST_URL: z.preprocess(
-    (v) => (v === '' ? undefined : v),
-    z.string().url().optional(),
-  ),
-  UPSTASH_REDIS_REST_TOKEN: z.string().optional(),
 });
 
-/** Redis REST configuré, quel que soit le nom des variables. */
-export function redisRestConfig(
-  env: Pick<
-    z.infer<typeof envBaseSchema>,
-    | 'KV_REST_API_URL'
-    | 'KV_REST_API_TOKEN'
-    | 'UPSTASH_REDIS_REST_URL'
-    | 'UPSTASH_REDIS_REST_TOKEN'
-  >,
-): { url: string; token: string } | undefined {
-  const url = env.KV_REST_API_URL ?? env.UPSTASH_REDIS_REST_URL;
-  const token = env.KV_REST_API_TOKEN ?? env.UPSTASH_REDIS_REST_TOKEN;
-  return url && token ? { url, token } : undefined;
-}
-
-export type DeploymentTier = 'production' | 'preview' | 'local';
-
-/**
- * Où tourne l'API. `VERCEL_ENV` prime sur `NODE_ENV` : une preview reste une preview même avec
- * NODE_ENV=production, et la production Vercel garde ses garde-fous même sans NODE_ENV. Hors
- * Vercel (Docker, local), `NODE_ENV` décide, comme avant.
- */
-export function deploymentTier(
-  env: Pick<z.infer<typeof envBaseSchema>, 'NODE_ENV' | 'VERCEL_ENV'>,
-): DeploymentTier {
-  if (env.VERCEL_ENV === 'production') return 'production';
-  if (env.VERCEL_ENV === 'preview') return 'preview';
-  return env.NODE_ENV === 'production' ? 'production' : 'local';
-}
-
-/** Servi en HTTPS (prod, preview) : cookies Secure/__Host- et en-tête Origin exigé. */
+/** Production (NODE_ENV=production) : servie en HTTPS, cookies Secure/__Host- et en-tête Origin exigé. */
 export const servesOverHttps = (
-  env: Pick<z.infer<typeof envBaseSchema>, 'NODE_ENV' | 'VERCEL_ENV'>,
-): boolean => deploymentTier(env) !== 'local';
+  env: Pick<z.infer<typeof envBaseSchema>, 'NODE_ENV'>,
+): boolean => env.NODE_ENV === 'production';
 
 const EXAMPLE_JWT_SECRET = /^dev-secret|change-me|^x+$/i;
 
 // Garde-fous production : le mailer « console » écrit les codes OTP dans stdout (logs Dokploy),
 // et le secret JWT d'exemple du .env.example ne doit jamais signer une session réelle.
-// Preview : ni Redis, ni cron, ni SMTP (les mails sont journalisés sans contenu, cf. createMailer),
-// mais une preview est publique : le secret d'exemple y est refusé aussi.
 export const envSchema = envBaseSchema.superRefine((env, ctx) => {
-  const tier = deploymentTier(env);
-  if (tier === 'local') return;
+  if (!servesOverHttps(env)) return;
   if (EXAMPLE_JWT_SECRET.test(env.JWT_SECRET)) {
     ctx.addIssue({
       code: 'custom',
@@ -186,27 +113,6 @@ export const envSchema = envBaseSchema.superRefine((env, ctx) => {
       message:
         'JWT_SECRET ressemble à une valeur d’exemple : générez un secret aléatoire',
     });
-  }
-  if (tier === 'preview') return;
-  // Sur Vercel, des compteurs en mémoire seraient propres à chaque instance : le throttling
-  // anti-brute-force serait contournable. Et sans CRON_SECRET, aucune tâche de fond ne tourne.
-  if (env.VERCEL === '1' || env.VERCEL_ENV === 'production') {
-    if (!redisRestConfig(env)) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['KV_REST_API_URL'],
-        message:
-          'Sur Vercel, un Redis REST (Upstash) est requis pour le throttling',
-      });
-    }
-    if (!env.CRON_SECRET) {
-      ctx.addIssue({
-        code: 'custom',
-        path: ['CRON_SECRET'],
-        message:
-          'Sur Vercel, CRON_SECRET est requis pour les tâches planifiées',
-      });
-    }
   }
   if (env.MAILER === 'resend') {
     for (const key of ['RESEND_API_KEY', 'MAIL_FROM'] as const) {

@@ -30,9 +30,5 @@ docker build -f apps/web/Dockerfile -t dashflow-web .
 
 ## Déploiement
 
-Production sur **Vercel** : un projet, deux services (`vercel.json`). Le front est servi à la racine et l'API sous `/api`, sur le même domaine.
-Procédure complète (Neon, Upstash, variables, copie des données, domaine, retour arrière) : [docs/deploiement-vercel.md](docs/deploiement-vercel.md).
-
-Previews isolées de la production (base Neon `preview`, aucun email, variables Preview) : [docs/preview-env.md](docs/preview-env.md).
-
-Auto-hébergement Docker (Dokploy/Traefik, images `apps/*/Dockerfile`) : [docs/deploiement-meme-origine.md](docs/deploiement-meme-origine.md).
+Production sur un serveur **Dokploy** : pile `deploy/compose.yaml` (front nginx qui relaie `/api`, API, sauvegarde chiffrée), base Postgres et Redis en services Dokploy, trafic par un tunnel Cloudflare. La CI publie les images sur GHCR depuis `master` puis déclenche le redéploiement.
+Mise en place, variables, vérifications et restauration d'une sauvegarde : [deploy/README.md](deploy/README.md).
