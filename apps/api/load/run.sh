@@ -2,7 +2,8 @@
 # Test de charge de bout en bout, sur une machine de développement (jamais contre la production) :
 # pile jetable (compose.yaml) avec les images de production, données synthétiques (seed.sql),
 # puis un scénario k6 (scenario.js) mesuré à travers le nginx du front.
-#   apps/api/load/run.sh [navigation|connexions]   (défaut : navigation)
+#   apps/api/load/run.sh [navigation|connexions|mixte]   (défaut : navigation)
+# Autre image d'API : API_IMAGE=<image> apps/api/load/run.sh …
 # La pile est supprimée à la fin, données comprises. Le résumé k6 est écrit dans
 # apps/api/load/results/<scénario>-<date>.json.
 set -euo pipefail
@@ -21,7 +22,8 @@ export LOAD_DB_PASSWORD LOAD_JWT_SECRET
 cleanup() { "${COMPOSE[@]}" down -v --remove-orphans >/dev/null 2>&1 || true; }
 trap cleanup EXIT
 
-"${COMPOSE[@]}" pull --quiet api web
+# Une image locale (API_IMAGE=…) n'existe pas dans le registre : elle est utilisée telle quelle.
+"${COMPOSE[@]}" pull --quiet --ignore-pull-failures api web
 "${COMPOSE[@]}" up -d --wait db redis
 "${COMPOSE[@]}" up -d api web
 

@@ -1,7 +1,9 @@
 // Scénario k6 du test de charge (cf. README.md). Deux scénarios, lancés séparément :
 //   SCENARIO=navigation : des utilisateurs connectés qui consultent leurs pages, de plus en plus
 //                         nombreux (paliers de 25 à 200 utilisateurs simultanés) ;
-//   SCENARIO=connexions : des connexions par seconde, de plus en plus nombreuses (Argon2).
+//   SCENARIO=connexions : des connexions par seconde, de plus en plus nombreuses (Argon2) ;
+//   SCENARIO=mixte      : 50 utilisateurs naviguent pendant une rafale de connexions (jusqu'à
+//                         20/s) : la navigation doit rester fluide.
 import http from 'k6/http';
 import { check, sleep } from 'k6';
 import exec from 'k6/execution';
@@ -58,10 +60,20 @@ const scenarios = {
   },
 };
 
+const mixte = {
+  navigation: {
+    executor: 'constant-vus',
+    vus: 50,
+    duration: '4m30s',
+    exec: 'navigation',
+  },
+  connexions: { ...scenarios.connexions, startTime: '30s' },
+};
+
 const chosen = __ENV.SCENARIO || 'navigation';
 
 export const options = {
-  scenarios: { [chosen]: scenarios[chosen] },
+  scenarios: chosen === 'mixte' ? mixte : { [chosen]: scenarios[chosen] },
   // Par défaut k6 vide les cookies à chaque itération : l'utilisateur virtuel serait déconnecté
   // après sa première boucle. Ici il garde sa session, comme un vrai navigateur.
   noCookiesReset: true,
@@ -80,16 +92,33 @@ function login(n) {
     {
       headers: { 'Content-Type': 'application/json', Origin: ORIGIN, 'x-load-ip': ipOf(n) },
       tags: { kind: 'login' },
+      // 503 « serveur occupé » est la réponse voulue quand trop de connexions arrivent à la fois :
+      // pas une erreur du test. Elle est comptée à part (check ci-dessous).
+      responseCallback: http.expectedStatuses(200, 503),
     },
   );
-  check(res, { 'connexion 200': (r) => r.status === 200 });
+  check(res, {
+    'connexion 200': (r) => r.status === 200,
+    'connexion refusée vite si saturé (503 < 1 s)': (r) =>
+      r.status !== 503 || r.timings.duration < 1000,
+  });
   return res.status === 200;
 }
 
+// Propre à chaque utilisateur virtuel (chacun a son propre environnement JavaScript).
+let connected = false;
+
 export function navigation() {
   const vu = exec.vu.idInTest;
-  // Une connexion par utilisateur virtuel, puis il navigue avec son cookie de session.
-  if (exec.vu.iterationInScenario === 0 && !login(vu)) return;
+  // Une connexion par utilisateur virtuel, puis il navigue avec son cookie de session. Refusée
+  // (503 serveur occupé), il attend comme un vrai utilisateur et réessaie au tour suivant.
+  if (!connected) {
+    connected = login(vu);
+    if (!connected) {
+      sleep(5);
+      return;
+    }
+  }
   for (const page of PAGES) {
     const res = http.get(`${BASE}${page}`, {
       headers: { 'x-load-ip': ipOf(vu) },
