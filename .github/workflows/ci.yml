@@ -149,6 +149,13 @@ jobs:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
           push: ${{ env.PUBLISH == 'true' }}
+          # Commit déployé : release Sentry du front et de l'API (cf. les Dockerfile).
+          build-args: |
+            SENTRY_RELEASE=${{ github.sha }}
+          # Jeton Sentry, pour envoyer les source maps du front : seulement à la publication depuis
+          # master (secret BuildKit, absent de l'image et des journaux). Sans lui, rien n'est envoyé.
+          secrets: |
+            sentry_auth_token=${{ env.PUBLISH == 'true' && matrix.app == 'web' && secrets.SENTRY_AUTH_TOKEN || '' }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
           labels: |
@@ -199,6 +206,18 @@ jobs:
         run: .github/scripts/compose.check.sh
       - name: Vérification du déclencheur Dokploy
         run: .github/scripts/trigger-deploy.check.sh
+      # Le jeton n'est utilisé qu'à la publication : un jeton expiré, révoqué ou sans accès à
+      # l'organisation se voit ici, dès la PR, plutôt qu'au premier déploiement.
+      - name: Jeton Sentry valide
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+        run: |
+          if [ -z "$SENTRY_AUTH_TOKEN" ]; then
+            echo "::notice::Secret SENTRY_AUTH_TOKEN absent : les source maps ne seront pas envoyées à Sentry"
+            exit 0
+          fi
+          npx --yes @sentry/cli@3.8.2 releases list --org j-ned --project dashflow-app-angular >/dev/null
+          echo "Jeton Sentry valide : accès au projet dashflow-app-angular confirmé."
 
   # API Dokploy (`compose.deploy`) : la pile tire les images qui viennent d'être publiées. Sans les
   # secrets, les images sont publiées et le déploiement reste manuel. Le panneau étant derrière

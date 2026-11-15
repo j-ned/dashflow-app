@@ -9,6 +9,10 @@ if (process.env.SENTRY_DSN) {
   Sentry.init({
     dsn: process.env.SENTRY_DSN,
     environment: process.env.NODE_ENV ?? 'development',
+    // Commit déployé (image Docker, cf. apps/api/Dockerfile) : relie chaque erreur à sa version.
+    ...(process.env.SENTRY_RELEASE
+      ? { release: process.env.SENTRY_RELEASE }
+      : {}),
     // App E2EE (santé + budget) : ne JAMAIS exfiltrer de PII ni de corps de requête/réponse
     // (chiffrés côté client, mais aussi en clair pour la démo). Cf. common/sentry-options.ts.
     sendDefaultPii: false,

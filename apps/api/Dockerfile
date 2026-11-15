@@ -36,6 +36,9 @@ COPY apps/api/package.json ./
 # Capacité de migration en étape séparée : scripts + fichiers de migration SQL.
 COPY apps/api/scripts ./scripts
 COPY apps/api/src/db/migrations ./src/db/migrations
+# Commit déployé (passé par la CI), lu par src/instrument.ts : relie chaque erreur Sentry à sa version.
+ARG SENTRY_RELEASE=""
+ENV SENTRY_RELEASE=$SENTRY_RELEASE
 USER node
 EXPOSE 3001
 # Swarm relance un conteneur mort, pas un process bloqué : la sonde HTTP fait la différence.
