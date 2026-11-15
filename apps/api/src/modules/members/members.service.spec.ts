@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { MembersService } from './members.service';
 import type { DrizzleDB } from '../../db/drizzle.constants';
+import type { StorageService } from '../../storage/storage.service';
 
 // Faux DrizzleDB : `insert().values().returning()` renvoie la ligne projetée (MEMBER_PROJECTION).
 function dbReturning(
@@ -15,7 +16,11 @@ function dbReturning(
 
 describe('MembersService.create', () => {
   it('insère le membre et renvoie la ligne projetée', async () => {
-    const svc = new MembersService(dbReturning({ id: 'new', firstName: 'A' }));
+    // `create` ne touche pas au stockage des fichiers.
+    const svc = new MembersService(
+      dbReturning({ id: 'new', firstName: 'A' }),
+      {} as StorageService,
+    );
     const row = await svc.create('u1', { firstName: 'A' });
     expect(row).toEqual({ id: 'new', firstName: 'A' });
   });

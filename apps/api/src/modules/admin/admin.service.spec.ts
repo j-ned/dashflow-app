@@ -328,10 +328,8 @@ describe('AdminService.purgeStaleUnverified', () => {
   it('purge au-delà de 7 jours en épargnant les codes demandés depuis 24 h, et ne lève jamais', async () => {
     const r = repo([], { purged: 3 });
     await new AdminService(r, mailer()).purgeStaleUnverified();
-    const [olderThan, recentCodeSince] = r.purgeUnverified.mock.calls[0] as [
-      Date,
-      Date,
-    ];
+    const [olderThan, recentCodeSince] = vi.mocked(r.purgeUnverified).mock
+      .calls[0];
     expect(Date.now() - olderThan.getTime()).toBeGreaterThanOrEqual(
       7 * 86_400_000 - 1000,
     );
@@ -339,7 +337,7 @@ describe('AdminService.purgeStaleUnverified', () => {
       86_400_000 + 1000,
     );
 
-    r.purgeUnverified.mockRejectedValueOnce(new Error('db down'));
+    vi.mocked(r.purgeUnverified).mockRejectedValueOnce(new Error('db down'));
     await expect(
       new AdminService(r, mailer()).purgeStaleUnverified(),
     ).resolves.toBeUndefined();

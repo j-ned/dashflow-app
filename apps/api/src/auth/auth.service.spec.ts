@@ -15,24 +15,43 @@ const repo = () => ({
   ),
   findById: vi.fn(),
   createUser: vi.fn(),
-  updateUser: vi.fn(),
+  updateUser: vi.fn(
+    (
+      _id: string,
+      _patch: Parameters<AuthRepository['updateUser']>[1],
+    ): Promise<unknown> => Promise.resolve({}),
+  ),
   insertCode: vi.fn(),
   findValidCode: vi.fn(),
   deleteCodes: vi.fn(),
-  replaceBackupCodes: vi.fn(() => Promise.resolve()),
-  consumeBackupCode: vi.fn(() => Promise.resolve(false)),
+  replaceBackupCodes: vi.fn((_userId: string, _hashes: string[]) =>
+    Promise.resolve(),
+  ),
+  consumeBackupCode: vi.fn((_userId: string, _hash: string) =>
+    Promise.resolve(false),
+  ),
   countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
   deleteBackupCodes: vi.fn(() => Promise.resolve()),
 });
 const cipher = () =>
   new SecretCipherService({
+    NODE_ENV: 'test',
     TOTP_ENC_KEY: 'c'.repeat(64),
     JWT_SECRET: 'j'.repeat(40),
   });
+/** Hash de mot de passe écrit par `updateUser` ; échoue si le patch n'en contient pas. */
+const writtenHash = (
+  patch: Parameters<AuthRepository['updateUser']>[1],
+): string => {
+  if (typeof patch.password !== 'string')
+    throw new Error('aucun mot de passe écrit');
+  return patch.password;
+};
 const mailer = () => ({
   sendVerificationCode: vi.fn(),
   sendPasswordResetCode: vi.fn(),
   sendAccountExists: vi.fn(),
+  sendSecurityNotice: vi.fn(),
 });
 
 describe('AuthService', () => {
@@ -298,7 +317,7 @@ describe('AuthService', () => {
     });
     expect(res.success).toBe(true);
     const patch = r.updateUser.mock.calls[0][1];
-    expect(await argon2.verify(patch.password, 'premier-mdp-long-1')).toBe(
+    expect(await argon2.verify(writtenHash(patch), 'premier-mdp-long-1')).toBe(
       true,
     );
   });
@@ -339,7 +358,10 @@ describe('AuthService', () => {
   });
 
   describe('2FA écrite avant la pose de TOTP_ENC_KEY (clé dérivée de JWT_SECRET)', () => {
-    const before = new SecretCipherService({ JWT_SECRET: 'j'.repeat(40) });
+    const before = new SecretCipherService({
+      NODE_ENV: 'test',
+      JWT_SECRET: 'j'.repeat(40),
+    });
     const tf = new TwoFactorService();
     const loginUser = async (extra: object) => ({
       id: 'u1',
@@ -382,7 +404,7 @@ describe('AuthService', () => {
         data: { kind: 'authenticated' },
       });
       const rewritten = r.updateUser.mock.calls.find(
-        ([, patch]: [string, { totpSecret?: string }]) => patch.totpSecret,
+        ([, patch]) => patch.totpSecret,
       )?.[1].totpSecret as string;
       expect(cipher().open(rewritten)).toEqual({
         plaintext: secret,
@@ -490,7 +512,7 @@ describe('AuthService', () => {
     expect(res.success).toBe(true);
     const patch = r.updateUser.mock.calls[0][1];
     expect(patch.authVersion).toBe(1);
-    expect(await argon2.verify(patch.password, key)).toBe(true);
+    expect(await argon2.verify(writtenHash(patch), key)).toBe(true);
   });
 
   it('upgradeAuth : mauvais mot de passe → 401, rien écrit', async () => {
@@ -568,11 +590,7 @@ describe('AuthService.deleteAccount (RGPD)', () => {
   ): Deletable =>
     new AuthService(
       r as unknown as ConstructorParameters<typeof AuthService>[0],
-      {
-        sendVerificationCode: vi.fn(),
-        sendPasswordResetCode: vi.fn(),
-        sendAccountExists: vi.fn(),
-      },
+      mailer(),
       new TwoFactorService(),
       s as unknown as never,
       cipher(),
@@ -619,10 +637,6 @@ describe('AuthService.deleteAccount (RGPD)', () => {
 
 describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
   const repoWithBump = () => ({
-    replaceBackupCodes: vi.fn(() => Promise.resolve()),
-    consumeBackupCode: vi.fn(() => Promise.resolve(false)),
-    countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
-    deleteBackupCodes: vi.fn(() => Promise.resolve()),
     ...repo(),
     bumpSessionVersion: vi.fn((id: string) =>
       Promise.resolve({ id, sessionVersion: 1 }),
@@ -769,7 +783,7 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
     expect(res.success).toBe(true);
     if (!res.success) return;
     expect(res.data.backupCodes).toHaveLength(10);
-    const hashes = r.replaceBackupCodes.mock.calls[0][1] as string[];
+    const hashes = r.replaceBackupCodes.mock.lastCall?.[1] ?? [];
     expect(hashes).toHaveLength(10);
     for (const c of res.data.backupCodes)
       expect(hashes).toContain(cipher().hmac(c));
