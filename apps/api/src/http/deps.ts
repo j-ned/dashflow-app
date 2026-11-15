@@ -61,7 +61,7 @@ function buildDeps(
     storage,
     tokens,
     csrf,
-    sessions: new SessionAuthenticator(tokens, db),
+    sessions: new SessionAuthenticator(tokens, db, servesOverHttps(env)),
     sessionCookies: new SessionCookies(tokens, csrf, servesOverHttps(env)),
     csrfPolicy: new CsrfPolicy(csrf, env),
     roles: new RoleChecker(db),

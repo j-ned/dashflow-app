@@ -16,7 +16,7 @@ export const SESSION_COOKIE = 'dashflow_session';
 export const SESSION_COOKIE_HOST = '__Host-dashflow_session';
 export const sessionCookieName = (isProd: boolean): string =>
   isProd ? SESSION_COOKIE_HOST : SESSION_COOKIE;
-/** Les deux noms, pour lire une session posée avant le passage au préfixe. */
+/** Les deux noms, pour effacer à la déconnexion un cookie posé avant le passage au préfixe. */
 export const SESSION_COOKIE_NAMES = [
   SESSION_COOKIE_HOST,
   SESSION_COOKIE,

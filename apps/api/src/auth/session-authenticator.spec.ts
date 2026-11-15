@@ -13,6 +13,10 @@ function dbWith(rows: { sessionVersion: number }[]) {
   return { select: vi.fn().mockReturnValue({ from }) } as unknown as DrizzleDB;
 }
 
+/** Servi en HTTPS (cookie __Host-) ou en local (cookie sans préfixe). */
+const PRODUCTION = true;
+const LOCAL = false;
+
 const tokenWith = (payload: unknown) =>
   ({ verify: vi.fn().mockResolvedValue(payload) }) as unknown as TokenService;
 
@@ -21,6 +25,7 @@ describe('SessionAuthenticator', () => {
     const auth = new SessionAuthenticator(
       tokenWith({ sub: 'u1', email: 'a@b.com', sv: 3 }),
       dbWith([{ sessionVersion: 3 }]),
+      LOCAL,
     );
     await expect(
       auth.authenticate({ [SESSION_COOKIE]: 'tok' }),
@@ -36,6 +41,7 @@ describe('SessionAuthenticator', () => {
     const auth = new SessionAuthenticator(
       tokenWith({ sub: 'demo', email: 'demo@x.io', sv: 0, demo: true }),
       dbWith([{ sessionVersion: 0 }]),
+      LOCAL,
     );
     await expect(
       auth.authenticate({ [SESSION_COOKIE]: 'tok' }),
@@ -48,7 +54,7 @@ describe('SessionAuthenticator', () => {
   });
 
   it('401 « Non authentifié » sans cookie', async () => {
-    const auth = new SessionAuthenticator(tokenWith({}), dbWith([]));
+    const auth = new SessionAuthenticator(tokenWith({}), dbWith([]), LOCAL);
     const attempt = auth.authenticate({});
     await expect(attempt).rejects.toBeInstanceOf(UnauthorizedError);
     await expect(attempt).rejects.toThrow('Non authentifié');
@@ -63,6 +69,7 @@ describe('SessionAuthenticator', () => {
         verify: vi.fn().mockRejectedValue(new Error('bad')),
       } as unknown as TokenService,
       dbWith([{ sessionVersion: 0 }]),
+      LOCAL,
     );
     const attempt = auth.authenticate({ [SESSION_COOKIE]: 'tok' });
     await expect(attempt).rejects.toBeInstanceOf(UnauthorizedError);
@@ -73,6 +80,7 @@ describe('SessionAuthenticator', () => {
     const auth = new SessionAuthenticator(
       tokenWith({ sub: 'u1', email: 'a@b.com', sv: 2 }),
       dbWith([{ sessionVersion: 3 }]),
+      LOCAL,
     );
     const attempt = auth.authenticate({ [SESSION_COOKIE]: 'tok' });
     await expect(attempt).rejects.toBeInstanceOf(UnauthorizedError);
@@ -83,19 +91,34 @@ describe('SessionAuthenticator', () => {
     const auth = new SessionAuthenticator(
       tokenWith({ sub: 'ghost', email: 'g@b.com', sv: 0 }),
       dbWith([]),
+      LOCAL,
     );
     const attempt = auth.authenticate({ [SESSION_COOKIE]: 'tok' });
     await expect(attempt).rejects.toBeInstanceOf(UnauthorizedError);
     await expect(attempt).rejects.toThrow('Session révoquée');
   });
 
-  it('lit aussi le cookie préfixé __Host- (nom de production)', async () => {
+  it('production : lit le cookie préfixé __Host-', async () => {
     const auth = new SessionAuthenticator(
       tokenWith({ sub: 'u1', email: 'a@b.com', sv: 3 }),
       dbWith([{ sessionVersion: 3 }]),
+      PRODUCTION,
     );
     await expect(
       auth.authenticate({ [SESSION_COOKIE_HOST]: 'tok' }),
     ).resolves.toMatchObject({ id: 'u1' });
+  });
+
+  it('production : un cookie sans préfixe (posable par un sous-domaine voisin) est ignoré → 401', async () => {
+    const auth = new SessionAuthenticator(
+      tokenWith({ sub: 'u1', email: 'a@b.com', sv: 3 }),
+      dbWith([{ sessionVersion: 3 }]),
+      PRODUCTION,
+    );
+
+    const attempt = auth.authenticate({ [SESSION_COOKIE]: 'tok' });
+
+    await expect(attempt).rejects.toBeInstanceOf(UnauthorizedError);
+    await expect(attempt).rejects.toThrow('Non authentifié');
   });
 });

@@ -3,7 +3,7 @@ import type { DrizzleDB } from '../db/drizzle.constants';
 import { users } from '../db/schema';
 import { UnauthorizedError } from '../common/errors';
 import type { AuthUser } from './auth-user';
-import { SESSION_COOKIE_NAMES } from './cookie';
+import { sessionCookieName } from './cookie';
 import type { TokenService } from './token.service';
 
 /**
@@ -14,12 +14,17 @@ export class SessionAuthenticator {
   constructor(
     private readonly token: TokenService,
     private readonly db: DrizzleDB,
+    /**
+     * Servi en HTTPS : seul le cookie `__Host-` est lu. Le nom sans préfixe peut être posé par un
+     * sous-domaine voisin (cookie tossing) : l'accepter annulerait la protection du préfixe.
+     */
+    private readonly isProd: boolean,
   ) {}
 
   async authenticate(
     cookies: Readonly<Record<string, string | undefined>> | undefined,
   ): Promise<AuthUser> {
-    const raw = SESSION_COOKIE_NAMES.map((n) => cookies?.[n]).find(Boolean);
+    const raw = cookies?.[sessionCookieName(this.isProd)];
     if (!raw) throw new UnauthorizedError('Non authentifié');
 
     let payload: Awaited<ReturnType<TokenService['verify']>>;
