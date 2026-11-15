@@ -2,6 +2,7 @@ import * as Sentry from '@sentry/node';
 import type { Context, Hono } from 'hono';
 import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { errorResponseBody, normalizeError } from '../common/error-response';
+import { ServerBusyError } from '../common/errors';
 import { createLogger } from '../common/logger';
 
 const logger = createLogger('HttpError');
@@ -14,12 +15,15 @@ function requestPath(c: Context): string {
 
 /**
  * Corps d'erreur identique à celui du filtre Nest. Seules les 5xx partent à Sentry et aux logs :
- * les 4xx (401/404/409…) sont du bruit. Le détail d'une erreur inattendue ne sort jamais.
+ * les 4xx (401/404/409…) sont du bruit, comme une surcharge attendue (ServerBusyError, 503 avec
+ * Retry-After). Le détail d'une erreur inattendue ne sort jamais.
  */
 export function installErrorHandling<E extends object>(app: Hono<E>): void {
   app.onError((err, c) => {
     const normalized = normalizeError(err);
-    if (normalized.status >= 500) {
+    if (err instanceof ServerBusyError) {
+      c.header('Retry-After', String(err.retryAfterSeconds));
+    } else if (normalized.status >= 500) {
       Sentry.captureException(err);
       logger.error(
         err instanceof Error ? (err.stack ?? err.message) : String(err),

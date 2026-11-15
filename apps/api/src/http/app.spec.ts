@@ -18,6 +18,7 @@ import {
   requireRole,
 } from './middleware/auth';
 import { jsonBody } from './validate';
+import { ServerBusyError } from '../common/errors';
 import { TokenService } from '../auth/token.service';
 import { SESSION_COOKIE } from '../auth/cookie';
 import type { DrizzleDB } from '../db/drizzle.constants';
@@ -281,6 +282,25 @@ describe('IP client derrière un tunnel Cloudflare (CLIENT_IP_HEADER)', () => {
 
     expect((await app.request('/login', spoofed('1.1.1.1'))).status).toBe(200);
     expect((await app.request('/login', spoofed('2.2.2.2'))).status).toBe(429);
+  });
+});
+
+describe('Serveur occupé (ServerBusyError)', () => {
+  it('503 avec Retry-After et le code SERVER_BUSY, sans détail technique', async () => {
+    d = deps(fakeDb());
+    const app = createApp(d);
+    app.post('/busy', () => {
+      throw new ServerBusyError(5);
+    });
+
+    const res = await app.request('/busy', { method: 'POST' });
+
+    expect(res.status).toBe(503);
+    expect(res.headers.get('Retry-After')).toBe('5');
+    expect(await res.json()).toMatchObject({
+      statusCode: 503,
+      code: 'SERVER_BUSY',
+    });
   });
 });
 

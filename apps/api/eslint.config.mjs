@@ -60,6 +60,33 @@ export default tseslint.config(
     },
   },
   {
+    // Code applicatif : Argon2 ne s'appelle qu'à travers src/auth/password-hashing.ts, qui borne
+    // les hachages simultanés (CPU). Un appel direct contournerait cette limite. La règle reprend
+    // le motif NestJS ci-dessus : une configuration plus bas remplace la précédente, sans fusion.
+    files: ['src/**/*.ts'],
+    ignores: ['**/*.spec.ts', 'src/auth/password-hashing.ts'],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          paths: [
+            {
+              name: 'argon2',
+              message:
+                'Passer par passwordHasher (src/auth/password-hashing.ts), qui borne les hachages simultanés.',
+            },
+          ],
+          patterns: [
+            {
+              group: ['@nestjs/*'],
+              message: 'NestJS a été retiré : passer par src/http (Hono).',
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
     // Les tests utilisent des mocks partiels et des fixtures non typés (Drizzle,
     // services, requêtes HTTP) : les règles `no-unsafe-*` type-aware y produisent
     // du bruit légitime. On les neutralise UNIQUEMENT dans les fichiers de test.
