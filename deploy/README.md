@@ -53,6 +53,23 @@ Derrière le tunnel, Traefik puis le front ne voient que l'adresse du tunnel. L'
 
 Cet en-tête n'est digne de confiance que si **rien d'autre que le tunnel ne joint Traefik** : aucun port 80 ou 443 du serveur ne doit être ouvert sur Internet, redirection de la box comprise. Sinon, un client choisirait lui-même l'adresse comptée.
 
+## Supervision
+
+Deux sondes, à ne pas confondre :
+- **`/api/health`** : sonde de **vie**, publique. Elle dit seulement que l'API tourne, sans toucher la base ni Redis. C'est celle du `HEALTHCHECK` Docker : une base en panne ne doit pas faire redémarrer l'API en boucle.
+- **`/api/health/ready`** : sonde d'**état**, pour un monitoring externe. Elle vérifie la base **et Redis**, et répond 503 si l'un des deux est injoignable ou ne répond pas en 2 secondes. Elle n'existe (sinon 404) que si `HEALTH_TOKEN` est réglée et présentée dans l'en-tête `X-Health-Token`.
+
+Mise en place :
+1. Génère un jeton (`openssl rand -hex 24`) et ajoute `HEALTH_TOKEN=<jeton>` dans l'onglet Environment, puis redéploie.
+2. Vérifie :
+   ```bash
+   curl -s -H "X-Health-Token: <jeton>" https://dashflow.nedellec-julien.fr/api/health/ready
+   ```
+   La réponse attendue est `{"ok":true,"db":true,"redis":true}`.
+3. Dans ton outil de supervision (Uptime Kuma, Better Stack, UptimeRobot…), crée une sonde HTTP sur cette adresse, avec l'en-tête `X-Health-Token`, toutes les minutes, en alerte si le code n'est pas 200. Choisis un outil **hors du serveur** : s'il tombe avec lui, il ne peut pas te prévenir.
+
+En cas d'alerte, les journaux de `dashflow-api` donnent la cause (`Sonde : Redis injoignable (…)`, ou une erreur de base).
+
 ## Vérifier après un déploiement
 
 - `https://dashflow.nedellec-julien.fr/api/health` répond `{"ok":true}` ;

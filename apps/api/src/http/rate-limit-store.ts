@@ -21,6 +21,8 @@ export type RateLimiter = {
     rule: ThrottleRule,
   ): ThrottleResult | Promise<ThrottleResult>;
   dispose(): void;
+  /** Stockage externe (Redis) : échoue s'il est injoignable. Absent pour les compteurs en mémoire. */
+  ping?(): Promise<void>;
 };
 
 type Entry = {
