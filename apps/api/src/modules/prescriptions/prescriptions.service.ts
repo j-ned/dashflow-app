@@ -1,6 +1,11 @@
 import { and, eq } from 'drizzle-orm';
 import type { DrizzleDB } from '../../db/drizzle.constants';
-import { prescriptions, patients, practitioners } from '../../db/schema';
+import {
+  appointments,
+  prescriptions,
+  patients,
+  practitioners,
+} from '../../db/schema';
 import { OwnedCrudService } from '../../common/crud/owned-crud.service';
 import { assertOwnedReference } from '../../common/crud/assert-owned-reference';
 import { StorageService } from '../../storage/storage.service';
@@ -29,6 +34,14 @@ export class PrescriptionsService extends OwnedCrudService<Prescription> {
         practitioners,
         userId,
         values.practitionerId,
+      );
+    }
+    if (typeof values.appointmentId === 'string') {
+      await assertOwnedReference(
+        this.db,
+        appointments,
+        userId,
+        values.appointmentId,
       );
     }
   }

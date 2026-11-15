@@ -357,7 +357,12 @@ export function authRoutes(d: HttpDeps) {
       )
 
       .get('/avatar/:userId', ...authed, async (c) => {
-        const user = await d.auth.getById(uuidParam(c, 'userId'));
+        // Seul l'avatar du compte connecté est servi : rien dans l'app ne montre celui d'un autre.
+        // 404 plutôt que 403, pour ne pas confirmer qu'un compte existe.
+        const userId = uuidParam(c, 'userId');
+        if (userId !== c.get('user').id)
+          throw new NotFoundError('Avatar introuvable');
+        const user = await d.auth.getById(userId);
         if (!user?.avatarUrl) throw new NotFoundError('Avatar introuvable');
         const obj = await d.storage.getStream(user.avatarUrl);
         if (!obj) throw new NotFoundError('Avatar introuvable');
