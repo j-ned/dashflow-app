@@ -74,6 +74,16 @@ describe.skipIf(!url)('RedisRateLimitStore (Redis réel)', () => {
     expect(results.filter((r) => !r.isBlocked)).toHaveLength(10);
   });
 
+  it('ping : Redis joignable → se résout ; connexion fermée → échoue', async () => {
+    const s = new RedisRateLimitStore(url ?? '');
+    await s.connect();
+    await expect(s.ping()).resolves.toBeUndefined();
+
+    await s.close();
+
+    await expect(s.ping()).rejects.toThrow();
+  });
+
   it('clés indépendantes : bloquer l’une ne touche pas l’autre', async () => {
     const s = await instance();
     const rule = { limit: 1, ttlMs: 60_000 };

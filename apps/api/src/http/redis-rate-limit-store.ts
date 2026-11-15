@@ -111,6 +111,11 @@ export class RedisRateLimitStore {
     };
   }
 
+  /** Redis répond ; échoue tout de suite s'il est déconnecté (pas de file d'attente). */
+  async ping(): Promise<void> {
+    await this.client.ping();
+  }
+
   /** Les compteurs vivent dans Redis : rien à libérer en mémoire (cf. close). */
   dispose(): void {}
 
