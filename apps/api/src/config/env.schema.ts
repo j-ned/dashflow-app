@@ -43,6 +43,19 @@ const envBaseSchema = z.object({
       .min(24, 'HEALTH_TOKEN doit faire au moins 24 caractères')
       .optional(),
   ),
+  // En-tête portant l'adresse du visiteur, posé par un tunnel (Cloudflare : cf-connecting-ip).
+  // À ne régler que si rien d'autre que ce tunnel ne joint le serveur : sinon un client choisirait
+  // lui-même l'adresse comptée par le throttling (cf. http/middleware/client-ip.ts).
+  CLIENT_IP_HEADER: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .regex(
+        /^[a-z0-9-]+$/,
+        'CLIENT_IP_HEADER : un nom d’en-tête en minuscules',
+      )
+      .optional(),
+  ),
   // Active le compte démo public (login sans mot de passe + reset). À couper en prod si non souhaité.
   DEMO_ENABLED: z
     .string()

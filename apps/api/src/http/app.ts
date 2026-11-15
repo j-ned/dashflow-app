@@ -41,7 +41,7 @@ export function createApp(
     ? new Hono<AppEnv>().basePath(opts.basePath)
     : new Hono<AppEnv>();
   app.use(securityHeaders());
-  app.use(clientIp());
+  app.use(clientIp(deps.env.CLIENT_IP_HEADER));
   app.use(rateLimit(deps.rateLimits));
   app.use(defaultBodyLimit());
 

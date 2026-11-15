@@ -32,6 +32,22 @@ describe('envSchema', () => {
   it('MAILER par défaut = console', () => {
     expect(envSchema.parse({ ...base }).MAILER).toBe('console');
   });
+
+  it('CLIENT_IP_HEADER : absent ou vide = non réglé, nom d’en-tête en minuscules accepté', () => {
+    expect(
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: '' }).CLIENT_IP_HEADER,
+    ).toBeUndefined();
+    expect(
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: 'cf-connecting-ip' })
+        .CLIENT_IP_HEADER,
+    ).toBe('cf-connecting-ip');
+  });
+
+  it('CLIENT_IP_HEADER : refuse un nom mal formé au démarrage', () => {
+    expect(() =>
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: 'CF-Connecting-IP; x' }),
+    ).toThrow(/CLIENT_IP_HEADER/);
+  });
 });
 
 describe('envSchema — garde-fous production', () => {
