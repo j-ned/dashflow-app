@@ -120,6 +120,8 @@
       "signIn": "Sign in",
       "verifySent": "A verification code has been sent to",
       "verifyCodeLabel": "Verification code",
+      "verifyPasswordLabel": "Password",
+      "verifyPasswordHint": "The one you chose when signing up: it becomes the account password once the address is verified.",
       "verify": "Verify",
       "verifying": "Verifying...",
       "resend": "Resend the code",

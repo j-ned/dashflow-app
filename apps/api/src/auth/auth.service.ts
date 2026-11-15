@@ -89,8 +89,12 @@ export class AuthService {
     if (!valid) return fail(400, 'Code invalide ou expiré');
     const user = await this.repo.findByEmail(dto.email);
     if (!user) return fail(404, 'Compte introuvable');
+    // Le mot de passe est celui de qui saisit le code, pas du dernier inscrit : une réinscription
+    // entre l'envoi et la saisie du code ne laisse pas la main à un tiers sans accès à la boîte.
     const updated = await this.repo.updateUser(user.id, {
       emailVerified: new Date(),
+      password: await passwordHasher.hash(dto.password),
+      authVersion: 1,
     });
     await this.repo.deleteCodes(dto.email, 'verification');
     return ok(updated);

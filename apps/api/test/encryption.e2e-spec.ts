@@ -25,7 +25,7 @@ describe('Encryption e2e', () => {
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
-      .send({ email, code: api.mail.lastCode })
+      .send({ email, code: api.mail.lastCode, password })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];

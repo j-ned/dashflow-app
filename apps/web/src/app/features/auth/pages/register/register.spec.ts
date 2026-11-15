@@ -1,3 +1,4 @@
+import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, provideRouter, Router } from '@angular/router';
 import { TranslocoService, TranslocoTestingModule } from '@jsverse/transloco';
@@ -16,6 +17,8 @@ type Cmp = {
   step: () => 'register' | 'verify';
   pendingEmail: () => string;
   codeValue: { set: (v: string) => void };
+  verifyPassword: { set: (v: string) => void };
+  needsPassword: () => boolean;
   registerForm: {
     setValue: (v: {
       displayName: string;
@@ -29,6 +32,7 @@ type Cmp = {
 };
 
 type AuthStoreMock = {
+  pendingVerificationEmail: () => string | null;
   register: ReturnType<typeof vi.fn>;
   verifyCode: ReturnType<typeof vi.fn>;
   resendCode: ReturnType<typeof vi.fn>;
@@ -37,13 +41,19 @@ type AuthStoreMock = {
 function makeComponent(
   opts: {
     register?: (email: string, password: string, displayName?: string) => Promise<void>;
-    verifyCode?: (email: string, code: string) => Promise<void>;
+    verifyCode?: (email: string, code: string, password?: string) => Promise<void>;
     resendCode?: (email: string) => Promise<void>;
     queryParams?: Record<string, string>;
   } = {},
 ) {
+  // Comme le vrai store : une inscription réussie garde la clé pour l'adresse inscrite.
+  const pending = signal<string | null>(null);
   const auth: AuthStoreMock = {
-    register: vi.fn(opts.register ?? (() => Promise.resolve())),
+    pendingVerificationEmail: pending.asReadonly(),
+    register: vi.fn(async (email: string, password: string, displayName?: string) => {
+      await (opts.register ?? (() => Promise.resolve()))(email, password, displayName);
+      pending.set(email);
+    }),
     verifyCode: vi.fn(opts.verifyCode ?? (() => Promise.resolve())),
     resendCode: vi.fn(opts.resendCode ?? (() => Promise.resolve())),
   };
@@ -223,6 +233,40 @@ describe('Register : inscription 2 étapes (sécurité)', () => {
       expect(cmp.loading()).toBe(false);
     });
 
+    it('après l’inscription (clé gardée par le store) : aucun mot de passe redemandé', async () => {
+      const { cmp } = makeComponent();
+      cmp.registerForm.setValue(VALID_FORM);
+
+      await cmp.submitRegister();
+
+      expect(cmp.needsPassword()).toBe(false);
+    });
+
+    it('page rechargée à l’étape du code (rien en mémoire) : le mot de passe est demandé puis envoyé avec le code', async () => {
+      const { cmp, auth, navigate } = makeComponent({
+        queryParams: { verify: 'true', email: VALID_FORM.email },
+      });
+      expect(cmp.needsPassword()).toBe(true);
+
+      cmp.codeValue.set('123456');
+      cmp.verifyPassword.set(VALID_FORM.password);
+      await cmp.submitVerify();
+
+      expect(auth.verifyCode).toHaveBeenCalledWith(VALID_FORM.email, '123456', VALID_FORM.password);
+      expect(navigate).toHaveBeenCalledWith(['/budget']);
+    });
+
+    it('mot de passe requis mais vide → ne tente pas verifyCode', async () => {
+      const { cmp, auth } = makeComponent({
+        queryParams: { verify: 'true', email: VALID_FORM.email },
+      });
+      cmp.codeValue.set('123456');
+
+      await cmp.submitVerify();
+
+      expect(auth.verifyCode).not.toHaveBeenCalled();
+    });
+
     it('code de longueur != 6 (trim inclus) → ne tente pas verifyCode', async () => {
       const { cmp, auth } = makeComponent();
       cmp.codeValue.set('12345');
@@ -310,6 +354,7 @@ describe('Register : inscription 2 étapes (sécurité)', () => {
 describe('Register : rendu réel du template (F014)', () => {
   function mountReal(opts: { register?: (...args: unknown[]) => Promise<void> } = {}) {
     const auth: AuthStoreMock = {
+      pendingVerificationEmail: signal<string | null>(null).asReadonly(),
       register: vi.fn(opts.register ?? (() => Promise.resolve())),
       verifyCode: vi.fn(() => Promise.resolve()),
       resendCode: vi.fn(() => Promise.resolve()),

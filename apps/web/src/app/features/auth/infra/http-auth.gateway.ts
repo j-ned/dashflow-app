@@ -46,16 +46,18 @@ export class HttpAuthGateway {
     return this.api.post('/auth/demo-login', {});
   }
 
+  /** `authKey` : la clé choisie à l'inscription. C'est elle que le serveur enregistre. */
   verifyCode(
     email: string,
     code: string,
+    authKey: string,
   ): Observable<{
     token: string;
     user: AuthUser;
     keyMaterial?: KeyMaterial;
     csrfToken?: string;
   }> {
-    return this.api.post('/auth/verify', { email, code });
+    return this.api.post('/auth/verify', { email, code, password: authKey });
   }
 
   resendCode(email: string): Observable<void> {

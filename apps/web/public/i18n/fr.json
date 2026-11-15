@@ -120,6 +120,8 @@
       "signIn": "Se connecter",
       "verifySent": "Un code de vérification a été envoyé à",
       "verifyCodeLabel": "Code de vérification",
+      "verifyPasswordLabel": "Mot de passe",
+      "verifyPasswordHint": "Celui choisi à l’inscription : il devient le mot de passe du compte une fois l’adresse vérifiée.",
       "verify": "Vérifier",
       "verifying": "Vérification...",
       "resend": "Renvoyer le code",

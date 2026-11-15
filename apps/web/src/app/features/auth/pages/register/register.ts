@@ -1,4 +1,4 @@
-import { Component, ChangeDetectionStrategy, inject, signal } from '@angular/core';
+import { Component, ChangeDetectionStrategy, computed, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoPipe, TranslocoService } from '@jsverse/transloco';
@@ -244,9 +244,37 @@ type RegisterFormShape = {
                 />
               </div>
 
+              @if (needsPassword()) {
+                <div>
+                  <label
+                    for="verify-password"
+                    class="mb-1.5 block text-sm font-medium text-text-primary"
+                  >
+                    {{ 'auth.register.verifyPasswordLabel' | transloco }}
+                  </label>
+                  <input
+                    #verifyPasswordInput
+                    id="verify-password"
+                    type="password"
+                    autocomplete="current-password"
+                    aria-required="true"
+                    aria-describedby="verify-password-hint"
+                    class="w-full rounded-lg border border-border bg-canvas px-4 py-2.5 text-sm text-text-primary transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue"
+                    (input)="verifyPassword.set(verifyPasswordInput.value)"
+                  />
+                  <p id="verify-password-hint" class="mt-1.5 text-xs text-text-muted">
+                    {{ 'auth.register.verifyPasswordHint' | transloco }}
+                  </p>
+                </div>
+              }
+
               <button
                 type="submit"
-                [disabled]="codeValue().length !== 6 || loading()"
+                [disabled]="
+                  codeValue().length !== 6 ||
+                  (needsPassword() && verifyPassword() === '') ||
+                  loading()
+                "
                 class="w-full rounded-lg bg-ib-blue px-4 py-2.5 text-sm font-semibold text-canvas transition-colors hover:bg-ib-blue/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ib-blue focus-visible:ring-offset-2 focus-visible:ring-offset-surface disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {{ (loading() ? 'auth.register.verifying' : 'auth.register.verify') | transloco }}
@@ -292,6 +320,14 @@ export class Register {
   protected readonly step = signal<'register' | 'verify'>('register');
   protected readonly pendingEmail = signal('');
   protected readonly codeValue = signal('');
+  protected readonly verifyPassword = signal('');
+  /**
+   * Le serveur enregistre le mot de passe avec la vérification. Après une inscription ou une
+   * connexion refusée, le store a gardé la clé ; page rechargée entre-temps, il faut le redemander.
+   */
+  protected readonly needsPassword = computed(
+    () => this.auth.pendingVerificationEmail() !== this.pendingEmail(),
+  );
 
   constructor() {
     const params = this.route.snapshot.queryParams;
@@ -343,12 +379,16 @@ export class Register {
   protected async submitVerify(): Promise<void> {
     const code = this.codeValue().trim();
     if (code.length !== 6) return;
+    const password = this.needsPassword() ? this.verifyPassword() : undefined;
+    if (password === '') return;
 
     this.loading.set(true);
     this.error.set('');
 
     try {
-      await this.auth.verifyCode(this.pendingEmail(), code);
+      await (password === undefined
+        ? this.auth.verifyCode(this.pendingEmail(), code)
+        : this.auth.verifyCode(this.pendingEmail(), code, password));
       this.router.navigate(['/budget']);
     } catch {
       this.error.set(this._i18n.translate('auth.register.errors.codeInvalid'));
