@@ -52,6 +52,19 @@ const envBaseSchema = z.object({
       .min(24, 'HEALTH_TOKEN doit faire au moins 24 caractères')
       .optional(),
   ),
+  // Redis joint en TCP (conteneur `dashflow-redis` de la pile Dokploy) : compteurs de throttling
+  // partagés entre les instances de l'API. Absent → Redis REST (Upstash) s'il est réglé, sinon
+  // compteurs en mémoire, propres à chaque processus.
+  REDIS_URL: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .url()
+      .refine((v) => /^rediss?:\/\//.test(v), {
+        message: 'REDIS_URL : une adresse redis:// ou rediss:// attendue',
+      })
+      .optional(),
+  ),
   // En-tête portant l'adresse du visiteur, posé par un tunnel (Cloudflare : cf-connecting-ip).
   // À ne régler que si rien d'autre que ce tunnel ne joint le serveur : sinon un client choisirait
   // lui-même l'adresse comptée par le throttling (cf. http/middleware/client-ip.ts).

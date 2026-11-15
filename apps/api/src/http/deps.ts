@@ -2,11 +2,7 @@ import postgres from 'postgres';
 import { drizzle } from 'drizzle-orm/postgres-js';
 import * as schema from '../db/schema';
 import type { DrizzleDB } from '../db/drizzle.constants';
-import {
-  redisRestConfig,
-  servesOverHttps,
-  type Env,
-} from '../config/env.schema';
+import { servesOverHttps, type Env } from '../config/env.schema';
 import type { Mailer } from '../mail/mailer';
 import { createMailer } from '../mail/create-mailer';
 import { StorageService } from '../storage/storage.service';
@@ -41,7 +37,7 @@ import { RecurringEntriesService } from '../modules/recurring-entries/recurring-
 import { RemindersService } from '../modules/reminders/reminders.service';
 import { SalaryArchivesService } from '../modules/salary-archives/salary-archives.service';
 import { RateLimitStore, type RateLimiter } from './rate-limit-store';
-import { RedisRateLimitStore } from './redis-rate-limit-store';
+import { createRateLimiter } from './rate-limiter';
 import { SessionCookies } from './kit';
 
 /** Tout ce dont la couche HTTP Hono a besoin, construit une fois au démarrage. */
@@ -103,6 +99,8 @@ function buildDeps(
 /** Racine de composition : remplace l'injection de dépendances de Nest (même câblage). */
 export function createDeps(env: Env): {
   deps: HttpDeps;
+  /** Connecte les dépendances qui en ont besoin (Redis) ; à attendre avant d'écouter. */
+  connect: () => Promise<void>;
   close: () => Promise<void>;
 } {
   const onVercel = env.VERCEL === '1';
@@ -114,17 +112,13 @@ export function createDeps(env: Env): {
   );
   const db = drizzle(client, { schema });
   const mailer = createMailer(env);
-  const redis = redisRestConfig(env);
-  const deps = buildDeps(
-    env,
-    db,
-    mailer,
-    redis ? new RedisRateLimitStore(redis) : new RateLimitStore(),
-  );
+  const rateLimits = createRateLimiter(env);
+  const deps = buildDeps(env, db, mailer, rateLimits.limiter);
   return {
     deps,
+    connect: rateLimits.connect,
     close: async () => {
-      deps.rateLimits.dispose();
+      await rateLimits.close();
       // Rend les connexions à Postgres au lieu de les laisser tomber à la mort du processus.
       await client.end({ timeout: 5 });
     },

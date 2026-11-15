@@ -3,6 +3,7 @@
 La pile de production est `compose.yaml` :
 - **`dashflow-web`** : nginx sert le front et relaie `/api/` vers l'API.
 - **`dashflow-api`** : l'API Node. Elle applique ses migrations au démarrage et fait tourner ses tâches planifiées.
+- **`dashflow-redis`** : les compteurs de limitation (connexions, envois de code), partagés par toutes les instances de l'API. Sans persistance : un redémarrage remet les compteurs à zéro, ce qui est sans conséquence.
 - **`dashflow-backup`** : sauvegarde quotidienne chiffrée de la base.
 
 La base Postgres 18 est **hors de la pile** : c'est le service de base de données `dashflow-db` de Dokploy, que l'API et la sauvegarde joignent par `dokploy-network`. Dokploy ne construit rien : il tire les images publiées sur GHCR par la CI (`dashflow-web`, `dashflow-api`, `dashflow-backup`). Le trafic arrive par le tunnel Cloudflare, puis passe par le Traefik de Dokploy.
@@ -27,7 +28,7 @@ Tant que l'étape « Bascule » n'est pas faite, Vercel et Neon restent la produ
    - `S3_*` : celles du **nouveau** bucket de documents.
 5. **Domains** : sur le service `dashflow-web`, port `8080`, en HTTP (le TLS est assuré par Cloudflare), pour `dashflow.nedellec-julien.fr`. L'API n'a pas de domaine à elle.
 
-   Le bouton _Preview Compose_ doit montrer les trois services, chacun sur `default` **et** sur `dokploy-network`.
+   Le bouton _Preview Compose_ doit montrer `dashflow-web`, `dashflow-api` et `dashflow-backup` sur `default` **et** `dokploy-network`, et `dashflow-redis` sur `default` seulement.
 6. **Premier déploiement** : à la main, avec le bouton Deploy. L'API applique les migrations qui manquent à la base, puis démarre.
 
    Vérification depuis le serveur :
