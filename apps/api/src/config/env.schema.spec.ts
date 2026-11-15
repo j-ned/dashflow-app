@@ -69,6 +69,33 @@ describe('envSchema — garde-fous production', () => {
     );
   });
 
+  it('accepte MAILER=resend avec sa clé et son expéditeur en production', () => {
+    expect(() =>
+      envSchema.parse({
+        ...prod,
+        MAILER: 'resend',
+        SMTP_HOST: undefined,
+        RESEND_API_KEY: 're_live_key',
+        MAIL_FROM: 'DashFlow <noreply@dashflow.example>',
+      }),
+    ).not.toThrow();
+  });
+
+  it('refuse MAILER=resend sans RESEND_API_KEY ou sans MAIL_FROM en production', () => {
+    const resend = {
+      ...prod,
+      MAILER: 'resend',
+      RESEND_API_KEY: 're_live_key',
+      MAIL_FROM: 'DashFlow <noreply@dashflow.example>',
+    };
+    expect(() =>
+      envSchema.parse({ ...resend, RESEND_API_KEY: undefined }),
+    ).toThrow(/RESEND_API_KEY/);
+    expect(() => envSchema.parse({ ...resend, MAIL_FROM: undefined })).toThrow(
+      /MAIL_FROM/,
+    );
+  });
+
   it('refuse MAILER=smtp sans SMTP_HOST en production', () => {
     expect(() => envSchema.parse({ ...prod, SMTP_HOST: undefined })).toThrow(
       /MAILER/,

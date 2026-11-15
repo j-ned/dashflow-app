@@ -24,7 +24,16 @@ const envBaseSchema = z.object({
     (v) => (v === '' ? undefined : v),
     z.string().min(43).optional(),
   ),
-  MAILER: z.enum(['console', 'smtp']).default('console'),
+  MAILER: z.enum(['console', 'smtp', 'resend']).default('console'),
+  // ── Resend (mailer = resend) : clé d'API et expéditeur sur un domaine vérifié chez Resend ──
+  RESEND_API_KEY: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
+  MAIL_FROM: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z.string().optional(),
+  ),
   GOOGLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_SECRET: z.string().optional(),
   APP_URL: z.string().url().default('http://localhost:3001'),
@@ -186,11 +195,22 @@ export const envSchema = envBaseSchema.superRefine((env, ctx) => {
       });
     }
   }
-  if (env.MAILER !== 'smtp' || !env.SMTP_HOST) {
+  if (env.MAILER === 'resend') {
+    for (const key of ['RESEND_API_KEY', 'MAIL_FROM'] as const) {
+      if (!env[key]) {
+        ctx.addIssue({
+          code: 'custom',
+          path: [key],
+          message: `MAILER=resend : ${key} est requis`,
+        });
+      }
+    }
+  } else if (env.MAILER !== 'smtp' || !env.SMTP_HOST) {
     ctx.addIssue({
       code: 'custom',
       path: ['MAILER'],
-      message: 'En production, MAILER doit valoir "smtp" avec SMTP_HOST défini',
+      message:
+        'En production, MAILER doit valoir "resend" ou "smtp" (avec SMTP_HOST défini)',
     });
   }
 });
