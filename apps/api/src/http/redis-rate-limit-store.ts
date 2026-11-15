@@ -12,7 +12,7 @@ import type { ThrottleResult, ThrottleRule } from './rate-limit-store';
  * ARGV : [maintenant ms, ttl ms, limite, blocage ms, membre unique]
  * Rend : [coups comptés, bloqué (0/1), ms avant fin de fenêtre, ms avant fin du blocage]
  */
-const SCRIPT = `
+export const THROTTLE_SCRIPT = `
 local now = tonumber(ARGV[1])
 local ttl = tonumber(ARGV[2])
 local limit = tonumber(ARGV[3])
@@ -41,6 +41,21 @@ end
 return { hits, 0, window, 0 }
 `;
 
+/** Clés Redis d'un compteur : coups, blocage, fenêtre (cf. KEYS du script). */
+export const throttleKeys = (key: string): string[] => {
+  const base = `rl:${key}`;
+  return [`${base}:hits`, `${base}:block`, `${base}:window`];
+};
+
+/** Arguments du script (cf. ARGV) ; le membre unique distingue deux requêtes de la même ms. */
+export const throttleArgs = (rule: ThrottleRule): string[] => [
+  String(Date.now()),
+  String(rule.ttlMs),
+  String(rule.limit),
+  String(rule.blockMs ?? rule.ttlMs),
+  randomUUID(),
+];
+
 export class RedisRateLimitStore {
   private readonly redis: Redis;
 
@@ -49,21 +64,10 @@ export class RedisRateLimitStore {
   }
 
   async increment(key: string, rule: ThrottleRule): Promise<ThrottleResult> {
-    const base = `rl:${key}`;
     const [hits, blocked, windowMs, blockMs] = await this.redis.eval<
       string[],
       [number, number, number, number]
-    >(
-      SCRIPT,
-      [`${base}:hits`, `${base}:block`, `${base}:window`],
-      [
-        String(Date.now()),
-        String(rule.ttlMs),
-        String(rule.limit),
-        String(rule.blockMs ?? rule.ttlMs),
-        randomUUID(),
-      ],
-    );
+    >(THROTTLE_SCRIPT, throttleKeys(key), throttleArgs(rule));
     return {
       totalHits: hits,
       isBlocked: blocked === 1,

@@ -43,6 +43,26 @@ describe('envSchema', () => {
     ).toBe('cf-connecting-ip');
   });
 
+  it('REDIS_URL : absente ou vide = non réglée, redis:// et rediss:// acceptées', () => {
+    expect(
+      envSchema.parse({ ...base, REDIS_URL: '' }).REDIS_URL,
+    ).toBeUndefined();
+    expect(
+      envSchema.parse({ ...base, REDIS_URL: 'redis://dashflow-redis:6379' })
+        .REDIS_URL,
+    ).toBe('redis://dashflow-redis:6379');
+    expect(
+      envSchema.parse({ ...base, REDIS_URL: 'rediss://cache.example:6380' })
+        .REDIS_URL,
+    ).toBe('rediss://cache.example:6380');
+  });
+
+  it('REDIS_URL : refuse une adresse qui n’est pas redis:// au démarrage', () => {
+    expect(() =>
+      envSchema.parse({ ...base, REDIS_URL: 'https://redis.example' }),
+    ).toThrow(/REDIS_URL/);
+  });
+
   it('CLIENT_IP_HEADER : refuse un nom mal formé au démarrage', () => {
     expect(() =>
       envSchema.parse({ ...base, CLIENT_IP_HEADER: 'CF-Connecting-IP; x' }),
