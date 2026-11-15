@@ -28,7 +28,12 @@ export const registerSchema = z.object({
   password,
   displayName: z.string().max(255).optional(),
 });
-export const verifySchema = z.object({ email, code });
+/**
+ * La vérification porte la clé d'authentification choisie à l'inscription : c'est celui qui
+ * prouve posséder la boîte mail (le code) qui fixe le mot de passe. Sans elle, quiconque se
+ * réinscrit avec la même adresse avant la saisie du code imposerait le sien.
+ */
+export const verifySchema = z.object({ email, code, password });
 export const preloginSchema = z.object({ email });
 /** Bascule d'un compte sur la clé d'authentification, preuve du mot de passe à l'appui. */
 export const upgradeAuthSchema = z.object({

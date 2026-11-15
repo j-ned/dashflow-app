@@ -43,7 +43,11 @@ async function session(api: E2eApi): Promise<Session> {
   const verify = await fetch(`${api.url}/auth/verify`, {
     method: 'POST',
     headers: json,
-    body: JSON.stringify({ email, code: api.mail.lastCode }),
+    body: JSON.stringify({
+      email,
+      code: api.mail.lastCode,
+      password: authKey('motdepasse-long-12'),
+    }),
   });
   const { csrfToken } = (await verify.json()) as { csrfToken: string };
   return { cookie: cookieOf(verify), csrf: csrfToken };

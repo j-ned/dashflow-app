@@ -27,7 +27,11 @@ describe('Admin notices e2e', () => {
       .expect(201);
     const v = await request(s)
       .post('/auth/verify')
-      .send({ email, code: api.mail.lastCode })
+      .send({
+        email,
+        code: api.mail.lastCode,
+        password: authKey('motdepasse-long-12'),
+      })
       .expect(200);
     const sessionCookie = v.headers['set-cookie'] as unknown as string[];
     const csrf = await request(s)

@@ -24,7 +24,11 @@ describe('Auth e2e', () => {
 
     const verify = await request(api.url)
       .post('/auth/verify')
-      .send({ email, code: api.mail.lastCode })
+      .send({
+        email,
+        code: api.mail.lastCode,
+        password: authKey('motdepasse-long-12'),
+      })
       .expect(200);
 
     const cookie = verify.headers['set-cookie'] as string | string[];
@@ -58,7 +62,11 @@ describe('Auth e2e', () => {
       .expect(201);
     await request(server)
       .post('/auth/verify')
-      .send({ email: victim, code: api.mail.lastCode })
+      .send({
+        email: victim,
+        code: api.mail.lastCode,
+        password: authKey('mot-de-passe-victime-12'),
+      })
       .expect(200);
 
     // 3. Seul le mot de passe de la personne qui a prouvé l'e-mail fonctionne.
@@ -166,12 +174,20 @@ describe('Auth e2e', () => {
     for (let i = 0; i < 5; i++) {
       await request(server)
         .post('/auth/verify')
-        .send({ email: target, code: wrong })
+        .send({
+          email: target,
+          code: wrong,
+          password: authKey('motdepasse-long-12'),
+        })
         .expect(400);
     }
     await request(server)
       .post('/auth/verify')
-      .send({ email: target, code: good })
+      .send({
+        email: target,
+        code: good,
+        password: authKey('motdepasse-long-12'),
+      })
       .expect(400);
   });
 
@@ -208,7 +224,11 @@ describe('Auth e2e', () => {
       .expect(201);
     const verify = await request(server)
       .post('/auth/verify')
-      .send({ email: email2, code: api.mail.lastCode })
+      .send({
+        email: email2,
+        code: api.mail.lastCode,
+        password: authKey('motdepasse-long-12'),
+      })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];
@@ -319,7 +339,11 @@ describe('Auth e2e', () => {
     const verify = await request(server)
       .post('/auth/verify')
       .set('User-Agent', 'Mozilla/5.0 (X11; Linux x86_64) Firefox/130.0')
-      .send({ email, code: api.mail.lastCode })
+      .send({
+        email,
+        code: api.mail.lastCode,
+        password: authKey('motdepasse-long-12'),
+      })
       .expect(200);
     const cookie = verify.headers['set-cookie'] as string | string[];
     const cookieArr = Array.isArray(cookie) ? cookie : [cookie];

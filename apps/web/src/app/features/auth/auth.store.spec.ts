@@ -44,6 +44,7 @@ describe('AuthStore : demo account bypass', () => {
     login: vi.fn(),
     upgradeAuth: vi.fn(),
     register: vi.fn(),
+    verifyCode: vi.fn(),
     disable2FA: vi.fn(),
     completeOAuthMfa: vi.fn(),
   };
@@ -365,6 +366,74 @@ describe('AuthStore : demo account bypass', () => {
       await store.disable2FA(PASSWORD);
 
       expect(mockGateway.disable2FA).toHaveBeenCalledWith(await deriveAuthKey(PASSWORD, EMAIL));
+    });
+  });
+
+  describe('vérification de l’e-mail : la clé choisie accompagne le code', () => {
+    const EMAIL = 'julie@dash.flow';
+    const PASSWORD = 'correct horse battery';
+    const CODE = '123456';
+
+    beforeEach(() => {
+      mockGateway.register.mockReturnValue(of(undefined));
+      mockGateway.verifyCode.mockReturnValue(
+        of({ user: makeUser({ email: EMAIL }), csrfToken: 't' }),
+      );
+    });
+
+    it('après l’inscription : le code part avec la clé dérivée à l’inscription', async () => {
+      await store.register(EMAIL, PASSWORD);
+
+      await store.verifyCode(EMAIL, CODE);
+
+      expect(mockGateway.verifyCode).toHaveBeenCalledWith(
+        EMAIL,
+        CODE,
+        await deriveAuthKey(PASSWORD, EMAIL),
+      );
+      expect(store.pendingVerificationEmail()).toBeNull();
+    });
+
+    it('après une connexion refusée « e-mail non vérifié » : la clé saisie à la connexion accompagne le code', async () => {
+      mockGateway.prelogin.mockReturnValue(of({ authVersion: 1 }));
+      mockGateway.login.mockReturnValue(throwError(() => ({ code: 'EMAIL_NOT_VERIFIED' })));
+      await expect(store.login(EMAIL, PASSWORD)).rejects.toMatchObject({
+        code: 'EMAIL_NOT_VERIFIED',
+      });
+      expect(store.pendingVerificationEmail()).toBe(EMAIL);
+
+      await store.verifyCode(EMAIL, CODE);
+
+      expect(mockGateway.verifyCode).toHaveBeenCalledWith(
+        EMAIL,
+        CODE,
+        await deriveAuthKey(PASSWORD, EMAIL),
+      );
+    });
+
+    it('page rechargée (rien en mémoire) : le mot de passe saisi à la vérification est dérivé', async () => {
+      await store.verifyCode(EMAIL, CODE, PASSWORD);
+
+      expect(mockGateway.verifyCode).toHaveBeenCalledWith(
+        EMAIL,
+        CODE,
+        await deriveAuthKey(PASSWORD, EMAIL),
+      );
+      expect(JSON.stringify(mockGateway.verifyCode.mock.calls)).not.toContain(PASSWORD);
+    });
+
+    it('ni clé en mémoire ni mot de passe : refus, rien ne part au serveur', async () => {
+      await expect(store.verifyCode(EMAIL, CODE)).rejects.toThrow();
+
+      expect(mockGateway.verifyCode).not.toHaveBeenCalled();
+    });
+
+    it('la clé gardée pour une adresse ne sert pas à une autre', async () => {
+      await store.register(EMAIL, PASSWORD);
+
+      await expect(store.verifyCode('autre@dash.flow', CODE)).rejects.toThrow();
+
+      expect(mockGateway.verifyCode).not.toHaveBeenCalled();
     });
   });
 });

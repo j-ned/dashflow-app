@@ -12,6 +12,12 @@ import { AuthUser } from './domain/models/auth-user.model';
 import { SecurityEvent } from './domain/models/security-event.model';
 import { KeyMaterial } from './domain/models/key-material.model';
 
+/** Code d'erreur métier renvoyé par l'API (`{ code }`), s'il y en a un. */
+const errorCode = (err: unknown): string | undefined =>
+  err && typeof err === 'object' && 'code' in err && typeof err.code === 'string'
+    ? err.code
+    : undefined;
+
 // Store de session/identité : signals-first, consomme HttpAuthGateway (infra/).
 // Le cycle de vie E2EE (unlock, setup, migration, rewrap) vit dans AuthEncryptionStore
 // (cf. audit F008) : cette classe ne connaît que le keyMaterial brut, pas la cryptographie.
@@ -26,12 +32,21 @@ export class AuthStore {
   private readonly _isAuthenticated = signal(false);
   private readonly _isLoading = signal(true);
   private _keyMaterial: KeyMaterial | null = null;
+  /**
+   * Clé d'authentification en attente de la vérification de l'e-mail, gardée en mémoire seulement
+   * (jamais dans le stockage du navigateur) : le serveur l'enregistre quand le code est saisi,
+   * pour que ce soit la personne qui possède la boîte mail qui fixe le mot de passe.
+   */
+  private _pendingVerification: { email: string; authKey: string } | null = null;
+  private readonly _pendingVerificationEmail = signal<string | null>(null);
   // Le constructeur ET les guards fonctionnels (authGuard/guestGuard/adminGuard) appellent
   // checkSession() dès que isLoading() est vrai : mémoïser la requête en vol évite un
   // /auth/csrf + /auth/me concurrent à chaque démarrage à froid (cf. audit F006).
   private _sessionPromise: Promise<void> | null = null;
 
   readonly user = this._user.asReadonly();
+  /** Adresse dont la clé attend la vérification ; null : la page doit redemander le mot de passe. */
+  readonly pendingVerificationEmail = this._pendingVerificationEmail.asReadonly();
   readonly isAuthenticated = this._isAuthenticated.asReadonly();
   readonly isLoading = this._isLoading.asReadonly();
 
@@ -106,6 +121,7 @@ export class AuthStore {
   async register(email: string, password: string, displayName?: string): Promise<void> {
     const authKey = await deriveAuthKey(password, email);
     await firstValueFrom(this.gateway.register(email, authKey, displayName));
+    this.keepForVerification(email, authKey);
   }
 
   async demoLogin(): Promise<void> {
@@ -121,8 +137,17 @@ export class AuthStore {
     }
   }
 
-  async verifyCode(email: string, code: string): Promise<void> {
-    const res = await firstValueFrom(this.gateway.verifyCode(email, code));
+  /**
+   * `password` : à fournir quand aucune clé n'attend pour cette adresse (page rechargée entre
+   * l'inscription et la saisie du code). Sans l'un ni l'autre, rien ne part au serveur.
+   */
+  async verifyCode(email: string, code: string, password?: string): Promise<void> {
+    const pending =
+      this._pendingVerification?.email === email ? this._pendingVerification.authKey : null;
+    const authKey = password !== undefined ? await deriveAuthKey(password, email) : pending;
+    if (authKey === null) throw new Error('Mot de passe requis pour vérifier l’adresse');
+    const res = await firstValueFrom(this.gateway.verifyCode(email, code, authKey));
+    this.keepForVerification(null);
     this.csrf.setToken(res.csrfToken ?? null);
     this._user.set(res.user);
     this._isAuthenticated.set(true);
@@ -144,7 +169,11 @@ export class AuthStore {
     const authKey = await deriveAuthKey(password, email);
     const res = await firstValueFrom(
       this.gateway.login(email, authVersion === 0 ? password : authKey, totpCode),
-    );
+    ).catch((err: unknown) => {
+      // Compte jamais vérifié : la page de vérification enverra cette clé avec le code.
+      if (errorCode(err) === 'EMAIL_NOT_VERIFIED') this.keepForVerification(email, authKey);
+      throw err;
+    });
     // 2FA activé sans code : le backend renvoie 200 + { mfaRequired: true } (pas une erreur).
     if ('mfaRequired' in res) return 'mfa_required';
 
@@ -172,6 +201,11 @@ export class AuthStore {
       }
     }
     return 'authenticated';
+  }
+
+  private keepForVerification(email: string | null, authKey?: string): void {
+    this._pendingVerification = email !== null && authKey ? { email, authKey } : null;
+    this._pendingVerificationEmail.set(this._pendingVerification?.email ?? null);
   }
 
   async forgotPassword(email: string): Promise<void> {
