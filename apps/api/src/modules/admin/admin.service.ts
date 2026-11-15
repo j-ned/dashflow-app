@@ -16,6 +16,7 @@ import {
   type NoticeReason,
 } from './account-security';
 import { createLogger } from '../../common/logger';
+import { describeError } from '../../common/describe-error';
 
 export type AdminNoticeView = { reason: NoticeReason; at: Date };
 
@@ -166,7 +167,7 @@ export class AdminService {
         await this.mailer.sendSecurityNotice(row.email, reason);
       } catch (err) {
         this.logger.warn(
-          `Relance ${reason} non envoyée à ${row.id} : ${err instanceof Error ? err.message : String(err)}`,
+          `Relance ${reason} non envoyée à ${row.id} : ${describeError(err)}`,
         );
         result.skipped.push({ ...target, why: 'send_failed' });
         continue;
@@ -237,7 +238,7 @@ export class AdminService {
         );
     } catch (err) {
       this.logger.warn(
-        `Purge des comptes non vérifiés échouée : ${err instanceof Error ? err.message : String(err)}`,
+        `Purge des comptes non vérifiés échouée : ${describeError(err)}`,
       );
     }
   }

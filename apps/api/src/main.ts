@@ -6,6 +6,7 @@ import { createLogger } from './common/logger';
 import { createApp } from './http/app';
 import { createDeps } from './http/deps';
 import { startScheduledJobs } from './http/scheduler';
+import { describeError } from './common/describe-error';
 
 const logger = createLogger('HttpServer');
 
@@ -42,8 +43,6 @@ function start(): void {
 // échouerait. La connexion réessaie d'elle-même ; un échec définitif arrête le processus, que
 // Docker relance.
 connect().then(start, (err: unknown) => {
-  logger.error(
-    `Démarrage impossible : ${err instanceof Error ? err.message : String(err)}`,
-  );
+  logger.error(`Démarrage impossible : ${describeError(err)}`);
   process.exit(1);
 });

@@ -3,6 +3,7 @@ import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { createLogger } from '../common/logger';
 import type { ThrottleResult, ThrottleRule } from './rate-limit-store';
+import { describeError } from '../common/describe-error';
 
 const logger = createLogger('RedisThrottle');
 
@@ -86,9 +87,7 @@ export class RedisRateLimitStore {
     // Sans écouteur, une erreur de connexion arrêterait le processus. Elle est journalisée ; la
     // requête concernée, elle, échoue avec sa propre erreur.
     this.client.on('error', (err: unknown) =>
-      logger.error(
-        `Redis (throttling) : ${err instanceof Error ? err.message : String(err)}`,
-      ),
+      logger.error(`Redis (throttling) : ${describeError(err)}`),
     );
   }
 

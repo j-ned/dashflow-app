@@ -4,6 +4,7 @@ import type { ContentfulStatusCode } from 'hono/utils/http-status';
 import { errorResponseBody, normalizeError } from '../common/error-response';
 import { ServerBusyError } from '../common/errors';
 import { createLogger } from '../common/logger';
+import { errorStack } from '../common/describe-error';
 
 const logger = createLogger('HttpError');
 
@@ -25,9 +26,7 @@ export function installErrorHandling<E extends object>(app: Hono<E>): void {
       c.header('Retry-After', String(err.retryAfterSeconds));
     } else if (normalized.status >= 500) {
       Sentry.captureException(err);
-      logger.error(
-        err instanceof Error ? (err.stack ?? err.message) : String(err),
-      );
+      logger.error(errorStack(err));
     }
     return c.json(
       errorResponseBody(normalized, requestPath(c)),

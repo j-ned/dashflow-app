@@ -2,6 +2,7 @@ import { and, desc, eq, lt } from 'drizzle-orm';
 import type { DrizzleDB } from '../db/drizzle.constants';
 import { securityEvents, users, type SecurityEventType } from '../db/schema';
 import { createLogger } from '../common/logger';
+import { describeError, errorStack } from '../common/describe-error';
 
 export type SecurityEventRow = {
   id: string;
@@ -48,7 +49,7 @@ export class SecurityEventsService {
         .values({ userId, type, ...bounded(client) });
     } catch (err) {
       this.logger.warn(
-        `Événement ${type} non journalisé : ${err instanceof Error ? err.message : String(err)}`,
+        `Événement ${type} non journalisé : ${describeError(err)}`,
       );
     }
   }
@@ -69,7 +70,7 @@ export class SecurityEventsService {
       if (u) await this.record(type, u.id, client);
     } catch (err) {
       this.logger.warn(
-        `Événement ${type} non journalisé : ${err instanceof Error ? err.message : String(err)}`,
+        `Événement ${type} non journalisé : ${describeError(err)}`,
       );
     }
   }
@@ -99,7 +100,7 @@ export class SecurityEventsService {
     } catch (err) {
       this.logger.error(
         'Purge des événements de sécurité échouée',
-        err instanceof Error ? err.stack : String(err),
+        errorStack(err),
       );
     }
   }
