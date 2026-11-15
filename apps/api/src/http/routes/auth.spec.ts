@@ -1,4 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
+import { Readable } from 'node:stream';
 import {
   honoTestApp,
   jsonInit,
@@ -230,5 +231,44 @@ describe('Routes /auth — session démo : routes d’identité verrouillées (H
 
     expect(res.status).toBe(200);
     expect(demo.reset).toHaveBeenCalledWith(TEST_USER.id);
+  });
+});
+
+describe('Routes /auth — GET /auth/avatar/:userId', () => {
+  const OTHER_USER = '0b7e6c1e-3f0a-4c1b-9a3e-5d2f8c4a7b90';
+
+  function setup() {
+    const auth = {
+      getById: vi.fn().mockResolvedValue({ avatarUrl: 'avatars/u/a.png' }),
+    };
+    const storage = {
+      getStream: vi.fn().mockResolvedValue({
+        stream: Readable.from([Buffer.from('png')]),
+        contentType: 'image/png',
+      }),
+    };
+    return honoTestApp({
+      auth: auth as unknown as AuthService,
+      storage: storage as unknown as StorageService,
+    }).then((t) => ({ t, auth, storage }));
+  }
+
+  it('son propre avatar : servi', async () => {
+    const { t } = await setup();
+
+    const res = await t.authed(`/auth/avatar/${TEST_USER.id}`);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Content-Type')).toBe('image/png');
+  });
+
+  it('l’avatar d’un autre compte : 404, sans lire le compte ni le stockage', async () => {
+    const { t, auth, storage } = await setup();
+
+    const res = await t.authed(`/auth/avatar/${OTHER_USER}`);
+
+    expect(res.status).toBe(404);
+    expect(auth.getById).not.toHaveBeenCalled();
+    expect(storage.getStream).not.toHaveBeenCalled();
   });
 });
