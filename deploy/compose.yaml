@@ -16,7 +16,8 @@
 # - Migrations et tâches de fond : l'API applique les migrations en attente à son démarrage, avant
 #   d'écouter, puis fait tourner elle-même ses tâches planifiées (purges, démo) : pas de service cron.
 #   Une seule exécution par créneau même avec plusieurs instances (table scheduled_job_runs).
-# - Throttling : compteurs dans `dashflow-redis`, partagés par toutes les instances de l'API.
+# - Throttling : compteurs dans un service Redis de Dokploy (`REDIS_URL`), hors de la pile comme la
+#   base, partagés par toutes les instances de l'API.
 # - Retour à une version : fixer `WEB_IMAGE` / `API_IMAGE` sur un tag `sha-<commit>` et redéployer.
 
 name: dashflow
@@ -39,8 +40,6 @@ services:
     image: ${API_IMAGE:-ghcr.io/j-ned/dashflow-api:latest}
     pull_policy: ${PULL_POLICY:-always}
     restart: unless-stopped
-    depends_on:
-      - dashflow-redis
     environment:
       - NODE_ENV=production
       - PORT=3001
@@ -55,9 +54,10 @@ services:
       # celle du visiteur est dans cet en-tête, que le front relaie tel quel. Sûr tant qu'aucun port
       # du serveur n'est ouvert sur Internet.
       - CLIENT_IP_HEADER=${CLIENT_IP_HEADER:-cf-connecting-ip}
-      # Compteurs de throttling partagés entre les instances de l'API. L'API n'écoute qu'une fois
+      # Compteurs de throttling partagés entre les instances de l'API : service Redis de Dokploy,
+      # hors de la pile comme la base, joint par `dokploy-network`. L'API n'écoute qu'une fois
       # Redis joint.
-      - REDIS_URL=redis://dashflow-redis:6379
+      - REDIS_URL=${REDIS_URL:?}
       - JWT_SECRET=${JWT_SECRET:?}
       - TOTP_ENC_KEY=${TOTP_ENC_KEY:?}
       # Mail par l'API HTTP de Resend : MAIL_FROM sur un domaine vérifié chez Resend.
@@ -78,30 +78,6 @@ services:
     networks:
       - default
       - dokploy-network
-
-  # Compteurs de throttling : volatils par nature (fenêtres de quelques minutes), donc ni
-  # persistance ni volume. Joint seulement par le réseau interne de la pile, jamais par
-  # `dokploy-network` : rien d'autre sur le serveur ne peut le lire ni l'écrire.
-  dashflow-redis:
-    image: redis:8.2-alpine
-    restart: unless-stopped
-    command:
-      - redis-server
-      - --save
-      - ''
-      - --appendonly
-      - 'no'
-      - --maxmemory
-      - 64mb
-      - --maxmemory-policy
-      - volatile-ttl
-    healthcheck:
-      test: ['CMD', 'redis-cli', 'ping']
-      interval: 10s
-      timeout: 3s
-      retries: 3
-    networks:
-      - default
 
   # Sauvegarde quotidienne chiffrée de la base vers un bucket hors du serveur (`backup/backup.sh`).
   dashflow-backup:

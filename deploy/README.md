@@ -3,8 +3,9 @@
 La pile de production est `compose.yaml` :
 - **`dashflow-web`** : nginx sert le front et relaie `/api/` vers l'API.
 - **`dashflow-api`** : l'API Node. Elle applique ses migrations au démarrage et fait tourner ses tâches planifiées.
-- **`dashflow-redis`** : les compteurs de limitation (connexions, envois de code), partagés par toutes les instances de l'API. Sans persistance : un redémarrage remet les compteurs à zéro, ce qui est sans conséquence.
 - **`dashflow-backup`** : sauvegarde quotidienne chiffrée de la base.
+
+Les compteurs de limitation (connexions, envois de code) vivent dans un service **Redis** de Dokploy, lui aussi hors de la pile, partagé par toutes les instances de l'API. Il ne contient rien de précieux : le perdre remet seulement les compteurs à zéro.
 
 La base Postgres 18 est **hors de la pile** : c'est le service de base de données `dashflow-db` de Dokploy, que l'API et la sauvegarde joignent par `dokploy-network`. Dokploy ne construit rien : il tire les images publiées sur GHCR par la CI (`dashflow-web`, `dashflow-api`, `dashflow-backup`). Le trafic arrive par le tunnel Cloudflare, puis passe par le Traefik de Dokploy.
 
@@ -23,12 +24,13 @@ Tant que l'étape « Bascule » n'est pas faite, Vercel et Neon restent la produ
    - N'utilise pas le mode **Raw** : Dokploy rejouerait alors le YAML collé dans son éditeur et ignorerait le dépôt.
 4. **Environment** : colle `dashflow.env.example` rempli.
    - `POSTGRES_*` : à recopier depuis la fiche de `dashflow-db` (Internal Credentials).
+   - `REDIS_URL` : un service **Database → Redis** dans le même projet, sans port externe ; l'URL interne se recopie de sa fiche (Internal Credentials). Attention à l'hôte : celui du **service**, pas celui de son volume (`…-data`).
    - `JWT_SECRET` et `TOTP_ENC_KEY` : à reprendre **à l'identique** du projet Vercel.
    - `RESEND_API_KEY` et `MAIL_FROM` : le mail part par l'API de Resend, plus par SMTP. Le domaine de `MAIL_FROM` doit être vérifié chez Resend (Domains → Add Domain, puis les enregistrements SPF et DKIM à poser dans la zone Cloudflare). Crée une clé d'API avec le seul droit « Sending access », limitée à ce domaine.
    - `S3_*` : celles du **nouveau** bucket de documents.
 5. **Domains** : sur le service `dashflow-web`, port `8080`, en HTTP (le TLS est assuré par Cloudflare), pour `dashflow.nedellec-julien.fr`. L'API n'a pas de domaine à elle.
 
-   Le bouton _Preview Compose_ doit montrer `dashflow-web`, `dashflow-api` et `dashflow-backup` sur `default` **et** `dokploy-network`, et `dashflow-redis` sur `default` seulement.
+   Le bouton _Preview Compose_ doit montrer les trois services, chacun sur `default` **et** sur `dokploy-network`.
 6. **Premier déploiement** : à la main, avec le bouton Deploy. L'API applique les migrations qui manquent à la base, puis démarre.
 
    Vérification depuis le serveur :
