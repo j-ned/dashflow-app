@@ -4,7 +4,7 @@ import {
   SECURITY_NOTICE_CONTENT,
   securityNoticeText,
 } from './security-notice.content';
-import { webUrlFrom } from './smtp.mailer';
+import { webUrlFrom } from './messages';
 
 describe('relances de sécurité : contenu des mails', () => {
   it('chaque motif a un sujet, une accroche, des étapes et un bouton vers une route du site', () => {

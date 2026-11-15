@@ -1,0 +1,96 @@
+# Pile de production de DashFlow sur le serveur, déployée par Dokploy (service de type Compose).
+# Dokploy lit ce fichier dans le dépôt (branche master) à chaque déploiement et ne construit rien :
+# il tire les images publiées sur GHCR par la CI.
+#
+# - Aucun port publié : le trafic arrive par le tunnel Cloudflare, puis le Traefik de Dokploy, qui
+#   joint `dashflow-web` par `dokploy-network`. Le domaine se règle dans l'onglet Domains de Dokploy
+#   (service `dashflow-web`, port 8080), qui ajoute les labels Traefik. L'API n'est pas exposée :
+#   le front la relaie sous `/api/` par le réseau interne de la pile.
+# - Base de données hors de la pile : un service Postgres de Dokploy (`POSTGRES_HOST`), joint par
+#   `dokploy-network`. L'API et la sauvegarde sont donc aussi sur ce réseau, sans label Traefik :
+#   rien ne les route depuis l'extérieur. Redéployer ou supprimer la pile ne touche pas aux données.
+# - Variables : onglet Environment de Dokploy, écrit dans le `.env` voisin (modèle :
+#   `dashflow.env.example`). Chaque service ne reçoit que les siennes.
+# - Noms de service préfixés : `dokploy-network` est partagé avec les autres piles du serveur, où un
+#   nom comme `api` ou `postgres` pourrait désigner le conteneur d'un autre projet.
+# - Migrations et tâches de fond : l'API applique les migrations en attente à son démarrage, avant
+#   d'écouter, puis fait tourner elle-même ses tâches planifiées (purges, démo) : pas de service cron.
+# - Retour à une version : fixer `WEB_IMAGE` / `API_IMAGE` sur un tag `sha-<commit>` et redéployer.
+
+name: dashflow
+
+services:
+  dashflow-web:
+    image: ${WEB_IMAGE:-ghcr.io/j-ned/dashflow-web:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    depends_on:
+      - dashflow-api
+    environment:
+      # Adresse interne de l'API, relayée sous /api/ ; le navigateur ne connaît que /api.
+      API_UPSTREAM: http://dashflow-api:3001
+    networks:
+      - default
+      - dokploy-network
+
+  dashflow-api:
+    image: ${API_IMAGE:-ghcr.io/j-ned/dashflow-api:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=production
+      - PORT=3001
+      # Base hors de la pile : si elle ne répond pas encore, les migrations échouent au démarrage
+      # et Docker relance l'API jusqu'à ce qu'elle réponde.
+      - DATABASE_URL=postgres://${POSTGRES_USER:?}:${POSTGRES_PASSWORD:?}@${POSTGRES_HOST:?}:5432/${POSTGRES_DB:?}
+      # Origine du front : CSRF, retour OAuth et liens des mails. APP_URL : adresse publique de
+      # l'API, base de l'URI de retour Google (<APP_URL>/auth/oauth/google/callback).
+      - CORS_ORIGIN=${CORS_ORIGIN:?}
+      - APP_URL=${APP_URL:?}
+      # Derrière le tunnel Cloudflare, Traefik puis le front ne voient que l'adresse du tunnel :
+      # celle du visiteur est dans cet en-tête, que le front relaie tel quel. Sûr tant qu'aucun port
+      # du serveur n'est ouvert sur Internet.
+      - CLIENT_IP_HEADER=${CLIENT_IP_HEADER:-cf-connecting-ip}
+      - JWT_SECRET=${JWT_SECRET:?}
+      - TOTP_ENC_KEY=${TOTP_ENC_KEY:?}
+      # Mail par l'API HTTP de Resend : MAIL_FROM sur un domaine vérifié chez Resend.
+      - MAILER=resend
+      - RESEND_API_KEY=${RESEND_API_KEY:?}
+      - MAIL_FROM=${MAIL_FROM:?}
+      - S3_ENDPOINT=${S3_ENDPOINT:?}
+      - S3_REGION=${S3_REGION:-auto}
+      - S3_ACCESS_KEY_ID=${S3_ACCESS_KEY_ID:?}
+      - S3_SECRET_ACCESS_KEY=${S3_SECRET_ACCESS_KEY:?}
+      - S3_BUCKET=${S3_BUCKET:?}
+      - DEMO_ENABLED=${DEMO_ENABLED:-false}
+      # Facultatives : transmises seulement si elles sont définies.
+      - GOOGLE_CLIENT_ID
+      - GOOGLE_CLIENT_SECRET
+      - SENTRY_DSN
+      - HEALTH_TOKEN
+    networks:
+      - default
+      - dokploy-network
+
+  # Sauvegarde quotidienne chiffrée de la base vers un bucket hors du serveur (`backup/backup.sh`).
+  dashflow-backup:
+    image: ${BACKUP_IMAGE:-ghcr.io/j-ned/dashflow-backup:latest}
+    pull_policy: ${PULL_POLICY:-always}
+    restart: unless-stopped
+    environment:
+      PGHOST: ${POSTGRES_HOST:?}
+      PGUSER: ${POSTGRES_USER:?}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?}
+      PGDATABASE: ${POSTGRES_DB:?}
+      BACKUP_S3_ENDPOINT: ${BACKUP_S3_ENDPOINT:?}
+      BACKUP_S3_BUCKET: ${BACKUP_S3_BUCKET:?}
+      BACKUP_S3_ACCESS_KEY: ${BACKUP_S3_ACCESS_KEY:?}
+      BACKUP_S3_SECRET_KEY: ${BACKUP_S3_SECRET_KEY:?}
+      BACKUP_PASSPHRASE: ${BACKUP_PASSPHRASE:?}
+    networks:
+      - default
+      - dokploy-network
+
+networks:
+  dokploy-network:
+    external: true

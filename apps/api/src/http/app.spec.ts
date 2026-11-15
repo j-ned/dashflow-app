@@ -194,14 +194,16 @@ describe('Socle HTTP Hono', () => {
 
 describe('IP client derrière Traefik', () => {
   it('prend l’entrée la plus à droite de X-Forwarded-For (celle du proxy), pas celle du client', () => {
-    expect(resolveClientIp('6.6.6.6, 203.0.113.7', '10.0.0.2')).toBe(
+    expect(resolveClientIp(undefined, '6.6.6.6, 203.0.113.7', '10.0.0.2')).toBe(
       '203.0.113.7',
     );
-    expect(resolveClientIp('203.0.113.7', '10.0.0.2')).toBe('203.0.113.7');
-    expect(resolveClientIp(undefined, '::ffff:127.0.0.1')).toBe(
+    expect(resolveClientIp(undefined, '203.0.113.7', '10.0.0.2')).toBe(
+      '203.0.113.7',
+    );
+    expect(resolveClientIp(undefined, undefined, '::ffff:127.0.0.1')).toBe(
       '::ffff:127.0.0.1',
     );
-    expect(resolveClientIp(' , ', undefined)).toBe('unknown');
+    expect(resolveClientIp(undefined, ' , ', undefined)).toBe('unknown');
   });
 
   it('un X-Forwarded-For forgé ne donne pas un compteur neuf à chaque requête', async () => {
@@ -219,6 +221,66 @@ describe('IP client derrière Traefik', () => {
     expect((await hit('1.1.1.1')).status).toBe(200);
     expect((await hit('2.2.2.2')).status).toBe(200);
     expect((await hit('3.3.3.3')).status).toBe(429);
+  });
+});
+
+describe('IP client derrière un tunnel Cloudflare (CLIENT_IP_HEADER)', () => {
+  const throttledApp = () => {
+    const app = createApp(d);
+    app.post('/login', throttle({ limit: 1, ttlMs: 60_000 }), (c) =>
+      c.json({}),
+    );
+    return app;
+  };
+  // Derrière le tunnel puis le relais du front, X-Forwarded-For ne porte que des adresses internes.
+  const viaTunnel = (visitor: string) => ({
+    method: 'POST',
+    headers: {
+      'CF-Connecting-IP': visitor,
+      'X-Forwarded-For': `${visitor}, 172.18.0.5`,
+    },
+  });
+
+  it("l'en-tête configuré donne l'adresse du visiteur, pas celle du relais interne", () => {
+    expect(
+      resolveClientIp('198.51.100.4', '198.51.100.4, 172.18.0.5', '10.0.0.2'),
+    ).toBe('198.51.100.4');
+  });
+
+  it("sans valeur dans l'en-tête configuré, retombe sur X-Forwarded-For", () => {
+    expect(resolveClientIp(undefined, '6.6.6.6, 203.0.113.7', '10.0.0.2')).toBe(
+      '203.0.113.7',
+    );
+    expect(resolveClientIp('  ', '203.0.113.7', '10.0.0.2')).toBe(
+      '203.0.113.7',
+    );
+  });
+
+  it('deux visiteurs derrière le tunnel ont chacun leur compteur de throttling', async () => {
+    d = deps(fakeDb(), { CLIENT_IP_HEADER: 'cf-connecting-ip' });
+    const app = throttledApp();
+
+    expect(
+      (await app.request('/login', viaTunnel('198.51.100.4'))).status,
+    ).toBe(200);
+    expect(
+      (await app.request('/login', viaTunnel('198.51.100.9'))).status,
+    ).toBe(200);
+    expect(
+      (await app.request('/login', viaTunnel('198.51.100.4'))).status,
+    ).toBe(429);
+  });
+
+  it("sans CLIENT_IP_HEADER, l'en-tête Cloudflare est ignoré : un client ne choisit pas son compteur", async () => {
+    d = deps(fakeDb());
+    const app = throttledApp();
+    const spoofed = (ip: string) => ({
+      method: 'POST',
+      headers: { 'CF-Connecting-IP': ip, 'X-Forwarded-For': '203.0.113.7' },
+    });
+
+    expect((await app.request('/login', spoofed('1.1.1.1'))).status).toBe(200);
+    expect((await app.request('/login', spoofed('2.2.2.2'))).status).toBe(429);
   });
 });
 

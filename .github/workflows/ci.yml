@@ -155,24 +155,117 @@ jobs:
         if: env.DATABASE_URL != ''
         run: pnpm --filter @dashflow/api db:migrate
 
+  # Images de production : construites sur chaque PR (un Dockerfile cassé se voit avant la fusion),
+  # publiées sur GHCR seulement depuis master. Dokploy tire ces images (deploy/compose.yaml).
   docker:
     name: Docker Build (${{ matrix.app }})
     runs-on: ubuntu-latest
     needs: [web, api]
+    permissions:
+      contents: read
+      packages: write
     strategy:
       matrix:
         app: [web, api]
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/dashflow-${{ matrix.app }}
+      PUBLISH: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
     steps:
       - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4
+      - name: Connexion à GHCR
+        if: env.PUBLISH == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
       # Contexte = racine du monorepo (lockfile et pnpm-workspace.yaml y vivent).
       - name: Build image
         uses: docker/build-push-action@53b7df96c91f9c12dcc8a07bcb9ccacbed38856a # v7
         with:
           context: .
           file: apps/${{ matrix.app }}/Dockerfile
-          push: false
+          push: ${{ env.PUBLISH == 'true' }}
           cache-from: type=gha,scope=${{ matrix.app }}
           cache-to: type=gha,mode=max,scope=${{ matrix.app }}
-          tags: dashflow-${{ matrix.app }}:${{ github.sha }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+          tags: |
+            ${{ env.IMAGE }}:sha-${{ github.sha }}
+            ${{ env.IMAGE }}:latest
+
+  # Image de sauvegarde : jugée de bout en bout (sauvegarde chiffrée puis restauration identique,
+  # devant un Postgres et un stockage S3 jetables) avant d'être publiée.
+  backup-image:
+    name: Docker Build (backup)
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    env:
+      IMAGE: ghcr.io/${{ github.repository_owner }}/dashflow-backup
+      PUBLISH: ${{ github.ref == 'refs/heads/master' && github.event_name == 'push' }}
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Build
+        run: >-
+          docker build
+          --label "org.opencontainers.image.source=https://github.com/$GITHUB_REPOSITORY"
+          --label "org.opencontainers.image.revision=$GITHUB_SHA"
+          -t "$IMAGE:sha-$GITHUB_SHA" -t "$IMAGE:latest" deploy/backup
+      - name: Vérification de l'image de sauvegarde
+        run: deploy/backup/check.sh "$IMAGE:sha-$GITHUB_SHA"
+      - name: Publication sur GHCR
+        if: env.PUBLISH == 'true'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker push --all-tags "$IMAGE"
+
+  # Dokploy lit deploy/compose.yaml dans le dépôt à chaque déploiement : un fichier invalide ne doit
+  # pas atteindre master. Le déclencheur est jugé devant un faux Dokploy : une redirection ou un
+  # refus doivent échouer, jamais passer pour un déploiement.
+  deploy-checks:
+    name: Déploiement — compose et déclencheur
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Vérification du compose
+        run: .github/scripts/compose.check.sh
+      - name: Vérification du déclencheur Dokploy
+        run: .github/scripts/trigger-deploy.check.sh
+
+  # API Dokploy (`compose.deploy`) : la pile tire les images qui viennent d'être publiées. Sans les
+  # secrets, les images sont publiées et le déploiement reste manuel. Le panneau étant derrière
+  # Cloudflare Access, le jeton de service passe par CF_ACCESS_*.
+  deploy:
+    name: Déploiement Dokploy
+    runs-on: ubuntu-latest
+    needs: [docker, backup-image, deploy-checks, api-e2e, audit]
+    if: github.ref == 'refs/heads/master' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6
+      - name: Déclenchement
+        env:
+          DOKPLOY_URL: ${{ secrets.DOKPLOY_URL }}
+          DOKPLOY_API_KEY: ${{ secrets.DOKPLOY_API_KEY }}
+          DOKPLOY_COMPOSE_ID: ${{ secrets.DOKPLOY_COMPOSE_ID }}
+          CF_ACCESS_CLIENT_ID: ${{ secrets.CF_ACCESS_CLIENT_ID }}
+          CF_ACCESS_CLIENT_SECRET: ${{ secrets.CF_ACCESS_CLIENT_SECRET }}
+        run: |
+          if [ -z "$DOKPLOY_URL" ] || [ -z "$DOKPLOY_API_KEY" ] || [ -z "$DOKPLOY_COMPOSE_ID" ]; then
+            echo "::notice::Secrets DOKPLOY_URL, DOKPLOY_API_KEY ou DOKPLOY_COMPOSE_ID absents, aucun déploiement"
+            exit 0
+          fi
+          .github/scripts/trigger-deploy.sh
+      # Sonde du site, si son adresse est renseignée (variable du dépôt) : elle prouve que le site
+      # répond, pas que la nouvelle version a remplacé l'ancienne.
+      - name: Sonde du site
+        if: vars.DEPLOY_HEALTH_URL != ''
+        env:
+          DEPLOY_HEALTH_URL: ${{ vars.DEPLOY_HEALTH_URL }}
+        run: |
+          curl --fail --silent --show-error --max-time 10 \
+            --retry 18 --retry-delay 10 --retry-all-errors "$DEPLOY_HEALTH_URL" -o /dev/null

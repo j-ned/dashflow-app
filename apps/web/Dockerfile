@@ -13,10 +13,11 @@ COPY apps/web/public/ apps/web/public/
 RUN pnpm --filter @dashflow/web build
 
 # ── Stage 2: serve static SPA via nginx ──
-# Cette image ne sert que le statique Angular ; /api est routé par Traefik vers l'image de l'API
-# (même domaine, cf. docs/deploiement-meme-origine.md à la racine du dépôt).
+# Statique Angular, et relais de /api/ vers l'API par le réseau interne de la pile
+# (variable API_UPSTREAM, lue au démarrage par 40-dashflow-config.sh ; cf. deploy/compose.yaml).
 # nginx sans root : écoute sur 8080 (à reporter dans le port interne du service Dokploy).
 FROM nginxinc/nginx-unprivileged:alpine AS runtime
+COPY --chmod=0555 apps/web/nginx/40-dashflow-config.sh /docker-entrypoint.d/40-dashflow-config.sh
 COPY --from=build /repo/apps/web/dist/dash-flow/browser/ /usr/share/nginx/html/
 COPY apps/web/nginx.conf /etc/nginx/conf.d/default.conf
 EXPOSE 8080

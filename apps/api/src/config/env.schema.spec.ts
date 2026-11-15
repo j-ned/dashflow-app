@@ -32,6 +32,22 @@ describe('envSchema', () => {
   it('MAILER par défaut = console', () => {
     expect(envSchema.parse({ ...base }).MAILER).toBe('console');
   });
+
+  it('CLIENT_IP_HEADER : absent ou vide = non réglé, nom d’en-tête en minuscules accepté', () => {
+    expect(
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: '' }).CLIENT_IP_HEADER,
+    ).toBeUndefined();
+    expect(
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: 'cf-connecting-ip' })
+        .CLIENT_IP_HEADER,
+    ).toBe('cf-connecting-ip');
+  });
+
+  it('CLIENT_IP_HEADER : refuse un nom mal formé au démarrage', () => {
+    expect(() =>
+      envSchema.parse({ ...base, CLIENT_IP_HEADER: 'CF-Connecting-IP; x' }),
+    ).toThrow(/CLIENT_IP_HEADER/);
+  });
 });
 
 describe('envSchema — garde-fous production', () => {
@@ -50,6 +66,33 @@ describe('envSchema — garde-fous production', () => {
   it('refuse MAILER=console en production (codes OTP dans les logs)', () => {
     expect(() => envSchema.parse({ ...prod, MAILER: 'console' })).toThrow(
       /MAILER/,
+    );
+  });
+
+  it('accepte MAILER=resend avec sa clé et son expéditeur en production', () => {
+    expect(() =>
+      envSchema.parse({
+        ...prod,
+        MAILER: 'resend',
+        SMTP_HOST: undefined,
+        RESEND_API_KEY: 're_live_key',
+        MAIL_FROM: 'DashFlow <noreply@dashflow.example>',
+      }),
+    ).not.toThrow();
+  });
+
+  it('refuse MAILER=resend sans RESEND_API_KEY ou sans MAIL_FROM en production', () => {
+    const resend = {
+      ...prod,
+      MAILER: 'resend',
+      RESEND_API_KEY: 're_live_key',
+      MAIL_FROM: 'DashFlow <noreply@dashflow.example>',
+    };
+    expect(() =>
+      envSchema.parse({ ...resend, RESEND_API_KEY: undefined }),
+    ).toThrow(/RESEND_API_KEY/);
+    expect(() => envSchema.parse({ ...resend, MAIL_FROM: undefined })).toThrow(
+      /MAIL_FROM/,
     );
   });
 

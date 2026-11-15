@@ -1,5 +1,7 @@
 # Bascule en même origine : `/api` sur le domaine du front
 
+> **Remplacé.** Ce document décrit l'ancien routage de `/api` par Traefik. Depuis la pile `deploy/compose.yaml`, c'est le nginx du front qui relaie `/api/` vers l'API. La procédure à jour est dans [`deploy/README.md`](../deploy/README.md).
+
 **Avant** : deux origines. Le front est sur `dashflow.nedellec-julien.fr`, l'API sur `api-dashflow.nedellec-julien.fr`, et les deux communiquent via CORS.
 **Après** : une seule origine. Traefik envoie `dashflow.nedellec-julien.fr/api/*` au conteneur de l'API en **retirant le préfixe** `/api`. L'API garde donc ses chemins actuels, comme `/auth/login` ou `/health`.
 
