@@ -1,6 +1,8 @@
 import { CronJob } from 'cron';
 import { createLogger } from '../common/logger';
+import type { DrizzleDB } from '../db/drizzle.constants';
 import type { HttpDeps } from './deps';
+import { claimJobSlot, scheduledSlot } from './job-claims';
 
 const logger = createLogger('Scheduler');
 
@@ -40,6 +42,21 @@ export const SCHEDULED_JOBS: readonly ScheduledJob[] = [
   },
 ];
 
+/**
+ * Un tick d'horloge : n'exécute la tâche que si cette instance revendique le créneau en base.
+ * Plusieurs instances de l'API tournent chacune leur horloge ; sans cette revendication, chaque
+ * purge ou réinitialisation de démo partirait autant de fois qu'il y a d'instances.
+ */
+export async function runScheduledTick(
+  db: DrizzleDB,
+  name: string,
+  run: () => Promise<void>,
+  now: Date,
+): Promise<void> {
+  if (!(await claimJobSlot(db, name, scheduledSlot(now)))) return;
+  await run();
+}
+
 /** Démarre les tâches ; rend la fonction d'arrêt (à appeler avant de fermer la base). */
 export function startScheduledJobs(d: HttpDeps): () => void {
   const jobs = SCHEDULED_JOBS.map((job) =>
@@ -47,13 +64,12 @@ export function startScheduledJobs(d: HttpDeps): () => void {
       cronTime: job.cron,
       start: true,
       onTick: () =>
-        job
-          .run(d)
-          .catch((err: unknown) =>
+        runScheduledTick(d.db, job.name, () => job.run(d), new Date()).catch(
+          (err: unknown) =>
             logger.error(
               `Tâche ${job.name} en échec : ${err instanceof Error ? err.message : String(err)}`,
             ),
-          ),
+        ),
     }),
   );
   return () => jobs.forEach((j) => void j.stop());
