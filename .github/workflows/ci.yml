@@ -67,8 +67,12 @@ jobs:
       - run: pnpm install --frozen-lockfile --filter @dashflow/api
       - name: Lint
         run: pnpm --filter @dashflow/api lint:check # eslint sans --fix (échoue s'il reste une erreur)
+      # Le build (tsconfig.build.json) exclut les tests : sans cette étape, une spec qui ne compile
+      # plus passe inaperçue, vitest ne vérifiant pas les types.
+      - name: Typecheck (tests compris)
+        run: pnpm --filter @dashflow/api typecheck
       - name: Build
-        run: pnpm --filter @dashflow/api build # tsc (typecheck complet)
+        run: pnpm --filter @dashflow/api build # tsc du code de production
       - name: Test
         run: pnpm --filter @dashflow/api test # vitest run (unit + module, dont les tests HTTP multipart)
 
