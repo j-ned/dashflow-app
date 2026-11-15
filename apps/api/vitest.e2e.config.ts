@@ -32,6 +32,13 @@ export default defineConfig({
     include: ['test/**/*.e2e-spec.ts'],
     // Chaque fichier démarre son propre processus API (cf. test/e2e/api-server.ts).
     hookTimeout: 60_000,
+    // Les parcours e2e hachent réellement les mots de passe (Argon2 de production : 64 Mo,
+    // 3 passes) à chaque inscription, connexion ou changement de clés. Le parcours de
+    // chiffrement en enchaîne une dizaine : mesuré entre 1,5 s et 6,8 s selon la charge de la
+    // machine, les fichiers tournant en parallèle. Le délai par défaut de 5 s (pensé pour des
+    // tests unitaires) le faisait échouer de façon intermittente. 30 s laisse une large marge
+    // sans masquer un vrai blocage.
+    testTimeout: 30_000,
     env: dotEnvVars,
   },
 });
