@@ -1,6 +1,6 @@
 COMPOSE = podman compose -f compose.dev.yaml
 
-.PHONY: db-up db-down db-restore db-fresh db-pull db-to-neon
+.PHONY: db-up db-down db-restore db-fresh db-pull
 
 ## Démarre la Postgres locale (1er boot = restauration auto)
 db-up:
@@ -24,6 +24,3 @@ db-restore:
 db-pull:
 	./scripts/db/pull.sh
 
-## Copie le dernier dump de prod dans Neon (Vercel) et compare les volumes — NEON_DATABASE_URL requis
-db-to-neon:
-	./scripts/db/copy-to-neon.sh

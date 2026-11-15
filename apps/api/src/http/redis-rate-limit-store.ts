@@ -1,18 +1,22 @@
-import { Redis } from '@upstash/redis';
+import { createClient } from 'redis';
 import { randomUUID } from 'node:crypto';
+import { z } from 'zod';
+import { createLogger } from '../common/logger';
 import type { ThrottleResult, ThrottleRule } from './rate-limit-store';
+
+const logger = createLogger('RedisThrottle');
 
 /**
  * Même sémantique que RateLimitStore (fenêtre glissante, blocage `blockMs`, requêtes non comptées
- * pendant le blocage), mais partagée entre toutes les instances : sur Vercel, chaque instance a
- * sa propre mémoire et un compteur local serait contournable. Un seul script Lua par requête :
+ * pendant le blocage), mais partagée entre toutes les instances de l'API : un compteur en mémoire
+ * serait propre à chacune, donc contournable. Un seul script Lua par requête :
  * lecture-décision-écriture atomiques, pas de course entre instances.
  *
  * KEYS : [coups (zset), blocage (chaîne à durée de vie), fenêtre (chaîne à durée de vie)]
  * ARGV : [maintenant ms, ttl ms, limite, blocage ms, membre unique]
  * Rend : [coups comptés, bloqué (0/1), ms avant fin de fenêtre, ms avant fin du blocage]
  */
-export const THROTTLE_SCRIPT = `
+const THROTTLE_SCRIPT = `
 local now = tonumber(ARGV[1])
 local ttl = tonumber(ARGV[2])
 local limit = tonumber(ARGV[3])
@@ -42,13 +46,13 @@ return { hits, 0, window, 0 }
 `;
 
 /** Clés Redis d'un compteur : coups, blocage, fenêtre (cf. KEYS du script). */
-export const throttleKeys = (key: string): string[] => {
+const throttleKeys = (key: string): string[] => {
   const base = `rl:${key}`;
   return [`${base}:hits`, `${base}:block`, `${base}:window`];
 };
 
 /** Arguments du script (cf. ARGV) ; le membre unique distingue deux requêtes de la même ms. */
-export const throttleArgs = (rule: ThrottleRule): string[] => [
+const throttleArgs = (rule: ThrottleRule): string[] => [
   String(Date.now()),
   String(rule.ttlMs),
   String(rule.limit),
@@ -56,18 +60,49 @@ export const throttleArgs = (rule: ThrottleRule): string[] => [
   randomUUID(),
 ];
 
-export class RedisRateLimitStore {
-  private readonly redis: Redis;
+/** Réponse du script : [coups comptés, bloqué (0/1), ms avant fin de fenêtre, ms avant fin du blocage]. */
+const throttleReply = z.tuple([z.number(), z.number(), z.number(), z.number()]);
 
-  constructor(config: { url: string; token: string }) {
-    this.redis = new Redis({ url: config.url, token: config.token });
+/** Pas de nouvelle tentative au-delà de 5 s d'écart : Redis est dans la même pile que l'API. */
+const reconnectDelay = (retries: number): number =>
+  Math.min(100 * 2 ** retries, 5_000);
+
+/**
+ * Compteurs de throttling dans Redis (service Redis de Dokploy), joint en TCP, partagés par
+ * toutes les instances de l'API.
+ *
+ * Redis indisponible : la requête échoue tout de suite (`disableOfflineQueue`) au lieu d'attendre
+ * en file, et le client se reconnecte de lui-même. Le throttling n'est jamais contourné en silence.
+ */
+export class RedisRateLimitStore {
+  private readonly client;
+
+  constructor(url: string) {
+    this.client = createClient({
+      url,
+      disableOfflineQueue: true,
+      socket: { connectTimeout: 2_000, reconnectStrategy: reconnectDelay },
+    });
+    // Sans écouteur, une erreur de connexion arrêterait le processus. Elle est journalisée ; la
+    // requête concernée, elle, échoue avec sa propre erreur.
+    this.client.on('error', (err: unknown) =>
+      logger.error(
+        `Redis (throttling) : ${err instanceof Error ? err.message : String(err)}`,
+      ),
+    );
+  }
+
+  /** Se résout une fois Redis joint ; réessaie tant qu'il ne répond pas. */
+  async connect(): Promise<void> {
+    await this.client.connect();
   }
 
   async increment(key: string, rule: ThrottleRule): Promise<ThrottleResult> {
-    const [hits, blocked, windowMs, blockMs] = await this.redis.eval<
-      string[],
-      [number, number, number, number]
-    >(THROTTLE_SCRIPT, throttleKeys(key), throttleArgs(rule));
+    const reply = await this.client.eval(THROTTLE_SCRIPT, {
+      keys: throttleKeys(key),
+      arguments: throttleArgs(rule),
+    });
+    const [hits, blocked, windowMs, blockMs] = throttleReply.parse(reply);
     return {
       totalHits: hits,
       isBlocked: blocked === 1,
@@ -76,6 +111,11 @@ export class RedisRateLimitStore {
     };
   }
 
-  /** Rien à libérer : client HTTP sans connexion persistante. */
+  /** Les compteurs vivent dans Redis : rien à libérer en mémoire (cf. close). */
   dispose(): void {}
+
+  /** Ferme la connexion, après les commandes en cours. */
+  async close(): Promise<void> {
+    if (this.client.isOpen) await this.client.close();
+  }
 }

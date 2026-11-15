@@ -103,13 +103,7 @@ export function createDeps(env: Env): {
   connect: () => Promise<void>;
   close: () => Promise<void>;
 } {
-  const onVercel = env.VERCEL === '1';
-  // Sur Vercel : peu de connexions par instance (elles se multiplient avec les instances) et pas
-  // de requêtes préparées, que le pooler de Neon/PgBouncer en mode transaction ne garantit pas.
-  const client = postgres(
-    env.DATABASE_URL,
-    onVercel ? { max: 3, prepare: false, idle_timeout: 20 } : {},
-  );
+  const client = postgres(env.DATABASE_URL);
   const db = drizzle(client, { schema });
   const mailer = createMailer(env);
   const rateLimits = createRateLimiter(env);

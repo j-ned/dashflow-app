@@ -1,7 +1,7 @@
 // Règles d'upload appliquées côté client AVANT chiffrement E2EE : une fois chiffré, le serveur
 // ne peut plus vérifier le type réel du fichier, c'est donc ici que la whitelist s'applique.
-// Miroir de apps/api/src/common/files/validate-upload.ts (types + 4 Mo, plafond des fonctions
-// Vercel : 4,5 Mo par requête, enveloppe multipart et chiffrement compris).
+// Miroir de apps/api/src/common/files/validate-upload.ts (types + 4 Mo ; le relais nginx accepte
+// 5 Mo par requête, enveloppe multipart et chiffrement compris).
 
 export const UPLOAD_MAX_BYTES = 4 * 1024 * 1024;
 

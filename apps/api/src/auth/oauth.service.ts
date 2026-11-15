@@ -2,7 +2,6 @@ import type { Google } from 'arctic';
 
 /**
  * `arctic` n'est publié qu'en ESM : chargé par import() dynamique depuis ce module CommonJS.
- * `require()` d'un module ESM échoue sur le runtime Node de Vercel (ERR_REQUIRE_ESM).
  */
 const loadArctic = () => import('arctic');
 import { AuthRepository } from './auth.repository';

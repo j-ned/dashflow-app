@@ -1,5 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { envSchema } from './env.schema';
+import { envSchema, servesOverHttps } from './env.schema';
+
+describe('servesOverHttps', () => {
+  it('production : HTTPS, cookies Secure et en-tête Origin exigé', () => {
+    expect(servesOverHttps({ NODE_ENV: 'production' })).toBe(true);
+  });
+
+  it('développement et tests : HTTP toléré', () => {
+    expect(servesOverHttps({ NODE_ENV: 'development' })).toBe(false);
+    expect(servesOverHttps({ NODE_ENV: 'test' })).toBe(false);
+  });
+});
 
 describe('envSchema', () => {
   const base = {
