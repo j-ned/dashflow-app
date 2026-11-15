@@ -1,5 +1,5 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
-import { and, count, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, count, eq, gt, isNull, lt, or, sql } from 'drizzle-orm';
 import type { DrizzleDB } from '../db/drizzle.constants';
 import { totpBackupCodes, users, verificationCodes } from '../db/schema';
 
@@ -188,6 +188,25 @@ export class AuthRepository {
   }
 
   /** Consomme le code en une seule requête : deux logins simultanés ne peuvent pas le partager. */
+  /**
+   * Anti-rejeu TOTP : enregistre `step` comme dernier pas consommé seulement s'il est plus récent
+   * que le précédent, en une requête atomique. `false` : pas déjà consommé (rejeu), y compris par
+   * une requête concurrente présentant le même code au même instant.
+   */
+  async claimTotpStep(userId: string, step: number): Promise<boolean> {
+    const rows = await this.db
+      .update(users)
+      .set({ totpLastUsedStep: step })
+      .where(
+        and(
+          eq(users.id, userId),
+          or(isNull(users.totpLastUsedStep), lt(users.totpLastUsedStep, step)),
+        ),
+      )
+      .returning({ id: users.id });
+    return rows.length > 0;
+  }
+
   async consumeBackupCode(userId: string, hash: string): Promise<boolean> {
     const rows = await this.db
       .update(totpBackupCodes)

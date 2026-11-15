@@ -117,6 +117,14 @@ async function setup(
       if (stored) stored = { ...stored, ...patch };
       return Promise.resolve(stored);
     }),
+    // Même sémantique que la vraie méthode : un pas TOTP ne se consomme qu'une fois.
+    claimTotpStep: vi.fn((_id: string, step: number) => {
+      const last = stored?.totpLastUsedStep;
+      if (!stored || (last != null && step <= last))
+        return Promise.resolve(false);
+      stored = { ...stored, totpLastUsedStep: step };
+      return Promise.resolve(true);
+    }),
     consumeBackupCode: vi.fn((_id: string, hash: string) =>
       Promise.resolve(unusedBackupCodes.delete(hash)),
     ),

@@ -21,7 +21,7 @@ import { jsonBody } from './validate';
 import { ServerBusyError } from '../common/errors';
 import { DrizzleQueryError } from 'drizzle-orm';
 import { TokenService } from '../auth/token.service';
-import { SESSION_COOKIE } from '../auth/cookie';
+import { SESSION_COOKIE, SESSION_COOKIE_HOST } from '../auth/cookie';
 import type { DrizzleDB } from '../db/drizzle.constants';
 import type { Env } from '../config/env.schema';
 import type { AppEnv } from './types';
@@ -54,8 +54,8 @@ function deps(db: DrizzleDB, env: Partial<Env> = {}): HttpDeps {
   return createDepsWith(fullEnv, db, {} as Mailer);
 }
 
-const sessionCookie = async (sv: number, demo = false) =>
-  `${SESSION_COOKIE}=${await new TokenService({ JWT_SECRET }).sign({
+const sessionCookie = async (sv: number, demo = false, name = SESSION_COOKIE) =>
+  `${name}=${await new TokenService({ JWT_SECRET }).sign({
     sub: 'u1',
     email: 'a@b.c',
     sv,
@@ -512,7 +512,8 @@ describe('Authentification, CSRF, démo, rôle', () => {
     const res = await app.request('/t/mutate', {
       method: 'POST',
       headers: {
-        Cookie: await sessionCookie(2),
+        // Nom de production : seul le cookie préfixé ouvre la session.
+        Cookie: await sessionCookie(2, false, SESSION_COOKIE_HOST),
         'X-CSRF-Token': d.csrf.tokenFor('u1', 2),
       },
     });

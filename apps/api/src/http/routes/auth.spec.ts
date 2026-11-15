@@ -4,6 +4,7 @@ import {
   jsonInit,
   multipartInit,
   TEST_USER,
+  type HonoTestApp,
 } from '../../../test/support/hono-test-app';
 import { SESSION_COOKIE } from '../../auth/cookie';
 import type { AuthService } from '../../auth/auth.service';
@@ -230,5 +231,59 @@ describe('Routes /auth — session démo : routes d’identité verrouillées (H
 
     expect(res.status).toBe(200);
     expect(demo.reset).toHaveBeenCalledWith(TEST_USER.id);
+  });
+});
+
+describe('Routes /auth — POST /auth/register (limite par e-mail)', () => {
+  const register = (t: HonoTestApp, email: string, ip: string) =>
+    t.anonymous('/auth/register', {
+      ...jsonInit('POST', { email, password: 'a'.repeat(64) }),
+      headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip },
+    });
+
+  it('11 inscriptions de la même adresse depuis 11 IP : la 11ᵉ est refusée, une autre adresse passe', async () => {
+    const auth = {
+      register: vi.fn().mockResolvedValue({ success: true, data: {} }),
+    };
+    const t = await honoTestApp({ auth: auth as unknown as AuthService });
+
+    for (let i = 1; i <= 10; i++)
+      expect(
+        (await register(t, 'cible@example.test', `198.51.100.${i}`)).status,
+      ).toBe(201);
+    const flooded = await register(t, 'cible@example.test', '198.51.100.11');
+    const other = await register(t, 'autre@example.test', '198.51.100.12');
+
+    expect(flooded.status).toBe(429);
+    expect(other.status).toBe(201);
+    expect(auth.register).toHaveBeenCalledTimes(11);
+  });
+});
+
+describe('Routes /auth — POST /auth/logout', () => {
+  const logout = (t: HonoTestApp) =>
+    t.authed('/auth/logout', { method: 'POST' });
+
+  it('compte ordinaire : révoque toutes ses sessions (tous les appareils)', async () => {
+    const auth = { revokeSessions: vi.fn().mockResolvedValue({}) };
+    const t = await honoTestApp({ auth: auth as unknown as AuthService });
+
+    expect((await logout(t)).status).toBe(200);
+
+    expect(auth.revokeSessions).toHaveBeenCalledWith(TEST_USER.id);
+  });
+
+  it('compte démo partagé : ferme seulement cette session, sans déconnecter les autres visiteurs', async () => {
+    const auth = { revokeSessions: vi.fn().mockResolvedValue({}) };
+    const t = await honoTestApp(
+      { auth: auth as unknown as AuthService },
+      { ...TEST_USER, demo: true },
+    );
+
+    const res = await logout(t);
+
+    expect(res.status).toBe(200);
+    expect(res.headers.get('Set-Cookie')).toMatch(/Max-Age=0/);
+    expect(auth.revokeSessions).not.toHaveBeenCalled();
   });
 });

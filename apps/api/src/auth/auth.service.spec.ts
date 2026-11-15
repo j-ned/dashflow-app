@@ -8,31 +8,42 @@ import type { StorageService } from '../storage/storage.service';
 import type { Result } from './auth.result';
 import type { AuthRepository } from './auth.repository';
 
-const repo = () => ({
-  findByEmail: vi.fn(),
-  bumpSessionVersion: vi.fn((id: string) =>
-    Promise.resolve({ id, sessionVersion: 1 }),
-  ),
-  findById: vi.fn(),
-  createUser: vi.fn(),
-  updateUser: vi.fn(
-    (
-      _id: string,
-      _patch: Parameters<AuthRepository['updateUser']>[1],
-    ): Promise<unknown> => Promise.resolve({}),
-  ),
-  insertCode: vi.fn(),
-  findValidCode: vi.fn(),
-  deleteCodes: vi.fn(),
-  replaceBackupCodes: vi.fn((_userId: string, _hashes: string[]) =>
-    Promise.resolve(),
-  ),
-  consumeBackupCode: vi.fn((_userId: string, _hash: string) =>
-    Promise.resolve(false),
-  ),
-  countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
-  deleteBackupCodes: vi.fn(() => Promise.resolve()),
-});
+const repo = () => {
+  // Même sémantique que la vraie méthode : un pas TOTP ne se consomme qu'une fois par compte.
+  const lastStep = new Map<string, number>();
+  return {
+    findByEmail: vi.fn(),
+    bumpSessionVersion: vi.fn((id: string) =>
+      Promise.resolve({ id, sessionVersion: 1 }),
+    ),
+    findById: vi.fn(),
+    createUser: vi.fn(),
+    updateUser: vi.fn(
+      (
+        _id: string,
+        _patch: Parameters<AuthRepository['updateUser']>[1],
+      ): Promise<unknown> => Promise.resolve({}),
+    ),
+    insertCode: vi.fn(),
+    findValidCode: vi.fn(),
+    deleteCodes: vi.fn(),
+    replaceBackupCodes: vi.fn((_userId: string, _hashes: string[]) =>
+      Promise.resolve(),
+    ),
+    consumeBackupCode: vi.fn((_userId: string, _hash: string) =>
+      Promise.resolve(false),
+    ),
+    countUnusedBackupCodes: vi.fn(() => Promise.resolve(0)),
+    deleteBackupCodes: vi.fn(() => Promise.resolve()),
+    claimTotpStep: vi.fn((userId: string, step: number) => {
+      const previous = lastStep.get(userId);
+      if (previous !== undefined && step <= previous)
+        return Promise.resolve(false);
+      lastStep.set(userId, step);
+      return Promise.resolve(true);
+    }),
+  };
+};
 const cipher = () =>
   new SecretCipherService({
     NODE_ENV: 'test',
@@ -738,7 +749,7 @@ describe('AuthService — révocation de session et anti-rejeu TOTP', () => {
       success: true,
       data: { kind: 'authenticated' },
     });
-    expect(typeof user.totpLastUsedStep).toBe('number');
+    expect(r.claimTotpStep).toHaveBeenCalledWith('u1', expect.any(Number));
 
     const replay = await svc.login({
       email: 'a@b.com',
@@ -938,9 +949,7 @@ describe('AuthService — second facteur après un premier facteur Google', () =
     );
 
     expect(res).toMatchObject({ success: true, data: { user: { id: 'u1' } } });
-    expect(r.updateUser).toHaveBeenCalledWith('u1', {
-      totpLastUsedStep: expect.any(Number) as number,
-    });
+    expect(r.claimTotpStep).toHaveBeenCalledWith('u1', expect.any(Number));
   });
 
   it('code TOTP faux → 401 « Code 2FA invalide », sans code d’erreur de preuve', async () => {

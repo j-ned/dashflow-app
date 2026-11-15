@@ -185,9 +185,10 @@ export class AuthService {
     if (this.twoFactor.isTotpCode(code)) {
       const secret = await this.totpSecretOf(user);
       const step = this.twoFactor.verifyStep(secret, code);
-      if (step === null || this.isReplayedTotp(user, step))
+      // Vérification et consommation du pas en une seule écriture : deux requêtes simultanées
+      // avec le même code ne passent pas toutes les deux.
+      if (step === null || !(await this.repo.claimTotpStep(user.id, step)))
         return fail(401, 'Code 2FA invalide');
-      await this.repo.updateUser(user.id, { totpLastUsedStep: step });
       return ok({});
     }
     // Code de secours : à usage unique, consommé atomiquement.
