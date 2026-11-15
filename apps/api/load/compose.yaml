@@ -1,0 +1,55 @@
+# Pile JETABLE du test de charge, sur une machine de développement — jamais contre la production.
+# Mêmes images que la production (GHCR), base et Redis vides puis remplis par seed.sql.
+# CPU bridés pour approcher le serveur (Intel i3-6100T : 2 cœurs, 4 threads) : 2 pour l'API,
+# 1 pour Postgres. Secrets générés à chaque lancement par run.sh (LOAD_DB_PASSWORD,
+# LOAD_JWT_SECRET). Lancement complet : apps/api/load/run.sh.
+name: dashflow-load
+
+services:
+  db:
+    image: postgres:18-alpine
+    cpus: 1
+    environment:
+      POSTGRES_USER: dashflow
+      POSTGRES_PASSWORD: ${LOAD_DB_PASSWORD:?}
+      POSTGRES_DB: dashflow
+    healthcheck:
+      test: ['CMD', 'pg_isready', '-U', 'dashflow']
+      interval: 2s
+      retries: 30
+
+  redis:
+    image: redis:8.2-alpine
+    command: ['redis-server', '--save', '', '--appendonly', 'no']
+
+  api:
+    image: ${API_IMAGE:-ghcr.io/j-ned/dashflow-api:latest}
+    cpus: 2
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_started
+    environment:
+      # `test` et non `production` : en production les cookies de session sont Secure (__Host-) et
+      # ne circuleraient pas sur le HTTP local. Le reste du code ne dépend pas de NODE_ENV.
+      NODE_ENV: test
+      PORT: 3001
+      DATABASE_URL: postgres://dashflow:${LOAD_DB_PASSWORD:?}@db:5432/dashflow
+      REDIS_URL: redis://redis:6379
+      CORS_ORIGIN: http://127.0.0.1:8088
+      APP_URL: http://127.0.0.1:8088/api
+      JWT_SECRET: ${LOAD_JWT_SECRET:?}
+      MAILER: console
+      # Chaque utilisateur virtuel de k6 annonce sa propre adresse : le throttling compte par
+      # visiteur, exactement comme en production derrière le tunnel (cf. CLIENT_IP_HEADER).
+      CLIENT_IP_HEADER: x-load-ip
+
+  web:
+    image: ${WEB_IMAGE:-ghcr.io/j-ned/dashflow-web:latest}
+    depends_on:
+      - api
+    environment:
+      API_UPSTREAM: http://api:3001
+    ports:
+      - 127.0.0.1:8088:8080
