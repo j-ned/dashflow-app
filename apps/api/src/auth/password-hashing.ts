@@ -6,12 +6,13 @@ import {
 import { ServerBusyError } from '../common/errors';
 
 /**
- * Hachages Argon2 simultanés. Chacun prend environ 64 Mo et tout un cœur pendant quelques
- * centaines de millisecondes : au-delà, une rafale de connexions saturerait le CPU de l'API et
- * ralentirait toutes les autres requêtes (cf. apps/api/load/README.md). Le serveur a 2 cœurs.
+ * Hachages Argon2 simultanés : un seul. Chacun prend 64 Mo et, avec ses 4 voies, déjà tous les
+ * cœurs du serveur (2) pendant quelques centaines de millisecondes. Mesuré (apps/api/load,
+ * scénario mixte) : à 2 en parallèle, les pages des autres utilisateurs passaient à un p95 de
+ * 1,5 s ; à 1, elles restent à 101 ms, et le débit de connexions est même meilleur.
  */
-export const ARGON2_MAX_CONCURRENT = 2;
-/** Hachages en attente au-delà desquels on refuse : environ 5 s d'attente au débit mesuré. */
+export const ARGON2_MAX_CONCURRENT = 1;
+/** Hachages en attente au-delà desquels on refuse : environ 4 s d'attente au débit mesuré. */
 export const ARGON2_MAX_QUEUED = 16;
 /** Délai de nouvel essai annoncé quand la file est pleine (en-tête Retry-After). */
 const RETRY_AFTER_SECONDS = 5;
