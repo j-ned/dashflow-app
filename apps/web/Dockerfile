@@ -10,7 +10,27 @@ RUN pnpm install --frozen-lockfile --filter @dashflow/web
 COPY apps/web/tsconfig.json apps/web/tsconfig.app.json apps/web/angular.json apps/web/.postcssrc.json apps/web/
 COPY apps/web/src/ apps/web/src/
 COPY apps/web/public/ apps/web/public/
-RUN pnpm --filter @dashflow/web build
+# Commit déployé (passé par la CI) : relie chaque erreur Sentry à sa version et à ses source maps.
+# Contrôlé avant usage : la valeur finit dans le code JavaScript de la build.
+ARG SENTRY_RELEASE=""
+RUN case "$SENTRY_RELEASE" in *[!0-9a-f]*) echo "SENTRY_RELEASE : SHA hexadécimal attendu" >&2; exit 1 ;; esac; \
+    if [ -n "$SENTRY_RELEASE" ]; then \
+      pnpm --filter @dashflow/web exec ng build --define "SENTRY_RELEASE='$SENTRY_RELEASE'"; \
+    else \
+      pnpm --filter @dashflow/web build; \
+    fi
+# Source maps : identifiants de débogage injectés dans les bundles (sentry-cli les associe grâce à la
+# ligne sourceMappingURL), envoyées à Sentry quand la CI fournit le jeton (secret BuildKit, absent
+# de l'image et des couches), puis retirées : ni servies ni référencées par les bundles publiés.
+RUN --mount=type=secret,id=sentry_auth_token \
+    set -eu; out=apps/web/dist/dash-flow/browser; \
+    npx --yes @sentry/cli@3.8.2 sourcemaps inject "$out"; \
+    if [ -s /run/secrets/sentry_auth_token ] && [ -n "$SENTRY_RELEASE" ]; then \
+      SENTRY_AUTH_TOKEN="$(cat /run/secrets/sentry_auth_token)" npx --yes @sentry/cli@3.8.2 sourcemaps upload \
+        --org j-ned --project dashflow-app-angular --release "$SENTRY_RELEASE" "$out"; \
+    fi; \
+    find "$out" -name '*.map' -delete; \
+    find "$out" -name '*.js' -exec sed -i '/^\/\/# sourceMappingURL=/d' {} +
 
 # ── Stage 2: serve static SPA via nginx ──
 # Statique Angular, et relais de /api/ vers l'API par le réseau interne de la pile

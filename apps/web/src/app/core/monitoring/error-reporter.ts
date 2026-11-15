@@ -1,5 +1,6 @@
 import { ErrorHandler, Injectable } from '@angular/core';
 import { environment } from '@env/environment';
+import { buildRelease, sentryOptions } from './sentry-options';
 
 type Sentry = typeof import('./sentry-client');
 export type ErrorTags = Readonly<Record<string, string>>;
@@ -13,22 +14,13 @@ let sentry: Promise<Sentry> | null = null;
 
 function loadSentry(): Promise<Sentry> {
   sentry ??= import('./sentry-client').then((Sentry) => {
-    Sentry.init({
-      dsn: environment.sentryDsn,
-      environment: environment.production ? 'production' : 'development',
-      sendDefaultPii: false,
-      dataCollection: {
-        userInfo: false,
-        httpBodies: [],
-        cookies: false,
-        httpHeaders: { request: false, response: false },
-        queryParams: false,
-      },
-      // Un console.error/warn peut porter une donnée E2EE déchiffrée (cf. validate-decrypted.ts) ; le
-      // breadcrumb par défaut de Sentry capture les arguments bruts des logs console, donc on les exclut
-      // sans toucher aux autres intégrations par défaut (dedupe, linkedErrors, httpContext...).
-      beforeBreadcrumb: (breadcrumb) => (breadcrumb.category === 'console' ? null : breadcrumb),
-    });
+    Sentry.init(
+      sentryOptions({
+        dsn: environment.sentryDsn,
+        production: environment.production,
+        release: buildRelease(),
+      }),
+    );
     return Sentry;
   });
   return sentry;
