@@ -1,4 +1,4 @@
-import argon2 from 'argon2';
+import { passwordHasher } from './password-hashing';
 import { and, eq, inArray } from 'drizzle-orm';
 import { AuthRepository } from './auth.repository';
 import type { DrizzleDB } from '../db/drizzle.constants';
@@ -188,7 +188,7 @@ export class EncryptionService {
     if (user.encryptionVersion === 1 && user.password) {
       const verified =
         !!dto.currentPassword &&
-        (await argon2.verify(user.password, dto.currentPassword));
+        (await passwordHasher.verify(user.password, dto.currentPassword));
       if (!verified)
         return fail(403, 'Mot de passe actuel requis', 'REAUTH_REQUIRED');
     }
@@ -227,7 +227,7 @@ export class EncryptionService {
         'E2EE_RECOVERY_REQUIRED',
       );
     }
-    const password = await argon2.hash(dto.newPassword);
+    const password = await passwordHasher.hash(dto.newPassword);
     if (encrypted && dto.wipe) {
       await this.db.transaction(async (tx) => {
         await this.wipeIn(tx, user.id, { password, authVersion: 1 });

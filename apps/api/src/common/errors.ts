@@ -39,6 +39,20 @@ export class NotFoundError extends AppError {
   }
 }
 
+/**
+ * Surcharge attendue (trop de hachages de mot de passe en cours) : 503 avec `Retry-After`, sans
+ * alerte Sentry — ce n'est pas un bug, et une rafale de requêtes ne doit pas inonder les alertes.
+ */
+export class ServerBusyError extends AppError {
+  constructor(readonly retryAfterSeconds: number) {
+    super(
+      503,
+      'Serveur occupé, réessayez dans quelques secondes',
+      'SERVER_BUSY',
+    );
+  }
+}
+
 export class InternalError extends AppError {
   constructor(message: string) {
     super(500, message);

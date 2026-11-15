@@ -1,5 +1,5 @@
 import { randomInt } from 'node:crypto';
-import argon2 from 'argon2';
+import { passwordHasher } from './password-hashing';
 import {
   AuthRepository,
   type VerificationCodePurpose,
@@ -34,7 +34,7 @@ export const requiresSecondFactor = (
 
 const CODE_TTL_MS = 10 * 60 * 1000;
 const genCode = (): string => String(randomInt(0, 1_000_000)).padStart(6, '0');
-// hash factice précalculé : cible de argon2.verify sur le chemin « user inconnu » (anti-timing)
+// hash factice précalculé : cible de passwordHasher.verify sur le chemin « user inconnu » (anti-timing)
 const DUMMY_PASSWORD_HASH =
   '$argon2id$v=19$m=65536,t=3,p=4$nDnJoEKnqivb4YJYimLDew$LsQ3NFQxFz3z6loo2TfhGsD7UEA5TiG67s9tn/ynstM';
 
@@ -51,7 +51,7 @@ export class AuthService {
     const existing = await this.repo.findByEmail(dto.email);
     if (existing) {
       // Coût argon2 payé dans les deux branches : le temps de réponse ne révèle pas l'existence.
-      const hash = await argon2.hash(dto.password);
+      const hash = await passwordHasher.hash(dto.password);
       if (existing.emailVerified) {
         await this.mailer.sendAccountExists(dto.email);
         return ok(existing);
@@ -69,7 +69,7 @@ export class AuthService {
       await this.sendCode(dto.email, 'verification');
       return ok(reclaimed);
     }
-    const hash = await argon2.hash(dto.password);
+    const hash = await passwordHasher.hash(dto.password);
     const user = await this.repo.createUser({
       email: dto.email,
       password: hash,
@@ -115,11 +115,11 @@ export class AuthService {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
     if (user.authVersion === 1) return ok(user);
-    if (!(await argon2.verify(user.password, dto.currentPassword)))
+    if (!(await passwordHasher.verify(user.password, dto.currentPassword)))
       return fail(401, 'Mot de passe actuel incorrect');
     return ok(
       await this.repo.updateUser(userId, {
-        password: await argon2.hash(dto.authKey),
+        password: await passwordHasher.hash(dto.authKey),
         authVersion: 1,
       }),
     );
@@ -128,10 +128,10 @@ export class AuthService {
   async login(dto: LoginDto): Promise<Result<LoginOutcome>> {
     const user = await this.repo.findByEmail(dto.email);
     if (!user || !user.password) {
-      await argon2.verify(DUMMY_PASSWORD_HASH, dto.password); // anti-timing : égalise le coût avec le chemin « user trouvé »
+      await passwordHasher.verify(DUMMY_PASSWORD_HASH, dto.password); // anti-timing : égalise le coût avec le chemin « user trouvé »
       return fail(401, 'Identifiants invalides');
     }
-    if (!(await argon2.verify(user.password, dto.password)))
+    if (!(await passwordHasher.verify(user.password, dto.password)))
       return fail(401, 'Identifiants invalides');
     if (!user.emailVerified)
       return fail(403, 'Email non vérifié', 'EMAIL_NOT_VERIFIED');
@@ -225,7 +225,7 @@ export class AuthService {
       );
     }
     await this.repo.updateUser(user.id, {
-      password: await argon2.hash(dto.newPassword),
+      password: await passwordHasher.hash(dto.newPassword),
       authVersion: 1,
     });
     await this.repo.bumpSessionVersion(user.id); // déconnecte un éventuel voleur de cookie
@@ -240,7 +240,7 @@ export class AuthService {
   ): Promise<Result<User>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
-    if (!(await argon2.verify(user.password, dto.currentPassword)))
+    if (!(await passwordHasher.verify(user.password, dto.currentPassword)))
       return fail(401, 'Mot de passe actuel incorrect');
     const rewrap = this.checkRewrap(
       user.encryptionVersion,
@@ -249,7 +249,7 @@ export class AuthService {
     );
     if (!rewrap.success) return rewrap;
     await this.repo.updateUser(userId, {
-      password: await argon2.hash(dto.newPassword),
+      password: await passwordHasher.hash(dto.newPassword),
       authVersion: 1,
       ...rewrap.data,
     });
@@ -272,7 +272,7 @@ export class AuthService {
     );
     if (!rewrap.success) return rewrap;
     await this.repo.updateUser(userId, {
-      password: await argon2.hash(dto.newPassword),
+      password: await passwordHasher.hash(dto.newPassword),
       authVersion: 1,
       ...rewrap.data,
     });
@@ -343,7 +343,7 @@ export class AuthService {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
     if (!user.totpEnabled) return fail(409, "La 2FA n'est pas active");
-    if (!(await argon2.verify(user.password, password)))
+    if (!(await passwordHasher.verify(user.password, password)))
       return fail(401, 'Mot de passe incorrect');
     return ok({ backupCodes: await this.issueBackupCodes(userId) });
   }
@@ -388,7 +388,7 @@ export class AuthService {
   async disableTotp(userId: string, password: string): Promise<Result<User>> {
     const user = await this.repo.findById(userId);
     if (!user || !user.password) return fail(400, 'Aucun mot de passe défini');
-    if (!(await argon2.verify(user.password, password)))
+    if (!(await passwordHasher.verify(user.password, password)))
       return fail(401, 'Mot de passe incorrect');
     await this.repo.updateUser(userId, {
       totpSecret: null,
